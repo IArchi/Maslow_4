@@ -1,10 +1,10 @@
-var http_communication_locked = false;
+let http_communication_locked = false;
 /** A list of various command objects that can be used as a queue */
 const cmd_list = [];
-var processing_cmd = false;
-var xmlhttpupload;
-var max_cmd = 40;
-var cmdInterval = 0;
+let processing_cmd = false;
+let xmlhttpupload;
+const max_cmd = 40;
+let cmdInterval = 0;
 
 const processNextCmd = () => {
     if (!cmd_list.length) {
@@ -94,7 +94,7 @@ const validateCommand = (cmd, step = "") => {
 }
 
 /** A semaphore (sorta mutex) for working with the cmd_list */
-var cmd_lock = false;
+let cmd_lock = false;
 
 /** Process the supplied cmd through the various stages in its life cycle */
 const process_cmd_list = (cmd, step = "") => {
@@ -180,7 +180,7 @@ function http_resultfn(cmd, response_text) {
 
 function http_errorfn(cmd, error_code, response_text) {
     if (typeof cmd.errorfn === "function") {
-        if (error_code == 401) {
+        if (error_code === 401) {
             logindlg();
             console.log("Authentication issue pls log");
         }
@@ -216,9 +216,9 @@ const process_cmd = (cmd) => {
 }
 
 function SendGetHttp(url, result_fn, error_fn, cmd_code, max_cmd_code) {
-    var cmd_code_id = 0;
+    let cmd_code_id = 0;
     /** The maximum number of times that this cmd_code can be added to the list */
-    var max_of_cmd_code = 1;
+    let max_of_cmd_code = 1;
 
     if (typeof cmd_code !== 'undefined') {
         cmd_code_id = cmd_code;
@@ -228,12 +228,12 @@ function SendGetHttp(url, result_fn, error_fn, cmd_code, max_cmd_code) {
         //else console.log("No Max ID defined");
         for (p = 0; p < cmd_list.length; p++) {
             //console.log("compare " + (max_cmd_code - max_of_cmd_code));
-            if (cmd_list[p].cmd_code == cmd_code_id) {
+            if (cmd_list[p].cmd_code === cmd_code_id) {
                 max_of_cmd_code--;
                 //console.log("found " + cmd_list[p].cmd_code + " and " + cmd_code_id);
             }
             if (max_of_cmd_code <= 0) {
-                console.log("Limit reached for " + cmd_code);
+                console.log(`Limit reached for ${cmd_code}`);
                 return;
             }
         }
@@ -257,14 +257,14 @@ function ProcessGetHttp(cmd) {
         return;
     }
 
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function () {
-        if (xmlhttp.readyState == 4) {
-            if (xmlhttp.status == 200) {
+    const xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = () => {
+        if (xmlhttp.readyState === 4) {
+            if (xmlhttp.status === 200) {
                 //console.log("*** " + url + " done");
                 http_resultfn(cmd, xmlhttp.responseText);
             } else {
-                if (xmlhttp.status == 401) {
+                if (xmlhttp.status === 401) {
                     GetIdentificationStatus();
                 }
                 http_errorfn(cmd, xmlhttp.status, xmlhttp.responseText);
@@ -300,13 +300,13 @@ function ProcessFileHttp(cmd) {
     http_communication_locked = true;
 
     xmlhttpupload = new XMLHttpRequest();
-    xmlhttpupload.onreadystatechange = function () {
-        if (xmlhttpupload.readyState == 4) {
+    xmlhttpupload.onreadystatechange = () => {
+        if (xmlhttpupload.readyState === 4) {
             http_communication_locked = false;
-            if (xmlhttpupload.status == 200) {
+            if (xmlhttpupload.status === 200) {
                 http_resultfn(cmd, xmlhttpupload.responseText);
             } else {
-                if (xmlhttpupload.status == 401) GetIdentificationStatus();
+                if (xmlhttpupload.status === 401) GetIdentificationStatus();
                 http_errorfn(cmd, xmlhttpupload.status, xmlhttpupload.responseText);
             }
         }

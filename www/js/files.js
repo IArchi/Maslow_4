@@ -658,7 +658,7 @@ function files_start_upload() {
 	for (let i = 0; i < files.length; i++) {
 		const file = files[i];
 		const fullFilename = `${path}${file.name}`;
-		//append file size first to check updload is complete
+		//append file size first to check upload is complete
 		formData.append(`${fullFilename}S`, file.size);
 		formData.append("myfile[]", file, fullFilename);
 		console.info(`Preparing ${fullFilename} for upload`);

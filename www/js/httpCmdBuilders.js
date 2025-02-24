@@ -4,7 +4,7 @@
 const httpCmd = {
     command: "/command",
     fileGet: "/",
-    /** Perform a GET file action. Mostly used by files.js (i.e. not SPIFFs) */
+    /** Perform a GET or POST file action. Used by files.js and tablet.js (i.e. not SPIFFs) */
     fileUpload: "/upload",
     /** Perform a files action.
      * For a POST this is used with FormData.
@@ -32,80 +32,63 @@ const getParam = (params, paramName, defaultValue = "") => {
         : defaultValue;
 }
 
+const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
+    const cmd = [];
+
+    for (const key of Object.keys(params)) {
+        let pVal = getParam(prms, key);
+        if (!pVal) {
+            continue;
+        }
+        // If the key is not in the `noEncKeys` list then it will be encoded
+        if (![noEncKeys].includes(key)) {
+            pVal = encodeURIComponent(pVal);
+        }
+        // If the key is in the `encKeys` list then it will be encoded
+        if ([encKeys].includes(key)) {
+            pVal = encodeURIComponent(pVal);
+        }
+        if (cmd.length) {
+            cmd.push(`${key}=${pVal}`);
+        } else {
+            cmd.push(`${httpcmd}?${key}=${pVal}`);
+        }
+    }
+
+    return cmd.join("&");
+}
+
 /** Build a full `/login` GET command, encoding the supplied params excluding DISCONNECT (and SUBMIT) */
-const buildHttpLoginCmd = (params = { }) => {
+const buildHttpLoginCmd = (params = {}) => {
     const cmd = [];
     // Do a deep copy of the params
     let prms = JSON.parse(JSON.stringify(params));
 
     if ("DISCONNECT" in prms && prms.DISCONNECT === "yes") {
         // Disconnect - throw away any other parameters
-        prms = {"DISCONNECT": "yes"};
+        prms = { "DISCONNECT": "yes" };
     } else {
         // Login / Change Password - add the submit param
         prms.SUBMIT = "yes";
     }
 
-    Object.keys(prms).forEach((key) => {
-        let pVal = getParam(prms, key);
-        if (pVal) {
-            if (!["DISCONNECT", "SUBMIT"].includes(key)) {
-                pVal = encodeURIComponent(pVal);
-            }
-            if (cmd.length) {
-                cmd.push(`${key}=${pVal}`);
-            } else {
-                cmd.push(`${httpCmd.login}?${key}=${pVal}`);
-            }
-        }
-    });
-
-    return cmd.join("&");
+    return buildHttpCmd(httpCmd.login, prms, [], ["DISCONNECT", "SUBMIT"]);
 }
 
 /** Build a full `/files` GET command, encoding all the supplied params excluding `action` */
-const buildHttpFilesCmd = (params = { }) => {
-    const cmd = [];
-
-    Object.keys(params).forEach((key) => {
-        let pVal = getParam(params, key);
-        if (pVal) {
-            if (!["action"].includes(key)) {
-                pVal = encodeURIComponent(pVal);
-            }
-            if (cmd.length) {
-                cmd.push(`${key}=${pVal}`);
-            } else {
-                cmd.push(`${httpCmd.files}?${key}=${pVal}`);
-            }
-        }
-    });
-
-    return cmd.join("&");
-}
+const buildHttpFilesCmd = (params = {}) => buildHttpCmd(httpCmd.files, params, [], ["action"]);
 
 /** Build a full `/upload` GET command, encoding the supplied `name`, `newname` and `path` values */
 const buildHttpFileCmd = (params = { action: "", path: "", filename: "" }) => {
+    // Do a deep copy of the params
+    const prms = JSON.parse(JSON.stringify(params));
     // `path` is special, it always goes into the command, and it always goes first
-    const path = getParam(params, "path", files_currentPath());
-    const cmdInfo = [`Performing http '${httpCmd.fileUpload}' GET command for path:'${path}'`];
-    const cmd = [`${httpCmd.fileUpload}?path=${encodeURIComponent(path)}`];
+    const path = encodeURIComponent(getParam(prms, "path", files_currentPath()));
 
-    Object.keys(params).forEach((key) => {
-        if (key !== "path") {
-            let pVal = getParam(params, key);
-            if (pVal) {
-                cmdInfo.push(`with ${key}:'${pVal}'`);
-                if (["name", "newname"].includes(key)) {
-                    pVal = encodeURIComponent(pVal);
-                }
-                cmd.push(`${key}=${pVal}`);
-            }
-        }
-    });
+    // Remove path from the params
+    prms.path = undefined;
 
-    console.info(cmdInfo.join(" "));
-    return cmd.join("&");
+    return buildHttpCmd(`${httpCmd.fileUpload}?path=${path}`, prms, ["name", "newname"]);
 }
 
 /** Build a simple file GET command. For some reason the filename is not encoded */
@@ -118,6 +101,6 @@ const buildHttpCommandCmd = (cmdType, cmd) => `${httpCmd.command}?${cmdType}=${e
 
 /** Build the supplied data into a blob, then a file, ready for inclusion as form data */
 const BuildFormDataFiles = (filename, filedata, options) => {
-	const blob = new Blob(filedata, options);
-	return new File([blob], filename);
+    const blob = new Blob(filedata, options);
+    return new File([blob], filename);
 }

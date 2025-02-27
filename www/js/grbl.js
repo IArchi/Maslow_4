@@ -637,17 +637,17 @@ async function handleCalibrationData(measurements) {
   }
 }
 
-function grblHandleMessage(msg) {
-  tabletShowMessage(msg, collecting)
+const grblHandleMessage = (msg) => {
+  tabletShowMessage(msg, collecting);
 
   // We handle these two before collecting data because they can be
   // sent at any time, maybe requested by a timer.
 
-  if (msg.startsWith('CLBM:')) {
+  if (valueStartsWith(msg, ["CLBM:"])) {
     const validJsonMSG = msg
       .replace(/(\b(?:bl|br|tr|tl)\b):/g, '"$1":')
-      .replace('CLBM:', '')
-      .replace(/,]$/, ']');
+      .replace("CLBM:", "")
+      .replace(/,]$/, "]");
     try {
       const measurements = JSON.parse(validJsonMSG);
       handleCalibrationData(measurements);
@@ -655,100 +655,100 @@ function grblHandleMessage(msg) {
       console.error("Parsing the GRBL `CLBM` message failed, the calibration data has not been 'handled'. This is probably a programmer error.");
     }
   }
-  if (msg.startsWith('<')) {
-    grblProcessStatus(msg)
-    return
+  if (valueStartsWith(msg, ["<"])) {
+    grblProcessStatus(msg);
+    return;
   }
-  if (msg.startsWith('[GC:')) {
-    grblGetModal(msg)
-    console.log(msg)
-    return
+  if (valueStartsWith(msg, ["[GC:"])) {
+    grblGetModal(msg);
+    console.log(msg);
+    return;
   }
 
   // Block data collection
   if (collecting) {
-    if (msg.startsWith('[MSG: EndData]')) {
-      collecting = false
+    if (valueStartsWith(msg, ["[MSG: EndData]"])) {
+      collecting = false;
       // Finish collecting data
       if (collectHandler) {
-        collectHandler(collectedData)
-        collectHandler = undefined
+        collectHandler(collectedData);
+        collectHandler = undefined;
       }
-      collectedData = ''
+      collectedData = "";
     } else {
       // Continue collecting data
-      collectedData += msg
+      collectedData += msg;
     }
-    return
+    return;
   }
-  if (msg.startsWith('[MSG: BeginData]')) {
+  if (valueStartsWith(msg, ["[MSG: BeginData]"])) {
     // Start collecting data
-    collectedData = ''
-    collecting = true
-    return
+    collectedData = "";
+    collecting = true;
+    return;
   }
 
   // Setting collection
   if (collectedSettings) {
-    if (msg.startsWith('ok')) {
+    if (valueStartsWith(msg, ["ok"])) {
       // Finish collecting settings
-      getESPconfigSuccess(collectedSettings)
-      collectedSettings = null
+      getESPconfigSuccess(collectedSettings);
+      collectedSettings = null;
       if (grbl_errorfn) {
-        grbl_errorfn()
-        grbl_errorfn = null
-        grbl_processfn = null
+        grbl_errorfn();
+        grbl_errorfn = null;
+        grbl_processfn = null;
       }
     } else {
       // Continue collecting settings
-      collectedSettings += msg
+      collectedSettings += msg;
     }
-    return
+    return;
   }
-  if (msg.startsWith('$0=') || msg.startsWith('$10=')) {
+  if (valueStartsWith(msg, ["$0=", "$10="])) {
     // Start collecting settings
-    collectedSettings = msg
-    return
+    collectedSettings = msg;
+    return;
   }
 
   // Handlers for standard Grbl protocol messages
 
-  if (msg.startsWith('ok')) {
+  if (valueStartsWith(msg, ["ok"])) {
     if (grbl_processfn) {
-      grbl_processfn()
-      grbl_processfn = null
-      grbl_errorfn = null
+      grbl_processfn();
+      grbl_processfn = null;
+      grbl_errorfn = null;
     }
-    return
+    return;
   }
-  if (msg.startsWith('[PRB:')) {
-    grblGetProbeResult(msg)
-    return
+  if (valueStartsWith(msg, ["[PRB:"])) {
+    grblGetProbeResult(msg);
+    return;
   }
-  if (msg.startsWith('[MSG:')) {
-    return
+  if (valueStartsWith(msg, ["[MSG:"])) {
+    return;
   }
-  if (msg.startsWith('error:')) {
+  if (valueStartsWith(msg, ["error:"])) {
     if (grbl_errorfn) {
-      grbl_errorfn()
-      grbl_errorfn = null
-      grbl_processfn = null
+      grbl_errorfn();
+      grbl_errorfn = null;
+      grbl_processfn = null;
     }
   }
-  if (msg.startsWith('error:') || msg.startsWith('ALARM:') || msg.startsWith('Hold:') || msg.startsWith('Door:')) {
+  if (valueStartsWith(msg, ["error:", "ALARM:", "Hold:", "Door:"])) {
     if (probe_progress_status !== 0) {
-      probe_failed_notification()
+      probe_failed_notification();
     }
     if (grbl_error_msg.length === 0) {
-      grbl_error_msg = translate_text_item(msg.trim())
+      grbl_error_msg = trx_text_item(msg.trim());
     }
-    return
+    return;
   }
-  if (msg.startsWith('Grbl ')) {
-    console.log('Reset detected')
-    return
+  if (valueStartsWith(msg, ["Grbl "])) {
+    console.log("Reset detected");
+    return;
   }
-}
+};
 
 function StartProbeProcess() {
   // G38.6 is FluidNC-specific.  It is like G38.2 except that the units

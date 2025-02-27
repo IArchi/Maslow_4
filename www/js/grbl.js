@@ -133,26 +133,6 @@ function grbl_set_probe_detected(state) {
   setHTML('touch_status_icon', get_icon_svg(glyph, '1.3em', '1.3em', color))
 }
 
-/** Gets an element's `value` value, or its `innerText` value.
- * And then tries to treat it as a float.
- * 
- * Returns a 'NaN' if the element:
- * * does not exist,
- * * does not have a `value` or `innerText` value or
- * * can't be converted to a float
- */
-const getValueFloat = (name) => Number.parseFloat(getValue(name) || "");
-
-/** Gets an element's `value` value, or its `innerText` value.
- * And then tries to treat it as an integer.
- * 
- * Returns a 'NaN' if the element:
- * * does not exist,
- * * does not have a `value` or `innerText` value or
- * * can't be converted to an integer
- */
-const getValueInt = (name) => Number.parseInt(getValue(name) || "");
-
 const trxOOR = () => translate_text_item("Out of range");
 const trxValErr = (valTitle, minVal, maxVal, units) => translate_text_item(`Value of ${valTitle} must be between ${minVal} ${units} and ${maxVal} ${units} !`);
 const alertdlgOOR = (valTitle, minVal, maxVal, units) => alertdlg(trxOOR(), trxValErr(valTitle, minVal, maxVal, units));
@@ -725,28 +705,39 @@ const grblHandleMessage = (msg) => {
 };
 
 const checkProbeValue = (pv) => {
+  if (!"value" in pv) {
+    if (pv.valType === "int" && typeof getValueInt === "function") {
+      pv.value = getValueInt(pv.fldId);
+    } else if (pv.valType === "float" && typeof getValueFloat === "function") {
+      pv.value = getValueFloat(pv.fldId);
+    } else {
+      return;
+    }
+  }
   if (Number.isNaN(pv.value) || pv.value > pv.maxVal || pv.value < pv.minVal) {
     alertdlgOOR(pv.valTitle, pv.minVal, pv.maxVal, pv.units);
     pv.value = Number.NaN;
   }
 }
 
-function StartProbeProcess() {
-  // G38.6 is FluidNC-specific.  It is like G38.2 except that the units
-  // are always G21 units, i.e. mm in the usual case, and distance is
-  // always incremental.  This avoids problems with probing when in G20
-  // inches mode and undoing a preexisting G91 incremental mode
+const probeValues = {
+  travel: { fldId: "grblpanel_probemaxtravel", valType: "float", valTitle: "maximum probe travel", minVal: 1, maxVal: 999, units: "mm" },
+  feedrate: { fldId: "grblpanel_probefeedrate", valType: "int", valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min" },
+  retract: { fldId: "grblpanel_proberetract", valType: "float", valTitle: "probe retract", minVal: 0, maxVal: 999, units: "mm" },
+  plateThickness: { fldId: "grblpanel_probetouchplatethickness", valType: "float", valTitle: "probe touch plate thickness", minVal: 0, maxVal: 999, units: "mm" },
+};
 
-  const probeValues = {
-    travel: {value: getValueFloat("grblpanel_probemaxtravel"), valTitle: "maximum probe travel", minVal: 1, maxVal: 999, units: "mm"},
-    feedrate: {value: getValueInt("grblpanel_probefeedrate"), valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min"},
-    retract: {value: getValueFloat("grblpanel_proberetract"), valTitle: "probe retract", minVal: 0, maxVal: 999, units: "mm"},
-    plateThickness: {value: getValueFloat("grblpanel_probetouchplatethickness"), valTitle: "probe touch plate thickness", minVal: 0, maxVal: 999, units: "mm"},
-  };
+const onprobemaxtravelChange = () => !Number.isNaN(checkProbeValue(probeValues.travel));
+const onprobefeedrateChange = () => !Number.isNaN(checkProbeValue(probeValues.feedrate));
+const onproberetractChange = () => !Number.isNaN(checkProbeValue(probeValues.retract));
+const onprobetouchplatethicknessChange = () => !Number.isNaN(checkProbeValue(probeValues.plateThickness));
+
+function StartProbeProcess() {
   Object.values(probeValues).forEach(pv => checkProbeValue(pv));
   if (Object.values(probeValues).some(pv => Number.isNaN(pv.value))) {
     return;
   }
+
   const cmd = `G38.2 Z-${probeValues.travel.value} F${probeValues.feedrate.value} P${probeValues.plateThickness.value}`;
   console.log(cmd);
   probe_progress_status = 1;
@@ -755,6 +746,11 @@ function StartProbeProcess() {
     tryAutoReport(); // will fall back to polled if autoreport fails
     restoreReport = true;
   }
+
+  // G38.6 is FluidNC-specific.  It is like G38.2 except that the units
+  // are always G21 units, i.e. mm in the usual case, and distance is
+  // always incremental.  This avoids problems with probing when in G20
+  // inches mode and undoing a preexisting G91 incremental mode
   SendPrinterCommand(cmd, true, null, null, 38.6, 1);
   setClickability('probingbtn', false);
   setClickability('probingtext', true);

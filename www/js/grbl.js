@@ -99,16 +99,6 @@ const floatOrZero = (value) => {
   return Number.isNaN(val) ? 0.0 : val;
 }
 
-/** Gets an element's `value` value, or its `innerText` value.
- * And then tries to treat it as a float.
- * 
- * Returns a 'NaN' if the element:
- * * does not exist,
- * * does not have a `value` or `innerText` value or
- * * can't be converted to a float
- */
-const getValueFloat = (name) => Number.parseFloat(getValue(name) || "");
-
 /** This must be done after the preferences have been set */
 function init_grbl_panel() {
   const prefList = (typeof preferencesList !== "undefined" && Array.isArray(preferenceList) && preferenceList.length > 0)
@@ -143,47 +133,31 @@ function grbl_set_probe_detected(state) {
   setHTML('touch_status_icon', get_icon_svg(glyph, '1.3em', '1.3em', color))
 }
 
+/** Gets an element's `value` value, or its `innerText` value.
+ * And then tries to treat it as a float.
+ * 
+ * Returns a 'NaN' if the element:
+ * * does not exist,
+ * * does not have a `value` or `innerText` value or
+ * * can't be converted to a float
+ */
+const getValueFloat = (name) => Number.parseFloat(getValue(name) || "");
+
+/** Gets an element's `value` value, or its `innerText` value.
+ * And then tries to treat it as an integer.
+ * 
+ * Returns a 'NaN' if the element:
+ * * does not exist,
+ * * does not have a `value` or `innerText` value or
+ * * can't be converted to an integer
+ */
+const getValueInt = (name) => Number.parseInt(getValue(name) || "");
+
 const trxOOR = () => translate_text_item("Out of range");
-const trxValErr = (valName, minVal, maxVal, units) = translate_text_item(`Value of ${valName} must be between ${minVal} ${units} and ${maxVal} ${units} !`);
-const alertdlgOOR = (valName, minVal, maxVal, units) => alertdlg(trxOOR(), trxValErr(valName, minVal, maxVal, units));
+const trxValErr = (valTitle, minVal, maxVal, units) => translate_text_item(`Value of ${valTitle} must be between ${minVal} ${units} and ${maxVal} ${units} !`);
+const alertdlgOOR = (valTitle, minVal, maxVal, units) => alertdlg(trxOOR(), trxValErr(valTitle, minVal, maxVal, units));
 
-function onprobemaxtravelChange() {
-  const travel = getValueFloat("grblpanel_probemaxtravel");
-  if (Number.isNaN(travel) || travel > 9999 || travel <= 0) {
-    alertdlgOOR("maximum probe travel", 1, 9999, "mm");
-    return false;
-  }
-  return true;
-}
-
-function onprobefeedrateChange() {
-  const feedratevalue = Number.parseInt(getValue("grblpanel_probefeedrate"));
-  if (feedratevalue <= 0 || feedratevalue > 9999 || Number.isNaN(feedratevalue) || feedratevalue === null) {
-    alertdlgOOR("probe feedrate", 1, 9999, "mm/min");
-    return false;
-  }
-  return true;
-}
-
-function onproberetractChange() {
-  const thickness = getValueFloat("grblpanel_proberetract");
-  if (Number.isNaN(thickness) || thickness < 0 || thickness > 999) {
-    alertdlgOOR("probe retract", 0, 9999, "mm");
-    return false;
-  }
-  return true;
-}
-
-function onprobetouchplatethicknessChange() {
-  const thickness = getValueFloat("grblpanel_probetouchplatethickness");
-  if (Number.isNaN(thickness) || thickness < 0 || thickness > 999) {
-    alertdlgOOR("probe touch plate thickness", 0, 9999, "mm");
-    return false;
-  }
-  return true;
-}
-
-var reportType = 'none'
+var reportType = 'none';
 
 function disablePolling() {
   setAutocheck(false)
@@ -750,36 +724,44 @@ const grblHandleMessage = (msg) => {
   }
 };
 
+const checkProbeValue = (pv) => {
+  if (Number.isNaN(pv.value) || pv.value > pv.maxVal || pv.value < pv.minVal) {
+    alertdlgOOR(pv.valTitle, pv.minVal, pv.maxVal, pv.units);
+    pv.value = Number.NaN;
+  }
+}
+
 function StartProbeProcess() {
   // G38.6 is FluidNC-specific.  It is like G38.2 except that the units
   // are always G21 units, i.e. mm in the usual case, and distance is
   // always incremental.  This avoids problems with probing when in G20
   // inches mode and undoing a preexisting G91 incremental mode
-  var cmd = 'G38.2 Z-'
-  if (
-    !onprobemaxtravelChange() ||
-    !onprobefeedrateChange() ||
-    !onproberetractChange() ||
-    !onprobetouchplatethicknessChange()
-  ) {
-    return
+
+  const probeValues = {
+    travel: {value: getValueFloat("grblpanel_probemaxtravel"), valTitle: "maximum probe travel", minVal: 1, maxVal: 999, units: "mm"},
+    feedrate: {value: getValueInt("grblpanel_probefeedrate"), valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min"},
+    retract: {value: getValueFloat("grblpanel_proberetract"), valTitle: "probe retract", minVal: 0, maxVal: 999, units: "mm"},
+    plateThickness: {value: getValueFloat("grblpanel_probetouchplatethickness"), valTitle: "probe touch plate thickness", minVal: 0, maxVal: 999, units: "mm"},
+  };
+  Object.values(probeValues).forEach(pv => checkProbeValue(pv));
+  if (Object.values(probeValues).some(pv => Number.isNaN(pv.value))) {
+    return;
   }
-  cmd +=
-    `${getValueFloat("grblpanel_probemaxtravel")} F${Number.parseInt(getValue('grblpanel_probefeedrate'))} P${getValue("grblpanel_probetouchplatethickness")}`
-  console.log(cmd)
-  probe_progress_status = 1
-  let restoreReport = false
+  const cmd = `G38.2 Z-${probeValues.travel.value} F${probeValues.feedrate.value} P${probeValues.plateThickness.value}`;
+  console.log(cmd);
+  probe_progress_status = 1;
+  let restoreReport = false;
   if (reportType === 'none') {
-    tryAutoReport() // will fall back to polled if autoreport fails
-    restoreReport = true
+    tryAutoReport(); // will fall back to polled if autoreport fails
+    restoreReport = true;
   }
-  SendPrinterCommand(cmd, true, null, null, 38.6, 1)
-  setClickability('probingbtn', false)
-  setClickability('probingtext', true)
-  grbl_error_msg = ''
-  setHTML('grbl_status_text', grbl_error_msg)
+  SendPrinterCommand(cmd, true, null, null, 38.6, 1);
+  setClickability('probingbtn', false);
+  setClickability('probingtext', true);
+  grbl_error_msg = '';
+  setHTML('grbl_status_text', grbl_error_msg);
   if (restoreReport) {
-    reportNone()
+    reportNone();
   }
 }
 

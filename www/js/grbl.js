@@ -105,6 +105,13 @@ const prefList = () => {
     : default_preferenceslist[0];
 }
 
+const probeValues = {
+  travel: { fldId: "grblpanel_probemaxtravel", prefId: "probemaxtravel", valType: "float", valTitle: "maximum probe travel", minVal: 1, maxVal: 999, units: "mm" },
+  feedrate: { fldId: "grblpanel_probefeedrate", prefId: "probefeedrate", valType: "int", valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min" },
+  retract: { fldId: "grblpanel_proberetract", prefId: "proberetract", valType: "float", valTitle: "probe retract", minVal: 0, maxVal: 999, units: "mm" },
+  plateThickness: { fldId: "grblpanel_probetouchplatethickness", prefId: "probetouchplatethickness", valType: "float", valTitle: "probe touch plate thickness", minVal: 0, maxVal: 999, units: "mm" },
+};
+
 /** This must be done after the preferences have been set */
 function init_grbl_panel() {
   // Feed rate for X and Y Axes
@@ -118,6 +125,16 @@ function init_grbl_panel() {
 
   setValue('controlpanel_xy_feedrate', AxisFeedrate()[0]);
   setValue('controlpanel_z_feedrate', AxisFeedrate()[2]);
+
+  Object.values(probeValues).forEach((pv) => {
+    if (pv.prefId in prefList() && prefList()[pv.prefId]) {
+      const prefValue = prefList()[pv.prefId];
+      const val = Number.parseFloat(prefValue);
+      if (!Number.isNaN(val)) {
+        setValue(pv.fldId, val);
+      }
+    }
+  });
 
   grbl_set_probe_detected(false);
 }
@@ -519,10 +536,10 @@ function grblGetProbeResult(response) {
   }
 }
 
-function probe_failed_notification() {
-  finalize_probing()
-  alertdlg(translate_text_item('Error'), translate_text_item('Probe failed !'))
-  beep(3, 140, 261)
+function probe_failed_notification(errMsg = "Probe failed !") {
+  finalize_probing();
+  alertdlg(translate_text_item('Error'), translate_text_item(errMsg));
+  beep(3, 140, 261);
 }
 const modalModes = [
   { name: 'motion', values: ['G80', 'G0', 'G1', 'G2', 'G3', 'G38.1', 'G38.2', 'G38.3', 'G38.4'] },
@@ -644,6 +661,12 @@ const grblHandleMessage = (msg) => {
     return;
   }
 
+  // Handle probe problem
+  if (msg === "[MSG:INFO: No probe pin defined]") {
+    probe_failed_notification("No probe pin defined");
+    return;
+  }
+
   // Setting collection
   if (collectedSettings) {
     if (valueStartsWith(msg, ["ok"])) {
@@ -686,7 +709,7 @@ const grblHandleMessage = (msg) => {
   }
   if (valueStartsWith(msg, ["error:"])) {
     if (grbl_errorfn) {
-      grbl_errorfn();
+      grbl_errorfn(msg.replace("error:", "").trim());
       grbl_errorfn = null;
       grbl_processfn = null;
     }
@@ -696,7 +719,7 @@ const grblHandleMessage = (msg) => {
       probe_failed_notification();
     }
     if (grbl_error_msg.length === 0) {
-      grbl_error_msg = trx_text_item(msg.trim());
+      grbl_error_msg = translate_text_item(msg.trim());
     }
     return;
   }
@@ -707,7 +730,7 @@ const grblHandleMessage = (msg) => {
 };
 
 const checkProbeValue = (pv) => {
-  if (!"value" in pv) {
+  if (!("value" in pv)) {
     if (pv.valType === "int" && typeof getValueInt === "function") {
       pv.value = getValueInt(pv.fldId);
     } else if (pv.valType === "float" && typeof getValueFloat === "function") {
@@ -722,13 +745,6 @@ const checkProbeValue = (pv) => {
   }
 }
 
-const probeValues = {
-  travel: { fldId: "grblpanel_probemaxtravel", valType: "float", valTitle: "maximum probe travel", minVal: 1, maxVal: 999, units: "mm" },
-  feedrate: { fldId: "grblpanel_probefeedrate", valType: "int", valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min" },
-  retract: { fldId: "grblpanel_proberetract", valType: "float", valTitle: "probe retract", minVal: 0, maxVal: 999, units: "mm" },
-  plateThickness: { fldId: "grblpanel_probetouchplatethickness", valType: "float", valTitle: "probe touch plate thickness", minVal: 0, maxVal: 999, units: "mm" },
-};
-
 const onprobemaxtravelChange = () => !Number.isNaN(checkProbeValue(probeValues.travel));
 const onprobefeedrateChange = () => !Number.isNaN(checkProbeValue(probeValues.feedrate));
 const onproberetractChange = () => !Number.isNaN(checkProbeValue(probeValues.retract));
@@ -740,8 +756,6 @@ function StartProbeProcess() {
     return;
   }
 
-  const cmd = `G38.2 Z-${probeValues.travel.value} F${probeValues.feedrate.value} P${probeValues.plateThickness.value}`;
-  console.log(cmd);
   probe_progress_status = 1;
   let restoreReport = false;
   if (reportType === 'none') {
@@ -749,11 +763,8 @@ function StartProbeProcess() {
     restoreReport = true;
   }
 
-  // G38.6 is FluidNC-specific.  It is like G38.2 except that the units
-  // are always G21 units, i.e. mm in the usual case, and distance is
-  // always incremental.  This avoids problems with probing when in G20
-  // inches mode and undoing a preexisting G91 incremental mode
-  SendPrinterCommand(cmd, true, null, null, 38.6, 1);
+  const cmd = `G38.2 Z-${probeValues.travel.value} F${probeValues.feedrate.value} P${probeValues.plateThickness.value}`;
+  SendPrinterCommand(cmd, true, null, null, 38.2, 1);
   setClickability('probingbtn', false);
   setClickability('probingtext', true);
   grbl_error_msg = '';

@@ -81,7 +81,6 @@ function prefs_toggledisplay(id_source, forcevalue) {
         case 'show_grbl_probe_tab':
             if (id(id_source).checked) displayBlock("grbl_probe_preferences");
             else displayNone("grbl_probe_preferences");
-            grbl_probe_tab_enabled();
             break;
     }
 }

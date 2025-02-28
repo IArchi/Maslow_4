@@ -119,8 +119,6 @@ function init_grbl_panel() {
   setValue('controlpanel_xy_feedrate', AxisFeedrate()[0]);
   setValue('controlpanel_z_feedrate', AxisFeedrate()[2]);
 
-  grbl_probe_tab_enabled();
-
   grbl_set_probe_detected(false);
 }
 
@@ -129,13 +127,6 @@ function grbl_clear_status() {
   grbl_error_msg = ''
   setHTML('grbl_status_text', grbl_error_msg)
   setHTML('grbl_status', '')
-}
-
-function grbl_probe_tab_enabled() {
-  id("grblpanel_probetablink").className = "tablink";
-  if (prefList().enable_grbl_probe_panel !== "true") {
-    id("grblpanel_probetablink").classList.add("hide_it");
-  }
 }
 
 function grbl_set_probe_detected(state) {

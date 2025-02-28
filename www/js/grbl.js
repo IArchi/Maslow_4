@@ -99,23 +99,27 @@ const floatOrZero = (value) => {
   return Number.isNaN(val) ? 0.0 : val;
 }
 
-/** This must be done after the preferences have been set */
-function init_grbl_panel() {
-  const prefList = (typeof preferencesList !== "undefined" && Array.isArray(preferenceList) && preferenceList.length > 0)
+const prefList = () => {
+  return (typeof preferencesList !== "undefined" && Array.isArray(preferenceList) && preferenceList.length > 0)
     ? preferenceslist[0]
     : default_preferenceslist[0];
+}
 
+/** This must be done after the preferences have been set */
+function init_grbl_panel() {
   // Feed rate for X and Y Axes
-  AxisFeedrate()[0] = floatOrZero(prefList.xy_feedrate);
-  AxisFeedrate()[1] = floatOrZero(prefList.xy_feedrate);
+  AxisFeedrate()[0] = floatOrZero(prefList().xy_feedrate);
+  AxisFeedrate()[1] = floatOrZero(prefList().xy_feedrate);
 
-  AxisFeedrate()[2] = floatOrZero(prefList.z_feedrate);
-  AxisFeedrate()[3] = floatOrZero(prefList.a_feedrate);
-  AxisFeedrate()[4] = floatOrZero(prefList.b_feedrate);
-  AxisFeedrate()[5] = floatOrZero(prefList.c_feedrate);
+  AxisFeedrate()[2] = floatOrZero(prefList().z_feedrate);
+  AxisFeedrate()[3] = floatOrZero(prefList().a_feedrate);
+  AxisFeedrate()[4] = floatOrZero(prefList().b_feedrate);
+  AxisFeedrate()[5] = floatOrZero(prefList().c_feedrate);
 
   setValue('controlpanel_xy_feedrate', AxisFeedrate()[0]);
   setValue('controlpanel_z_feedrate', AxisFeedrate()[2]);
+
+  grbl_probe_tab_enabled();
 
   grbl_set_probe_detected(false);
 }
@@ -125,6 +129,13 @@ function grbl_clear_status() {
   grbl_error_msg = ''
   setHTML('grbl_status_text', grbl_error_msg)
   setHTML('grbl_status', '')
+}
+
+function grbl_probe_tab_enabled() {
+  id("grblpanel_probetablink").className = "tablink";
+  if (prefList().enable_grbl_probe_panel !== "true") {
+    id("grblpanel_probetablink").classList.add("hide_it");
+  }
 }
 
 function grbl_set_probe_detected(state) {

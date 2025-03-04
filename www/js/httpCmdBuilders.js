@@ -32,6 +32,7 @@ const getParam = (params, paramName, defaultValue = "") => {
         : defaultValue;
 }
 
+/** Build out command based on the supplied parameters, and whether a given parameter should be encoded or not */
 const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
     const cmd = [];
 
@@ -48,11 +49,8 @@ const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
         if ([encKeys].includes(key)) {
             pVal = encodeURIComponent(pVal);
         }
-        if (cmd.length) {
-            cmd.push(`${key}=${pVal}`);
-        } else {
-            cmd.push(`${httpcmd}?${key}=${pVal}`);
-        }
+        // If this is the first part of the command then prefix it with the httpcmd
+        cmd.push(`${!cmd.length ? httpcmd : ""}?${key}=${pVal}`);
     }
 
     return cmd.join("&");

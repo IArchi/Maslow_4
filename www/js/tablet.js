@@ -7,7 +7,7 @@ var gCodeDisplayable = false
 var snd = null
 var sndok = true
 
-var versionNumber = 0.88
+var versionNumber = 1.0
 
 const addMessage = (msg, scroll = true, clear = false) => {
   const msgWindow = id("messages");

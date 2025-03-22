@@ -57,6 +57,11 @@ const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
         cmd.push(`${!cmd.length ? httpcmd : ""}?${key}=${pVal}`);
     }
 
+    if (!cmd.length) {
+        // If there's nothing so far, ensure the httpcmd is emitted
+        cmd.push(httpcmd);
+    }
+
     return cmd.join("&");
 }
 

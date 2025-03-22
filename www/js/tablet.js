@@ -658,10 +658,10 @@ var gCodeFilename = '';
 var filename = 'TEST.NC';
 var watchPath = '';
 
-function tabletGetFileList(path) {
+function tabletGetFileList(tabPath) {
   // Clear/reset the gCodeFilename
   gCodeFilename = "";
-  const cmd = buildHttpFileCmd({ path: path });
+  const cmd = buildHttpFileCmd({ path: tabPath });
   SendGetHttp(cmd, files_list_success);
 }
 

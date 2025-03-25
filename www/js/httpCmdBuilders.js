@@ -32,11 +32,15 @@ const getParam = (params, paramName, defaultValue = "") => {
         : defaultValue;
 }
 
+/** Do a deep copy of the obj */
+const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
+
 /** Build out command based on the supplied parameters, and whether a given parameter should be encoded or not */
 const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
     const cmd = [];
+    let prms = deepCopy(params);
 
-    for (const key of Object.keys(params)) {
+    for (const key of Object.keys(prms)) {
         let pVal = getParam(prms, key);
         if (!pVal) {
             continue;
@@ -53,14 +57,18 @@ const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
         cmd.push(`${!cmd.length ? httpcmd : ""}?${key}=${pVal}`);
     }
 
+    if (!cmd.length) {
+        // If there's nothing so far, ensure the httpcmd is emitted
+        cmd.push(httpcmd);
+    }
+
     return cmd.join("&");
 }
 
 /** Build a full `/login` GET command, encoding the supplied params excluding DISCONNECT (and SUBMIT) */
 const buildHttpLoginCmd = (params = {}) => {
     const cmd = [];
-    // Do a deep copy of the params
-    let prms = JSON.parse(JSON.stringify(params));
+    let prms = deepCopy(params);
 
     if ("DISCONNECT" in prms && prms.DISCONNECT === "yes") {
         // Disconnect - throw away any other parameters
@@ -78,8 +86,7 @@ const buildHttpFilesCmd = (params = {}) => buildHttpCmd(httpCmd.files, params, [
 
 /** Build a full `/upload` GET command, encoding the supplied `name`, `newname` and `path` values */
 const buildHttpFileCmd = (params = { action: "", path: "", filename: "" }) => {
-    // Do a deep copy of the params
-    const prms = JSON.parse(JSON.stringify(params));
+    let prms = deepCopy(params);
     // `path` is special, it always goes into the command, and it always goes first
     const path = encodeURIComponent(getParam(prms, "path", files_currentPath()));
 

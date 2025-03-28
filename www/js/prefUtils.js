@@ -1,0 +1,104 @@
+const checkFields = {
+    show_camera_panel: "enable_camera",
+    autoload_camera_panel: "auto_load_camera",
+    enable_DHT: "enable_DHT",
+    enable_lock_UI: "enable_lock_UI",
+    enable_ping: "enable_ping",
+    show_grbl_probe_tab: "enable_probe",
+    show_control_panel: "enable_control_panel",
+    show_grbl_panel: "enable_grbl_panel",
+    show_grbl_probe_tab: "enable_grbl_probe_panel",
+    show_files_panel: "enable_files_panel",
+    has_tft_sd: "has_TFT_SD",
+    has_tft_usb: "has_TFT_USB",
+    show_commands_panel: "enable_commands_panel",
+    preferences_autoscroll: "enable_autoscroll",
+    preferences_verbose_mode: "enable_verbose_mode",
+};
+
+const intFields = {
+    preferences_autoReport_Interval: "preferenceslist[0].autoReport_interval",
+    preferences_pos_Interval_check: "preferenceslist[0].interval_positions",
+    preferences_status_Interval_check: "preferenceslist[0].interval_status",
+};
+
+/** This does not include axis velocity fields */
+const floatFields = {
+    preferences_probemaxtravel: "preferenceslist[0].probemaxtravel",
+    preferences_probefeedrate: "preferenceslist[0].probefeedrate",
+    preferences_proberetract: "preferenceslist[0].proberetract",
+    preferences_probetouchplatethickness: "preferenceslist[0].probetouchplatethickness",
+};
+
+/** Determine if the preferences have been modified */
+const PreferencesModified = () => {
+    if (!preferenceslist[0].length) {
+        // Nothing got loaded, so nothing could have been modified
+        return false;
+    }
+
+    let defKeys = Object.keys(default_preferenceslist[0]);
+
+    //check dialog compare to global state
+    for (let ix = 0; ix < defKeys.length; ix++) {
+        if (!(defKeys[ix] in preferenceslist[0])) {
+            // If anything has been 'undefined' then we assume modification
+            return true;
+        }
+    }
+
+    for (const chkMap in checkFields) {
+        if (getChecked(chkMap) !== (preferenceslist[0][checkFields[chkMap]])) {
+            return true;
+        }
+    }
+
+    for (const intMap in intFields) {
+        if (getValueInt(intMap) !== Number.parseInt(preferenceslist[0][intFields[intMap]])) {
+            return true;
+        }
+    }
+
+    for (const floatMap in floatFields) {
+        if (getValueFloat(floatMap) !== Number.parseFloat(preferenceslist[0][floatFields[floatMap]])) {
+            return true;
+        }
+    }
+
+    //camera address
+    if (getValue('preferences_camera_webaddress') !== HTMLDecode(preferenceslist[0].camera_address)) {
+        return true;
+    }
+
+    //xy feedrate
+    if (getValueFloat('preferences_control_xy_velocity') !== Number.parseFloat(preferenceslist[0].xy_feedrate)) {
+        return true;
+    }
+    //z feedrate
+    if (grblaxis > 2 && getValueFloat('preferences_control_z_velocity') !== Number.parseFloat(preferenceslist[0].z_feedrate)) {
+        return true;
+    }
+    //a feedrate
+    if (grblaxis > 3 && getValueFloat('preferences_control_a_velocity') !== Number.parseFloat(preferenceslist[0].a_feedrate)) {
+        return true;
+    }
+    //b feedrate
+    if (grblaxis > 4 && getValueFloat('preferences_control_b_velocity') !== Number.parseFloat(preferenceslist[0].b_feedrate)) {
+        return true;
+    }
+    //c feedrate
+    if (grblaxis > 5 && getValueFloat('preferences_control_c_velocity') !== Number.parseFloat(preferenceslist[0].c_feedrate)) {
+        return true;
+    }
+    //file filters
+    return (getValue('preferences_filters') !== preferenceslist[0].f_filters);
+}
+
+/** Display the element as a block or none */
+const displayBlockOrNone = (elemName, enable) => {
+    if (enable) {
+        displayBlock(elemName);
+    } else {
+        displayNone(elemName);
+    }
+};

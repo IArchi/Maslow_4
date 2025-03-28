@@ -122,6 +122,17 @@ function setDisabled(selector, value) {
   }
 }
 
+/** Set a checkbox element's default `value`, its `checked` field (if the element exists) */
+const setCheckedDefault = (name, val, setBoth = true) => {
+  const checkBox = id(name);
+  if (checkBox) {
+    checkBox.checked = String(val).toLowerCase() === "true";
+    if (setBoth) {
+      checkBox.value = String(val);
+    }
+  }
+}
+
 /** Set a checkbox element's `value` (if the element exists) */
 const setChecked = (name, val) => {
   const checkBox = id(name);
@@ -129,6 +140,7 @@ const setChecked = (name, val) => {
     checkBox.value = String(val);
   }
 }
+
 /** Return a checkbox element's `value`.
  * Note that this is a string.
  * If the element does not exist a "false" string is returned */

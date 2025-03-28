@@ -92,9 +92,9 @@ function processMacroGetFailed(error_code, response) {
 
 function on_autocheck_position(use_value) {
 	if (typeof (use_value) !== 'undefined') {
-		id('autocheck_position').checked = use_value;
+		setChecked('autocheck_position', string(use_value));
 	}
-	if (id('autocheck_position').checked) {
+	if (getChecked('autocheck_position') === "true") {
 		var interval = parseInt(getValue('controlpanel_interval_positions'));
 		if (!Number.isNaN(interval) && interval > 0 && interval < 100) {
 			if (interval_position != -1) {
@@ -102,7 +102,7 @@ function on_autocheck_position(use_value) {
 			}
 			interval_position = setInterval(function () { get_Position() }, interval * 1000);
 		} else {
-			id('autocheck_position').checked = false;
+			setChecked('autocheck_position', "false");
 			setValue('controlpanel_interval_positions', 0);
 			if (interval_position != -1) {
 				clearInterval(interval_position);
@@ -122,7 +122,7 @@ function onPosIntervalChange() {
 	if (!Number.isNaN(interval) && interval > 0 && interval < 100) {
 		on_autocheck_position();
 	} else {
-		id('autocheck_position').checked = false;
+		setChecked('autocheck_position', "false");
 		setValue('controlpanel_interval_positions', 0);
 		if (interval != 0) {
 			alertdlg(translate_text_item("Out of range"), translate_text_item("Value of auto-check must be between 0s and 99s !!"));
@@ -155,7 +155,7 @@ function control_motorsOff() {
 }
 
 function SendHomecommand(cmd) {
-	if (id('lock_UI').checked) {
+	if (getChecked('lock_UI') === "true") {
 		return;
 	}
 	switch (cmd) {

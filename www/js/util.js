@@ -137,7 +137,7 @@ const setCheckedDefault = (name, val, setBoth = true) => {
 const setChecked = (name, val) => {
   const checkBox = id(name);
   if (checkBox) {
-    checkBox.value = String(val);
+    checkBox.value = String(val).toLowerCase();
   }
 }
 

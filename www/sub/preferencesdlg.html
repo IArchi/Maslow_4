@@ -1,9 +1,9 @@
 <!-- preference Modal -->
-<div id="preferencesdlg.html" class="modal" onclick="clear_drop_menu(event)">
+<div id="preferencesdlg.html" class="modal">
     <!-- preferences content -->
     <div class="modal-content">
         <div class="modal-header">
-            <span class="close" onclick="closePreferencesDialog()"><b>&times;</b></span>
+            <span id="preferencesDlgClose" class="close"><b>&times;</b></span>
             <h3>
                 <div class="modal-title" translate>Preferences</div>
             </h3>
@@ -47,8 +47,7 @@
                 <div class="panel-heading">
                     <div class="checkbox">
                         <label>
-                            <input id="show_camera_panel" type="checkbox"
-                                onclick="prefs_toggledisplay('show_camera_panel')" />
+                            <input id="show_camera_panel" type="checkbox"/>
                             <span translate>Show camera panel</span>
                         </label>
                     </div>
@@ -73,8 +72,7 @@
                 <div class="panel-heading">
                     <div class="checkbox">
                         <label>
-                            <input id="show_control_panel" type="checkbox"
-                                onclick="prefs_toggledisplay('show_control_panel')" />
+                            <input id="show_control_panel" type="checkbox"/>
                             <span translate>Show control panel</span>
                         </label>
                     </div>
@@ -231,8 +229,7 @@
                 <div class="panel-heading">
                     <div class="checkbox">
                         <label>
-                            <input id="show_grbl_panel" type="checkbox"
-                                onclick="prefs_toggledisplay('show_grbl_panel')" />
+                            <input id="show_grbl_panel" type="checkbox"/>
                             <span translate>Show GRBL panel</span>
                         </label>
                     </div>
@@ -292,8 +289,7 @@
                         <div class="panel-heading">
                             <div class="checkbox">
                                 <label>
-                                    <input id="show_grbl_probe_tab" type="checkbox"
-                                        onclick="prefs_toggledisplay('show_grbl_probe_tab')" />
+                                    <input id="show_grbl_probe_tab" type="checkbox"/>
                                     <span translate>Show probe panel</span>
                                 </label>
                             </div>
@@ -407,8 +403,7 @@
                 <div class="panel-heading">
                     <div class="checkbox">
                         <label>
-                            <input id="show_files_panel" type="checkbox"
-                                onclick="prefs_toggledisplay('show_files_panel')" />
+                            <input id="show_files_panel" type="checkbox"/>
                             <span translate>Show files panel</span>
                         </label>
                     </div>
@@ -420,7 +415,7 @@
                                 <td colspan=2>
                                     <div class="checkbox">
                                         <label>
-                                            <input id="has_tft_sd" type="checkbox" onclick="" />
+                                            <input id="has_tft_sd" type="checkbox" disabled value="true" />
                                             <span translate>TFT SD card</span>
                                         </label>
                                     </div>
@@ -430,7 +425,7 @@
                                 <td colspan=2>
                                     <div class="checkbox">
                                         <label>
-                                            <input id="has_tft_usb" type="checkbox" onclick="" />
+                                            <input id="has_tft_usb" type="checkbox" disabled value="true" />
                                             <span translate>TFT USB disk</span>
                                         </label>
                                     </div>
@@ -457,8 +452,7 @@
                 <div class="panel-heading">
                     <div class="checkbox">
                         <label>
-                            <input id="show_commands_panel" type="checkbox"
-                                onclick="prefs_toggledisplay('show_commands_panel')" />
+                            <input id="show_commands_panel" type="checkbox"/>
                             <span translate>Show commands panel</span>
                         </label>
                     </div>
@@ -488,13 +482,13 @@
                 <span id="preferencesdlg_upload_percent">0</span>%
             </div>
             <span class="pull-right">
-                <button class="btn btn-warning" onclick="closePreferencesDialog()" translate>Cancel</button>
+                <button id="preferencesDlgCancel" class="btn btn-warning" translate>Cancel</button>
             </span>
             <span class="pull-right">
                 &nbsp;&nbsp;
             </span>
             <span class="pull-right">
-                <button class="btn btn-primary" onclick="SavePreferences()" translate>Save</button>
+                <button id="preferencesDlgSave" class="btn btn-primary" translate>Save</button>
             </span>
         </div>
     </div>

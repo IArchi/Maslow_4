@@ -9,7 +9,24 @@ function initpreferences() {
     displayBlock('grbl_pref_panel');
     displayTable('has_tft_sd');
     displayTable('has_tft_usb');
+
+    id("preferencesdlg.html").addEventListener("click", clear_drop_menu);
+    id("preferencesDlgClose").addEventListener("click", closePreferencesDialog);
+    id("preferencesDlgCancel").addEventListener("click", closePreferencesDialog);
+    id("preferencesDlgSave").addEventListener("click", savingPreferences);
+
+    const checkBoxes = Array.from(document.getElementsByTagName("input")).filter((inpElem) => inpElem.type === "checkbox" && inpElem.disabled !== true);
+    for (const checkBox of checkBoxes) {
+        const chkId = checkBox.id;
+        if (chkId in checkBlocks) {
+            id(chkId).addEventListener("click", toggleCheckBlock);
+        } else {
+            id(chkId).addEventListener("click", toggleCheckBox);
+        }
+    }
 }
+
+const savingPreferences = (dispatchEvent) => {SavePreferences(false)};
 
 function getpreferenceslist() {
     preferenceslist = [];
@@ -20,29 +37,6 @@ function getpreferenceslist() {
     //endRemoveIf(production)
     const cmd = buildHttpFileGetCmd(preferences_file_name);
     SendGetHttp(cmd, processPreferencesGetSuccess, processPreferencesGetFailed);
-}
-
-function prefs_toggledisplay(id_source) {
-    switch (id_source) {
-        case "show_files_panel":
-            displayBlockOrNone("files_preferences", getChecked(id_source) === "true");
-            break;
-        case "show_grbl_panel":
-            displayBlockOrNone("grbl_preferences", getChecked(id_source) === "true");
-            break;
-        case "show_camera_panel":
-            displayBlockOrNone("camera_preferences", getChecked(id_source) === "true");
-            break;
-        case "show_control_panel":
-            displayBlockOrNone("control_preferences", getChecked(id_source) === "true");
-            break;
-        case "show_commands_panel":
-            displayBlockOrNone("cmd_preferences", getChecked(id_source) === "true");
-            break;
-        case "show_grbl_probe_tab":
-            displayBlockOrNone("grbl_probe_preferences", getChecked(id_source) === "true");
-            break;
-    }
 }
 
 function processPreferencesGetSuccess(response) {
@@ -250,34 +244,12 @@ function build_dlg_preferences_list() {
     content += build_language_list("language_preferences");
     content += "</td></tr></table>";
     setHTML("preferences_langage_list", content);
-    //camera
-    setCheckedDefault("show_camera_panel", preferenceslist[0]?.enable_camera);
-    //autoload camera
-    setCheckedDefault("autoload_camera_panel", preferenceslist[0]?.auto_load_camera);
+
+    setCheckboxes();
+
     //camera address
-    setValue('preferences_camera_webaddress', (typeof (preferenceslist[0].camera_address) !== 'undefined')? HTMLDecode(preferenceslist[0].camera_address) : "");
-    //DHT
-    setCheckedDefault("enable_DHT", preferenceslist[0]?.enable_DHT);
-    //lock UI
-    setCheckedDefault("enable_lock_UI", preferenceslist[0]?.enable_lock_UI);
-    //Monitor connection
-    setCheckedDefault("enable_ping", preferenceslist[0]?.enable_ping);
+    setValue('preferences_camera_webaddress', (typeof (preferenceslist[0].camera_address) !== 'undefined') ? HTMLDecode(preferenceslist[0].camera_address) : "");
 
-    //grbl panel
-    setCheckedDefault("show_grbl_panel", preferenceslist[0]?.enable_grbl_panel);
-    //grbl probe panel
-    setCheckedDefault("show_grbl_probe_tab", preferenceslist[0]?.enable_grbl_probe_panel);
-    //control panel
-    setCheckedDefault("show_control_panel", preferenceslist[0]?.enable_control_panel);
-    //files panel
-    setCheckedDefault("show_files_panel", preferenceslist[0]?.enable_files_panel);
-    //TFT SD
-    setCheckedDefault("has_tft_sd", preferenceslist[0]?.has_TFT_SD);
-
-    //TFT USB
-    setCheckedDefault("has_tft_usb", preferenceslist[0]?.has_TFT_USB);
-    //commands
-    setCheckedDefault("show_commands_panel", preferenceslist[0]?.enable_commands_panel);
     //autoreport interval
     if (typeof (preferenceslist[0].autoreport_interval) !== 'undefined') {
         id('preferences_autoReport_Interval').value = Number.parseInt(preferenceslist[0].autoreport_interval);
@@ -337,10 +309,7 @@ function build_dlg_preferences_list() {
     if ((typeof (preferenceslist[0].probetouchplatethickness) !== 'undefined') && (preferenceslist[0].probetouchplatethickness.length !== 0)) {
         id('preferences_probetouchplatethickness').value = Number.parseFloat(preferenceslist[0].probetouchplatethickness);
     } else id('preferences_probetouchplatethickness').value = Number.parseFloat(default_preferenceslist[0].probetouchplatethickness);
-    //autoscroll
-    setCheckedDefault("preferences_autoscroll", preferenceslist[0]?.enable_autoscroll);
-    //Verbose Mode
-    setCheckedDefault("preferences_verbose_mode", preferenceslist[0]?.enable_verbose_mode);
+
     //file filters
     if (typeof (preferenceslist[0].f_filters) !== 'undefined') {
         console.log("Use prefs filters");
@@ -349,13 +318,6 @@ function build_dlg_preferences_list() {
         console.log("Use default filters");
         id('preferences_filters').value = String(default_preferenceslist[0].f_filters);
     }
-
-    prefs_toggledisplay('show_camera_panel');
-    prefs_toggledisplay('show_grbl_panel');
-    prefs_toggledisplay('show_control_panel');
-    prefs_toggledisplay('show_commands_panel');
-    prefs_toggledisplay('show_files_panel');
-    prefs_toggledisplay('show_grbl_probe_tab');
 }
 
 function closePreferencesDialog() {
@@ -375,92 +337,115 @@ function process_preferencesCloseDialog(answer) {
         closeModal('cancel');
     } else {
         // console.log("Answer is yes so let's save");
-        SavePreferences();
+        SavePreferences(false);
     }
 }
 
-function SavePreferences(current_preferences) {
+const getPreferencesForSave = () => {
+    let newPrefsList = [];
+    if (!Checkvalues("preferences_autoReport_Interval") ||
+        !Checkvalues("preferences_pos_Interval_check") ||
+        !Checkvalues("preferences_status_Interval_check") ||
+        !Checkvalues("preferences_control_xy_velocity") ||
+        !Checkvalues("preferences_filters") ||
+        !Checkvalues("preferences_probemaxtravel") ||
+        !Checkvalues("preferences_probefeedrate") ||
+        !Checkvalues("preferences_proberetract") ||
+        !Checkvalues("preferences_probetouchplatethickness")
+    ) {
+        return newPrefsList;
+    }
+    if (grblaxis > 2) {
+        if (!Checkvalues("preferences_control_z_velocity")) {
+            return newPrefsList;
+        }
+    }
+    if ((grblaxis > 3) && (!Checkvalues("preferences_control_a_velocity"))) {
+        return newPrefsList;
+    }
+    if ((grblaxis > 4) && (!Checkvalues("preferences_control_b_velocity"))) {
+        return newPrefsList;
+    }
+    if ((grblaxis > 5) && (!Checkvalues("preferences_control_c_velocity"))) {
+        return newPrefsList;
+    }
+
+    let saveprefs = [`[{"language":"${language}"`];
+    saveprefs.push(`"enable_lock_UI":"${getChecked('enable_lock_UI')}"`);
+    saveprefs.push(`"enable_ping":"${getChecked('enable_ping')}"`);
+    saveprefs.push(`"enable_DHT":"${getChecked('enable_DHT')}"`);
+
+    saveprefs.push(`"enable_camera":"${getChecked('show_camera_panel')}"`);
+    saveprefs.push(`"auto_load_camera":"${getChecked('autoload_camera_panel')}"`);
+    saveprefs.push(`"camera_address":"${HTMLEncode(getValue('preferences_camera_webaddress') || "")}"`);
+
+    saveprefs.push(`"enable_control_panel":"${getChecked('show_control_panel')}"`);
+    saveprefs.push(`"interval_positions":"${getValue('preferences_pos_Interval_check') || ""}"`);
+    saveprefs.push(`"xy_feedrate":"${getValue('preferences_control_xy_velocity') || ""}"`);
+    if (grblaxis > 2) {
+        saveprefs.push(`"z_feedrate":"${getValue('preferences_control_z_velocity') || ""}"`);
+    }
+    if (grblaxis > 3) {
+        saveprefs.push(`"a_feedrate":"${getValue('preferences_control_a_velocity') || ""}"`);
+    }
+    if (grblaxis > 4) {
+        saveprefs.push(`"b_feedrate":"${getValue('preferences_control_b_velocity') || ""}"`);
+    }
+    if (grblaxis > 5) {
+        saveprefs.push(`"c_feedrate":"${getValue('preferences_control_c_velocity') || ""}"`);
+    }
+
+    saveprefs.push(`"enable_grbl_panel":"${getChecked('show_grbl_panel')}"`);
+    saveprefs.push(`"autoreport_interval":"${getValue('preferences_autoReport_Interval') || ""}"`);
+    saveprefs.push(`"interval_status":"${getValue('preferences_status_Interval_check') || ""}"`);
+    saveprefs.push(`"enable_grbl_probe_panel":"${getChecked('show_grbl_probe_tab')}"`);
+    saveprefs.push(`"probemaxtravel":"${getValue('preferences_probemaxtravel') || ""}"`);
+    saveprefs.push(`"probefeedrate":"${getValue('preferences_probefeedrate') || ""}"`);
+    saveprefs.push(`"probetouchplatethickness":"${getValue('preferences_probetouchplatethickness') || ""}"`);
+    saveprefs.push(`"proberetract":"${getValue('preferences_proberetract') || ""}"`);
+
+    saveprefs.push(`"enable_files_panel":"${getChecked('show_files_panel')}"`);
+    saveprefs.push(`"has_TFT_SD":"${getChecked('has_tft_sd')}"`);
+    saveprefs.push(`"has_TFT_USB":"${getChecked('has_tft_usb')}"`);
+    saveprefs.push(`"f_filters":"${getValue('preferences_filters') || ""}"`);
+
+    saveprefs.push(`"enable_commands_panel":"${getChecked('show_commands_panel')}"`);
+    saveprefs.push(`"enable_autoscroll":"${getChecked('preferences_autoscroll')}"`);
+    saveprefs.push(`"enable_verbose_mode":"${getChecked('preferences_verbose_mode')}"}]`);
+    try {
+        newPrefsList = JSON.parse(saveprefs.join(","));
+    } catch (error) {
+        console.error("There was an error preparing the preferences before saving them. The preferences have not been saved. This is probably a programmer error.");
+        console.error(error);
+        return;
+    }
+
+    return newPrefsList;
+}
+
+function SavePreferences(useExternalSetPreference = false) {
     if (CheckForHttpCommLock()) {
         return;
     }
 
-    console.log("save prefs");
-    if (((typeof (current_preferences) !== 'undefined') && !current_preferences) || (typeof (current_preferences) == 'undefined')) {
-        if (!Checkvalues("preferences_autoReport_Interval") ||
-            !Checkvalues("preferences_pos_Interval_check") ||
-            !Checkvalues("preferences_status_Interval_check") ||
-            !Checkvalues("preferences_control_xy_velocity") ||
-            !Checkvalues("preferences_filters") ||
-            !Checkvalues("preferences_probemaxtravel") ||
-            !Checkvalues("preferences_probefeedrate") ||
-            !Checkvalues("preferences_proberetract") ||
-            !Checkvalues("preferences_probetouchplatethickness")
-        ) return;
-        if (grblaxis > 2) {
-            if (!Checkvalues("preferences_control_z_velocity")) return;
-        }
-        if ((grblaxis > 3) && (!Checkvalues("preferences_control_a_velocity"))) return;
-        if ((grblaxis > 4) && (!Checkvalues("preferences_control_b_velocity"))) return;
-        if ((grblaxis > 5) && (!Checkvalues("preferences_control_c_velocity"))) return;
-
-        preferenceslist = [];
-        let saveprefs = [`[{"language":"${language}"`];
-        saveprefs.push(`"enable_lock_UI":"${getChecked('enable_lock_UI')}"`);
-        saveprefs.push(`"enable_ping":"${getChecked('enable_ping')}"`);
-        saveprefs.push(`"enable_DHT":"${getChecked('enable_DHT')}"`);
-
-        saveprefs.push(`"enable_camera":"${getChecked('show_camera_panel')}"`);
-        saveprefs.push(`"auto_load_camera":"${getChecked('autoload_camera_panel')}"`);
-        saveprefs.push(`"camera_address":"${HTMLEncode(getValue('preferences_camera_webaddress') || "")}"`);
-
-        saveprefs.push(`"enable_control_panel":"${getChecked('show_control_panel')}"`);
-        saveprefs.push(`"interval_positions":"${getValue('preferences_pos_Interval_check') || ""}"`);
-        saveprefs.push(`"xy_feedrate":"${getValue('preferences_control_xy_velocity') || ""}"`);
-        if (grblaxis > 2) {
-            saveprefs.push(`"z_feedrate":"${getValue('preferences_control_z_velocity') || ""}"`);
-        }
-        if (grblaxis > 3) {
-            saveprefs.push(`"a_feedrate":"${getValue('preferences_control_a_velocity') || ""}"`);
-        }
-        if (grblaxis > 4) {
-            saveprefs.push(`"b_feedrate":"${getValue('preferences_control_b_velocity') || ""}"`);
-        }
-        if (grblaxis > 5) {
-            saveprefs.push(`"c_feedrate":"${getValue('preferences_control_c_velocity') || ""}"`);
-        }
-
-        saveprefs.push(`"enable_grbl_panel":"${getChecked('show_grbl_panel')}"`);
-        saveprefs.push(`"autoreport_interval":"${getValue('preferences_autoReport_Interval') || ""}"`);
-        saveprefs.push(`"interval_status":"${getValue('preferences_status_Interval_check') || ""}"`);
-        saveprefs.push(`"enable_grbl_probe_panel":"${getChecked('show_grbl_probe_tab')}"`);
-        saveprefs.push(`"probemaxtravel":"${getValue('preferences_probemaxtravel') || ""}"`);
-        saveprefs.push(`"probefeedrate":"${getValue('preferences_probefeedrate') || ""}"`);
-        saveprefs.push(`"probetouchplatethickness":"${getValue('preferences_probetouchplatethickness') || ""}"`);
-        saveprefs.push(`"proberetract":"${getValue('preferences_proberetract') || ""}"`);
-
-        saveprefs.push(`"enable_files_panel":"${getChecked('show_files_panel')}"`);
-        saveprefs.push(`"has_TFT_SD":"${getChecked('has_tft_sd')}"`);
-        saveprefs.push(`"has_TFT_USB":"${getChecked('has_tft_usb')}"`);
-        saveprefs.push(`"f_filters":"${getValue('preferences_filters') || ""}"`);
-
-        saveprefs.push(`"enable_commands_panel":"${getChecked('show_commands_panel')}"`);
-        saveprefs.push(`"enable_autoscroll":"${getChecked('preferences_autoscroll')}"`);
-        saveprefs.push(`"enable_verbose_mode":"${getChecked('preferences_verbose_mode')}"}]`);
-        try {
-            preferenceslist = JSON.parse(saveprefs.join(","));
-        } catch (error) {
-            console.error("There was an error preparing the preferences before saving them. The preferences have not been saved. This is probably a programmer error.");
-            console.error(error);
+    console.log("Saving preferences");
+    if (!useExternalSetPreference) {
+        const newPrefsList = getPreferencesForSave();
+        if (newPrefsList.length === 0) {
             return;
         }
+
+        preferenceslist = newPrefsList;
     }
 
     const file = BuildFormDataFiles(preferences_file_name, [JSON.stringify(preferenceslist, null, " ")], { type: 'application/json' });
     var formData = new FormData();
     formData.append('path', '/');
     formData.append('myfile[]', file, preferences_file_name);
-    if ((typeof (current_preferences) != 'undefined') && current_preferences) {
+
+    if (useExternalSetPreference) {
         SendFileHttp(httpCmd.files, formData);
+        console.info("Preferences successfully updated");
     } else {
         SendFileHttp(httpCmd.files, formData, preferencesdlgUploadProgressDisplay, preferencesUploadsuccess, preferencesUploadfailed);
     }
@@ -478,6 +463,7 @@ function preferencesdlgUploadProgressDisplay(oEvent) {
 }
 
 function preferencesUploadsuccess(response) {
+    console.info("Preferences successfully saved");
     displayNone('preferencesdlg_upload_msg');
     applypreferenceslist();
     closeModal('ok');
@@ -486,7 +472,6 @@ function preferencesUploadsuccess(response) {
 function preferencesUploadfailed(error_code, response) {
     alertdlg(translate_text_item("Error"), translate_text_item("Save preferences failed!"));
 }
-
 
 function Checkvalues(id_2_check) {
     let status = true;

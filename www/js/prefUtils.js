@@ -30,6 +30,15 @@ const floatFields = {
     preferences_probetouchplatethickness: "preferenceslist[0].probetouchplatethickness",
 };
 
+const checkBlocks = {
+    show_files_panel: "files_preferences",
+    show_grbl_panel: "grbl_preferences",
+    show_camera_panel: "camera_preferences",
+    show_control_panel: "control_preferences",
+    show_commands_panel: "cmd_preferences",
+    show_grbl_probe_tab: "grbl_probe_preferences",
+};
+
 /** Determine if the preferences have been modified */
 const PreferencesModified = () => {
     if (!preferenceslist[0].length) {
@@ -102,3 +111,43 @@ const displayBlockOrNone = (elemName, enable) => {
         displayNone(elemName);
     }
 };
+
+const toggleCheckBlock = (event) => {
+    const checkBox = event.currentTarget;
+    const chkId = checkBox.id;
+    prefs_toggledisplay(chkId);
+}
+
+const toggleCheckBox = (event) => {
+    const checkBox = event.currentTarget;
+    const chkId = checkBox.id;
+    prefs_togglebox(chkId);
+}
+
+const prefs_togglebox = (id_source) => {
+    const currentValue = getChecked(id_source);
+    const newValue = ["on", "true"].includes(currentValue) ? 'false' : 'true';
+    setChecked(id_source, newValue);
+}
+
+/** Toggles the checkbox value, and also its associated block of preferences */
+function prefs_toggledisplay(id_source) {
+    prefs_togglebox(id_source);
+    displayBlockOrNone(checkBlocks[id_source], getChecked(id_source) === 'true');
+}
+
+const setCheckboxes = () => {
+    for (const chkMap in checkFields) {
+        setCheckedDefault(chkMap, preferenceslist[0]?.[checkFields[chkMap]]);
+
+        // Now click / toggle it twice
+        if (chkMap in checkBlocks) {
+            prefs_toggledisplay(chkMap);
+            prefs_toggledisplay(chkMap);
+        } else {
+            const checkbox = id(chkMap);
+            checkbox.click();
+            checkbox.click();
+        }
+    }
+}

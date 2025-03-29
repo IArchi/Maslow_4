@@ -80,7 +80,7 @@ const setDisplay = (name, val) => {
   if (!elem) {
     return;
   }
-  id(name).style.display = val;
+  elem.style.display = val;
 }
 
 /** Set the display style of the element identified by name to 'none' */

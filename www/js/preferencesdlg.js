@@ -2,7 +2,7 @@
 var preferenceslist = [];
 var language_save = language;
 
-var preferences_file_name = '/preferences.json';
+var preferences_file_name = 'preferences.json';
 
 function initpreferences() {
     displayNone('DHT_pref_panel');

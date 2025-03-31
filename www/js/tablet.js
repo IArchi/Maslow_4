@@ -7,7 +7,7 @@ var gCodeDisplayable = false
 var snd = null
 var sndok = true
 
-var versionNumber = "1.02.02";
+var versionNumber = "1.02.03";
 
 const addMessage = (msg, scroll = true, clear = false) => {
   const msgWindow = id("messages");
@@ -204,7 +204,7 @@ const checkParams = (params = {}) => {
   for (key in params) {
     s.push(`${key}${params[key]}`);
   }
-  return s.join();
+  return s.join("");
 }
 
 /** Perform a jog command */

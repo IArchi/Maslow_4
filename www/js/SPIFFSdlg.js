@@ -324,19 +324,13 @@ function SPIFFS_UploadFile() {
 		return;
 	}
 
-	const fileList = [];
 	const files = id("SPIFFS_select").files;
-	const formData = new FormData();
-	formData.append("path", SPIFFS_currentpath);
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i];
+	const fileList = [];
+	for (const file of files) {
 		fileList.push(file.name);
-		const fullFilename = `${SPIFFS_currentpath}${file.name}`;
-		//append file size first to check upload is complete
-		formData.append(`${fullFilename}S`, file.size);
-		formData.append("myfile[]", file, fullFilename);
-		console.info(`Preparing ${fullFilename} for upload`);
 	}
+	const formData = BuildFileUploadFormData(SPIFFS_currentpath, files);
+
 	displayNone("SPIFFS_select_form");
 	displayNone("SPIFFS_uploadbtn");
 	displayBlock("uploadSPIFFSmsg");

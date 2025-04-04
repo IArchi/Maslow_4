@@ -98,16 +98,6 @@ function processSPIFFS_Createdir(answer) {
 	}
 }
 
-function SPIFFSDownload(url) {
-	console.info(`Preparing to download ${url}`);
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = url;
-	document.body.appendChild(anchor);
-	anchor.click();
-	document.body.removeChild(anchor);
-}
-
 function processSPIFFSDelete(answer) {
 	if (answer === "yes") {
 		SPIFFSSendCommand("delete", SPIFFS_currentfile);
@@ -197,6 +187,11 @@ function SPIFFSbutton(btnId, btnClass, icon) {
 	return `<td width='0%' style='vertical-align:middle'>${btnContent}</td>`;
 }
 
+const SPIFFSanchor = (btnId, btnClass, icon, url) => {
+	const aContent = `<a id="${btnId}" class="btn ${btnClass} btn-xs" href="${url}" download="${url}" style='padding: 5px 5px 0px 5px;'>${get_icon_svg(icon)}</a>`;
+	return `<td width='0%' style='vertical-align:middle'>${aContent}</td>`;
+}
+
 const buildSPIFFSTotalBar = (jsonresponse) => {
 	let content = `${translate_text_item("Total:")} ${jsonresponse.total}`;
 	content += `&nbsp;&nbsp;|&nbsp;&nbsp;${translate_text_item("Used:")} ${jsonresponse.used}&nbsp;`;
@@ -240,12 +235,11 @@ function SPIFFSdispatchfilestatus(jsonresponse) {
 		// filecontent += "<td width='100%' style='vertical-align:middle'><a href=\"" + pathname + filename + "\" target=_blank download><button  class=\"btn btn-link no_overflow\">" + filename + "</button></a></td>"
 		filecontent += `<td width='100%' style='vertical-align:middle'>${filename}</td>`;
 		filecontent += `<td nowrap  style='vertical-align:middle; text-align:right'>${filesize}</td>`;
-		filecontent += SPIFFSbutton(`${bIdF}download_${i}`, "btn-default", "download");
+		filecontent += SPIFFSanchor(`${bIdF}download_${i}`, "btn-default", "download", pathname + filename);
 		filecontent += SPIFFSbutton(`${bIdF}delete_${i}`, "btn-danger", "trash");
 		filecontent += SPIFFSbutton(`${bIdF}rename_${i}`, "btn-default", "wrench");
 		content += buildTr(filecontent);
 
-		actions.push({ id: `${bIdF}download_${i}`, method: SPIFFSDownload, path: pathname + filename });
 		actions.push({ id: `${bIdF}delete_${i}`, method: SPIFFSDelete, path: filename });
 		actions.push({ id: `${bIdF}rename_${i}`, method: SPIFFSRename, path: filename });
 	}

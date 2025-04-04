@@ -139,6 +139,14 @@ function formatFileSize(size) {
 	return `${nSize} B`;
 }
 
+const FileButton = (btnId, btnClass, icon, index) =>{
+	return `<button id="${btnId}" data-index="${index}" class="btn btn-xs ${btnClass}" style='padding-top: 4px;'>${get_icon_svg(icon, "1em", "1em")}</button>`;
+}
+
+const FileAnchor = (btnId, btnClass, icon, url) => {
+	return `<a id="${btnId}" class="btn btn-xs ${btnClass}" href="${url}" download="${url}" style='padding-top: 4px;'>${get_icon_svg(icon)}</a>`;
+}
+
 function files_build_file_line(index, actions) {
 	let content = "";
 	const entry = files_file_list[index];
@@ -146,7 +154,7 @@ function files_build_file_line(index, actions) {
 	if ((files_filter_sd_list && entry.isprintable) || !files_filter_sd_list) {
 		const fliId = `filelist_${index}`;
 		const clickStyle = is_clickable ? " style='cursor:pointer;'" : "";
-		content += `<li id='${fliId}' class='list-group-item list-group-hover'${clickStyle}>`;
+		content += `<li id='${fliId}' data-index='${index}' class='list-group-item list-group-hover' ${clickStyle}>`;
 		content += "<div class='row'>";
 		content += "<div class='col-md-5 col-sm-5 no_overflow'>";
 		content += "<table><tr>";
@@ -155,7 +163,7 @@ function files_build_file_line(index, actions) {
 		content += "</tr></table>";
 		content += "</div>";
 		if (is_clickable) {
-			actions.push({ id: fliId, method: files_click_file, index: index });
+			actions.push({ id: fliId, method: files_click_file });
 		}
 		let sizecol = "col-md-2 col-sm-2 filesize";
 		let timecol = "col-md-2 col-sm-2";
@@ -168,26 +176,23 @@ function files_build_file_line(index, actions) {
 		const entrySize = entry.isdir ? "" : formatFileSize(entry.size);
 		content += `<div class='${sizecol}'>${entrySize}</div>`;
 
-		const btnPad = "style='padding-top: 4px;'";
-		const btnCls = "class='btn btn-xs btn-default'";
 		content += `<div class='${timecol}'>${entry.datetime}</div>`;
 		content += `<div class='${iconcol}'>`;
 		content += "<div class='pull-right'>";
 		if (entry.isprintable) {
-			content += `<button id='${fliId}_print_btn' ${btnCls} ${btnPad}>${get_icon_svg("play", "1em", "1em")}</button>`;
-			actions.push({ id: `${fliId}_print_btn`, method: files_print, index: index });
+			content += FileButton(`${fliId}_print_btn`, "btn-default", "play", index);
+			actions.push({ id: `${fliId}_print_btn`, method: files_print });
 		}
 		content += "&nbsp;";
 		if (!entry.isdir) {
-			content += `<button id='${fliId}_download_btn' ${btnCls} ${btnPad}>${get_icon_svg("download", "1em", "1em")}</button>`;
-			actions.push({ id: `${fliId}_download_btn`, method: files_download, index: index });
+			content += FileAnchor(`${fliId}_download_btn`, "btn-default", "download", buildFileHref(index));			
 		}
 		if (files_showdeletebutton(index)) {
-			content += `<button id='${fliId}_delete_btn' class='btn btn-xs btn-danger' ${btnPad}>${get_icon_svg("trash", "1em", "1em")}</button>`;
-			actions.push({ id: `${fliId}_delete_btn`, method: files_delete, index: index });
+			content += FileButton(`${fliId}_delete_btn`, "btn-danger", "trash", index);
+			actions.push({ id: `${fliId}_delete_btn`, method: files_delete });
 		}
-		content += `<button id='${fliId}_rename_btn' ${btnCls} ${btnPad}>${get_icon_svg("wrench", "1em", "1em")}</button>`;
-		actions.push({ id: `${fliId}_rename_btn`, method: files_rename, index: index });
+		content += FileButton(`${fliId}_rename_btn`, "btn-default", "wrench", index);
+		actions.push({ id: `${fliId}_rename_btn`, method: files_rename });
 		content += "</div>";
 		content += "</div>";
 		content += "</div>";
@@ -203,7 +208,11 @@ function tabletSelectGCodeFile(filename) {
 	option.selected = true;
 }
 
-function files_print(index) {
+const getEventIndex = (event) => Number.parseInt(event.currentTarget.dataset.index);
+
+function files_print(event) {
+	event.stopPropagation();
+	const index = getEventIndex(event);
 	const file = files_file_list[index];
 	const path = `${files_currentPath()}${file.name}`;
 	tabletSelectGCodeFile(file.name);
@@ -238,7 +247,9 @@ function files_create_dir(name) {
 	SendGetHttp(cmd, files_list_success, files_list_failed);
 }
 
-function files_delete(index) {
+function files_delete(event) {
+	event.stopPropagation();
+	const index = getEventIndex(event);
 	files_current_file_index = index;
 	let msg = translate_text_item("Confirm deletion of directory: ");
 	if (!files_file_list[index].isdir) {
@@ -272,7 +283,9 @@ const files_is_clickable = (index) => files_file_list[index].isdir ? true : dire
 const files_enter_dir = (name) => files_refreshFiles(`${files_currentPath()}${name}/`);
 
 let old_file_name;
-function files_rename(index) {
+function files_rename(event) {
+	event.stopPropagation();
+	const index = getEventIndex(event);
 	const entry = files_file_list[index];
 	old_file_name = entry.sdname;
 	inputdlg(translate_text_item("New file name"), translate_text_item("Name:"), process_files_rename, old_file_name);
@@ -291,11 +304,10 @@ function process_files_rename(new_file_name) {
 }
 
 const buildFileHref = (index) => encodeURIComponent(`SD/${files_currentPath()}${files_file_list[index].sdname}`.replace("//", "/"));
-function files_download(index) {
-	//console.log("file on direct SD");
-	window.location.href = buildFileHref(index);
-}
-function files_click_file(index) {
+
+function files_click_file(event) {
+	event.stopPropagation();
+	const index = getEventIndex(event);
 	const entry = files_file_list[index];
 	if (entry.isdir) {
 		files_enter_dir(entry.name);
@@ -508,7 +520,9 @@ function files_directSD_upload_failed(error_code, response) {
 
 const need_up_level = () => files_currentPath() !== "/";
 
-function files_go_levelup() {
+function files_go_levelup(event) {
+	event.stopPropagation();
+
 	const tlist = files_currentPath().split("/");
 	let path = "/";
 	let nb = 1;
@@ -546,7 +560,7 @@ function files_build_display_filelist(displaylist = true) {
 			content += `<li id='${liId}' class='list-group-item list-group-hover' style='cursor:pointer'>`;
 			content += `<span>${get_icon_svg("level-up")}</span>&nbsp;&nbsp;<span translate>Up...</span>`;
 			content += "</li>";
-			actions.push({ id: liId, method: files_go_levelup, index: undefined });
+			actions.push({ id: liId, method: files_go_levelup });
 		}
 		for (let index = 0; index < files_file_list.length; index++) {
 			if (!files_file_list[index].isdir)
@@ -558,12 +572,12 @@ function files_build_display_filelist(displaylist = true) {
 		}
 
 		fileListElem.innerHTML = content;
-		actions.forEach((action) => {
+		for (const action of actions) {
 			const elem = id(action.id);
 			if (elem) {
-				elem.addEventListener("click", (event) => action.method(action.index));
+				elem.addEventListener("click", action.method);
 			}
-		});
+		}
 		displayBlock("files_fileList");
 	}
 

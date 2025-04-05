@@ -1,4 +1,4 @@
-// import get_icon_svg, displayBlock, displayNone, id, setHTML, clear_drop_menu, hide_drop_menu, showhide_drop_menu, closeModal, setactiveModal, showModal, alertdlg, confirmdlg, SendFileHttp, translate_text_item 
+// import get_icon_svg, displayBlock, displayNone, id, setHTML, clear_drop_menu, closeModal, setactiveModal, showModal, alertdlg, confirmdlg, SendFileHttp, translate_text_item 
 
 //Macro dialog
 let macrodlg_macrolist = [];
@@ -19,79 +19,117 @@ function showmacrodlg(closefn) {
 	showModal();
 }
 
+const BuildColorSelectionBtn = (divId, actions, colClass) => {
+	const btnId = `${divId}_btn`;
+
+	const content = [
+		`<button id='${btnId}' class='btn ${colClass}'>&nbsp;`,
+		"<svg width='0.8em' height='0.8em' viewBox='0 0 1300 1200' style='pointer-events:none'>",
+		"<g transform='translate(50,1200) scale(1, -1)'>",
+		"<path  fill='currentColor' d='M100 900h1000q41 0 49.5 -21t-20.5 -50l-494 -494q-14 -14 -35 -14t-35 14l-494 494q-29 29 -20.5 50t49.5 21z'></path>",
+		"</g>",
+		"</svg>",
+		"</button>"
+	];
+	actions.push({ id: btnId, type: "click", method: showhide_drop_menu });
+
+	return content.join("");
+}
+
 function build_color_selection(index, actions) {
-	let content = "";
 	const entry = macrodlg_macrolist[index];
 	const menu_pos = index > 3 ? "dropmenu-content-up" : "dropmenu-content-down";
-	content += `<div id='macro_color_line${index}' class='dropdownselect'>`;
-	content += `<button id='macro_color_line${index}_btn' class='btn ${entry.class}'>&nbsp;`;
-	content += "<svg width='0.8em' height='0.8em' viewBox='0 0 1300 1200' style='pointer-events:none'>";
-	content += "<g transform='translate(50,1200) scale(1, -1)'>";
-	content += "<path  fill='currentColor' d='M100 900h1000q41 0 49.5 -21t-20.5 -50l-494 -494q-14 -14 -35 -14t-35 14l-494 494q-29 29 -20.5 50t49.5 21z'></path>";
-	content += "</g>";
-	content += "</svg>";
-	content += "</button>";
-	actions.push({ id: `macro_color_line${index}_btn`, type: "click", method: showhide_drop_menu });
-	content += `<div class='dropmenu-content ${menu_pos}' style='min-width:auto; padding-left: 4px;padding-right: 4px;'>`;
-	["default", "primary", "info", "warning", "danger"].forEach((col) => {
-		content += `<button id='macro_select_color_${col}${index}_btn' class='btn btn-${col}'>&nbsp;</button>`;
-		actions.push({ id: `macro_select_color_${col}${index}_btn`, type: "click", method: (event) => macro_select_color(event, col, index) });
-	});
-	content += "</div>";
-	content += "</div>";
-	return content;
+	const mColId = `macro_color_line_${index}`;
+
+	const content = [`<div id='${mColId}' class='dropdownselect'>`];
+	content.push(BuildColorSelectionBtn(mColId, actions, entry.class));
+
+	content.push(`<div class='dropmenu-content ${menu_pos}' style='min-width:auto; padding-left: 4px;padding-right: 4px;'>`);
+	for (const col of ["default", "primary", "info", "warning", "danger"]) {
+		const btnColId = `macro_select_color_${index}_${col}_btn`;
+		content.push(`<button id='${btnColId}' data-index="${index}" data-color="${col}" class='btn btn-${col}'>&nbsp;</button>`);
+		actions.push({ id: btnColId, type: "click", method: macro_select_color });
+	}
+	content.push("</div>", "</div>");
+	return content.join("");
+}
+
+const BuildTargetSelectionBtn = (divId, actions, target) => {
+	const btnId = `${divId}_btn`;
+
+	const content = [
+		`<button id='${btnId}' class='btn btn-default' style='min-width:5em;'>`,
+		`<span>${target}</span>`,
+		"<svg width='0.8em' height='0.8em' viewBox='0 0 1300 1200' style='pointer-events:none'>",
+		"<g transform='translate(50,1200) scale(1, -1)'>",
+		"<path fill='currentColor' d='M100 900h1000q41 0 49.5 -21t-20.5 -50l-494 -494q-14 -14 -35 -14t-35 14l-494 494q-29 29 -20.5 50t49.5 21z'></path>",
+		"</g>",
+		"</svg>",
+		"</button>"
+	];
+	actions.push({ id: btnId, type: "click", method: showhide_drop_menu });
+	
+	return content.join("");
 }
 
 function build_target_selection(index, actions) {
-	let content = "";
 	const entry = macrodlg_macrolist[index];
 	const menu_pos = index > 3 ? "dropmenu-content-up" : "dropmenu-content-down";
-	content += `<div id='macro_target_line${index}' class='dropdownselect'>`;
-	content += `<button id='macro_target_line${index}_btn' class='btn btn-default' style='min-width:5em;'><span>${entry.target}</span>`;
-	content += "<svg width='0.8em' height='0.8em' viewBox='0 0 1300 1200' style='pointer-events:none'>";
-	content += "<g transform='translate(50,1200) scale(1, -1)'>";
-	content += "<path fill='currentColor' d='M100 900h1000q41 0 49.5 -21t-20.5 -50l-494 -494q-14 -14 -35 -14t-35 14l-494 494q-29 29 -20.5 50t49.5 21z'></path>";
-	content += "</g>";
-	content += "</svg>";
-	content += "</button>";
-	actions.push({ id: `macro_target_line${index}_btn`, type: "click", method: showhide_drop_menu });
-	content += `<div class='dropmenu-content ${menu_pos}' style='min-width:auto'>`;
-	content += `<a id='macro_select_targetESP${index}_link' href=#>ESP</a>`;
-	content += `<a id='macro_select_targetSD${index}_link' href=#>SD</a>`;
-	content += `<a id='macro_select_targetURI${index}_link' href=#>URI</a>`;
-	actions.push({ id: `macro_select_targetESP${index}_link`, type: "click", method: (event) => macro_select_target(event, "ESP", index) });
-	actions.push({ id: `macro_select_targetSD${index}_link`, type: "click", method: (event) => macro_select_target(event, "SD", index) });
-	actions.push({ id: `macro_select_targetURI${index}_link`, type: "click", method: (event) => macro_select_target(event, "URI", index) });
+	const mTrgId = `macro_target_line_${index}`;
 
-	content += "</div>";
-	content += "</div>";
-	return content;
+	const content = [`<div id='${mTrgId}' class='dropdownselect'>`];
+	content.push(BuildTargetSelectionBtn(mTrgId, actions, entry.target));
+
+	content.push(`<div class='dropmenu-content ${menu_pos}' style='min-width:auto'>`);
+	for (const trg of ["ESP", "SD", "URI"]) {
+		const aTrgId = `macro_select_target_${index}_${trg}_link`;
+		content.push(`<a id='${aTrgId}' data-index="${index}" data-target="${trg}" href=#>${trg}</a>`);
+		actions.push({ id: aTrgId, type: "click", method: macro_select_target });
+	}
+
+	content.push("</div>", "</div>");
+	return content.join("");
+}
+
+const BuildGlyphSelectionBtn = (divId, actions, colClass, glyph) => {
+	const btnId = `${divId}_btn`;
+
+	const content = [
+		`<button id='${btnId}' class='btn ${colClass}'>`,
+		`<span>${get_icon_svg(glyph)}</span>&nbsp;`,
+		"<svg width='0.8em' height='0.8em' viewBox='0 0 1300 1200' style='pointer-events:none'>",
+		"<g transform='translate(50,1200) scale(1, -1)'>",
+		"<path fill='currentColor' d='M100 900h1000q41 0 49.5 -21t-20.5 -50l-494 -494q-14 -14 -35 -14t-35 14l-494 494q-29 29 -20.5 50t49.5 21z'></path>",
+		"</g>",
+		"</svg>",
+		"</button>"
+	];
+	actions.push({ id: btnId, type: "click", method: showhide_drop_menu });
+
+	return content.join("");
 }
 
 function build_glyph_selection(index, actions) {
-	let content = "";
 	const entry = macrodlg_macrolist[index];
 	const menu_pos = index > 3 ? "dropmenu-content-up" : "dropmenu-content-down";
-	content += `<div id='macro_glyph_line${index}' class='dropdownselect'>`;
-	content += `<button id='macro_glyph_line${index}_btn' class='btn ${entry.class}'><span>${get_icon_svg(entry.glyph)}</span>&nbsp;`;
-	content += "<svg width='0.8em' height='0.8em' viewBox='0 0 1300 1200' style='pointer-events:none'>";
-	content += "<g transform='translate(50,1200) scale(1, -1)'>";
-	content += "<path fill='currentColor' d='M100 900h1000q41 0 49.5 -21t-20.5 -50l-494 -494q-14 -14 -35 -14t-35 14l-494 494q-29 29 -20.5 50t49.5 21z'></path>";
-	content += "</g>";
-	content += "</svg>";
-	content += "</button>";
-	actions.push({ id: `macro_glyph_line${index}_btn`, type: "click", method: showhide_drop_menu });
-	content += `<div class='dropmenu-content ${menu_pos}' style='min-width:30em'>`;
-	for (const key in list_icon) {
-		if (key === "plus") {
+	const mGlpId = `macro_glyph_line_${index}`;
+
+	const content = [`<div id='${mGlpId}' class='dropdownselect'>`];
+	content.push(BuildGlyphSelectionBtn(mGlpId, actions, entry.class, entry.glyph));
+
+	content.push(`<div class='dropmenu-content ${menu_pos}' style='min-width:30em'>`);
+	let ix = 0;
+	for (const glyph in list_icon) {
+		if (glyph === "plus") {
 			continue;
 		}
-		content += `<button id='macro_glyph_select${index}_btn' class='btn btn-default btn-xs'><span>${get_icon_svg(key)}</span></button>`;
-		actions.push({ id: `macro_glyph_select${index}_btn`, type: "click", method: (event) => macro_select_glyph(event, key, index) });
+		const btnGlpId = `macro_glyph_select_${index}_${ix}_btn`;
+		content.push(`<button id='${btnGlpId}' data-index="${index}" data-glyph="${glyph}" class='btn btn-default btn-xs'><span>${get_icon_svg(glyph)}</span></button>`);
+		actions.push({ id: btnGlpId, type: "click", method: macro_select_glyph });
+		ix++;
 	}
-	content += "</div>";
-	content += "</div>";
-	return content;
+	content.push("</div>", "</div>");
+	return content.join("");
 }
 
 function build_filename_selection(index, actions) {
@@ -99,58 +137,59 @@ function build_filename_selection(index, actions) {
 	const noFilename = entry.filename.length === 0;
 	const mflId = `macro_filename_line_${index}`;
 
-	let content = `<span id='macro_filename_input_line_${index}' class='form-group ${noFilename ? "has-error has-feedback" : ""}'>`;
-	content += `<input type='text' id='${mflId}' style='width:9em' class='form-control' value='${entry.filename}'  aria-describedby='inputStatus_line${index}'>`;
-	content += `<span id='icon_macro_status_line_${index}' style='color:#a94442; position:absolute;bottom:4px;left:7.5em;${noFilename ? "display:none" : ""}'>${get_icon_svg("remove")}</span>`;
-	content += "</input></span>";
+	const content = [
+		`<span id='macro_filename_input_line_${index}' class='form-group ${noFilename ? "has-error has-feedback" : ""}'>`,
+		`<input id='${mflId}' data-index="${index}" type='text' style='width:9em' class='form-control' value='${entry.filename}' aria-describedby='inputStatus_line${index}'>`,
+		`<span id='icon_macro_status_line_${index}' style='color:#a94442; position:absolute;bottom:4px;left:7.5em;${noFilename ? "display:none" : ""}'>${get_icon_svg("remove")}</span>`,
+		"</input>",
+		"</span>"
+	];
 
-	actions.push({ id: mflId, type: "keyup", method: (event) => macro_filename_OnKeyUp(index) });
-	actions.push({ id: mflId, type: "change", method: (event) => on_macro_filename(event, index) });
+	actions.push({ id: mflId, type: "keyup", method: macro_filename_OnKeyUp });
+	actions.push({ id: mflId, type: "change", method: on_macro_filename });
 
-	return content;
+	return content.join("");
 }
 
 function build_dlg_macrolist_line(index) {
-	let content = "";
 	const actions = [];
 	const entry = macrodlg_macrolist[index];
 
-	const buildTdVertMiddle = (content) =>
-		`<td style='vertical-align:middle'>${content}</td>`;
+	const buildTdVertMiddle = (content) => `<td style='vertical-align:middle'>${content}</td>`;
 
 	const noEC = entry.class === "";
 	const btnClass = `btn btn-xs ${noEC ? "btn-default" : "btn-danger"}`;
 	const btnStyle = `padding-top: 3px;padding-left: ${noEC ? "4" : "2"}px;padding-right: ${noEC ? "2" : "3"}px;padding-bottom: 0px;`;
 	const btnId = `macro_reset_btn_${index}`;
-	content += buildTdVertMiddle(
-		`<button id='${btnId}' class='${btnClass}' style='${btnStyle}>${get_icon_svg(noEC ? "plus" : "trash")}</button>`,
-	);
-	actions.push({ id: btnId, type: "click", method: (event) => macro_reset_button(index) });
+	const content = [buildTdVertMiddle(`<button id='${btnId}' data-index="${index}" class='${btnClass}' style='${btnStyle}>${get_icon_svg(noEC ? "plus" : "trash")}</button>`)];
+	actions.push({ id: btnId, type: "click", method: macro_reset_button });
 	if (noEC) {
-		content += "<td colspan='5'></td>";
+		content.push("<td colspan='5'></td>");
 	} else {
 		const inpId = `macro_name_line_${index}`;
 		const entryName = entry.name && entry.name !== "&nbsp;" ? entry.name : "";
-		content += buildTdVertMiddle(
-			`<input type='text' id='${inpId}' style='width:4em' class='form-control' value='${entryName}'/>`,
-		);
-		actions.push({ id: inpId, type: "change", method: (event) => on_macro_name(event, index) });
-		content += buildTdVertMiddle(build_glyph_selection(index, actions));
-		content += buildTdVertMiddle(build_color_selection(index, actions));
-		content += buildTdVertMiddle(build_target_selection(index, actions));
-		content += buildTdVertMiddle(build_filename_selection(index, actions));
+		content.push(buildTdVertMiddle(`<input id='${inpId}' data-index="${index}" type='text' style='width:4em' class='form-control' value='${entryName}'/>`));
+		actions.push({ id: inpId, type: "change", method: on_macro_name });
+		for (const buildFn of [build_glyph_selection, build_color_selection, build_target_selection, build_filename_selection]) {
+			content.push(buildTdVertMiddle(buildFn(index, actions)));
+		}
 	}
 
-	setHTML(`macro_line_${index}`, content);
-	actions.forEach((action) => {
+	setHTML(`macro_line_${index}`, content.join(""));
+	for (const action of actions) {
 		const elem = id(action.id);
 		if (elem) {
 			elem.addEventListener(action.type, action.method);
+		} else {
+			console.warn(`Element ${action.id} not found`);
 		}
-	});
+	};
 }
 
-function macro_filename_OnKeyUp(index) {
+function macro_filename_OnKeyUp(event) {
+	event.stopPropagation();
+	const index = event.currentTarget.dataset.index;
+
 	const group = id(`macro_filename_input_line_${index}`);
 	const value = getValueTrimmed(`macro_filename_line_${index}`);
 	if (value) {
@@ -165,20 +204,29 @@ function macro_filename_OnKeyUp(index) {
 	return true;
 }
 
-function on_macro_filename(event, index) {
+function on_macro_filename(event) {
+	event.stopPropagation();
+	const index = event.currentTarget.dataset.index;
+
 	const entry = macrodlg_macrolist[index];
-	const filename = event.value.trim();
-	entry.filename = event.value;
+	const filename = event.currentTarget.value.trim();
 	if (filename.length === 0) {
 		alertdlg(translate_text_item("Out of range"), translate_text_item("File name cannot be empty!"));
+		return;
 	}
+	
+	entry.filename = filename;
+
 	build_dlg_macrolist_line(index);
 }
 
-function on_macro_name(event, index) {
+function on_macro_name(event) {
+	event.stopPropagation();
+	const index = event.currentTarget.dataset.index;
+
 	const entry = macrodlg_macrolist[index];
-	const macroname = event.value.trim();
-	entry.name = macroname.length > 0 ? event.value : "&nbsp;";
+	const macroname = event.currentTarget.value.trim();
+	entry.name = macroname.length > 0 ? event.currentTarget.value : "&nbsp;";
 }
 
 function build_dlg_macrolist_ui() {
@@ -196,7 +244,10 @@ function build_dlg_macrolist_ui() {
 	}
 }
 
-function macro_reset_button(index) {
+function macro_reset_button(event) {
+	event.stopPropagation();
+	const index = event.currentTarget.dataset.index;
+
 	const entry = macrodlg_macrolist[index];
 	if (entry.class === "") {
 		entry.name = `M${1 + entry.index}`;
@@ -214,23 +265,52 @@ function macro_reset_button(index) {
 	build_dlg_macrolist_line(index);
 }
 
-function macro_select_color(event, color, index) {
+const hide_drop_menu = (target) => {
+    const item = get_parent_by_class(target, "dropmenu-content");
+    if (typeof item !== 'undefined' && item.classList.contains('show')) {
+        item.classList.remove('show');
+    }
+}
+
+const showhide_drop_menu = (event) => {
+    const item = get_parent_by_class(event.target, "dropdownselect");
+    if (item === null) {
+		return;
+	}
+    const menu = item.getElementsByClassName("dropmenu-content")[0];
+    if (typeof menu !== 'undefined') {
+		menu.classList.toggle("show");
+	}
+}
+
+const macro_select_color = (event) => {
+	event.stopPropagation();
+	const color = event.currentTarget.dataset.color;
+	const index = event.currentTarget.dataset.index;
+
 	const entry = macrodlg_macrolist[index];
-	hide_drop_menu(event);
+	hide_drop_menu(event.target);
 	entry.class = `btn btn-${color}`;
 	build_dlg_macrolist_line(index);
 }
 
-function macro_select_target(event, target, index) {
+const macro_select_target = (event) => {
+	// event.stopPropagation();
+	const trg = event.currentTarget.dataset.target;
+	const index = event.currentTarget.dataset.index;
+
 	const entry = macrodlg_macrolist[index];
-	hide_drop_menu(event);
-	entry.target = target;
+	hide_drop_menu(event.target);
+	entry.target = trg;
 	build_dlg_macrolist_line(index);
 }
 
-const macro_select_glyph = (event, glyph, index) => {
+const macro_select_glyph = (event) => {
+	const glyph = event.currentTarget.dataset.glyph;
+	const index = event.currentTarget.dataset.index;
+
 	const entry = macrodlg_macrolist[index];
-	hide_drop_menu(event);
+	hide_drop_menu(event.target);
 	entry.glyph = glyph;
 	build_dlg_macrolist_line(index);
 }
@@ -263,10 +343,8 @@ const closeMacroDialog = () => {
 
 function process_macroCloseDialog(answer) {
 	if (answer === "no") {
-		//console.log("Answer is no so exit");
 		closeModal("cancel");
 	} else {
-		// console.log("Answer is yes so let's save");
 		SaveNewMacroList();
 	}
 }
@@ -305,7 +383,7 @@ function macrodlgUploadProgressDisplay(oEvent) {
 }
 
 function macroUploadsuccess(response) {
-	control_macrolist = [];
+	control_macrolist.length = 0;
 	for (let i = 0; i < 9; i++) {
 		let entry;
 		if (macrodlg_macrolist.length !== 0) {

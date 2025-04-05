@@ -1,5 +1,5 @@
 let interval_position = -1;
-var control_macrolist = [];
+const control_macrolist = [];
 
 /** Set up the macro list for the Controls Panel */
 const init_controls_panel = () => {
@@ -34,23 +34,23 @@ const ControlsPanel = () => {
 };
 
 function loadmacrolist() {
-	control_macrolist = [];
+	control_macrolist.length = 0;
 	const cmd = buildHttpFileGetCmd("macrocfg.json");
 	SendGetHttp(cmd, processMacroGetSuccess, processMacroGetFailed);
 }
 
 function Macro_build_list(response_text) {
-	var response = [];
+	let response = [];
 	try {
-		if (response_text.length != 0) {
+		if (response_text.length !== 0) {
 			response = JSON.parse(response_text);
 		}
 	} catch (e) {
 		console.error("Parsing error:", e);
 		return;
 	}
-	for (var i = 0; i < 9; i++) {
-		var entry;
+	for (let i = 0; i < 9; i++) {
+		let entry;
 		if (
 			response.length !== 0 &&
 			typeof response[i].name !== "undefined" &&
@@ -83,7 +83,7 @@ function Macro_build_list(response_text) {
 	control_build_macro_ui();
 }
 
-const processMacroGetSuccess = (response) => Macro_build_list(response.indexOf("<HTML>") == -1 ? response : "");
+const processMacroGetSuccess = (response) => Macro_build_list(response.indexOf("<HTML>") === -1 ? response : "");
 
 function processMacroGetFailed(error_code, response) {
 	conErr(error_code, response);
@@ -95,22 +95,22 @@ function on_autocheck_position(use_value) {
 		setChecked('autocheck_position', string(use_value));
 	}
 	if (getChecked('autocheck_position') === "true") {
-		var interval = parseInt(getValue('controlpanel_interval_positions'));
+		const interval = Number.parseInt(getValue('controlpanel_interval_positions'));
 		if (!Number.isNaN(interval) && interval > 0 && interval < 100) {
-			if (interval_position != -1) {
+			if (interval_position !== -1) {
 				clearInterval(interval_position);
 			}
-			interval_position = setInterval(function () { get_Position() }, interval * 1000);
+			interval_position = setInterval(() => { get_Position() }, interval * 1000);
 		} else {
 			setChecked('autocheck_position', "false");
 			setValue('controlpanel_interval_positions', 0);
-			if (interval_position != -1) {
+			if (interval_position !== -1) {
 				clearInterval(interval_position);
 			}
 			interval_position = -1;
 		}
 	} else {
-		if (interval_position != -1) {
+		if (interval_position !== -1) {
 			clearInterval(interval_position);
 		}
 		interval_position = -1;
@@ -118,13 +118,13 @@ function on_autocheck_position(use_value) {
 }
 
 function onPosIntervalChange() {
-	var interval = parseInt(getValue('controlpanel_interval_positions'));
+	const interval = Number.parseInt(getValue('controlpanel_interval_positions'));
 	if (!Number.isNaN(interval) && interval > 0 && interval < 100) {
 		on_autocheck_position();
 	} else {
 		setChecked('autocheck_position', "false");
 		setValue('controlpanel_interval_positions', 0);
-		if (interval != 0) {
+		if (interval !== 0) {
 			alertdlg(translate_text_item("Out of range"), translate_text_item("Value of auto-check must be between 0s and 99s !!"));
 		}
 		on_autocheck_position();
@@ -134,11 +134,11 @@ function onPosIntervalChange() {
 const get_Position = () => SendPrinterCommand("?", false, null, null, 114, 1);
 
 function Control_get_position_value(label, result_data) {
-	var result = "";
-	var pos1 = result_data.indexOf(label, 0);
+	let result = "";
+	let pos1 = result_data.indexOf(label, 0);
 	if (pos1 > -1) {
 		pos1 += label.length;
-		var pos2 = result_data.indexOf(" ", pos1);
+		const pos2 = result_data.indexOf(" ", pos1);
 		if (pos2 > -1) {
 			result = result_data.substring(pos1, pos2);
 		} else result = result_data.substring(pos1);
@@ -158,15 +158,16 @@ function SendHomecommand(cmd) {
 	if (getChecked('lock_UI') === "true") {
 		return;
 	}
+	let hCmd = cmd;
 	switch (cmd) {
-		case 'G28': cmd = '$H'; break;
-		case 'G28 X0': cmd = '$HX'; break;
-		case 'G28 Y0': cmd = '$HY'; break;
-		case 'G28 Z0': cmd = (grblaxis > 3) ? `$H${getValue("control_select_axis") || ""}` : '$HZ'; break;
-		default: cmd = '$H'; break;
+		case 'G28': hCmd = '$H'; break;
+		case 'G28 X0': hCmd = '$HX'; break;
+		case 'G28 Y0': hCmd = '$HY'; break;
+		case 'G28 Z0': hCmd = (grblaxis > 3) ? `$H${getValue("control_select_axis") || ""}` : '$HZ'; break;
+		default: hCmd = '$H'; break;
 	}
 
-	SendPrinterCommand(cmd, true, get_Position);
+	SendPrinterCommand(hCmd, true, get_Position);
 }
 
 function SendZerocommand(cmd) {
@@ -200,14 +201,12 @@ function SendJogcommand(cmd, feedrate) {
 		return;
 	}
 
-	if (grblaxis > 3) {
-		cmd = cmd.replace("Z", getValue("control_select_axis"));
-	}
+	const jCmd = grblaxis > 3 ? cmd.replace("Z", getValue("control_select_axis")) : cmd;
 
 	const feedrateValue = GetAxisFeedRate(feedrate[0].toUpperCase() === "Z" ? getValue("control_select_axis") : "XY");
 
-	const command = `$J=G91 G21 F${feedrateValue} ${cmd}`;
-	console.log(command);
+	const command = `$J=G91 G21 F${feedrateValue} ${jCmd}`;
+	console.debug(command);
 	SendPrinterCommand(command, true, get_Position);
 }
 
@@ -255,18 +254,19 @@ function control_build_macro_button(index, entry) {
 	const btnStyle = noGlyph ? " style='display:none'" : "";
 	const entryIcon = get_icon_svg(noGlyph ? "star" : entry.glyph);
 
-	let content = `<button id="control_macro_${index}" class='btn fixedbutton ${entry.class}' type='text'${btnStyle}>`;
-	content += `<span style='position:relative; top:3px;'>${entryIcon}</span>${entry.name.length > 0 ? "&nbsp;" : ""}${entry.name}`;
-	content += "</button>";
+	const content = [
+		`<button id="control_macro_${index}" data-target="${entry.target}" data-filename="${entry.filename}" class='btn fixedbutton ${entry.class}' type='text'${btnStyle}>`,
+		`<span style='position:relative; top:3px;'>${entryIcon}</span>${entry.name.length > 0 ? "&nbsp;" : ""}${entry.name}`,
+		"</button>"
+	];
 
-	return content;
+	return content.join("");
 }
 
 const processMacroSave = (answer) => {
 	if (answer !== "ok") {
 		return;
 	}
-	//console.log("now rebuild list");
 	control_build_macro_ui();
 }
 
@@ -275,39 +275,46 @@ const initMacroDlg = () => showmacrodlg(processMacroSave);
 function control_build_macro_ui() {
 	const actions = [];
 
-	var content = "<div class='tooltip'>";
-	content += "<span class='tooltip-text'>Manage macros</span>"
-	content += "<button id='control_btn_show_macro_dlg' class='btn btn-primary'>";
-	actions.push({ id: "control_btn_show_macro_dlg", method: initMacroDlg});
-	content += "<span class='badge'>";
-	content += "<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'>";
-	content += "<g transform='translate(50,1200) scale(1, -1)'>";
-	content += "<path  fill='currentColor' d='M407 800l131 353q7 19 17.5 19t17.5 -19l129 -353h421q21 0 24 -8.5t-14 -20.5l-342 -249l130 -401q7 -20 -0.5 -25.5t-24.5 6.5l-343 246l-342 -247q-17 -12 -24.5 -6.5t-0.5 25.5l130 400l-347 251q-17 12 -14 20.5t23 8.5h429z'></path>";
-	content += "</g>";
-	content += "</svg>";
-	content += "<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'>";
-	content += "<g transform='translate(50,1200) scale(1, -1)'>";
-	content += "<path  fill='currentColor' d='M1011 1210q19 0 33 -13l153 -153q13 -14 13 -33t-13 -33l-99 -92l-214 214l95 96q13 14 32 14zM1013 800l-615 -614l-214 214l614 614zM317 96l-333 -112l110 335z'></path>";
-	content += "</g>";
-	content += "</svg>";
-	content += "</span>";
-	content += "</button>";
-	content += "</div>";
-	for (var i = 0; i < 9; i++) {
+	const content = [
+		"<div class='tooltip'>",
+		"<span class='tooltip-text'>Manage macros</span>",
+		"<button id='control_btn_show_macro_dlg' class='btn btn-primary'>"
+	];
+	actions.push({ id: "control_btn_show_macro_dlg", method: initMacroDlg });
+	content.push(
+		"<span class='badge'>",
+		"<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'>",
+		"<g transform='translate(50,1200) scale(1, -1)'>",
+		"<path fill='currentColor' d='M407 800l131 353q7 19 17.5 19t17.5 -19l129 -353h421q21 0 24 -8.5t-14 -20.5l-342 -249l130 -401q7 -20 -0.5 -25.5t-24.5 6.5l-343 246l-342 -247q-17 -12 -24.5 -6.5t-0.5 25.5l130 400l-347 251q-17 12 -14 20.5t23 8.5h429z'></path>",
+		"</g>",
+		"</svg>",
+		"<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'>",
+		"<g transform='translate(50,1200) scale(1, -1)'>",
+		"<path fill='currentColor' d='M1011 1210q19 0 33 -13l153 -153q13 -14 13 -33t-13 -33l-99 -92l-214 214l95 96q13 14 32 14zM1013 800l-615 -614l-214 214l614 614zM317 96l-333 -112l110 335z'></path>",
+		"</g>",
+		"</svg>",
+		"</span>",
+		"</button>",
+		"</div>"
+	);
+	for (let i = 0; i < 9; i++) {
 		const entry = control_macrolist[i];
-		content += control_build_macro_button(i, entry);
-		actions.push({ id: `control_macro_${i}`, method: (event) => macro_command(entry.target, entry.filename) });
+		content.push(control_build_macro_button(i, entry));
+		actions.push({ id: `control_macro_${i}`, method: macro_command });
 	}
-	setHTML("Macro_list", content);
-	actions.forEach((action) => {
+	setHTML("Macro_list", content.join(""));
+	for (const action of actions) {
 		const elem = id(action.id);
 		if (elem) {
 			elem.addEventListener("click", action.method);
 		}
-	});
+	}
 }
 
-function macro_command(target, filename) {
+function macro_command(event) {
+	event.stopPropagation();
+	const target = event.currentTarget.dataset.target;
+	const filename = event.currentTarget.dataset.filename;
 	switch (target) {
 		case "ESP": SendPrinterCommand(`$LocalFS/Run=${filename}`); break;
 		case "SD": files_print_filename(filename); break;

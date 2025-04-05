@@ -653,6 +653,30 @@ function process_check_sd_presence(answer) {
 	}
 }
 
+const FileUploadNotice = (file) => {
+	files_error_status = `Upload ${file.name}`;
+	setHTML("files_currentUpload_msg", file.name);
+}
+
+const BuildFileUploadFormData = (path, files, perFileFn) => {
+	//console.log("upload from " + path );
+	const formData = new FormData();
+	formData.append("path", path);
+	for (let i = 0; i < files.length; i++) {
+		const file = files[i];
+		const fullFilename = `${path}${file.name}`;
+		//append file size first to check upload is complete
+		formData.append(`${fullFilename}S`, file.size);
+		formData.append("myfile[]", file, fullFilename);
+		console.info(`Preparing ${fullFilename} for upload`);
+
+		if (typeof perFileFn === "function") {
+			perFileFn(file);
+		}
+	}
+	return formData;
+}
+
 function files_start_upload() {
 	if (CheckForHttpCommLock()) {
 		return;
@@ -665,21 +689,7 @@ function files_start_upload() {
 		return;
 	}
 
-	const formData = new FormData();
-	const path = files_currentPath();
-	//console.log("upload from " + path );
-	formData.append("path", path);
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i];
-		const fullFilename = `${path}${file.name}`;
-		//append file size first to check upload is complete
-		formData.append(`${fullFilename}S`, file.size);
-		formData.append("myfile[]", file, fullFilename);
-		console.info(`Preparing ${fullFilename} for upload`);
-
-		files_error_status = `Upload ${file.name}`;
-		setHTML("files_currentUpload_msg", file.name);
-	}
+	const formData = BuildFileUploadFormData(files_currentPath(), files, FileUploadNotice);
 
 	displayBlock("files_uploading_msg");
 	displayNone("files_navigation_buttons");

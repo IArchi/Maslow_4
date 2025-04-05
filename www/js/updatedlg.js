@@ -83,18 +83,13 @@ function StartUploadUpdatefile(response) {
 		return;
 	}
 
-	const fileList = [];
 	const files = id("fw_select").files;
-	const formData = new FormData();
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i];
-		const arg = `/${file.name}S`;
+	const fileList = [];
+	for (const file of files) {
 		fileList.push(file.name);
-		//append file size first to check updload is complete
-		formData.append(arg, file.size);
-		formData.append("myfile[]", file, `/${file.name}`);
-		console.info(`Preparing ${fullFilename} for upload`);
 	}
+	const formData = BuildFileUploadFormData("/", files);
+
 	displayNone("fw_select_form");
 	displayNone("uploadfw_button");
 	displayBlock("updatemsg");

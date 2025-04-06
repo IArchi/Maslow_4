@@ -5,8 +5,12 @@ let ssid_subitem_scanwifi = -1;
 
 const scanWiFiDlgCancel = () => closeModal("cancel");
 
-/** scanwifi dialog */
-const scanwifidlg = (item, subitem) => {
+/** scanwifi dialog - event handler */
+const scanwifidlg = (event) => {
+	event.stopPropagation();
+	ssid_item_scanwifi = event.currentTarget.dataset.i;
+	ssid_subitem_scanwifi = event.currentTarget.dataset.j;
+
 	const modal = setactiveModal("scanwifidlg.html", scanwifidlg_close);
 	if (modal == null) {
 		return;
@@ -16,8 +20,6 @@ const scanwifidlg = (item, subitem) => {
 	id("scanWiFiDlgClose").addEventListener("click", scanWiFiDlgCancel);
 	id("refresh_scanwifi_btn").addEventListener("click", refresh_scanwifi);
 
-	ssid_item_scanwifi = item;
-	ssid_subitem_scanwifi = subitem;
 	showModal();
 	refresh_scanwifi();
 };
@@ -85,12 +87,12 @@ function process_scanWifi_answer(response_text) {
 	}
 	setHTML("AP_scan_data", content);
 
-	actions.forEach((action) => {
+	for (const action of actions) {
 		const elem = id(action.id);
 		if (elem) {
-			elem.addEventListener("click", (event) => action.method(action.index));
+			elem.addEventListener("click", action.method);
 		}
-	});
+	};
 
 	return result;
 }

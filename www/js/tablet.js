@@ -1,13 +1,13 @@
 // When we can change to proper ESM - uncomment this
 // import { checkHomed, maslowErrorMsgHandling, maslowInfoMsgHandling, maslowMsgHandling, sendCommand } from "maslow";
 
-var gCodeLoaded = false
-var gCodeDisplayable = false
+var gCodeLoaded = false;
+var gCodeDisplayable = false;
 
-var snd = null
-var sndok = true
+var snd = null;
+var sndok = true;
 
-var versionNumber = "1.02.07";
+var versionNumber = "1.02.08";
 
 const addMessage = (msg, scroll = true, clear = false) => {
   const msgWindow = id("messages");
@@ -251,7 +251,7 @@ const moveTo = (location) => {
 const sendMove = (cmd) => {
   tabletClick();
 
-  let distance = cmd.includes('Z')
+  const distance = cmd.includes('Z')
     ? Number(getText('disZ')) || 0
     : Number(getText('disM')) || 0;
 
@@ -488,8 +488,8 @@ var oldCannotClick = null
 
 function scaleUnits(target) {
   //Scale the units to move when jogging down or up by 25.4 to keep them reasonable
-  let distanceElement = id(target);
-  let currentValue = Number(distanceElement.innerText);
+  const distanceElement = id(target);
+  const currentValue = Number(distanceElement.innerText);
 
   if (!Number.isNaN(currentValue)) {
     distanceElement.innerText = gCodeModal.units == 'G20' ? currentValue / 25.4 : currentValue * 25.4;
@@ -512,10 +512,10 @@ function tabletUpdateModal() {
 
 function tabletGrblState(grbl, response) {
   // tabletShowResponse(response)
-  var stateName = grbl.stateName
+  const stateName = grbl.stateName;
 
   // Unit conversion factor - depends on both $13 setting and parser units
-  var factor = 1.0
+  let factor = 1.0;
 
   //  spindleSpeed = grbl.spindleSpeed;
   //  spindleDirection = grbl.spindle;
@@ -524,7 +524,7 @@ function tabletGrblState(grbl, response) {
   //  rapidOverride = OVR.rapid/100.0;
   //  spindleOverride = OVR.spindle/100.0;
 
-  var mmPerInch = 25.4
+  const mmPerInch = 25.4;
   switch (gCodeModal.units) {
     case 'G20':
       factor = grblReportingUnits === 0 ? 1 / mmPerInch : 1.0
@@ -591,13 +591,13 @@ function tabletGrblState(grbl, response) {
 
   var now = new Date();
   //setText('time-of-day', now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0'));
-  if (stateName == 'Run') {
-    var elapsed = now.getTime() - startTime;
+  if (stateName === 'Run') {
+    let elapsed = now.getTime() - startTime;
     if (elapsed < 0) {
       elapsed = 0;
     }
-    var seconds = Math.floor(elapsed / 1000);
-    var minutes = Math.floor(seconds / 60);
+    let seconds = Math.floor(elapsed / 1000);
+    const minutes = Math.floor(seconds / 60);
     seconds = seconds % 60;
     if (seconds < 10) {
       seconds = `0${seconds}`;
@@ -610,16 +610,16 @@ function tabletGrblState(grbl, response) {
   //setText('runtime', runTime);
 
   //setText('wpos-label', gCodeModal.wcs);
-  var distanceText = gCodeModal.distance == 'G90' ? gCodeModal.distance : `<div style='color:red'>${gCodeModal.distance}</div>`;
+  const distanceText = gCodeModal.distance === 'G90' ? gCodeModal.distance : `<div style='color:red'>${gCodeModal.distance}</div>`;
   //setHTML('distance', distanceText);
 
-  var stateText = ''
-  if (stateName == 'Run') {
-    var rateNumber = gCodeModal.units == 'G21'
+  let stateText = '';
+  if (stateName === 'Run') {
+    const rateNumber = gCodeModal.units === 'G21'
       ? Number(grbl.feedrate).toFixed(0)
       : Number(grbl.feedrate / 25.4).toFixed(2)
 
-    var rateText = rateNumber + (gCodeModal.units == 'G21' ? ' mm/min' : ' in/min')
+    const rateText = rateNumber + (gCodeModal.units === 'G21' ? ' mm/min' : ' in/min')
 
     stateText = `${rateText} ${spindleSpeed} ${spindleDirection}`;
   } else {
@@ -640,15 +640,15 @@ function tabletGrblState(grbl, response) {
     tpDisplayer().reDrawTool(gCodeModal, arrayToXYZ(WPOS));
   }
 
-  var digits = gCodeModal.units == 'G20' ? 4 : 2;
+  const digits = gCodeModal.units === 'G20' ? 4 : 2;
 
   if (WPOS) {
-    WPOS.forEach(function (pos, index) {
+    WPOS.forEach((pos, index) => {
       setTextContent(`mpos-${axisNames[index]}`, Number(pos * factor).toFixed(index > 2 ? 2 : digits));
     })
   }
 
-  MPOS.forEach(function (pos, index) {
+  MPOS.forEach((pos, index) => {
     //setTextContent('mpos-'+axisNames[index], Number(pos*factor).toFixed(index > 2 ? 2 : digits));
   })
 }

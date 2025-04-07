@@ -57,7 +57,13 @@ function refreshSettings(hide_setting_list) {
 const defval = (i) => scl[i].defaultvalue;
 
 /** Build a 'setting' id, any prefix (pf) if supplied should include an '_' at the end of its value */
-const sId = (sEntry, j, pf = "") => `${pf}${sEntry.id}_${j}`;
+const sId = (sEntry, j, pf = "") => {
+  const entryId = typeof sEntry === "string" ? sEntry : sEntry.id;
+  if (typeof sEntry === "string") {
+    console.warn(`sId() called with a string value ${sEntry}`);
+  }
+  return `${pf}${entryId}_${j}`;
+}
 
 /** Build a select option, includes ugly workaround for OSX Chrome and Safari.
  * Also note that the `translate` attribute is set to yes to instruct the browser to use its own translation
@@ -111,7 +117,7 @@ const build_text_for_setting_list = (i, j, actions) => {
   const input_type = defVal.startsWith("******") ? "password" : "text";
 
   const html = [
-    "form",
+    "<form>",
     `<input id='${sfId}' data-i="${i}" data-j="${j}" type='${input_type}' class='form-control input-min' value='${defVal}'>`,
     "</form>"
   ];
@@ -207,7 +213,7 @@ const build_control_from_index = (i, actions) => {
       content.push("<input class='hide_it'></input>");
       content.push("<div class='input-group-btn'>");
       const btnId = sId(sEntry, j, "btn_");
-      content.push(`<button id='${btnId}' class='btn btn-default' translate english_content='Set'>`, translate_text_item("Set"), "</button>");
+      content.push(`<button id='${btnId}' data-i="${i}" data-j="${j}" class='btn btn-default' translate english_content='Set'>`, translate_text_item("Set"), "</button>");
       actions.push({ id: btnId, type: "click", method: settingsetvalue });
 
       if (sEntry.pos === EP_STA_SSID) {
@@ -494,6 +500,7 @@ const is_setting_entry = (sline) => typeof sline.T !== "undefined" && typeof sli
 
 const getFlag = (i, j) => scl[i].type !== "F" || scl[i].Options.length <= j ? -1 : Number.parseInt(scl[i].Options[j].id);
 
+/** Get the element matching the settings index value (i) and its subindex value (j)  */
 const setting = (i, j) => id(sId(scl[i], j));
 
 const getSettingElem = (i, j, pf) => {
@@ -549,7 +556,11 @@ const applyFlag = (value, defVal, i, j = 0) => {
   return tmp;
 }
 
-function settingsetvalue(i, j = 0) {
+function settingsetvalue(event) {
+  event.stopPropagation();
+  const i = event.currentTarget.dataset.i;
+  const j = event.currentTarget.dataset.j;
+
   //remove possible spaces
   let value = setting(i, j).value.trim();
   const defVal = defval(i);

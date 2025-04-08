@@ -101,13 +101,13 @@ function processSPIFFSDelete(answer) {
 function SPIFFSDelete(event) {
 	event.stopPropagation();
 	SPIFFS_currentfile = event.currentTarget.dataset.path;
-	confirmdlg(translate_text_item("Please Confirm"), translate_text_item("Confirm deletion of file: ") + filename, processSPIFFSDelete);
+	confirmdlg(translate_text_item("Please Confirm"), translate_text_item("Confirm deletion of file: ") + SPIFFS_currentfile, processSPIFFSDelete);
 }
 
 function SPIFFSDeleteDir(event) {
 	event.stopPropagation();
 	SPIFFS_currentfile = event.currentTarget.dataset.path;
-	confirmdlg(translate_text_item("Please Confirm"), translate_text_item("Confirm deletion of directory: ") + filename, processSPIFFSDeleteDir);
+	confirmdlg(translate_text_item("Please Confirm"), translate_text_item("Confirm deletion of directory: ") + SPIFFS_currentfile, processSPIFFSDeleteDir);
 }
 
 function processSPIFFSDeleteDir(answer) {

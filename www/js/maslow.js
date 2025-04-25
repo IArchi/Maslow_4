@@ -5,6 +5,7 @@
 let maslowStatus = { homed: false, extended: false, state: 0 };
 
 /** This keeps track of when we saw the last heartbeat from the machine */
+//I think this is not used anymore and can be removed now
 let lastHeartBeatTime = new Date().getTime();
 
 const err = "error: ";
@@ -14,6 +15,65 @@ const MaslowErrMsgNoKey = `${err}No key supplied for value.`;
 const MaslowErrMsgNoValue = `${err}No value supplied for key.`;
 const MaslowErrMsgNoMatchingKey = `${err}Could not find key for value in reference table.`;
 const MaslowErrMsgKeyValueSuffix = "This is probably a programming error\nKey-Value pair supplied was:";
+
+/*
+* Updates the dynamic buttons to reflect the current state of the machine
+UNKNOWN 0
+    -Retract All
+    -Apply Tension
+
+RETRACTING 1
+    -No buttons
+
+RETRACTED 2
+    -Retract All
+    -Extend All
+
+EXTENDING 3
+    -No Buttons
+
+EXTENDEDOUT 4 //Extended is a reserved word
+    -Retract All
+    -Apply Tension
+    -Calibrate
+
+TAKING_SLACK 5
+    -No buttons
+
+CALIBRATION_IN_PROGRESS 6
+    -No buttons
+
+READY_TO_CUT 7
+    -Retract All
+    -Apply Tension
+    -Release Tension
+*/
+const updateDynamicButtons = () => {
+
+	console.log("Updated dynamic buttons");
+	console.log(maslowStatus.state);
+
+
+	const dynamicButton1 = document.getElementById("dynamicButton1");
+	const dynamicButton2 = document.getElementById("dynamicButton2");
+	const dynamicButton3 = document.getElementById("dynamicButton3");
+
+	switch (maslowStatus.state) {
+		case 0: 
+			console.log("Maslow state: UNKNOWN recognized");
+			dynamicButton1.innerHTML = "Retract All";
+			dynamicButton1.onclick = () => {
+				tabletCalRetract();
+			};
+			dynamicButton2.innerHTML = "Apply Tension";
+			dynamicButton2.onclick = () => {
+				tabletCalApplyTension();
+			};
+			dynamicButton3.style.display = "none";
+			break;
+	}
+}
+
 
 /** Perform maslow specific-ish info message handling */
 const maslowInfoMsgHandling = (msg) => {
@@ -33,9 +93,13 @@ const maslowInfoMsgHandling = (msg) => {
 
 	//Parse state messages like [MSG:INFO: Current state: 0]
 	if (msg.startsWith("[MSG:INFO: Current state:")) {
-		const state = msg.split(":")[2].trim();
-		console.log(`Maslow state: ${state}`);
-		maslowStatus.state = state;
+		const m = msg.match(/Current state:\s*(\d+)/);
+		if (m) {
+			const state = Number(m[1]);
+			console.log(`Maslow state: ${state}`);
+			maslowStatus.state = state;
+			updateDynamicButtons();
+		}
 		return true;
 	}
 

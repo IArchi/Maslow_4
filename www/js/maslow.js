@@ -50,26 +50,102 @@ READY_TO_CUT 7
 */
 const updateDynamicButtons = () => {
 
-	console.log("Updated dynamic buttons");
-	console.log(maslowStatus.state);
-
-
-	const dynamicButton1 = document.getElementById("dynamicButton1");
-	const dynamicButton2 = document.getElementById("dynamicButton2");
-	const dynamicButton3 = document.getElementById("dynamicButton3");
+	const dynamicButton1 = document.getElementById("dynamic_button_1");
+	const dynamicButton2 = document.getElementById("dynamic_button_2");
+	const dynamicButton3 = document.getElementById("dynamic_button_3");
 
 	switch (maslowStatus.state) {
 		case 0: 
-			console.log("Maslow state: UNKNOWN recognized");
+			dynamicButton1.innerHTML = "Retract All";
+			dynamicButton1.onclick = () => {
+				tabletCalRetract();
+			};
+			dynamicButton2.innerHTML = "";
+			dynamicButton2.onclick = null;
+			dynamicButton3.innerHTML = "";
+			dynamicButton3.onclick = null;
+			break;
+		case 1:
+			dynamicButton1.innerHTML = "Retracting";
+			dynamicButton1.onclick = null;
+			dynamicButton2.innerHTML = "Retracting";
+			dynamicButton2.onclick = null;
+			dynamicButton3.innerHTML = "Retracting";
+			dynamicButton3.onclick = null;
+			break;
+		case 2:
+			dynamicButton1.innerHTML = "Retract All";
+			dynamicButton1.onclick = () => {
+				tabletCalRetract();
+			};
+			dynamicButton2.innerHTML = "Extend All";
+			dynamicButton2.onclick = () => {
+				tabletCalExtend();
+			};
+			dynamicButton3.innerHTML = "";
+			dynamicButton3.onclick = null;
+			break;
+		case 3:
+			dynamicButton1.innerHTML = "Extending";
+			dynamicButton1.onclick = null;
+			dynamicButton2.innerHTML = "Extending";
+			dynamicButton2.onclick = null;
+			dynamicButton3.innerHTML = "Extending";
+			dynamicButton3.onclick = null;
+			break;
+		case 4:
 			dynamicButton1.innerHTML = "Retract All";
 			dynamicButton1.onclick = () => {
 				tabletCalRetract();
 			};
 			dynamicButton2.innerHTML = "Apply Tension";
 			dynamicButton2.onclick = () => {
-				tabletCalApplyTension();
+				tabletCalTense();
 			};
-			dynamicButton3.style.display = "none";
+			dynamicButton3.innerHTML = "Calibrate";
+			dynamicButton3.onclick = () => {
+				tabletCalCalibrate();
+			};
+			break;
+		case 5:
+			dynamicButton1.innerHTML = "Taking Slack";
+			dynamicButton1.onclick = null;
+			dynamicButton2.innerHTML = "Taking Slack";
+			dynamicButton2.onclick = null;
+			dynamicButton3.innerHTML = "Taking Slack";
+			dynamicButton3.onclick = null;
+			break;
+		case 6:
+			dynamicButton1.innerHTML = "Calibrating";
+			dynamicButton1.onclick = null;
+			dynamicButton2.innerHTML = "Calibrating";
+			dynamicButton2.onclick = null;
+			dynamicButton3.innerHTML = "Calibrating";
+			dynamicButton3.onclick = null;
+			break;
+		case 7:
+			dynamicButton1.innerHTML = "Retract All";
+			dynamicButton1.onclick = () => {
+				tabletCalRetract();
+			};
+			dynamicButton2.innerHTML = "Apply Tension";
+			dynamicButton2.onclick = () => {
+				tabletCalTense();
+			};
+			dynamicButton3.innerHTML = "Release Tension";
+			dynamicButton3.onclick = () => {
+				tabletCalRelax();
+			};
+			break;
+		default:
+			dynamicButton1.innerHTML = "Retract All";
+			dynamicButton1.onclick = () => {
+				tabletCalRetract();
+			};
+			dynamicButton2.innerHTML = "";
+			dynamicButton2.onclick = null;
+			dynamicButton3.innerHTML = "";
+			dynamicButton3.onclick = null;
 			break;
 	}
 }
@@ -96,7 +172,6 @@ const maslowInfoMsgHandling = (msg) => {
 		const m = msg.match(/Current state:\s*(\d+)/);
 		if (m) {
 			const state = Number(m[1]);
-			console.log(`Maslow state: ${state}`);
 			maslowStatus.state = state;
 			updateDynamicButtons();
 		}

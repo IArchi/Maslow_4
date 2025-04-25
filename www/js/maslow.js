@@ -2,7 +2,7 @@
 // import M from "constants";
 
 /** Maslow Status */
-let maslowStatus = { homed: false, extended: false };
+let maslowStatus = { homed: false, extended: false, state: 0 };
 
 /** This keeps track of when we saw the last heartbeat from the machine */
 let lastHeartBeatTime = new Date().getTime();
@@ -31,7 +31,15 @@ const maslowInfoMsgHandling = (msg) => {
 		return true;
 	}
 
-	//Catch the calibration complete message and alert the user
+	//Parse state messages like [MSG:INFO: Current state: 0]
+	if (msg.startsWith("[MSG:INFO: Current state:")) {
+		const state = msg.split(":")[2].trim();
+		console.log(`Maslow state: ${state}`);
+		maslowStatus.state = state;
+		return true;
+	}
+
+	//Catch the calibration complete message and alert the user...this locks up the UI which is bad...should be handled better
 	if (msg.startsWith("[MSG:INFO: Calibration complete")) {
 		alert(
 			"Calibration complete. You do not need to do calibration ever again unless your frame changes size. You might want to store a backup of your maslow.yaml file in case you need to restore it later.",

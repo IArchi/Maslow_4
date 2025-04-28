@@ -144,29 +144,29 @@
   <div id="calibration-popup" class="calibration-modal-container">
     <div id="calibration_popup_content" class="calibration-modal-content">
       <div class="calibration-modal-button-container">
-        <div class="buttons-row">
-          <button id="tablettab_cal_retract" class="calibration-modal-button">Retract All</button>
-          <span class="arrow">&#8594;</span>
-          <button id="tablettab_cal_extend" class="calibration-modal-button">Extend All</button>
-          <div class="buttons-row-col-el">
-            <span class="arrow">&#8599;</span>
-            <span class="arrow">&#8600;</span>
-          </div>
-          <div class="buttons-row-col-el">
-            <button id="tablettab_cal_calibrate" class="calibration-modal-button">Calibrate</button>
-            <button id="tablettab_cal_tense" class="calibration-modal-button">Apply Tension</button>
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label id="state-label" style="text-align: center;">State: Unknown</label>
           </div>
         </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
+          <button id="tablettab_cal_retract" class="calibration-modal-button">Retract All</button>
+          <button id="tablettab_cal_extend" class="calibration-modal-button">Extend All</button>
+          <button id="tablettab_cal_tense" class="calibration-modal-button">Apply Tension</button>
+        </div>
+        <div class="buttons-row">
+          <button id="tablettab_cal_calibrate" class="calibration-modal-button">Calibrate</button>
+          <button id="tablettab_cal_stop" class="calibration-modal-button stop-button">Stop</button>
+          <button id="tablettab_cal_relax" class="calibration-modal-button">Release Tension</button>
+        </div>
+        <hr style="border-top: 1px dashed;">
         <div class="buttons-row">
           <!-- <button id="tablettab_cal_homez" class="calibration-modal-button">Home Z</button> -->
           <button id="tablettab_cal_config" class="calibration-modal-button">Config</button>
-          <button id="tablettab_cal_stop" class="calibration-modal-button stop-button">Stop</button>
+          <button id="tablettab_cal_test" class="calibration-modal-button">Test</button>
           <button id="tablettab_cal_zstop" class="calibration-modal-button"
             title="Record the 'bottom' limit for Z-axis movement">Set Z-Stop</button>
-        </div>
-        <div class="buttons-row">
-          <button id="tablettab_cal_test" class="calibration-modal-button">Test</button>
-          <button id="tablettab_cal_relax" class="calibration-modal-button">Release Tension</button>
         </div>
       </div>
     </div>

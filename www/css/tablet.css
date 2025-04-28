@@ -816,15 +816,16 @@ background-color: #cd654c!important;
 }
 
 .buttons-row {
-  display:  flex;
+  display: grid;
+  grid-template-columns: repeat(3, 30%); /* three columns at 30% each */
+  justify-content: space-between;         /* distribute the remaining 10% */
   align-items: center;
+  column-gap: 5%;                         /* optional gutter between columns */
   margin-bottom: 10px;
-  justify-content: space-evenly;
 }
 .buttons-row:first-child {
   padding: 10px 0px;
   margin-bottom: 10px;
-  border-bottom: 1px dashed black;
 }
 .buttons-row-col-el {
   display: flex;
@@ -832,12 +833,6 @@ background-color: #cd654c!important;
 }
 .buttons-row-col-el .calibration-modal-button:first-child {
   margin-bottom: 10px;
-}
-
-
-.buttons-row .arrow {
-  font-size: 60px;
-  margin: 0px 10px;
 }
 /* Calibration modal END */
 

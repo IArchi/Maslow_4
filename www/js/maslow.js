@@ -54,98 +54,109 @@ const updateDynamicButtons = () => {
 	const dynamicButton2 = document.getElementById("dynamic_button_2");
 	const dynamicButton3 = document.getElementById("dynamic_button_3");
 
+	const stateLabel = document.getElementById("state-label");
+
+	const retractButton = document.getElementById("tablettab_cal_retract");
+	const extendButton = document.getElementById("tablettab_cal_extend");
+	const tenseButton = document.getElementById("tablettab_cal_tense");
+	const relaxButton = document.getElementById("tablettab_cal_relax");
+	const calibrateButton = document.getElementById("tablettab_cal_calibrate");
+
+	const greenBackground = "#4aa85c"
+	const greyBackground = "#a0a0a0"
+
 	switch (maslowStatus.state) {
 		case 0: 
+			stateLabel.innerHTML = "State: Unknown";
+
+			//Set the retract and extend buttons to have a green background 
+			retractButton.style.backgroundColor = greenBackground;
+			extendButton.style.backgroundColor = greenBackground;
+
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
+
 			dynamicButton1.innerHTML = "Retract All";
-			dynamicButton1.onclick = () => {
-				tabletCalRetract();
-			};
-			dynamicButton2.innerHTML = "";
-			dynamicButton2.onclick = null;
-			dynamicButton3.innerHTML = "";
-			dynamicButton3.onclick = null;
 			break;
 		case 1:
-			dynamicButton1.innerHTML = "Retracting";
-			dynamicButton1.onclick = null;
-			dynamicButton2.innerHTML = "Retracting";
-			dynamicButton2.onclick = null;
-			dynamicButton3.innerHTML = "Retracting";
-			dynamicButton3.onclick = null;
+			stateLabel.innerHTML = "State: Retracting";
+
+			retractButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
+
 			break;
 		case 2:
-			dynamicButton1.innerHTML = "Retract All";
-			dynamicButton1.onclick = () => {
-				tabletCalRetract();
-			};
-			dynamicButton2.innerHTML = "Extend All";
-			dynamicButton2.onclick = () => {
-				tabletCalExtend();
-			};
-			dynamicButton3.innerHTML = "";
-			dynamicButton3.onclick = null;
+			stateLabel.innerHTML = "State: Retracted";
+
+			retractButton.style.backgroundColor = greenBackground;
+			extendButton.style.backgroundColor = greenBackground;
+
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
+
 			break;
 		case 3:
-			dynamicButton1.innerHTML = "Extending";
-			dynamicButton1.onclick = null;
-			dynamicButton2.innerHTML = "Extending";
-			dynamicButton2.onclick = null;
-			dynamicButton3.innerHTML = "Extending";
-			dynamicButton3.onclick = null;
+			stateLabel.innerHTML = "State: Extending";
+			
+			retractButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 4:
-			dynamicButton1.innerHTML = "Retract All";
-			dynamicButton1.onclick = () => {
-				tabletCalRetract();
-			};
-			dynamicButton2.innerHTML = "Apply Tension";
-			dynamicButton2.onclick = () => {
-				tabletCalTense();
-			};
-			dynamicButton3.innerHTML = "Calibrate";
-			dynamicButton3.onclick = () => {
-				tabletCalCalibrate();
-			};
+			stateLabel.innerHTML = "State: Extended";
+
+			retractButton.style.backgroundColor = greenBackground;
+			tenseButton.style.backgroundColor = greenBackground;
+			calibrateButton.style.backgroundColor = greenBackground;
+
+			extendButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+
 			break;
 		case 5:
-			dynamicButton1.innerHTML = "Taking Slack";
-			dynamicButton1.onclick = null;
-			dynamicButton2.innerHTML = "Taking Slack";
-			dynamicButton2.onclick = null;
-			dynamicButton3.innerHTML = "Taking Slack";
-			dynamicButton3.onclick = null;
+			stateLabel.innerHTML = "State: Taking Slack";
+
+			retractButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 6:
-			dynamicButton1.innerHTML = "Calibrating";
-			dynamicButton1.onclick = null;
-			dynamicButton2.innerHTML = "Calibrating";
-			dynamicButton2.onclick = null;
-			dynamicButton3.innerHTML = "Calibrating";
-			dynamicButton3.onclick = null;
+			stateLabel.innerHTML = "State: Calibrating";
+
+			retractButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 7:
-			dynamicButton1.innerHTML = "Retract All";
-			dynamicButton1.onclick = () => {
-				tabletCalRetract();
-			};
-			dynamicButton2.innerHTML = "Apply Tension";
-			dynamicButton2.onclick = () => {
-				tabletCalTense();
-			};
-			dynamicButton3.innerHTML = "Release Tension";
-			dynamicButton3.onclick = () => {
-				tabletCalRelax();
-			};
+			stateLabel.innerHTML = "State: Ready to Cut";
+
+			retractButton.style.backgroundColor = greenBackground;
+			relaxButton.style.backgroundColor = greenBackground;
+
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
+
 			break;
 		default:
-			dynamicButton1.innerHTML = "Retract All";
-			dynamicButton1.onclick = () => {
-				tabletCalRetract();
-			};
-			dynamicButton2.innerHTML = "";
-			dynamicButton2.onclick = null;
-			dynamicButton3.innerHTML = "";
-			dynamicButton3.onclick = null;
+			stateLabel.innerHTML = "State: Unknown";
+
+			retractButton.style.backgroundColor = greenBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 	}
 }

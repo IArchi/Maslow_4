@@ -50,10 +50,6 @@ READY_TO_CUT 7
 */
 const updateDynamicButtons = () => {
 
-	const dynamicButton1 = document.getElementById("dynamic_button_1");
-	const dynamicButton2 = document.getElementById("dynamic_button_2");
-	const dynamicButton3 = document.getElementById("dynamic_button_3");
-
 	const stateLabel = document.getElementById("state-label");
 
 	const retractButton = document.getElementById("tablettab_cal_retract");
@@ -76,8 +72,6 @@ const updateDynamicButtons = () => {
 			tenseButton.style.backgroundColor = greyBackground;
 			relaxButton.style.backgroundColor = greyBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
-
-			dynamicButton1.innerHTML = "Retract All";
 			break;
 		case 1:
 			stateLabel.innerHTML = "State: Retracting";
@@ -115,8 +109,8 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greenBackground;
 			tenseButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greenBackground;
-
-			extendButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greenBackground;
+			
 			relaxButton.style.backgroundColor = greyBackground;
 
 			break;

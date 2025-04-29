@@ -37,8 +37,8 @@ const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
 
 /** Build out command based on the supplied parameters, and whether a given parameter should be encoded or not */
 const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
-    const cmd = [];
-    let prms = deepCopy(params);
+    const cmd = [httpcmd];
+    const prms = deepCopy(params);
 
     for (const key of Object.keys(prms)) {
         let pVal = getParam(prms, key);
@@ -53,13 +53,13 @@ const buildHttpCmd = (httpcmd, params = {}, encKeys = [], noEncKeys = []) => {
         if ([encKeys].includes(key)) {
             pVal = encodeURIComponent(pVal);
         }
-        // If this is the first part of the command then prefix it with the httpcmd
-        cmd.push(`${!cmd.length ? httpcmd : ""}?${key}=${pVal}`);
-    }
-
-    if (!cmd.length) {
-        // If there's nothing so far, ensure the httpcmd is emitted
-        cmd.push(httpcmd);
+        // If this is the first part of the command then append it to the httpcmd
+        // so long as httpcmd does not already include a first parameter
+        if (cmd.length === 1 && !cmd[0].includes("?")) {
+            cmd[0] += `?${key}=${pVal}`;
+        } else {
+            cmd.push(`${key}=${pVal}`);
+        }
     }
 
     return cmd.join("&");
@@ -86,7 +86,7 @@ const buildHttpFilesCmd = (params = {}) => buildHttpCmd(httpCmd.files, params, [
 
 /** Build a full `/upload` GET command, encoding the supplied `name`, `newname` and `path` values */
 const buildHttpFileCmd = (params = { action: "", path: "", filename: "" }) => {
-    let prms = deepCopy(params);
+    const prms = deepCopy(params);
     // `path` is special, it always goes into the command, and it always goes first
     const path = encodeURIComponent(getParam(prms, "path", files_currentPath()));
 

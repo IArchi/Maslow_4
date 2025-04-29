@@ -251,11 +251,9 @@ function files_delete(event) {
 	event.stopPropagation();
 	const index = getEventIndex(event);
 	files_current_file_index = index;
-	let msg = translate_text_item("Confirm deletion of directory: ");
-	if (!files_file_list[index].isdir) {
-		msg = translate_text_item("Confirm deletion of file: ");
-	}
-	confirmdlg(translate_text_item("Please Confirm"), msg + files_file_list[index].name, process_files_Delete);
+	const ffli = files_file_list[index];
+	const msg = `${translate_text_item(ffli.isdir ? "Confirm deletion of directory: " : "Confirm deletion of file: ")}${ffli.name}`;
+	confirmdlg(translate_text_item("Please Confirm"), msg, process_files_Delete);
 }
 
 function process_files_Delete(answer) {

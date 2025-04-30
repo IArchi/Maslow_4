@@ -732,6 +732,8 @@ function tabletInit() {
     loadConfigValues();
     loadCornerValues();
 
+    SendPrinterCommand("$GSTATE");
+
     numpad.attach({ target: "disM", axis: "D" });
     numpad.attach({ target: "disZ", axis: "Z" });
     //numpad.attach({target: "wpos-y", axis: "Y"});

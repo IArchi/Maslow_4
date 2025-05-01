@@ -14,7 +14,7 @@ reviews:
   commit_status: true
   fail_commit_status: false
   collapse_walkthrough: false
-  changed_files_summary: true
+  changed_files_summary: false
   sequence_diagrams: false
   assess_linked_issues: true
   related_issues: true

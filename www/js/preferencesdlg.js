@@ -1,5 +1,4 @@
 //Preferences dialog
-var preferenceslist = [];
 var language_save = language;
 
 var preferences_file_name = 'preferences.json';
@@ -27,38 +26,6 @@ function initpreferences() {
 }
 
 const savingPreferences = (dispatchEvent) => {SavePreferences(false)};
-
-function getpreferenceslist() {
-    preferenceslist = [];
-    //removeIf(production)
-    var response = JSON.stringify(default_preferenceslist);
-    processPreferencesGetSuccess(response);
-    return;
-    //endRemoveIf(production)
-    const cmd = buildHttpFileGetCmd(preferences_file_name);
-    SendGetHttp(cmd, processPreferencesGetSuccess, processPreferencesGetFailed);
-}
-
-function processPreferencesGetSuccess(response) {
-    Preferences_build_list(response);
-}
-
-function processPreferencesGetFailed(error_code, response) {
-    conErr(error_code, response);
-    Preferences_build_list("");
-}
-
-function Preferences_build_list(response_text) {
-    preferenceslist = [];
-    try {
-        const prefTest = response_text ? response_text : JSON.stringify(default_preferenceslist)
-        preferenceslist = JSON.parse(prefTest);
-    } catch (e) {
-        console.error("Preferences parsing error:", e);
-        preferenceslist = default_preferenceslist;
-    }
-    applypreferenceslist();
-}
 
 function ontogglePing(forcevalue) {
     if (typeof forcevalue !== 'undefined') enable_ping = forcevalue
@@ -237,6 +204,21 @@ function showpreferencesdlg() {
     showModal();
 }
 
+const GetPrefOrDefault = (prefName) => {
+    if (!prefName || typeof prefName !== "string") {
+        console.error("GetPrefOrDefault called without a prefName");
+        return;
+    }
+    if (!(prefName in default_preferenceslist[0]) && !(prefName in preferenceslist[0])) {
+        console.error(`GetPrefOrDefault called with an invalid prefName '${prefName}'`);
+        return;
+    }
+    if (typeof (preferenceslist[0][prefName]) !== 'undefined') {
+        return preferenceslist[0][prefName];
+    }
+    return default_preferenceslist[0][prefName];
+}
+
 /** use preferenceslist to set dlg status */
 function build_dlg_preferences_list() {
     let content = "<table><tr><td>";
@@ -251,64 +233,38 @@ function build_dlg_preferences_list() {
     setValue('preferences_camera_webaddress', (typeof (preferenceslist[0].camera_address) !== 'undefined') ? HTMLDecode(preferenceslist[0].camera_address) : "");
 
     //autoreport interval
-    if (typeof (preferenceslist[0].autoreport_interval) !== 'undefined') {
-        id('preferences_autoReport_Interval').value = Number.parseInt(preferenceslist[0].autoreport_interval);
-    } else id('preferences_autoReport_Interval').value = Number.parseInt(default_preferenceslist[0].autoreport_interval);
+    id('preferences_autoReport_Interval').value = Number.parseInt(GetPrefOrDefault("autoreport_interval"));
     //interval positions
-    if (typeof (preferenceslist[0].interval_positions) !== 'undefined') {
-        id('preferences_pos_Interval_check').value = Number.parseInt(preferenceslist[0].interval_positions);
-    } else id('preferences_pos_Interval_check').value = Number.parseInt(default_preferenceslist[0].interval_positions);
+    id('preferences_pos_Interval_check').value = Number.parseInt(GetPrefOrDefault("interval_positions"));
     //interval status
-    if (typeof (preferenceslist[0].interval_status) !== 'undefined') {
-        id('preferences_status_Interval_check').value = Number.parseInt(preferenceslist[0].interval_status);
-    } else id('preferences_status_Interval_check').value = Number.parseInt(default_preferenceslist[0].interval_status);
+    id('preferences_status_Interval_check').value = Number.parseInt(GetPrefOrDefault("interval_status"));
     //xy feedrate
-    if (typeof (preferenceslist[0].xy_feedrate) !== 'undefined') {
-        id('preferences_control_xy_velocity').value = Number.parseFloat(preferenceslist[0].xy_feedrate);
-    } else id('preferences_control_xy_velocity').value = Number.parseFloat(default_preferenceslist[0].xy_feedrate);
+    id('preferences_control_xy_velocity').value = Number.parseFloat(GetPrefOrDefault("xy_feedrate"));
     if (grblaxis > 2) {
         //z feedrate
-        if (typeof (preferenceslist[0].z_feedrate) !== 'undefined') {
-            id('preferences_control_z_velocity').value = Number.parseFloat(preferenceslist[0].z_feedrate);
-        } else id('preferences_control_z_velocity').value = Number.parseFloat(default_preferenceslist[0].z_feedrate);
+        id('preferences_control_z_velocity').value = Number.parseFloat(GetPrefOrDefault("z_feedrate"));
     }
     if (grblaxis > 3) {
         //a feedrate
-        if (typeof (preferenceslist[0].a_feedrate) !== 'undefined') {
-            id('preferences_control_a_velocity').value = Number.parseFloat(preferenceslist[0].a_feedrate);
-        } else id('preferences_control_a_velocity').value = Number.parseFloat(default_preferenceslist[0].a_feedrate);
+        id('preferences_control_a_velocity').value = Number.parseFloat(GetPrefOrDefault("a_feedrate"));
     }
     if (grblaxis > 4) {
         //b feedrate
-        if (typeof (preferenceslist[0].b_feedrate) !== 'undefined') {
-            id('preferences_control_b_velocity').value = Number.parseFloat(preferenceslist[0].b_feedrate);
-        } else id('preferences_control_b_velocity').value = Number.parseFloat(default_preferenceslist[0].b_feedrate);
+        id('preferences_control_b_velocity').value = Number.parseFloat(GetPrefOrDefault("b_feedrate"));
     }
     if (grblaxis > 5) {
         //c feedrate
-        if (typeof (preferenceslist[0].c_feedrate) !== 'undefined') {
-            id('preferences_control_c_velocity').value = Number.parseFloat(preferenceslist[0].c_feedrate);
-        } else id('preferences_control_c_velocity').value = Number.parseFloat(default_preferenceslist[0].c_feedrate);
+        id('preferences_control_c_velocity').value = Number.parseFloat(GetPrefOrDefault("c_feedrate"));
     }
 
     //probemaxtravel
-    if ((typeof (preferenceslist[0].probemaxtravel) !== 'undefined') && (preferenceslist[0].probemaxtravel.length !== 0)) {
-        id('preferences_probemaxtravel').value = Number.parseFloat(preferenceslist[0].probemaxtravel);
-    } else {
-        id('preferences_probemaxtravel').value = Number.parseFloat(default_preferenceslist[0].probemaxtravel);
-    }
+    id('preferences_probemaxtravel').value = Number.parseFloat(GetPrefOrDefault("probemaxtravel"));
     //probefeedrate
-    if ((typeof (preferenceslist[0].probefeedrate) !== 'undefined') && (preferenceslist[0].probefeedrate.length !== 0)) {
-        id('preferences_probefeedrate').value = Number.parseFloat(preferenceslist[0].probefeedrate);
-    } else id('preferences_probefeedrate').value = Number.parseFloat(default_preferenceslist[0].probefeedrate);
+    id('preferences_probefeedrate').value = Number.parseFloat(GetPrefOrDefault("probefeedrate"));
     //proberetract
-    if ((typeof (preferenceslist[0].proberetract) !== 'undefined') && (preferenceslist[0].proberetract.length !== 0)) {
-        id('preferences_proberetract').value = Number.parseFloat(preferenceslist[0].proberetract);
-    } else id('preferences_proberetract').value = Number.parseFloat(default_preferenceslist[0].proberetract);
+    id('preferences_proberetract').value = Number.parseFloat(GetPrefOrDefault("proberetract"));
     //probetouchplatethickness
-    if ((typeof (preferenceslist[0].probetouchplatethickness) !== 'undefined') && (preferenceslist[0].probetouchplatethickness.length !== 0)) {
-        id('preferences_probetouchplatethickness').value = Number.parseFloat(preferenceslist[0].probetouchplatethickness);
-    } else id('preferences_probetouchplatethickness').value = Number.parseFloat(default_preferenceslist[0].probetouchplatethickness);
+    id('preferences_probetouchplatethickness').value = Number.parseFloat(GetPrefOrDefault("probetouchplatethickness"));
 
     //file filters
     if (typeof (preferenceslist[0].f_filters) !== 'undefined') {
@@ -453,7 +409,7 @@ function SavePreferences(useExternalSetPreference = false) {
 
 function preferencesdlgUploadProgressDisplay(oEvent) {
     if (oEvent.lengthComputable) {
-        var percentComplete = (oEvent.loaded / oEvent.total) * 100;
+        const percentComplete = (oEvent.loaded / oEvent.total) * 100;
         setValue('preferencesdlg_prg', percentComplete);
         setHTML('preferencesdlg_upload_percent', percentComplete.toFixed(0));
         displayBlock('preferencesdlg_upload_msg');
@@ -466,6 +422,7 @@ function preferencesUploadsuccess(response) {
     console.info("Preferences successfully saved");
     displayNone('preferencesdlg_upload_msg');
     applypreferenceslist();
+    init_grbl_panel();
     closeModal('ok');
 }
 

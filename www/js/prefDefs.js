@@ -8,6 +8,7 @@ var default_preferenceslist = [{
     "camera_address": "",
     "enable_control_panel": "true",
     "interval_positions": "3",
+    "is_default": "true",
     "xy_feedrate": "2500",
     "z_feedrate": "300",
     "a_feedrate": "100",

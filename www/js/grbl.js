@@ -760,8 +760,8 @@ const onproberetractChange = () => !Number.isNaN(checkProbeValue(probeValues.ret
 const onprobetouchplatethicknessChange = () => !Number.isNaN(checkProbeValue(probeValues.plateThickness));
 
 function StartProbeProcess() {
-  for(const pv in probeValues) {
-    checkProbeValue(pv);
+  for (const key in probeValues) {
+    checkProbeValue(probeValues[key]);
   }
   if (Object.values(probeValues).some(pv => Number.isNaN(pv.value))) {
     return;

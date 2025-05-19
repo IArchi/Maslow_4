@@ -92,7 +92,7 @@ function processMacroGetFailed(error_code, response) {
 
 function on_autocheck_position(use_value) {
 	if (typeof (use_value) !== 'undefined') {
-		setChecked('autocheck_position', string(use_value));
+		setChecked('autocheck_position', String(use_value));
 	}
 	if (getChecked('autocheck_position') === "true") {
 		const interval = Number.parseInt(getValue('controlpanel_interval_positions'));

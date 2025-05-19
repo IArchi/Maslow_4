@@ -100,41 +100,49 @@ const floatOrZero = (value) => {
 }
 
 const prefList = () => {
-  return (typeof preferencesList !== "undefined" && Array.isArray(preferenceList) && preferenceList.length > 0)
-    ? preferenceslist[0]
-    : default_preferenceslist[0];
+  // This has a possible race condition
+  // ideally GetPreferencesList() should be awaited on in some way
+  // but that would require a lot of changes to the code
+  if (!isPreferencesListDefined()) {
+    GetPreferencesList();
+  }
+  return isPreferencesListDefined() ? preferenceslist[0] : default_preferenceslist[0];
 }
 
 const probeValues = {
   travel: { fldId: "grblpanel_probemaxtravel", prefId: "probemaxtravel", valType: "float", valTitle: "maximum probe travel", minVal: 1, maxVal: 999, units: "mm" },
-  feedrate: { fldId: "grblpanel_probefeedrate", prefId: "probefeedrate", valType: "int", valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min" },
+  feedrate: { fldId: "grblpanel_probefeedrate", prefId: "probefeedrate", valType: "float", valTitle: "probe feedrate", minVal: 1, maxVal: 9999, units: "mm/min" },
   retract: { fldId: "grblpanel_proberetract", prefId: "proberetract", valType: "float", valTitle: "probe retract", minVal: 0, maxVal: 999, units: "mm" },
   plateThickness: { fldId: "grblpanel_probetouchplatethickness", prefId: "probetouchplatethickness", valType: "float", valTitle: "probe touch plate thickness", minVal: 0, maxVal: 999, units: "mm" },
 };
 
 /** This must be done after the preferences have been set */
 function init_grbl_panel() {
+  const preferences = prefList();
   // Feed rate for X and Y Axes
-  AxisFeedrate()[0] = floatOrZero(prefList().xy_feedrate);
-  AxisFeedrate()[1] = floatOrZero(prefList().xy_feedrate);
+  AxisFeedrate()[0] = floatOrZero(preferences.xy_feedrate);
+  AxisFeedrate()[1] = floatOrZero(preferences.xy_feedrate);
 
-  AxisFeedrate()[2] = floatOrZero(prefList().z_feedrate);
-  AxisFeedrate()[3] = floatOrZero(prefList().a_feedrate);
-  AxisFeedrate()[4] = floatOrZero(prefList().b_feedrate);
-  AxisFeedrate()[5] = floatOrZero(prefList().c_feedrate);
+  AxisFeedrate()[2] = floatOrZero(preferences.z_feedrate);
+  AxisFeedrate()[3] = floatOrZero(preferences.a_feedrate);
+  AxisFeedrate()[4] = floatOrZero(preferences.b_feedrate);
+  AxisFeedrate()[5] = floatOrZero(preferences.c_feedrate);
 
   setValue('controlpanel_xy_feedrate', AxisFeedrate()[0]);
   setValue('controlpanel_z_feedrate', AxisFeedrate()[2]);
 
-  Object.values(probeValues).forEach((pv) => {
-    if (pv.prefId in prefList() && prefList()[pv.prefId]) {
-      const prefValue = prefList()[pv.prefId];
-      const val = Number.parseFloat(prefValue);
-      if (!Number.isNaN(val)) {
-        setValue(pv.fldId, val);
-      }
+  for (const pvFld in probeValues) {
+    const pv = probeValues[pvFld];
+    if (!(pv.prefId in preferences)) {
+      continue;
     }
-  });
+
+    const prefValue = preferences[pv.prefId];
+    const val = Number.parseFloat(prefValue);
+    if (!Number.isNaN(val)) {
+      setValue(pv.fldId, val);
+    }
+  };
 
   grbl_set_probe_detected(false);
 }
@@ -752,7 +760,9 @@ const onproberetractChange = () => !Number.isNaN(checkProbeValue(probeValues.ret
 const onprobetouchplatethicknessChange = () => !Number.isNaN(checkProbeValue(probeValues.plateThickness));
 
 function StartProbeProcess() {
-  Object.values(probeValues).forEach(pv => checkProbeValue(pv));
+  for (const key in probeValues) {
+    checkProbeValue(probeValues[key]);
+  }
   if (Object.values(probeValues).some(pv => Number.isNaN(pv.value))) {
     return;
   }

@@ -1,8 +1,8 @@
 /** Set the page's title */
 const Set_page_title = (page_title = "") => {
 	if (page_title) {
-        esp_hostname = page_title;
-    }
+		esp_hostname = page_title;
+	}
 	document.title = esp_hostname;
 }
 
@@ -48,7 +48,7 @@ const update_UI_firmware_target = () => {
 		displayNone("z_feedrate_group");
 	}
 	if (grblaxis > 3) {
-        id("zero_xyz_btn_txt").innerHTML += "A";
+		id("zero_xyz_btn_txt").innerHTML += "A";
 		grblzerocmd += " A0";
 		build_axis_selection();
 		displayBlock("a_feedrate_group");
@@ -58,8 +58,8 @@ const update_UI_firmware_target = () => {
 	if (grblaxis > 4) {
 		id("zero_xyz_btn_txt").innerHTML += "B";
 		grblzerocmd += " B0";
-        displayBlock("b_feedrate_group");
-        displayBlock("control_b_position_display");
+		displayBlock("b_feedrate_group");
+		displayBlock("control_b_position_display");
 	}
 	if (grblaxis > 5) {
 		id("zero_xyz_btn_txt").innerHTML += "C";
@@ -76,7 +76,7 @@ const update_UI_firmware_target = () => {
 	setHTML("control_x_position_label", "Xw");
 	setHTML("control_y_position_label", "Yw");
 
-    EP_HOSTNAME = 'Hostname';
+	EP_HOSTNAME = 'Hostname';
 	EP_STA_SSID = 'Sta/SSID';
 	EP_STA_PASSWORD = 'Sta/Password';
 	EP_STA_IP_MODE = 'Sta/IPMode';
@@ -153,11 +153,16 @@ function initUI_2() {
 function initUI_3() {
 	console.log("Init UI - Step 3 - Initialise the control and GRBL panels, get the preferences");
 	display_boot_progress();
-	//init panels
-	init_controls_panel();
-	init_grbl_panel();
-	getpreferenceslist();
-	initUI_4();
+	GetPreferencesList();
+	// Yet another hack to wait for the preferences to be set
+	setTimeout(() => {
+		//init panels
+		init_controls_panel();
+		// This is in preferencesdlg.js
+		applypreferenceslist();
+		init_grbl_panel();
+		initUI_4();
+	}, 1500);
 }
 
 /** InitUI step4 - Initialise the command and files panels, determine if the setup wizard needs to be run */
@@ -174,7 +179,7 @@ function initUI_4() {
 		setupdlg();
 	} else {
 		//wizard is done UI can be updated
-	    setup_is_done = true;
+		setup_is_done = true;
 		do_not_build_settings = false;
 		display_boot_progress();
 		build_HTML_setting_list(current_setting_filter);

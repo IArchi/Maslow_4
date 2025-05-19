@@ -1,3 +1,5 @@
+let preferenceslist = [];
+
 const checkFields = {
     show_camera_panel: "enable_camera",
     autoload_camera_panel: "auto_load_camera",
@@ -38,6 +40,40 @@ const checkBlocks = {
     show_grbl_probe_tab: "grbl_probe_preferences",
 };
 
+const isPreferencesListDefined = () => (typeof preferenceslist !== "undefined" && Array.isArray(preferenceslist) && preferenceslist.length > 0 && preferenceslist?.is_default !== "true");
+
+const GetPreferencesList = () => {
+    console.info("Getting the preferences list")
+    preferenceslist = [];
+    //removeIf(production)
+    const response = JSON.stringify(default_preferenceslist);
+    processPreferencesGetSuccess(response);
+    return;
+    //endRemoveIf(production)
+    const cmd = buildHttpFileGetCmd(preferences_file_name);
+    SendGetHttp(cmd, processPreferencesGetSuccess, processPreferencesGetFailed);
+}
+
+const processPreferencesGetSuccess = (response) => {
+    Preferences_build_list(response);
+}
+
+const processPreferencesGetFailed = (error_code, response) => {
+    conErr(error_code, response);
+    Preferences_build_list("");
+}
+
+const Preferences_build_list = (response_text) => {
+    preferenceslist = [];
+    try {
+        const prefTest = response_text ? response_text : JSON.stringify(default_preferenceslist)
+        preferenceslist = JSON.parse(prefTest);
+    } catch (e) {
+        console.error("Preferences parsing error:", e);
+        preferenceslist = default_preferenceslist;
+    }
+}
+
 /** Determine if the preferences have been modified */
 const PreferencesModified = () => {
     if (!preferenceslist[0].length) {
@@ -45,7 +81,7 @@ const PreferencesModified = () => {
         return false;
     }
 
-    let defKeys = Object.keys(default_preferenceslist[0]);
+    const defKeys = Object.keys(default_preferenceslist[0]);
 
     //check dialog compare to global state
     for (let ix = 0; ix < defKeys.length; ix++) {

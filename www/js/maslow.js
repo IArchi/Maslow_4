@@ -349,11 +349,11 @@ const loadCornerValues = () => {
 
 const saveConfigValues = () => {
 	// Get all of the config data as entered, and as already loaded
-	allConfigKeys().forEach((key) => {
+	for (const key of allConfigKeys()) {
 		const cfgVal = cfgDef[key];
 		cfgVal.val = getValue(cfgVal.name);
 		cfgVal.loadedVal = loadedValues(cfgVal.name);
-	});
+	};
 
 	const gridSpacingWidth = cfgDef.calibration_grid_width_mm_X.val / (cfgDef.calibration_grid_size.val - 1);
 	const gridSpacingHeight = cfgDef.calibration_grid_height_mm_Y.val / (cfgDef.calibration_grid_size.val - 1);
@@ -365,7 +365,7 @@ const saveConfigValues = () => {
 	}
 
 	// Save the individual values
-	allConfigKeys().forEach((key) => {
+	for (const key of allConfigKeys()) {
 		const cfgVal = cfgDef[key];
 		const value = typeof cfgVal.val === "undefined"
 			? cfgVal.loadedVal
@@ -374,7 +374,7 @@ const saveConfigValues = () => {
 			const cmd = `$/${M}_${key}=${value}`;
 			sendCommand(cmd);
 		}
-	});
+	};
 
 	refreshSettings(current_setting_filter);
 	saveMaslowYaml();

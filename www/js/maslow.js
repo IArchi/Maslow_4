@@ -302,7 +302,7 @@ const maslowMsgHandling = (msg) => {
 
 const checkHomed = () => {
 	if (maslowStatus.state != 7) { // If the state is not 'ready to cut'
-		const err_msg = `${M} Is not ready to move.`;
+		const err_msg = `${M} is not ready to move.`;
 		alert(err_msg);
 
 		// Write to the console too, in case the system alerts are not visible
@@ -313,7 +313,7 @@ const checkHomed = () => {
 		}
 	}
 
-	return maslowStatus.state === 7; // Return true if the state is 'ready to cut'
+	return maslowStatus.state == 7; // Return true if the state is 'ready to cut'
 }
 
 /** Short hand convenience call to SendPrinterCommand with some preset values.

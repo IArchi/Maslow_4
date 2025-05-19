@@ -7,7 +7,7 @@ var gCodeDisplayable = false;
 var snd = null;
 var sndok = true;
 
-var versionNumber = "1.02.09";
+var versionNumber = "1.05";
 
 const addMessage = (msg, scroll = true, clear = false) => {
   const msgWindow = id("messages");
@@ -589,7 +589,7 @@ function tabletGrblState(grbl, response) {
   spindleSpeed = grbl.spindleSpeed ? Number(grbl.spindleSpeed) : "";
   //setText('spindle-speed', spindleSpeed);
 
-  var now = new Date();
+  const now = new Date();
   //setText('time-of-day', now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0'));
   if (stateName === 'Run') {
     let elapsed = now.getTime() - startTime;
@@ -653,10 +653,7 @@ function tabletGrblState(grbl, response) {
   })
 }
 
-var gCodeFilename = '';
-
-var filename = 'TEST.NC';
-var watchPath = '';
+let gCodeFilename = '';
 
 function tabletGetFileList(tabPath) {
   // Clear/reset the gCodeFilename
@@ -734,6 +731,8 @@ function tabletInit() {
     requestModes();
     loadConfigValues();
     loadCornerValues();
+
+    SendPrinterCommand("$GSTATE");
 
     numpad.attach({ target: "disM", axis: "D" });
     numpad.attach({ target: "disZ", axis: "Z" });
@@ -960,9 +959,9 @@ const clickon = (name) => {
   button.classList.add("active");
   button.dispatchEvent(new Event("click"));
 }
-var ctrlDown = false;
-var oldIndex = null;
-var newChild = null;
+let ctrlDown = false;
+let oldIndex = null;
+let newChild = null;
 
 function shiftUp() {
   if (!newChild) {

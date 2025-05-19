@@ -558,7 +558,7 @@ function findMaxFitness(measurements) {
 
     } else { //We have completed the calibration (success or timeout)
       if (1 / bestGuess.fitness < acceptableCalibrationThreshold) {
-        messagesBox.textContent += '\nWARNING FITNESS TOO LOW. DO NOT USE THESE CALIBRATION VALUES!';
+        messagesBox.textContent += '\nCalculated Fitness Too Low. The process will automatically try again.!';
       }
 
       messagesBox.textContent += '\nCalibration values:';

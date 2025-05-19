@@ -100,6 +100,9 @@ const floatOrZero = (value) => {
 }
 
 const prefList = () => {
+  // This has a possible race condition
+  // ideally GetPreferencesList() should be awaited on in some way
+  // but that would require a lot of changes to the code
   if (!isPreferencesListDefined()) {
     GetPreferencesList();
   }

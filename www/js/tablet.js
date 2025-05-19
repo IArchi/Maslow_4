@@ -1,11 +1,11 @@
 // When we can change to proper ESM - uncomment this
 // import { checkHomed, maslowErrorMsgHandling, maslowInfoMsgHandling, maslowMsgHandling, sendCommand } from "maslow";
 
-var gCodeLoaded = false
-var gCodeDisplayable = false
+var gCodeLoaded = false;
+var gCodeDisplayable = false;
 
-var snd = null
-var sndok = true
+var snd = null;
+var sndok = true;
 
 var versionNumber = "1.05.01";
 
@@ -251,7 +251,7 @@ const moveTo = (location) => {
 const sendMove = (cmd) => {
   tabletClick();
 
-  let distance = cmd.includes('Z')
+  const distance = cmd.includes('Z')
     ? Number(getText('disZ')) || 0
     : Number(getText('disM')) || 0;
 
@@ -488,8 +488,8 @@ var oldCannotClick = null
 
 function scaleUnits(target) {
   //Scale the units to move when jogging down or up by 25.4 to keep them reasonable
-  let distanceElement = id(target);
-  let currentValue = Number(distanceElement.innerText);
+  const distanceElement = id(target);
+  const currentValue = Number(distanceElement.innerText);
 
   if (!Number.isNaN(currentValue)) {
     distanceElement.innerText = gCodeModal.units == 'G20' ? currentValue / 25.4 : currentValue * 25.4;
@@ -512,10 +512,10 @@ function tabletUpdateModal() {
 
 function tabletGrblState(grbl, response) {
   // tabletShowResponse(response)
-  var stateName = grbl.stateName
+  const stateName = grbl.stateName;
 
   // Unit conversion factor - depends on both $13 setting and parser units
-  var factor = 1.0
+  let factor = 1.0;
 
   //  spindleSpeed = grbl.spindleSpeed;
   //  spindleDirection = grbl.spindle;
@@ -524,7 +524,7 @@ function tabletGrblState(grbl, response) {
   //  rapidOverride = OVR.rapid/100.0;
   //  spindleOverride = OVR.spindle/100.0;
 
-  var mmPerInch = 25.4
+  const mmPerInch = 25.4;
   switch (gCodeModal.units) {
     case 'G20':
       factor = grblReportingUnits === 0 ? 1 / mmPerInch : 1.0
@@ -613,7 +613,7 @@ function tabletGrblState(grbl, response) {
   const distanceText = gCodeModal.distance === 'G90' ? gCodeModal.distance : `<div style='color:red'>${gCodeModal.distance}</div>`;
   //setHTML('distance', distanceText);
 
-  let stateText = ''
+  let stateText = '';
   if (stateName === 'Run') {
     const rateNumber = gCodeModal.units === 'G21'
       ? Number(grbl.feedrate).toFixed(0)
@@ -648,7 +648,7 @@ function tabletGrblState(grbl, response) {
     })
   }
 
-  MPOS.forEach(function (pos, index) {
+  MPOS.forEach((pos, index) => {
     //setTextContent('mpos-'+axisNames[index], Number(pos*factor).toFixed(index > 2 ? 2 : digits));
   })
 }

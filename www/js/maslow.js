@@ -352,11 +352,8 @@ const maslowMsgHandling = (msg) => {
 }
 
 const checkHomed = () => {
-	console.log("Check homed ran");
-	console.log(maslowStatus);
 	if (maslowStatus.state != 7) { // If the state is not 'ready to cut'
 		console.log("Maslow is not ready to move, current state: " + maslowStatus.state);
-		console.log(maslowStatus);
 		const err_msg = `${M} is not ready to move.`;
 		alert(err_msg);
 

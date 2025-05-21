@@ -160,7 +160,17 @@ const updateDynamicButtons = () => {
 const maslowInfoMsgHandling = (msg) => {
 	if (msg.startsWith('MINFO: ')) {
 		try {
-			maslowStatus = JSON.parse(msg.substring(7));
+			const parsedStatus = JSON.parse(msg.substring(7));
+
+			// Iterate through the keys of the parsed JSON. This is more reliable than assigning it directly which sometimes seems to produce garbage
+			for (const key in parsedStatus) {
+				if (parsedStatus.hasOwnProperty(key)) {
+					// Check if the key exists in maslowStatus
+					if (key in maslowStatus) {
+						maslowStatus[key] = parsedStatus[key];
+					}
+				}
+			}
 		} catch (error) {
 			console.error("Parsing the 'MINFO' message failed, the maslow status has not been changed. This is probably a programmer error.");
 		}
@@ -177,6 +187,11 @@ const maslowInfoMsgHandling = (msg) => {
 		const m = msg.match(/Current state:\s*(\d+)/);
 		if (m) {
 			const state = Number(m[1]);
+			//If the state is in the range of 0-7, update the maslowStatus
+			if (state < 0 || state > 7) {
+				console.error("Invalid state received from machine: " + state);
+				return false;
+			}
 			maslowStatus.state = state;
 			updateDynamicButtons();
 		}
@@ -185,14 +200,50 @@ const maslowInfoMsgHandling = (msg) => {
 
 	//Catch the calibration complete message and alert the user...this locks up the UI which is bad...should be handled better
 	if (msg.startsWith("[MSG:INFO: Calibration complete")) {
-		alert(
-			"Calibration complete. You do not need to do calibration ever again unless your frame changes size. You might want to store a backup of your maslow.yaml file in case you need to restore it later.",
-		);
+		showCalibrationCompleteMessage();
 		return true;
 	}
 
 	return false;
 };
+
+
+/// Show a modal message when calibration is complete
+function showCalibrationCompleteMessage() {
+  const message = "Calibration complete. You do not need to do calibration ever again unless your frame changes size. You might want to store a backup of your maslow.yaml file in case you need to restore it later.";
+  // Create the modal dynamically
+  const modal = document.createElement('div');
+  modal.id = 'calibration-complete-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border: 1px solid black;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+  `;
+
+  const messageElement = document.createElement('p');
+  messageElement.textContent = message;
+
+  const closeButton = document.createElement('button');
+  closeButton.textContent = 'Close';
+    closeButton.style.cssText = `
+    margin-top: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+  `;
+  closeButton.onclick = function() {
+    document.body.removeChild(modal);
+  };
+
+  modal.appendChild(messageElement);
+  modal.appendChild(closeButton);
+  document.body.appendChild(modal);
+}
 
 /** Perform maslow specific-ish error message handling */
 const maslowErrorMsgHandling = (msg) => {
@@ -302,6 +353,7 @@ const maslowMsgHandling = (msg) => {
 
 const checkHomed = () => {
 	if (maslowStatus.state != 7) { // If the state is not 'ready to cut'
+		console.log("Maslow is not ready to move, current state: " + maslowStatus.state);
 		const err_msg = `${M} is not ready to move.`;
 		alert(err_msg);
 

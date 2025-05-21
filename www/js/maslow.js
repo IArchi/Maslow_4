@@ -163,14 +163,14 @@ const maslowInfoMsgHandling = (msg) => {
 			const parsedStatus = JSON.parse(msg.substring(7));
 
 			// Iterate through the keys of the parsed JSON. This is more reliable than assigning it directly which sometimes seems to produce garbage
-            for (const key in parsedStatus) {
-                if (parsedStatus.hasOwnProperty(key)) {
-                    // Check if the key exists in maslowStatus
-                    if (key in maslowStatus) {
-                        maslowStatus[key] = parsedStatus[key];
-                    }
-                }
-            }
+			for (const key in parsedStatus) {
+				if (parsedStatus.hasOwnProperty(key)) {
+					// Check if the key exists in maslowStatus
+					if (key in maslowStatus) {
+						maslowStatus[key] = parsedStatus[key];
+					}
+				}
+			}
 		} catch (error) {
 			console.error("Parsing the 'MINFO' message failed, the maslow status has not been changed. This is probably a programmer error.");
 		}

@@ -61,6 +61,17 @@ const updateDynamicButtons = () => {
 	const greenBackground = "#4aa85c"
 	const greyBackground = "#a0a0a0"
 
+	// #define UNKNOWN 0
+	// #define RETRACTING 1
+	// #define RETRACTED 2
+	// #define EXTENDING 3
+	// #define EXTENDEDOUT 4 //Extended is a reserved word
+	// #define TAKING_SLACK 5
+	// #define CALIBRATION_IN_PROGRESS 6
+	// #define READY_TO_CUT 7
+	// #define RELEASE_TENSION 8
+	// #define CALIBRATION_COMPUTING 9
+
 	switch (maslowStatus.state) {
 		case 0: 
 			stateLabel.innerHTML = "State: Unknown";
@@ -143,6 +154,26 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greyBackground;
 
 			break;
+		case 8:
+			stateLabel.innerHTML = "State: Releasing Tension";
+
+			retractButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
+
+			// No buttons are active in this state
+			break;
+		case 9:
+			stateLabel.innerHTML = "State: Calibration Computing";
+			// No buttons are active in this state
+			retractButton.style.backgroundColor = greyBackground;
+			extendButton.style.backgroundColor = greyBackground;
+			tenseButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greyBackground;
+			calibrateButton.style.backgroundColor = greyBackground;
+			break;
 		default:
 			stateLabel.innerHTML = "State: Unknown";
 
@@ -154,6 +185,8 @@ const updateDynamicButtons = () => {
 			break;
 	}
 }
+
+
 
 
 /** Perform maslow specific-ish info message handling */
@@ -188,7 +221,7 @@ const maslowInfoMsgHandling = (msg) => {
 		if (m) {
 			const state = Number(m[1]);
 			//If the state is in the range of 0-7, update the maslowStatus
-			if (state < 0 || state > 7) {
+			if (state < 0 || state > 9) {
 				console.error("Invalid state received from machine: " + state);
 				return false;
 			}

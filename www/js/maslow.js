@@ -10,11 +10,11 @@ let lastHeartBeatTime = new Date().getTime();
 
 const err = "error: ";
 // When we can change to proper ESM - prefix these const strings and functions with 'export' (minus the quotes of course)
-const MaslowErrMsgKeyValueCantUse = `${err}Could not use supplied key-value pair.`;
-const MaslowErrMsgNoKey = `${err}No key supplied for value.`;
-const MaslowErrMsgNoValue = `${err}No value supplied for key.`;
-const MaslowErrMsgNoMatchingKey = `${err}Could not find key for value in reference table.`;
-const MaslowErrMsgKeyValueSuffix = "This is probably a programming error\nKey-Value pair supplied was:";
+export const MaslowErrMsgKeyValueCantUse = `${err}Could not use supplied key-value pair.`;
+export const MaslowErrMsgNoKey = `${err}No key supplied for value.`;
+export const MaslowErrMsgNoValue = `${err}No value supplied for key.`;
+export const MaslowErrMsgNoMatchingKey = `${err}Could not find key for value in reference table.`;
+export const MaslowErrMsgKeyValueSuffix = "This is probably a programming error\nKey-Value pair supplied was:";
 
 /*
 * Updates the dynamic buttons to reflect the current state of the machine
@@ -301,34 +301,36 @@ const isVert = (value) => value === "horizontal" ? "false" : "true";
 const vertIs = (value) => value === "false" ? "horizontal" : "vertical";
 
 const cfgDef = {
-	vertical: { name: "machineOrientation", type: "A", fnVal: isVert, fnDisp: vertIs },
-	calibration_grid_size: { name: "gridSize", type: "A" },
-	calibration_grid_width_mm_X: { name: "gridWidth", type: "A" },
-	calibration_grid_height_mm_Y: { name: "gridHeight", type: "A" },
-	Retract_Current_Threshold: { name: "retractionForce", type: "A" },
-	Calibration_Current_Threshold: { name: "calibrationForce", type: "A" },
-	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A" },
-	Extend_Dist: { name: "extendDist", type: "A" },
-	beltEndExtension: { name: "beltEndExtension", type: "A" },
-	armLength: { name: "armLength", type: "A" },
-	trX: { name: "tr.x", type: "D" },
-	trY: { name: "tr.y", type: "D" },
-	trZ: { name: "tr.z", type: "D" },
-	tlX: { name: "tl.x", type: "D" },
-	tlY: { name: "tl.y", type: "D" },
-	tlZ: { name: "tl.z", type: "D" },
-	brX: { name: "br.x", type: "D" },
-	brY: { name: "br.y", type: "Null" },
-	brZ: { name: "br.z", type: "D" },
-	blX: { name: "bl.x", type: "Null" },
-	blY: { name: "bl.y", type: "Null" },
-	blZ: { name: "bl.z", type: "D" },
+	vertical: { name: "machineOrientation", type: "A", fnVal: isVert, fnDisp: vertIs, cmd: "Maslow_vertical" },
+	calibration_grid_size: { name: "gridSize", type: "A", cmd: "maslow_calibration_grid_size" },
+	calibration_grid_width_mm_X: { name: "gridWidth", type: "A", cmd: "maslow_calibration_grid_width_mm_X" },
+	calibration_grid_height_mm_Y: { name: "gridHeight", type: "A", cmd: "maslow_calibration_grid_height_mm_Y" },
+	Retract_Current_Threshold: { name: "retractionForce", type: "A", cmd: "Maslow_Retract_Current_Threshold" },
+	Calibration_Current_Threshold: { name: "calibrationForce", type: "A", cmd: "Maslow_Calibration_Current_Threshold" },
+	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A", cmd: "Maslow_Acceptable_Calibration_Threshold" },
+	Extend_Dist: { name: "extendDist", type: "A", cmd: "Maslow_Extend_Dist" },
+	Scale_X: { name: "scaleX", type: "A", cmd: "Maslow_Scale_X" },
+	Scale_Y: { name: "scaleY", type: "A", cmd: "Maslow_Scale_Y" },
+	beltEndExtension: { name: "beltEndExtension", type: "A", cmd: "kinematics/MaslowKinematics/beltEndExtension" },
+	armLength: { name: "armLength", type: "A", cmd: "kinematics/MaslowKinematics/armLength" },
+	trX: { name: "tr.x", type: "D", cmd: "kinematics/MaslowKinematics/trX", alsoSet: "machineWidth" },
+	trY: { name: "tr.y", type: "D", cmd: "kinematics/MaslowKinematics/trY", alsoSet: "machineHeight" },
+	trZ: { name: "tr.z", type: "D", cmd: "kinematics/MaslowKinematics/trZ" },
+	tlX: { name: "tl.x", type: "D", cmd: "kinematics/MaslowKinematics/tlX" },
+	tlY: { name: "tl.y", type: "D", cmd: "kinematics/MaslowKinematics/tlY" },
+	tlZ: { name: "tl.z", type: "D", cmd: "kinematics/MaslowKinematics/tlZ" },
+	brX: { name: "br.x", type: "D", cmd: "kinematics/MaslowKinematics/brX" },
+	brY: { name: "br.y", type: "Null", cmd: "kinematics/MaslowKinematics/brY" },
+	brZ: { name: "br.z", type: "D", cmd: "kinematics/MaslowKinematics/brZ" },
+	blX: { name: "bl.x", type: "Null", cmd: "kinematics/MaslowKinematics/blX" },
+	blY: { name: "bl.y", type: "Null", cmd: "kinematics/MaslowKinematics/blY" },
+	blZ: { name: "bl.z", type: "D", cmd: "kinematics/MaslowKinematics/blZ" },
 };
 
 /** Handle Maslow specific configuration messages
  * These would have all started with `$/Maslow_` which is expected to have been stripped away before calling this function
  */
-const maslowMsgHandling = (msg) => {
+export const maslowMsgHandling = (msg) => {
 	const keyValue = msg.split("=");
 	const errMsgSuffix = `${MaslowErrMsgKeyValueSuffix}${msg}`;
 	if (keyValue.length !== 2) {
@@ -345,34 +347,52 @@ const maslowMsgHandling = (msg) => {
 
 	const stdAction = (id, value) => {
 		const val = ("fnDisp" in cfgVal && typeof cfgVal.fnDisp === "function") ? cfgVal.fnDisp(value) : value;
-		setValue(id, val);
-		loadedValues(id, value);
+		globalThis.setValue(id, val);
+		// Handle loadedValues as an object for compatibility with tests
+		if (!globalThis.loadedValues) {
+			globalThis.loadedValues = {};
+		}
+		globalThis.loadedValues[id] = val; // Store the transformed value
 	};
 
 	const stdDimensionAction = (value) => Number.parseFloat(value);
 
 	const cfgVal = cfgDef[key];
 	if (typeof cfgVal !== "object") {
-		return maslowErrorMsgHandling(`error: Could not find key '${key}' in the reference table. ${errMsgSuffix}`);
+		return maslowErrorMsgHandling(`${MaslowErrMsgNoMatchingKey} ${errMsgSuffix}`);
 	}
 	switch (cfgVal.type) {
 		case "A":
+			// Check if this is a global variable assignment (like Acceptable_Calibration_Threshold)
+			if (cfgVal.name === "acceptableCalibrationThreshold") {
+				globalThis.acceptableCalibrationThreshold = stdDimensionAction(value);
+			}
 			stdAction(cfgVal.name, value);
 			break;
 		case "D": {
-			let dimEnt = initialGuess;
+			let dimEnt = globalThis.initialGuess || {};
 			if (!cfgVal.name) {
 				// Well this is dangerous - so let's not do anything we'll regret very quickly
 				return maslowErrorMsgHandling(`error: No 'name' value specified for '${key}' in the reference table. ${errMsgSuffix}`);
 			}
-			// Traverse through to the required entity
-			cfgVal.name.split(".").forEach((namePart) => {
-				if (!(namePart in dimEnt)) {
-					dimEnt[namePart] = null;
+			// Set the final value
+			const parts = cfgVal.name.split(".");
+			let target = globalThis.initialGuess || {};
+			for (let i = 0; i < parts.length - 1; i++) {
+				if (!target[parts[i]]) {
+					target[parts[i]] = {};
 				}
-				dimEnt = dimEnt[namePart];
-			});
-			dimEnt = stdDimensionAction(value);
+				target = target[parts[i]];
+			}
+			target[parts[parts.length - 1]] = stdDimensionAction(value);
+			
+			// If there's an alsoSet property, also store the value as a standard action
+			if (cfgVal.alsoSet) {
+				if (!globalThis.loadedValues) {
+					globalThis.loadedValues = {};
+				}
+				globalThis.loadedValues[cfgVal.alsoSet] = value;
+			}
 		}
 			break;
 		default:
@@ -383,6 +403,17 @@ const maslowMsgHandling = (msg) => {
 	// Success - return an empty string
 	return "";
 }
+
+// Helper functions for setValue and loadedValues
+globalThis.setValue = globalThis.setValue || function(id, value) {
+	const element = document.getElementById(id);
+	if (element) {
+		element.value = value;
+	}
+};
+
+// Initialize loadedValues as an object (for compatibility with existing code/tests)
+globalThis.loadedValues = globalThis.loadedValues || {};
 
 const checkHomed = () => {
 	if (maslowStatus.state != 7) { // If the state is not 'ready to cut'
@@ -418,7 +449,8 @@ const allConfigKeys = () => Object.keys(cfgDef).filter((key) => cfgDef[key].type
 const loadConfigValues = () => {
 	// biome-ignore lint/complexity/noForEach: <explanation>
 	allConfigKeys().forEach((key) => {
-		const cmd = `$/${M}_${key}`;
+		const cfgVal = cfgDef[key];
+		const cmd = `$/${cfgVal.cmd || `${M}_${key}`}`;
 		SendPrinterCommand(cmd);
 	});
 };
@@ -427,7 +459,8 @@ const loadConfigValues = () => {
 const loadCornerValues = () => {
 	// biome-ignore lint/complexity/noForEach: <explanation>
 	Object.keys(cfgDef).filter((key) => cfgDef[key].type === "D").forEach((key) => {
-		const cmd = `$/${M}_${key}`;
+		const cfgVal = cfgDef[key];
+		const cmd = `$/${cfgVal.cmd || `${M}_${key}`}`;
 		SendPrinterCommand(cmd);
 	});
 };
@@ -437,7 +470,7 @@ const saveConfigValues = () => {
 	for (const key of allConfigKeys()) {
 		const cfgVal = cfgDef[key];
 		cfgVal.val = getValue(cfgVal.name);
-		cfgVal.loadedVal = loadedValues(cfgVal.name);
+		cfgVal.loadedVal = globalThis.loadedValues ? globalThis.loadedValues[cfgVal.name] : undefined;
 	};
 
 	const gridSpacingWidth = cfgDef.calibration_grid_width_mm_X.val / (cfgDef.calibration_grid_size.val - 1);
@@ -456,7 +489,7 @@ const saveConfigValues = () => {
 			? cfgVal.loadedVal
 			: ("fnVal" in cfgVal && typeof cfgVal.fnVal === "function") ? cfgVal.fnVal(cfgVal.val) : cfgVal.val;
 		if (value !== cfgVal.loadedVal) {
-			const cmd = `$/${M}_${key}=${value}`;
+			const cmd = `$/${cfgVal.cmd || `${M}_${key}`}=${value}`;
 			sendCommand(cmd);
 		}
 	};

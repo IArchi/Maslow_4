@@ -14,26 +14,29 @@ var setup_is_done = false;
 let do_not_build_settings = false;
 const CONFIG_TOOLTIPS = {
   Maslow_vertical: `If the ${M} is oriented horizontally, set this to false`,
-  Maslow_calibration_offset_X: "mm offset from the edge of the frame, X",
-  Maslow_calibration_offset_Y: "mm offset from the edge of the frame, Y",
-  Maslow_calibration_size_X: "Number of X points to use in calibration",
-  Maslow_calibration_size_Y: "Number of Y points to use in calibration",
-  Maslow_brX: "Bottom right anchor x (normally width in mm)",
-  Maslow_brY: "Bottom right anchor y (normally 0)",
-  Maslow_brZ: "Bottom right z (normally 117)",
-  Maslow_tlX: "Top left anchor x (normally 0)",
-  Maslow_tlY: "Top left anchor y (normally height in mm)",
-  Maslow_tlZ: "Top left z (normally 144)",
-  Maslow_trX: "Top right anchor x (normally width in mm)",
-  Maslow_trY: "Top right anchor y (normally height in mm)",
-  Maslow_trZ: "Top right z (normally 97)",
-  Maslow_blX: "Bottom left anchor x (normally 0)",
-  Maslow_blY: "Bottom left anchor y (normally 0)",
-  Maslow_blZ: "Bottom left z (normally 75)",
+  maslow_calibration_grid_width_mm_X: "Define the distance from the anchor points to the corners of the calibration grid in mm (X dimension)",
+  maslow_calibration_grid_height_mm_Y: "Define the distance from the anchor points to the corners of the calibration grid in mm (Y dimension)",
+  maslow_calibration_grid_size: "Defines the number of points in the calibration grid. Options are 3,5,7,9",
+  "kinematics/MaslowKinematics/brX": "Bottom right anchor x (normally width in mm)",
+  "kinematics/MaslowKinematics/brY": "Bottom right anchor y (normally 0)",
+  "kinematics/MaslowKinematics/brZ": "Bottom right anchor z (normally 117)",
+  "kinematics/MaslowKinematics/tlX": "Top left anchor x (normally 0)",
+  "kinematics/MaslowKinematics/tlY": "Top left anchor y (normally height in mm)",
+  "kinematics/MaslowKinematics/tlZ": "Top left anchor z (normally 144)",
+  "kinematics/MaslowKinematics/trX": "Top right anchor x (normally width in mm)",
+  "kinematics/MaslowKinematics/trY": "Top right anchor y (normally height in mm)",
+  "kinematics/MaslowKinematics/trZ": "Top right anchor z (normally 97)",
+  "kinematics/MaslowKinematics/blX": "Bottom left anchor x (normally 0)",
+  "kinematics/MaslowKinematics/blY": "Bottom left anchor y (normally 0)",
+  "kinematics/MaslowKinematics/blZ": "Bottom left anchor z (normally 75)",
+  "kinematics/MaslowKinematics/beltEndExtension": "Extension distance during calibration",
+  "kinematics/MaslowKinematics/armLength": "Length of the router arm",
   Maslow_Retract_Current_Threshold: `Sets how hard should ${M} pull on the belts to retract before considering them to be all the way in`,
   Maslow_Calibration_Current_Threshold: `Sets how hard should ${M} pull on the belts during the calibration process.`,
-  Maslow_calibration_extend_top_y: "starting Y for top belts on extend all (-1000 to 1000) default 0",
-  Maslow_calibration_extend_bottom_y: "starting Y for bottom belts on extend all (-1000 to 1000) default ",
+  Maslow_Acceptable_Calibration_Threshold: "Sets the acceptable fitness threshold for moving on to the next calibration round",
+  Maslow_Scale_X: "Sets the scale factor for the x axis",
+  Maslow_Scale_Y: "Sets the scale factor for the y axis",
+  Maslow_Extend_Dist: "Sets the distance to extend the belts during the calibration process",
 }
 
 function refreshSettings(hide_setting_list) {
@@ -329,14 +332,14 @@ const build_HTML_setting_list = (filter) => {
   // set calibration values if exists
   const calRes = calibrationResults;
   if (Object.keys(calRes).length) {
-    document.querySelector("#setting__Maslow_brX_0").value = calRes.br.x;
-    document.querySelector("#setting__Maslow_brY_0").value = calRes.br.y;
-    document.querySelector("#setting__Maslow_tlX_0").value = calRes.tl.x;
-    document.querySelector("#setting__Maslow_tlY_0").value = calRes.tl.y;
-    document.querySelector("#setting__Maslow_trX_0").value = calRes.tr.x;
-    document.querySelector("#setting__Maslow_trY_0").value = calRes.tr.y;
-    document.querySelector("#setting__Maslow_blX_0").value = calRes.bl.x;
-    document.querySelector("#setting__Maslow_blY_0").value = calRes.bl.y;
+    document.querySelector("#setting__kinematics_MaslowKinematics_brX_0").value = calRes.br.x;
+    document.querySelector("#setting__kinematics_MaslowKinematics_brY_0").value = calRes.br.y;
+    document.querySelector("#setting__kinematics_MaslowKinematics_tlX_0").value = calRes.tl.x;
+    document.querySelector("#setting__kinematics_MaslowKinematics_tlY_0").value = calRes.tl.y;
+    document.querySelector("#setting__kinematics_MaslowKinematics_trX_0").value = calRes.tr.x;
+    document.querySelector("#setting__kinematics_MaslowKinematics_trY_0").value = calRes.tr.y;
+    document.querySelector("#setting__kinematics_MaslowKinematics_blX_0").value = calRes.bl.x;
+    document.querySelector("#setting__kinematics_MaslowKinematics_blY_0").value = calRes.bl.y;
   }
   // set calibration values if exists END
 }

@@ -581,14 +581,14 @@ function findMaxFitness(measurements) {
       messagesBox.scrollTop = messagesBox.scrollHeight;
 
       if (1 / bestGuess.fitness > acceptableCalibrationThreshold) {
-        sendCommand(`$/${M}_tlX= ${tlxStr}`);
-        sendCommand(`$/${M}_tlY= ${tlyStr}`);
-        sendCommand(`$/${M}_trX= ${trxStr}`);
-        sendCommand(`$/${M}_trY= ${tryStr}`);
-        sendCommand(`$/${M}_blX= ${blxStr}`);
-        sendCommand(`$/${M}_blY= ${blyStr}`);
-        sendCommand(`$/${M}_brX= ${brxStr}`);
-        sendCommand(`$/${M}_brY= ${bryStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/tlX=${tlxStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/tlY=${tlyStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/trX=${trxStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/trY=${tryStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/blX=${blxStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/blY=${blyStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/brX=${brxStr}`);
+        sendCommand(`$/kinematics/MaslowKinematics/brY=${bryStr}`);
 
         sendCalibrationEvent({
           good: true,

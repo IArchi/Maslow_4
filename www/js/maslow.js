@@ -10,11 +10,11 @@ let lastHeartBeatTime = new Date().getTime();
 
 const err = "error: ";
 // When we can change to proper ESM - prefix these const strings and functions with 'export' (minus the quotes of course)
-export const MaslowErrMsgKeyValueCantUse = `${err}Could not use supplied key-value pair.`;
-export const MaslowErrMsgNoKey = `${err}No key supplied for value.`;
-export const MaslowErrMsgNoValue = `${err}No value supplied for key.`;
-export const MaslowErrMsgNoMatchingKey = `${err}Could not find key for value in reference table.`;
-export const MaslowErrMsgKeyValueSuffix = "This is probably a programming error\nKey-Value pair supplied was:";
+const MaslowErrMsgKeyValueCantUse = `${err}Could not use supplied key-value pair.`;
+const MaslowErrMsgNoKey = `${err}No key supplied for value.`;
+const MaslowErrMsgNoValue = `${err}No value supplied for key.`;
+const MaslowErrMsgNoMatchingKey = `${err}Could not find key for value in reference table.`;
+const MaslowErrMsgKeyValueSuffix = "This is probably a programming error\nKey-Value pair supplied was:";
 
 /*
 * Updates the dynamic buttons to reflect the current state of the machine
@@ -330,7 +330,7 @@ const cfgDef = {
 /** Handle Maslow specific configuration messages
  * These would have all started with `$/Maslow_` which is expected to have been stripped away before calling this function
  */
-export const maslowMsgHandling = (msg) => {
+const maslowMsgHandling = (msg) => {
 	const keyValue = msg.split("=");
 	const errMsgSuffix = `${MaslowErrMsgKeyValueSuffix}${msg}`;
 	if (keyValue.length !== 2) {

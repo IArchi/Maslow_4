@@ -346,6 +346,11 @@ function tabletShowMessage(msg, collecting) {
 
   // let errMsg = "";
 
+  //Hide kinematics commands from being displayed in the user log
+  if (valueStartsWith(msg, ["$/kinematics"])) {
+    return; //We don't want to display these messages
+  }
+
   //These are used for populating the configuration popup
   if (valueStartsWith(msg, ["$/Maslow_", "$/maslow_"])) {
     errMsg = maslowMsgHandling(msg.substring(9));

@@ -810,15 +810,20 @@ function tabletInit() {
   }, 1000);
 }
 
-const showGCode = (gcode) => {
+const showGCode = (gcode, append = false) => {
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
     setValue("tablettab_gcode", "(No GCode loaded)");
     tpDisplayer().clear();
   } else {
-    setValue("tablettab_gcode", gcode);
+    if (append) {
+      const currentContent = getValue("tablettab_gcode") || "";
+      setValue("tablettab_gcode", currentContent + gcode);
+    } else {
+      setValue("tablettab_gcode", gcode);
+    }
     if (gCodeDisplayable) {
-      tpDisplayer().showToolpath(gcode, gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
     }
   }
 
@@ -880,9 +885,88 @@ function tabletLoadGCodeFile(path, size) {
     tpDisplayer().clear();
   } else {
     gCodeDisplayable = true;
-    fetch(encodeURIComponent(`SD${gCodeFilename}`))
-      .then((response) => response.text())
-      .then((gcode) => showGCode(gcode));
+    // Use sequential loading for files larger than 10KB for better user experience
+    if (size > 10000) {
+      tabletLoadGCodeFileSequentially(path);
+    } else {
+      fetch(encodeURIComponent(`SD${gCodeFilename}`))
+        .then((response) => response.text())
+        .then((gcode) => showGCode(gcode));
+    }
+  }
+}
+
+async function tabletLoadGCodeFileSequentially(path) {
+  try {
+    // Clear existing content and show loading message
+    showGCode("Loading GCode file...");
+    
+    const response = await fetch(encodeURIComponent(`SD${path}`));
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let lineCount = 0;
+    let isFirstChunk = true;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        // Process any remaining content in buffer
+        if (buffer.trim()) {
+          if (isFirstChunk) {
+            showGCode(buffer);
+            isFirstChunk = false;
+          } else {
+            showGCode(buffer, true);
+          }
+        }
+        break;
+      }
+      
+      // Decode the chunk and add to buffer
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+      
+      // Process complete lines
+      const lines = buffer.split('\n');
+      // Keep the last incomplete line in buffer
+      buffer = lines.pop() || "";
+      
+      if (lines.length > 0) {
+        lineCount += lines.length;
+        const content = lines.join('\n') + '\n';
+        
+        if (isFirstChunk) {
+          // Replace loading message with first chunk
+          showGCode(content);
+          isFirstChunk = false;
+        } else {
+          // Append subsequent chunks
+          showGCode(content, true);
+        }
+        
+        // Process in chunks of approximately 1000 lines for better UX
+        if (lineCount % 1000 === 0) {
+          // Add a small delay to allow UI to update and prevent blocking
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+    }
+    
+    // Update toolpath once loading is complete
+    if (gCodeDisplayable) {
+      const finalContent = getValue("tablettab_gcode");
+      tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
+    }
+    
+  } catch (error) {
+    console.error('Error loading GCode file:', error);
+    showGCode(`Error loading GCode file: ${error.message}`);
   }
 }
 

@@ -16,6 +16,7 @@ tp.strokeStyle = 'black';
 
 var cameraAngle = 0;
 
+// Default fallback values (will be replaced by actual configuration values)
 var tlX = -8.339;
 var tlY = 2209;
 var trX = 3505; 
@@ -24,6 +25,28 @@ var blX = 0;
 var blY = 0;
 var brX = 3505;
 var brY = 0;
+
+// Function to update anchor points from configuration
+function updateAnchorPointsFromConfig() {
+    if (globalThis.initialGuess) {
+        if (globalThis.initialGuess.tl) {
+            tlX = globalThis.initialGuess.tl.x || tlX;
+            tlY = globalThis.initialGuess.tl.y || tlY;
+        }
+        if (globalThis.initialGuess.tr) {
+            trX = globalThis.initialGuess.tr.x || trX;
+            trY = globalThis.initialGuess.tr.y || trY;
+        }
+        if (globalThis.initialGuess.bl) {
+            blX = globalThis.initialGuess.bl.x || blX;
+            blY = globalThis.initialGuess.bl.y || blY;
+        }
+        if (globalThis.initialGuess.br) {
+            brX = globalThis.initialGuess.br.x || brX;
+            brY = globalThis.initialGuess.br.y || brY;
+        }
+    }
+}
 
 //Draw buttons
 const tlC = document.getElementById("tlBtn").getContext("2d");
@@ -399,6 +422,9 @@ var drawMachineBounds = function() {
 
 var drawMachineBelts = function() {
     console.log("Draw belts");
+
+    // Update anchor points from current configuration
+    updateAnchorPointsFromConfig();
 
     const tl = projection({x: tlX - trX/2, y: tlY/2, z: 0});
     const tr = projection({x: trX/2, y: trY/2, z: 0});
@@ -856,6 +882,9 @@ ToolpathDisplayer.prototype.clear = function() {
 }
 
 ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPosition) {
+    // Update anchor points from current configuration before displaying
+    updateAnchorPointsFromConfig();
+    
     cameraAngle = cameraAngle;
 
     var drawBounds = false;

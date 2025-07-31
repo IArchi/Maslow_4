@@ -810,15 +810,20 @@ function tabletInit() {
   }, 1000);
 }
 
-const showGCode = (gcode) => {
+const showGCode = (gcode, append = false, updateToolpath = true) => {
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
     setValue("tablettab_gcode", "(No GCode loaded)");
     tpDisplayer().clear();
   } else {
-    setValue("tablettab_gcode", gcode);
-    if (gCodeDisplayable) {
-      tpDisplayer().showToolpath(gcode, gCodeModal, arrayToXYZ(WPOS));
+    if (append) {
+      const currentContent = getValue("tablettab_gcode") || "";
+      setValue("tablettab_gcode", currentContent + gcode);
+    } else {
+      setValue("tablettab_gcode", gcode);
+    }
+    if (gCodeDisplayable && updateToolpath) {
+      tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
     }
   }
 
@@ -880,9 +885,94 @@ function tabletLoadGCodeFile(path, size) {
     tpDisplayer().clear();
   } else {
     gCodeDisplayable = true;
-    fetch(encodeURIComponent(`SD${gCodeFilename}`))
-      .then((response) => response.text())
-      .then((gcode) => showGCode(gcode));
+    // Use sequential loading for files larger than 10KB for better user experience
+    if (size > 10000) {
+      tabletLoadGCodeFileSequentially(path);
+    } else {
+      fetch(encodeURIComponent(`SD${gCodeFilename}`))
+        .then((response) => response.text())
+        .then((gcode) => showGCode(gcode));
+    }
+  }
+}
+
+async function tabletLoadGCodeFileSequentially(path) {
+  try {
+    // Clear existing content and show loading message
+    showGCode("Loading GCode file...", false, false);
+    
+    const response = await fetch(encodeURIComponent(`SD${path}`));
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let lineCount = 0;
+    let chunkCount = 0;
+    let isFirstChunk = true;
+    const TOOLPATH_UPDATE_INTERVAL = 10; // Update toolpath every 10 chunks for progressive display
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        // Process any remaining content in buffer
+        if (buffer.trim()) {
+          if (isFirstChunk) {
+            showGCode(buffer, false, true);
+            isFirstChunk = false;
+          } else {
+            showGCode(buffer, true, true);
+          }
+        }
+        break;
+      }
+      
+      // Decode the chunk and add to buffer
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+      
+      // Process complete lines
+      const lines = buffer.split('\n');
+      // Keep the last incomplete line in buffer
+      buffer = lines.pop() || "";
+      
+      if (lines.length > 0) {
+        lineCount += lines.length;
+        chunkCount++;
+        const content = lines.join('\n') + '\n';
+        
+        // Determine if we should update toolpath for this chunk
+        const shouldUpdateToolpath = (chunkCount % TOOLPATH_UPDATE_INTERVAL === 0);
+        
+        if (isFirstChunk) {
+          // Replace loading message with first chunk and show initial toolpath
+          showGCode(content, false, true);
+          isFirstChunk = false;
+        } else {
+          // Append subsequent chunks with periodic toolpath updates
+          showGCode(content, true, shouldUpdateToolpath);
+        }
+        
+        // Process in chunks of approximately 1000 lines for better UX
+        if (lineCount % 1000 === 0) {
+          // Add a small delay to allow UI to update and prevent blocking
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+    }
+    
+    // Final toolpath update to ensure everything is displayed
+    if (gCodeDisplayable) {
+      const finalContent = getValue("tablettab_gcode");
+      tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
+    }
+    
+  } catch (error) {
+    console.error('Error loading GCode file:', error);
+    showGCode(`Error loading GCode file: ${error.message}`);
   }
 }
 

@@ -343,6 +343,12 @@ var drawTool = function(dpos) {
     pp = projection(dpos)
     toolX = xToPixel(pp.x)-toolRadius-2;
     toolY = yToPixel(pp.y)-toolRadius-2;
+    
+    // Validate coordinates before calling getImageData to prevent canvas errors
+    if (!isFinite(toolX) || !isFinite(toolY)) {
+        return; // Skip drawing if coordinates are invalid
+    }
+    
     toolSave = tp.getImageData(toolX, toolY, toolRectWH, toolRectWH);
 
     tp.beginPath();
@@ -944,7 +950,13 @@ const tpDisplayer = () => {
 
 /** Expects a simple array with 3 elements, and converts it to an xyz object */
 const arrayToXYZ = (arr) => {
-	return { x: arr[0], y: arr[1], z: arr[2] };
+	// Provide safe defaults if array is invalid or contains non-finite values
+	const safeArr = arr && Array.isArray(arr) ? arr : [0, 0, 0];
+	return { 
+		x: isFinite(safeArr[0]) ? safeArr[0] : 0, 
+		y: isFinite(safeArr[1]) ? safeArr[1] : 0, 
+		z: isFinite(safeArr[2]) ? safeArr[2] : 0 
+	};
 };
 
 const updateGcodeViewerAngle = () => {

@@ -910,7 +910,9 @@ async function tabletLoadGCodeFileSequentially(path) {
     const decoder = new TextDecoder();
     let buffer = "";
     let lineCount = 0;
+    let chunkCount = 0;
     let isFirstChunk = true;
+    const TOOLPATH_UPDATE_INTERVAL = 10; // Update toolpath every 10 chunks for progressive display
     
     while (true) {
       const { done, value } = await reader.read();
@@ -919,10 +921,10 @@ async function tabletLoadGCodeFileSequentially(path) {
         // Process any remaining content in buffer
         if (buffer.trim()) {
           if (isFirstChunk) {
-            showGCode(buffer, false, false);
+            showGCode(buffer, false, true);
             isFirstChunk = false;
           } else {
-            showGCode(buffer, true, false);
+            showGCode(buffer, true, true);
           }
         }
         break;
@@ -939,15 +941,19 @@ async function tabletLoadGCodeFileSequentially(path) {
       
       if (lines.length > 0) {
         lineCount += lines.length;
+        chunkCount++;
         const content = lines.join('\n') + '\n';
         
+        // Determine if we should update toolpath for this chunk
+        const shouldUpdateToolpath = (chunkCount % TOOLPATH_UPDATE_INTERVAL === 0);
+        
         if (isFirstChunk) {
-          // Replace loading message with first chunk
-          showGCode(content, false, false);
+          // Replace loading message with first chunk and show initial toolpath
+          showGCode(content, false, true);
           isFirstChunk = false;
         } else {
-          // Append subsequent chunks without updating toolpath
-          showGCode(content, true, false);
+          // Append subsequent chunks with periodic toolpath updates
+          showGCode(content, true, shouldUpdateToolpath);
         }
         
         // Process in chunks of approximately 1000 lines for better UX
@@ -958,7 +964,7 @@ async function tabletLoadGCodeFileSequentially(path) {
       }
     }
     
-    // Update toolpath once loading is complete
+    // Final toolpath update to ensure everything is displayed
     if (gCodeDisplayable) {
       const finalContent = getValue("tablettab_gcode");
       tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));

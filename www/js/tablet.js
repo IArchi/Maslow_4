@@ -810,7 +810,7 @@ function tabletInit() {
   }, 1000);
 }
 
-const showGCode = (gcode, append = false) => {
+const showGCode = (gcode, append = false, updateToolpath = true) => {
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
     setValue("tablettab_gcode", "(No GCode loaded)");
@@ -822,7 +822,7 @@ const showGCode = (gcode, append = false) => {
     } else {
       setValue("tablettab_gcode", gcode);
     }
-    if (gCodeDisplayable) {
+    if (gCodeDisplayable && updateToolpath) {
       tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
     }
   }
@@ -899,7 +899,7 @@ function tabletLoadGCodeFile(path, size) {
 async function tabletLoadGCodeFileSequentially(path) {
   try {
     // Clear existing content and show loading message
-    showGCode("Loading GCode file...");
+    showGCode("Loading GCode file...", false, false);
     
     const response = await fetch(encodeURIComponent(`SD${path}`));
     if (!response.ok) {
@@ -919,10 +919,10 @@ async function tabletLoadGCodeFileSequentially(path) {
         // Process any remaining content in buffer
         if (buffer.trim()) {
           if (isFirstChunk) {
-            showGCode(buffer);
+            showGCode(buffer, false, false);
             isFirstChunk = false;
           } else {
-            showGCode(buffer, true);
+            showGCode(buffer, true, false);
           }
         }
         break;
@@ -943,11 +943,11 @@ async function tabletLoadGCodeFileSequentially(path) {
         
         if (isFirstChunk) {
           // Replace loading message with first chunk
-          showGCode(content);
+          showGCode(content, false, false);
           isFirstChunk = false;
         } else {
-          // Append subsequent chunks
-          showGCode(content, true);
+          // Append subsequent chunks without updating toolpath
+          showGCode(content, true, false);
         }
         
         // Process in chunks of approximately 1000 lines for better UX

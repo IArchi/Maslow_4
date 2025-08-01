@@ -171,6 +171,12 @@ function initUI_4() {
 	display_boot_progress();
 	init_command_panel();
 	init_files_panel(false);
+	
+	// Ensure connection dialog is properly closed
+	if (typeof forceCloseConnectionDialog === "function") {
+		forceCloseConnectionDialog();
+	}
+	
 	//check if we need setup
 	if (target_firmware === "???") {
 		console.log("Launch Setup");

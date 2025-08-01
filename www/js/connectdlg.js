@@ -1,7 +1,16 @@
 // import conErr, displayBlock, displayInline, displayNone, id, closeModal, setactiveModal, showModal, SendGetHttp, logindlg, EventListenerSetup, startSocket,
 
+// Connection state to prevent multiple concurrent connection attempts
+let connectionInProgress = false;
+
 /** Connect Dialog */
 const connectdlg = (getFw = false) => {
+	// Prevent multiple concurrent connection attempts
+	if (connectionInProgress && getFw) {
+		console.log("Connection already in progress, skipping duplicate attempt");
+		return;
+	}
+
 	const modal = setactiveModal("connectdlg.html");
 	if (modal == null) {
 		return;
@@ -10,6 +19,7 @@ const connectdlg = (getFw = false) => {
 	showModal();
 
 	if (getFw) {
+		connectionInProgress = true;
 		retryconnect();
 	}
 };
@@ -97,6 +107,7 @@ const getFWdata = (response) => {
 };
 
 const connectfailed = (error_code, response) => {
+	connectionInProgress = false; // Clear connection state on failure
 	displayBlock("connectbtn");
 	displayBlock("failed_connect_msg");
 	displayNone("connecting_msg");
@@ -107,6 +118,7 @@ const connectfailed = (error_code, response) => {
 };
 
 const connectsuccess = (response) => {
+	connectionInProgress = false; // Clear connection state on success
 	if (getFWdata(response)) {
 		console.log(`FW identification:${response}`);
 		if (ESP3D_authentication) {
@@ -124,6 +136,7 @@ const connectsuccess = (response) => {
 };
 
 const retryconnect = () => {
+	connectionInProgress = true; // Set connection state when retrying
 	displayNone("connectbtn");
 	displayNone("failed_connect_msg");
 	displayBlock("connecting_msg");
@@ -132,4 +145,14 @@ const retryconnect = () => {
 
 	const cmd = buildHttpCommandCmd(httpCmdType.plain, "[ESP800]");
 	SendGetHttp(cmd, connectsuccess, connectfailed);
+};
+
+// Helper function to force close connection dialog if it's stuck
+const forceCloseConnectionDialog = () => {
+	const connectModal = id("connectdlg.html");
+	if (connectModal && connectModal.style.display !== "none") {
+		console.log("Force closing stuck connection dialog");
+		closeModal("Force closed");
+	}
+	connectionInProgress = false;
 };

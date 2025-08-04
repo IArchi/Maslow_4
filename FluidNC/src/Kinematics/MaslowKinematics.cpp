@@ -52,7 +52,6 @@ namespace Kinematics {
     static MaslowKinematics* g_maslowKinematics = nullptr;
     
     void MaslowKinematics::init() {
-        log_info("Kinematic system: " << name());
         calculateCenter();
         g_maslowKinematics = this;  // Set global pointer for access
         init_position();
@@ -73,7 +72,7 @@ namespace Kinematics {
         _centerX = (_brY - (B * _brX) + (A * _trX) - _trY) / (A - B);
         _centerY = A * (_centerX - _trX) + _trY;
         
-        log_info("Maslow center calculated: X=" << _centerX << " Y=" << _centerY);
+        //log_info("Maslow center calculated: X=" << _centerX << " Y=" << _centerY);
     }
 
     bool MaslowKinematics::cartesian_to_motors(float* target, plan_line_data_t* pl_data, float* position) {
@@ -98,7 +97,6 @@ namespace Kinematics {
         // Only segment if we're not already in a segmentation to prevent recursion
         // Apply to both feed moves and rapid moves to ensure consistent belt tension
         if (!_isSegmenting && !is_z_only_move && cartesian_distance > _maxSegmentLength) {
-            log_info("MaslowKinematics: Segmenting long move of " << cartesian_distance << "mm into smaller segments");
             
             // For very long moves, use smaller segments to minimize belt slack
             // Adaptive segmentation: longer moves need smaller segments due to increased kinematic non-linearity
@@ -115,7 +113,6 @@ namespace Kinematics {
             uint16_t segments = uint16_t(ceilf(cartesian_distance / effectiveSegmentLength));
             
             if (segments > 1 && segments <= 1000) { // Increased limit for better belt synchronization
-                log_info("MaslowKinematics: Breaking move into " << segments << " segments (effective length: " << effectiveSegmentLength << "mm)");
                 // Set flag to prevent recursion
                 _isSegmenting = true;
                 
@@ -251,12 +248,6 @@ namespace Kinematics {
         if (computeXYfromBeltLengths(tlXYDistance, trXYDistance, x, y)) {
             cartesian[X_AXIS] = x;
             cartesian[Y_AXIS] = y;
-            
-            static int debug_count = 0;
-            if (debug_count < 5) {
-                log_info("motors_to_cartesian: TL=" << tlBeltLength << " TR=" << trBeltLength << " -> X=" << x << " Y=" << y);
-                debug_count++;
-            }
         } else {
             // If we can't solve the kinematics, fall back to (0,0)
             // This can happen if belt lengths are inconsistent
@@ -327,12 +318,6 @@ namespace Kinematics {
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
         float length = sqrt(XYBeltLength * XYBeltLength + c * c); // Get the angled belt length
-
-        static int tl_debug_count = 0;
-        if (tl_debug_count < 5) {
-            log_info("computeTL: input(" << orig_x << "," << orig_y << "," << z << ") -> frame(" << x << "," << y << ") -> length=" << length);
-            tl_debug_count++;
-        }
 
         return length;
     }
@@ -463,10 +448,6 @@ namespace Kinematics {
         
         // Recalculate center coordinates
         calculateCenter();
-        
-        log_info("Frame size updated to: " << frameSize << " x " << frameSize);
-        log_info("Anchor points updated - TL: (" << _tlX << "," << _tlY << "), TR: (" << _trX << "," << _trY << 
-                "), BL: (" << _blX << "," << _blY << "), BR: (" << _brX << "," << _brY << ")");
     }
 
     void MaslowKinematics::updateAnchorCoordinates(float tlX, float tlY, float tlZ, 

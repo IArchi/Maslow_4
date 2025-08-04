@@ -1325,24 +1325,38 @@ function processTabletFileDelete(answer) {
     filename: gCodeFilename.split('/').pop() // Get just the filename without path
   });
   
+  console.log("Sending delete command:", cmd);
+  console.log("Current path:", files_currentPath());
+  console.log("Full gCodeFilename:", gCodeFilename);
+  console.log("Extracted filename:", gCodeFilename.split('/').pop());
+  
   SendGetHttp(cmd, tabletFileDeleteSuccess, tabletFileDeleteFailed);
 }
 
 function tabletFileDeleteSuccess(response) {
-  // Clear the selected file
+  console.log("Delete success response:", response);
+  
+  // Remember the deleted file name for logging
+  const deletedFile = gCodeFilename;
+  
+  // Clear the selected file and reset dropdown
   gCodeFilename = "";
   showGCode(""); // Clear the GCode display
   
-  // Refresh the file list
+  // Reset the dropdown to the first option immediately
+  const filelist = id("filelist");
+  if (filelist) {
+    filelist.selectedIndex = 0;
+  }
+  
+  addMessage("File deleted successfully: " + deletedFile.split('/').pop());
+  
+  // Refresh the file list - this will automatically call updateDeleteButtonState()
   tabletGetFileList(files_currentPath());
-  
-  // Update delete button state
-  updateDeleteButtonState();
-  
-  addMessage("File deleted successfully");
 }
 
 function tabletFileDeleteFailed(error_code, response) {
+  console.log("Delete failed:", error_code, response);
   addMessage("Failed to delete file: " + (response || "Unknown error"));
 }
 

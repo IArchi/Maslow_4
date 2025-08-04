@@ -388,6 +388,7 @@ function addOption(selector, name, value, isDisabled, isSelected) {
 }
 
 const populateTabletFileSelector = (files, path) => {
+	console.log("populateTabletFileSelector called with:", files, path);
 	const selector = id("filelist");
 	if (!selector) {
 		return;
@@ -458,6 +459,7 @@ const files_list_success = (response_text) => {
 		files_list_failed(406, translate_text_item("Wrong data", true));
 		return;
 	}
+	console.log("files_list_success received response:", response);
 	populateTabletFileSelector(response);
 	files_file_list = [];
 	if (Array.isArray(response.files)) {

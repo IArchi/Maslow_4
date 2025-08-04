@@ -663,7 +663,8 @@ let gCodeFilename = '';
 function tabletGetFileList(tabPath) {
   // Clear/reset the gCodeFilename
   gCodeFilename = "";
-  const cmd = buildHttpFileCmd({ path: tabPath });
+  const cmd = buildHttpFileCmd({ path: tabPath, _t: Date.now() }); // Add cache-busting timestamp
+  console.log("Refreshing file list with command:", cmd);
   SendGetHttp(cmd, files_list_success);
 }
 
@@ -1318,6 +1319,14 @@ function processTabletFileDelete(answer) {
     return;
   }
   
+  // Disable the delete button immediately to prevent multiple clicks
+  const deleteBtn = id("tablettab_gcode_delete");
+  if (deleteBtn) {
+    deleteBtn.style.opacity = "0.5";
+    deleteBtn.style.pointerEvents = "none";
+    deleteBtn.setAttribute("disabled", "true");
+  }
+  
   // Build the delete command using the same pattern as SPIFFS
   const cmd = buildHttpFilesCmd({ 
     action: "delete", 
@@ -1351,12 +1360,24 @@ function tabletFileDeleteSuccess(response) {
   
   addMessage("File deleted successfully: " + deletedFile.split('/').pop());
   
-  // Refresh the file list - this will automatically call updateDeleteButtonState()
-  tabletGetFileList(files_currentPath());
+  // Wait a short moment for server-side cleanup, then refresh the file list
+  setTimeout(() => {
+    console.log("Refreshing file list after delete...");
+    tabletGetFileList(files_currentPath());
+  }, 500); // 500ms delay to ensure server-side delete completes
 }
 
 function tabletFileDeleteFailed(error_code, response) {
   console.log("Delete failed:", error_code, response);
+  
+  // Re-enable the delete button
+  const deleteBtn = id("tablettab_gcode_delete");
+  if (deleteBtn && gCodeFilename) {
+    deleteBtn.style.opacity = "1";
+    deleteBtn.style.pointerEvents = "auto";
+    deleteBtn.removeAttribute("disabled");
+  }
+  
   addMessage("Failed to delete file: " + (response || "Unknown error"));
 }
 

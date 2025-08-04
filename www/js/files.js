@@ -399,6 +399,10 @@ const populateTabletFileSelector = (files, path) => {
 
 	if (!files.length) {
 		addOption(selector, "No files found", -3, true, selectedFile === "");
+		// Update delete button state after populating file list
+		if (typeof updateDeleteButtonState === 'function') {
+			updateDeleteButtonState();
+		}
 		return;
 	}
 	const inRoot = path === "/";
@@ -429,6 +433,11 @@ const populateTabletFileSelector = (files, path) => {
 			addOption(selector, `${file.name}/`, index, false, false);
 		}
 	});
+	
+	// Update delete button state after populating file list
+	if (typeof updateDeleteButtonState === 'function') {
+		updateDeleteButtonState();
+	}
 };
 
 const files_list_success = (response_text) => {

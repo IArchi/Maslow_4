@@ -661,10 +661,8 @@ function tabletGrblState(grbl, response) {
 let gCodeFilename = '';
 
 function tabletGetFileList(tabPath) {
-  // Clear/reset the gCodeFilename
-  gCodeFilename = "";
-  const cmd = buildHttpFileCmd({ path: tabPath, _t: Date.now() }); // Add cache-busting timestamp
-  SendGetHttp(cmd, files_list_success);
+  // Use the standard files_refreshFiles function instead of custom implementation
+  files_refreshFiles(tabPath);
 }
 
 const tabletDOMActivate = () => {
@@ -1326,10 +1324,9 @@ function processTabletFileDelete(answer) {
     deleteBtn.setAttribute("disabled", "true");
   }
   
-  // Build the delete command using the same pattern as SPIFFS
-  const cmd = buildHttpFilesCmd({ 
+  // Build the delete command using the same pattern as files.js
+  const cmd = buildHttpFileCmd({ 
     action: "delete", 
-    path: files_currentPath(), 
     filename: gCodeFilename.split('/').pop() // Get just the filename without path
   });
   

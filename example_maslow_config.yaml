@@ -42,7 +42,6 @@ kinematics:
 # - A 100mm diagonal move gets broken into ~29 segments at 5mm setting
 # - Each segment adds minimal computation overhead
 # - Total performance impact is typically negligible for most use cases
-# - Moves longer than this distance will be automatically broken into smaller segments
 # - Each segment recalculates correct belt lengths, preventing slack during long moves  
 # - This fixes the belt tension issue during long diagonal moves
 # - Only affects XY moves; Z-only moves and rapid motions are unaffected

@@ -182,38 +182,8 @@ namespace Kinematics {
         float motors[n_axis];
         transform_cartesian_to_motors(motors, target);
 
-        if (!pl_data->motion.rapidMotion && cartesian_distance > 0) {
-            if (is_z_only_move) {
-                // For Z-only moves: Scale feed rate by Z motor movement ratio
-                // The Z motor moves directly with cartesian Z, so ratio should be 1:1,
-                // but we need to account for the fact that FluidNC's motion planning
-                // expects proper feed rate scaling for all motor movements
-                float last_motors[n_axis];
-                transform_cartesian_to_motors(last_motors, position);
-                
-                // For Z-only moves, only consider the Z motor distance
-                float z_motor_distance = fabs(motors[4] - last_motors[4]); // Z is at index 4
-                float z_cartesian_distance = fabs(target[Z_AXIS] - position[Z_AXIS]);
-                
-                if (z_cartesian_distance > 0) {
-                    pl_data->feed_rate = pl_data->feed_rate * z_motor_distance / z_cartesian_distance;
-                }
-            } else {
-                // For X/Y moves or combined moves: Scale feed rate by motor/cartesian ratio
-                // This accounts for the fact that belt movements are longer than cartesian movements
-                // and ensures the actual belt speed matches the programmed feed rate
-                float last_motors[n_axis];
-                transform_cartesian_to_motors(last_motors, position);
-                
-                // Calculate distance considering all belt motors for proper feed rate scaling
-                float motor_distance = vector_distance(motors, last_motors, n_axis);
-                float current_cartesian_distance = vector_distance(target, position, 3);
-                
-                if (current_cartesian_distance > 0) {
-                    pl_data->feed_rate = pl_data->feed_rate * motor_distance / current_cartesian_distance;
-                }
-            }
-        }
+        // Feedrate scaling removed: feedrate now stays in XY coordinates
+        // The machine will move at the set feedrate in XY coordinates rather than scaling to belt space
 
         return mc_move_motors(motors, pl_data);
     }

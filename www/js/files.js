@@ -399,6 +399,10 @@ const populateTabletFileSelector = (files, path) => {
 
 	if (!files.length) {
 		addOption(selector, "No files found", -3, true, selectedFile === "");
+		// Update delete button state after populating file list
+		if (typeof updateDeleteButtonState === 'function') {
+			updateDeleteButtonState();
+		}
 		return;
 	}
 	const inRoot = path === "/";
@@ -429,6 +433,11 @@ const populateTabletFileSelector = (files, path) => {
 			addOption(selector, `${file.name}/`, index, false, false);
 		}
 	});
+	
+	// Update delete button state after populating file list
+	if (typeof updateDeleteButtonState === 'function') {
+		updateDeleteButtonState();
+	}
 };
 
 const files_list_success = (response_text) => {
@@ -449,7 +458,7 @@ const files_list_success = (response_text) => {
 		files_list_failed(406, translate_text_item("Wrong data", true));
 		return;
 	}
-	populateTabletFileSelector(response);
+	// Process files first to build files_file_list
 	files_file_list = [];
 	if (Array.isArray(response.files)) {
 		for (let i = 0; i < response.files.length; i++) {
@@ -467,6 +476,9 @@ const files_list_success = (response_text) => {
 		}
 	}
 	files_file_list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+	
+	// Now populate the tablet file selector with the processed file list
+	populateTabletFileSelector(files_file_list, files_currentPath());
 	let vtotal = "-1";
 	let vused = "-1";
 	let voccupation = "-1";

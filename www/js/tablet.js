@@ -660,12 +660,7 @@ function tabletGrblState(grbl, response) {
 
 let gCodeFilename = '';
 
-function tabletGetFileList(tabPath) {
-  // Clear/reset the gCodeFilename
-  gCodeFilename = "";
-  const cmd = buildHttpFileCmd({ path: tabPath });
-  SendGetHttp(cmd, files_list_success);
-}
+
 
 const tabletDOMActivate = () => {
   fullscreenIfMobile();
@@ -732,7 +727,7 @@ function tabletInit() {
     SendPrinterCommand("$SS");
     // get maslow info
     SendPrinterCommand("$MINFO");
-    tabletGetFileList("/");
+    files_refreshFiles("/");
     requestModes();
     loadConfigValues();
     loadCornerValues();
@@ -779,6 +774,7 @@ function tabletInit() {
     // Controls - Fifth Row
     id("filelist").addEventListener("change", selectFile);
     id("tablettab_gcode_upload").addEventListener("click", files_select_upload);
+    id("tablettab_gcode_delete").addEventListener("click", tabletDeleteGCodeFile);
 
     // Buttons - Sixth Row
     id("tablettab_gcode_play").addEventListener("click", doPlayButton);
@@ -982,16 +978,19 @@ function selectFile() {
   const index = Number(filelist.options[filelist.selectedIndex].value);
   if (index === -3) {
     // No files
+    updateDeleteButtonState();
     return;
   }
   if (index === -2) {
     // Blank entry selected
+    updateDeleteButtonState();
     return;
   }
   if (index === -1) {
     // Go up
     gCodeFilename = "";
     files_go_levelup()
+    updateDeleteButtonState();
     return
   }
   const file = files_file_list[index];
@@ -1002,6 +1001,7 @@ function selectFile() {
   } else {
     tabletLoadGCodeFile(`${files_currentPath()}${filename}`, file.size);
   }
+  updateDeleteButtonState();
 }
 // function toggleDropdown() {
 //   id("tablet-dropdown-menu").classList.toggle("show");
@@ -1283,3 +1283,100 @@ const onCalibrationButtonsClick = async (command, msg = "") => {
 }
 
 /* Calibration modal END */
+
+// File deletion functionality
+function tabletDeleteGCodeFile() {
+  const filelist = id("filelist");
+  const selectedIndex = filelist.selectedIndex;
+  
+  if (selectedIndex <= 0 || !gCodeFilename) {
+    return; // No file selected or invalid selection
+  }
+  
+  const selectedOption = filelist.options[selectedIndex];
+  const filename = selectedOption.text;
+  
+  // Show confirmation dialog (using the same pattern as SPIFFS dialog)
+  confirmdlg(
+    translate_text_item("Please Confirm"), 
+    translate_text_item("Confirm deletion of file: ") + filename, 
+    processTabletFileDelete
+  );
+}
+
+function processTabletFileDelete(answer) {
+  if (answer !== "yes") {
+    return;
+  }
+  
+  if (!gCodeFilename) {
+    return;
+  }
+  
+  // Disable the delete button immediately to prevent multiple clicks
+  const deleteBtn = id("tablettab_gcode_delete");
+  if (deleteBtn) {
+    deleteBtn.style.opacity = "0.5";
+    deleteBtn.style.pointerEvents = "none";
+    deleteBtn.setAttribute("disabled", "true");
+  }
+  
+  // Build the delete command using the same pattern as files.js
+  const cmd = buildHttpFileCmd({ 
+    action: "delete", 
+    filename: gCodeFilename.split('/').pop() // Get just the filename without path
+  });
+  
+  SendGetHttp(cmd, tabletFileDeleteSuccess, tabletFileDeleteFailed);
+}
+
+function tabletFileDeleteSuccess(response) {
+  // Remember the deleted file name for logging
+  const deletedFile = gCodeFilename;
+  
+  // Clear the selected file and reset dropdown
+  gCodeFilename = "";
+  showGCode(""); // Clear the GCode display
+  
+  // Reset the dropdown to the first option immediately
+  const filelist = id("filelist");
+  if (filelist) {
+    filelist.selectedIndex = 0;
+  }
+  
+  addMessage("File deleted successfully: " + deletedFile.split('/').pop());
+  
+  // Wait a short moment for server-side cleanup, then refresh the file list
+  setTimeout(() => {
+    files_refreshFiles(files_currentPath());
+  }, 500); // 500ms delay to ensure server-side delete completes
+}
+
+function tabletFileDeleteFailed(error_code, response) {
+  // Re-enable the delete button
+  const deleteBtn = id("tablettab_gcode_delete");
+  if (deleteBtn && gCodeFilename) {
+    deleteBtn.style.opacity = "1";
+    deleteBtn.style.pointerEvents = "auto";
+    deleteBtn.removeAttribute("disabled");
+  }
+  
+  addMessage("Failed to delete file: " + (response || "Unknown error"));
+}
+
+function updateDeleteButtonState() {
+  const filelist = id("filelist");
+  const deleteBtn = id("tablettab_gcode_delete");
+  const selectedIndex = filelist.selectedIndex;
+  
+  // Enable delete button only if a valid file is selected (not "Load File..." or directory)
+  if (selectedIndex > 0 && gCodeFilename) {
+    deleteBtn.style.opacity = "1";
+    deleteBtn.style.pointerEvents = "auto";
+    deleteBtn.removeAttribute("disabled");
+  } else {
+    deleteBtn.style.opacity = "0.5";
+    deleteBtn.style.pointerEvents = "none";
+    deleteBtn.setAttribute("disabled", "true");
+  }
+}

@@ -1354,7 +1354,7 @@ function tabletFileDeleteSuccess(response) {
   
   // Wait a short moment for server-side cleanup, then refresh the file list
   setTimeout(() => {
-    tabletGetFileList(files_currentPath());
+    files_refreshFiles(files_currentPath());
   }, 500); // 500ms delay to ensure server-side delete completes
 }
 

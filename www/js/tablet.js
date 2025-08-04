@@ -664,7 +664,6 @@ function tabletGetFileList(tabPath) {
   // Clear/reset the gCodeFilename
   gCodeFilename = "";
   const cmd = buildHttpFileCmd({ path: tabPath, _t: Date.now() }); // Add cache-busting timestamp
-  console.log("Refreshing file list with command:", cmd);
   SendGetHttp(cmd, files_list_success);
 }
 
@@ -1334,17 +1333,10 @@ function processTabletFileDelete(answer) {
     filename: gCodeFilename.split('/').pop() // Get just the filename without path
   });
   
-  console.log("Sending delete command:", cmd);
-  console.log("Current path:", files_currentPath());
-  console.log("Full gCodeFilename:", gCodeFilename);
-  console.log("Extracted filename:", gCodeFilename.split('/').pop());
-  
   SendGetHttp(cmd, tabletFileDeleteSuccess, tabletFileDeleteFailed);
 }
 
 function tabletFileDeleteSuccess(response) {
-  console.log("Delete success response:", response);
-  
   // Remember the deleted file name for logging
   const deletedFile = gCodeFilename;
   
@@ -1362,14 +1354,11 @@ function tabletFileDeleteSuccess(response) {
   
   // Wait a short moment for server-side cleanup, then refresh the file list
   setTimeout(() => {
-    console.log("Refreshing file list after delete...");
     tabletGetFileList(files_currentPath());
   }, 500); // 500ms delay to ensure server-side delete completes
 }
 
 function tabletFileDeleteFailed(error_code, response) {
-  console.log("Delete failed:", error_code, response);
-  
   // Re-enable the delete button
   const deleteBtn = id("tablettab_gcode_delete");
   if (deleteBtn && gCodeFilename) {

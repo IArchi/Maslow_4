@@ -660,10 +660,7 @@ function tabletGrblState(grbl, response) {
 
 let gCodeFilename = '';
 
-function tabletGetFileList(tabPath) {
-  // Use the standard files_refreshFiles function instead of custom implementation
-  files_refreshFiles(tabPath);
-}
+
 
 const tabletDOMActivate = () => {
   fullscreenIfMobile();
@@ -730,7 +727,7 @@ function tabletInit() {
     SendPrinterCommand("$SS");
     // get maslow info
     SendPrinterCommand("$MINFO");
-    tabletGetFileList("/");
+    files_refreshFiles("/");
     requestModes();
     loadConfigValues();
     loadCornerValues();

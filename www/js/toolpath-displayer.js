@@ -996,7 +996,7 @@ const updateGcodeViewerAngle = () => {
 canvas.addEventListener("mouseup", updateGcodeViewerAngle); 
 var refreshGcode = function() {
     const gcode = getValue("tablettab_gcode");
-    tpDisplayer().showToolpath(gcode, WPOS, MPOS, cameraAngle);
+    tpDisplayer().showToolpath(gcode, gCodeModal, arrayToXYZ(WPOS));
 }
 
 // document.getElementById("small-toolpath").addEventListener("mouseup", updateGcodeViewerAngle); 

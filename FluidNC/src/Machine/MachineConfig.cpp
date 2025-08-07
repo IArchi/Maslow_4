@@ -156,7 +156,7 @@ namespace Machine {
         }
 
         // Synchronize machine-level material thickness parameters with MaslowKinematics
-        auto maslowKinematics = Kinematics::getMaslowKinematics();
+        auto maslowKinematics = ::Kinematics::getMaslowKinematics();
         if (maslowKinematics != nullptr) {
             maslowKinematics->setSpoilboardThickness(_tempSpoilboardThickness);
             maslowKinematics->setWorkThickness(_tempWorkThickness);

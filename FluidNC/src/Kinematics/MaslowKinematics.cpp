@@ -250,8 +250,7 @@ namespace Kinematics {
 
         // Check if belts are ready to cut - if not, don't compute belt movements
         // This allows the Z-axis to move independently when belts are not calibrated
-        // EXCEPTION: Always compute belt movements during segmentation to maintain belt synchronization
-        if (Maslow.calibration.currentState == READY_TO_CUT || _isSegmenting) {
+        if (Maslow.calibration.currentState == READY_TO_CUT) {
             // Compute belt lengths for each corner and assign to correct axis
             motors[0] = computeTL(x, y, z);  // Top Left -> A axis
             motors[1] = computeTR(x, y, z);  // Top Right -> B axis

@@ -156,3 +156,29 @@ const forceCloseConnectionDialog = () => {
 	}
 	connectionInProgress = false;
 };
+
+// Handle visibility change to fix stuck connection dialog when tab doesn't have focus
+const handleVisibilityChange = () => {
+	// Only act when tab becomes visible again
+	if (!document.hidden) {
+		// Small delay to allow any pending operations to complete
+		setTimeout(() => {
+			const connectModal = id("connectdlg.html");
+			// Check if connection dialog is still showing but connection is no longer in progress
+			// and main UI is already loaded (indicating successful connection)
+			if (connectModal && 
+				connectModal.style.display !== "none" && 
+				!connectionInProgress && 
+				id("main_ui") && 
+				!id("main_ui").classList.contains("hide_it")) {
+				console.log("Tab regained focus - force closing stuck connection dialog");
+				forceCloseConnectionDialog();
+			}
+		}, 100);
+	}
+};
+
+// Set up the visibility change listener when the page loads
+if (typeof document !== "undefined") {
+	document.addEventListener("visibilitychange", handleVisibilityChange);
+}

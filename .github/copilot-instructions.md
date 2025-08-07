@@ -2,6 +2,8 @@
 
 FluidNC is a CNC firmware optimized for ESP32 controllers. It's the next generation of firmware from the creators of Grbl_ESP32, featuring a built-in web UI and the flexibility to operate a wide variety of machine types including laser/spindle combinations and tool changers.
 
+This project is a fork from the original FluidNC project specifically for Maslow CNC machines. It is not important to maintain compatability with other kinds of machines, this fork is specific to Maslow CNC type machines. 
+
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
 ## Working Effectively

@@ -98,19 +98,19 @@ namespace Kinematics {
         // Apply to both feed moves and rapid moves to ensure consistent belt tension
         if (!_isSegmenting && !is_z_only_move && cartesian_distance > _maxSegmentLength) {
             
-            // For very long moves, use smaller segments to minimize belt slack
-            // Adaptive segmentation: longer moves need smaller segments due to increased kinematic non-linearity
-            float effectiveSegmentLength = _maxSegmentLength;
-            if (cartesian_distance > 100.0f) {
-                // For moves longer than 100mm, progressively smaller segments
-                // Formula: smaller segments for longer moves to minimize non-linear interpolation errors
-                float scaleFactor = 100.0f / cartesian_distance; // Gets smaller as distance increases
-                effectiveSegmentLength = _maxSegmentLength * scaleFactor;
-                effectiveSegmentLength = std::max(effectiveSegmentLength, 1.0f); // Minimum 1mm segments
-            }
+            // Calculate initial segments using base segment length
+            uint16_t segments = uint16_t(ceilf(cartesian_distance / _maxSegmentLength));
             
-            // Calculate number of segments needed with adaptive length
-            uint16_t segments = uint16_t(ceilf(cartesian_distance / effectiveSegmentLength));
+            // For very long moves, ensure we don't exceed segment limit while maintaining reasonable segmentation
+            if (segments > 1000) {
+                // Cap at 1000 segments and adjust segment length accordingly
+                segments = 1000;
+            } else if (cartesian_distance > 100.0f && segments > 100) {
+                // For long moves (>100mm), use finer segmentation to minimize belt slack
+                // but ensure we don't create an excessive number of segments
+                uint16_t desiredSegments = std::min(uint16_t(cartesian_distance / 2.0f), uint16_t(1000));
+                segments = std::max(segments, desiredSegments);
+            }
             
             if (segments > 1 && segments <= 1000) { // Increased limit for better belt synchronization
                 // Set flag to prevent recursion

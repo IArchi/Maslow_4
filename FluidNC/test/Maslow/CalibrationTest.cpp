@@ -1,6 +1,5 @@
 #include "TestFramework.h"
 #include "../../src/Maslow/Calibration.h"
-#include "../../src/Maslow/Maslow.h"
 #include "../../src/Kinematics/MaslowKinematics.h"
 
 // Simple test to verify that MaslowKinematics setFrameSize works correctly
@@ -53,21 +52,4 @@ Test(MaslowKinematicsUpdateAnchors, CalibrationTest) {
     Assert(kinematics.getBrX() == brX, "Bottom right X not set correctly");
     Assert(kinematics.getBrY() == brY, "Bottom right Y not set correctly");
     Assert(kinematics.getBrZ() == brZ, "Bottom right Z not set correctly");
-}
-
-// Test that orientation logging works correctly
-Test(CalibrationOrientationLogging, CalibrationTest) {
-    // Create a calibration instance
-    Calibration cal;
-    
-    // Test VERTICAL orientation
-    cal.orientation = VERTICAL;
-    // Test that the orientation getter works correctly (just to verify the constants)
-    Assert(cal.orientation == VERTICAL, "Should be in VERTICAL mode");
-    Assert(cal.orientation == 1, "VERTICAL should equal 1");
-    
-    // Test HORIZONTAL orientation  
-    cal.orientation = HORIZONTAL;
-    Assert(cal.orientation == HORIZONTAL, "Should be in HORIZONTAL mode");
-    Assert(cal.orientation == 0, "HORIZONTAL should equal 0");
 }

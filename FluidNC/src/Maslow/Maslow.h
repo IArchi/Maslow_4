@@ -188,6 +188,10 @@ public:
     double y;
     float scaleX = 1.0;
     float scaleY = 1.0;
+    
+    // Material thickness parameters for kinematics calculations
+    float spoilboardThickness = 0.0f;  // Spoilboard thickness (mm) added to anchor heights
+    float workThickness = 0.0f;        // Work piece thickness (mm) added to anchor heights
 
     bool   test = false;
 

@@ -5,6 +5,7 @@
 #include "MachineConfig.h"
 
 #include "../Kinematics/Kinematics.h"
+#include "../Kinematics/MaslowKinematics.h"
 
 #include "../Motors/MotorDriver.h"
 #include "../Motors/NullMotor.h"
@@ -106,6 +107,8 @@ namespace Machine {
 
         handler.item(M+"_Scale_X", Maslow.scaleX, .8, 1.2);
         handler.item(M+"_Scale_Y", Maslow.scaleY, .8, 1.2);
+        handler.item(M+"_spoilboardThickness", Maslow.spoilboardThickness, 0.0, 50.0);
+        handler.item(M+"_workThickness", Maslow.workThickness, 0.0, 50.0);
     }
 
     void MachineConfig::afterParse() {
@@ -148,6 +151,13 @@ namespace Machine {
             log_config_error(M+" M4 expects the 'stepping' section to be defined in the file or the default config");
             // The following is NOT expected to yield the correct result for the M4
             _stepping = new Stepping();
+        }
+        
+        // Synchronize Maslow thickness parameters with MaslowKinematics
+        auto maslowKinematics = Kinematics::getMaslowKinematics();
+        if (maslowKinematics != nullptr) {
+            maslowKinematics->setSpoilboardThickness(Maslow.spoilboardThickness);
+            maslowKinematics->setWorkThickness(Maslow.workThickness);
         }
 
         // We do not auto-create an I2SO bus config node
@@ -204,6 +214,8 @@ namespace Machine {
     const std::string dcM4ZAxis = M+"_tlZ: 100\n"+M+"_trZ: 56\n"+M+"_blZ: 34\n"+M+"_brZ: 78\n";
 
     const std::string dcM4CurrentThreshold = M+"_Retract_Current_Threshold: 1300\n"+M+"_Calibration_Current_Threshold: 1500\n"+M+"_Acceptable_Calibration_Threshold: 0.5\n";
+    
+    const std::string dcM4Thickness = M+"_spoilboardThickness: 0.0\n"+M+"_workThickness: 0.0\n";
 
     const std::string dcSpi = "spi:\n  miso_pin: gpio.13\n  mosi_pin: gpio.11\n  sck_pin: gpio.12\n";
     const std::string dcSDCard = "sdcard:\n  card_detect_pin: NO_PIN\n  cs_pin: gpio.10\n";
@@ -220,7 +232,7 @@ namespace Machine {
     const std::string defaultConfig =
         dcBoard +
         // Maslow M4 default items
-        dcM4Vert + dcM4CalibrationGrid + dcM4Anchors + dcM4ZAxis + dcM4CurrentThreshold +
+        dcM4Vert + dcM4CalibrationGrid + dcM4Anchors + dcM4ZAxis + dcM4CurrentThreshold + dcM4Thickness +
         // Default sections
         dcSpi + dcSDCard + dcStepping + dcUart1 + 
         "axes:\n"

@@ -107,8 +107,10 @@ namespace Machine {
 
         handler.item(M+"_Scale_X", Maslow.scaleX, .8, 1.2);
         handler.item(M+"_Scale_Y", Maslow.scaleY, .8, 1.2);
-        handler.item(M+"_spoilboardThickness", Maslow.spoilboardThickness, 0.0, 50.0);
-        handler.item(M+"_workThickness", Maslow.workThickness, 0.0, 50.0);
+        
+        // Material thickness parameters - temporary storage for machine-level config
+        handler.item(M+"_spoilboardThickness", _tempSpoilboardThickness, 0.0, 50.0);
+        handler.item(M+"_workThickness", _tempWorkThickness, 0.0, 50.0);
     }
 
     void MachineConfig::afterParse() {
@@ -152,12 +154,12 @@ namespace Machine {
             // The following is NOT expected to yield the correct result for the M4
             _stepping = new Stepping();
         }
-        
-        // Synchronize Maslow thickness parameters with MaslowKinematics
+
+        // Synchronize machine-level material thickness parameters with MaslowKinematics
         auto maslowKinematics = Kinematics::getMaslowKinematics();
         if (maslowKinematics != nullptr) {
-            maslowKinematics->setSpoilboardThickness(Maslow.spoilboardThickness);
-            maslowKinematics->setWorkThickness(Maslow.workThickness);
+            maslowKinematics->setSpoilboardThickness(_tempSpoilboardThickness);
+            maslowKinematics->setWorkThickness(_tempWorkThickness);
         }
 
         // We do not auto-create an I2SO bus config node

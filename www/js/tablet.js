@@ -435,9 +435,62 @@ function setButton(name, isEnabled, color, text) {
   button.innerText = text;
 }
 
+function drawPlayButton(state, color) {
+  const playBtn = document.getElementById("playBtn");
+  if (!playBtn) return;
+  
+  const playC = playBtn.getContext("2d");
+  
+  // Clear and set background
+  playC.fillStyle = color;
+  playC.fillRect(0, 0, 500, 500);
+  
+  // Set drawing properties
+  playC.strokeStyle = 'white';
+  playC.fillStyle = 'white';
+  playC.lineWidth = 1;
+  playC.lineCap = 'butt';
+  playC.lineJoin = 'miter';
+  
+  if (state === 'play' || state === 'resume') {
+    // Draw play triangle
+    playC.beginPath();
+    playC.moveTo(60 + 44.053484, 147.608260 - 35);
+    playC.lineTo(60 + 44.053484, 68.502834 - 35);
+    playC.lineTo(60 + 112.311470, 106.828610 - 35);
+    playC.closePath();
+    playC.fill();
+    playC.stroke();
+  } else if (state === 'pause') {
+    // Draw pause bars
+    playC.beginPath();
+    playC.rect(60 + 44, 65 - 35, 25, 80);
+    playC.fill();
+    playC.stroke();
+    
+    playC.beginPath();
+    playC.rect(60 + 80, 65 - 35, 25, 80);
+    playC.fill();
+    playC.stroke();
+  }
+}
+
 var playButtonHandler
 function setPlayButton(isEnabled, color, text, click) {
-  setButton('playBtn', isEnabled, color, text);
+  const button = id('playBtn');
+  if (button) {
+    button.disabled = !isEnabled;
+  }
+  
+  // Determine button state based on text
+  let state = 'play';
+  if (text === 'Pause') {
+    state = 'pause';
+  } else if (text === 'Resume') {
+    state = 'resume';
+  }
+  
+  drawPlayButton(state, color);
   playButtonHandler = click;
 }
 function doPlayButton() {

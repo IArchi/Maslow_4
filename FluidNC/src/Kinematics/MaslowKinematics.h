@@ -71,6 +71,8 @@ namespace Kinematics {
         float getBrZ() const { return _brZ; }
         float getBeltEndExtension() const { return _beltEndExtension; }
         float getArmLength() const { return _armLength; }
+        float getSpoilboardThickness() const { return _spoilboardThickness; }
+        float getWorkThickness() const { return _workThickness; }
         float getCenterX() const { return _centerX; }
         float getCenterY() const { return _centerY; }
 
@@ -84,6 +86,8 @@ namespace Kinematics {
                                    float trX, float trY, float trZ,
                                    float blX, float blY, float blZ,
                                    float brX, float brY, float brZ);
+        void setSpoilboardThickness(float thickness);
+        void setWorkThickness(float thickness);
 
     private:
         // Anchor point coordinates (in mm)
@@ -106,6 +110,10 @@ namespace Kinematics {
         // Belt and arm parameters (in mm)
         float _beltEndExtension = 30.0f;   // Belt end extension
         float _armLength = 123.4f;         // Arm length
+        
+        // Material thickness offsets (in mm) - accounts for spoil board and work piece thickness
+        float _spoilboardThickness = 0.0f;   // Spoil board thickness added to all anchor heights
+        float _workThickness = 0.0f;         // Work piece thickness added to all anchor heights
         
         // Center offset for coordinate system transformation
         float _centerX = 0.0f;  // Will be calculated from frame dimensions

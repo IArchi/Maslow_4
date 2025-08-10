@@ -34,12 +34,18 @@ kinematics:
     brZ: 78.0
     beltEndExtension: 30.0
     armLength: 123.4
+    spoilboardThickness: 0.0
+    workThickness: 0.0
     maxSegmentLength: 5.0
 
 This implements the cable-driven kinematics for the Maslow CNC system.
 The system has 5 axes:
 - A, B, C, D (belt motors: TL, TR, BL, BR mapped to motors 0-3)
 - Z (cartesian Z coordinate mapped to motor 4)
+
+The spoilboardThickness and workThickness parameters account for material thickness
+placed on the cutting surface. Both values are added to all anchor point Z coordinates
+during belt length calculations, effectively raising the reference height for all belts.
 
 The maxSegmentLength parameter controls belt length synchronization during long moves.
 Moves longer than this distance (in mm) will be automatically segmented to ensure
@@ -283,7 +289,7 @@ namespace Kinematics {
         y = y + _centerY;
         float a = _tlX - x; // X dist from corner to router center
         float b = _tlY - y; // Y dist from corner to router center
-        float c = 0.0f - (z + _tlZ); // Z dist from corner to router center
+        float c = 0.0f - (z + _tlZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
 
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
@@ -298,7 +304,7 @@ namespace Kinematics {
         y = y + _centerY;
         float a = _trX - x;
         float b = _trY - y;
-        float c = 0.0f - (z + _trZ);
+        float c = 0.0f - (z + _trZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
         
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
@@ -313,7 +319,7 @@ namespace Kinematics {
         y = y + _centerY;
         float a = _blX - x; // X dist from corner to router center
         float b = _blY - y; // Y dist from corner to router center
-        float c = 0.0f - (z + _blZ); // Z dist from corner to router center
+        float c = 0.0f - (z + _blZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
 
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
@@ -328,7 +334,7 @@ namespace Kinematics {
         y = y + _centerY;
         float a = _brX - x;
         float b = _brY - y;
-        float c = 0.0f - (z + _brZ);
+        float c = 0.0f - (z + _brZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
 
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
@@ -400,6 +406,8 @@ namespace Kinematics {
         handler.item("brZ", _brZ);
         handler.item("beltEndExtension", _beltEndExtension);
         handler.item("armLength", _armLength);
+        handler.item("spoilboardThickness", _spoilboardThickness);
+        handler.item("workThickness", _workThickness);
         handler.item("maxSegmentLength", _maxSegmentLength);
     }
 
@@ -433,6 +441,16 @@ namespace Kinematics {
         calculateCenter();
         
         log_info("Anchor coordinates updated manually");
+    }
+
+    void MaslowKinematics::setSpoilboardThickness(float thickness) {
+        _spoilboardThickness = thickness;
+        log_info("Spoilboard thickness set to " << thickness << " mm");
+    }
+
+    void MaslowKinematics::setWorkThickness(float thickness) {
+        _workThickness = thickness;
+        log_info("Work thickness set to " << thickness << " mm");
     }
 
     // Destructor - clear global pointer

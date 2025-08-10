@@ -102,6 +102,11 @@ namespace Machine {
         // Tracks and reports gcode line numbers. Disabled by default.
         bool _useLineNumbers = false;
 
+        // Temporary storage for machine-level material thickness configuration
+        // These get copied to MaslowKinematics during afterParse()
+        float _tempSpoilboardThickness = 0.0f;
+        float _tempWorkThickness = 0.0f;
+
         std::string _board = "None";
         std::string _name  = "None";
         std::string _meta  = "";

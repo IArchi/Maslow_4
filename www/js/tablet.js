@@ -462,14 +462,14 @@ function drawPlayButton(state, color) {
     playC.fill();
     playC.stroke();
   } else if (state === 'pause') {
-    // Draw pause bars
+    // Draw pause bars - thinner and better spaced
     playC.beginPath();
-    playC.rect(60 + 44, 65 - 35, 25, 80);
+    playC.rect(60 + 50, 65 - 35, 12, 80);
     playC.fill();
     playC.stroke();
     
     playC.beginPath();
-    playC.rect(60 + 80, 65 - 35, 25, 80);
+    playC.rect(60 + 75, 65 - 35, 12, 80);
     playC.fill();
     playC.stroke();
   }
@@ -515,6 +515,7 @@ function doPlayButton() {
 const green = "#86f686";
 const red = "#f64646";
 const gray = "#f6f6f6";
+const orange = "#ff9500";
 
 function setRunControls() {
   if (gCodeLoaded) {
@@ -624,7 +625,7 @@ function tabletGrblState(grbl, response) {
     case 'Jog':
     case 'Home':
     case 'Run':
-      setPlayButton(true, red, 'Pause', pauseGCode)
+      setPlayButton(true, orange, 'Pause', pauseGCode)
       break
     case 'Check':
       setPlayButton(true, gray, 'Start', null)

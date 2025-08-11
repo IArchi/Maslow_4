@@ -622,6 +622,8 @@ function tabletGrblState(grbl, response) {
       break
     case 'Jog':
     case 'Home':
+      setPlayButton(true, gray, 'Start', null)
+      break
     case 'Run':
       setPlayButton(true, orange, 'Pause', pauseGCode)
       break

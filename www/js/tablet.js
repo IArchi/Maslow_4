@@ -460,7 +460,6 @@ function drawPlayButton(state, color) {
     playC.lineTo(60 + 112.311470, 106.828610 - 35);
     playC.closePath();
     playC.fill();
-    playC.stroke();
   } else if (state === 'pause') {
     // Draw pause bars - thinner and better spaced, no border
     playC.beginPath();

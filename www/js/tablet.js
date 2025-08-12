@@ -441,12 +441,18 @@ function drawPlayButton(state, color) {
   
   const playC = playBtn.getContext("2d");
   
-  // Clear and set background
+  // Completely clear the canvas and reset all styles
+  playC.clearRect(0, 0, 500, 500);
+  playC.save(); // Save the current state
+  
+  // Set background
   playC.fillStyle = color;
   playC.fillRect(0, 0, 500, 500);
   
-  // Set drawing properties
-  playC.strokeStyle = 'white';
+  // Reset all drawing properties to defaults before setting new ones
+  playC.globalAlpha = 1.0;
+  playC.globalCompositeOperation = 'source-over';
+  playC.strokeStyle = 'transparent';  // Explicitly set to transparent
   playC.fillStyle = 'white';
   playC.lineWidth = 1;
   playC.lineCap = 'butt';
@@ -460,6 +466,7 @@ function drawPlayButton(state, color) {
     playC.lineTo(60 + 112.311470, 106.828610 - 35);
     playC.closePath();
     playC.fill();
+    // Explicitly don't stroke
   } else if (state === 'pause') {
     // Draw pause bars - thinner and better spaced, no border
     playC.beginPath();
@@ -469,7 +476,10 @@ function drawPlayButton(state, color) {
     playC.beginPath();
     playC.rect(60 + 75, 65 - 35, 12, 80);
     playC.fill();
+    // Explicitly don't stroke
   }
+  
+  playC.restore(); // Restore the saved state
 }
 
 var playButtonHandler
@@ -854,6 +864,9 @@ function tabletInit() {
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);
     id("configuration_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_config_save").addEventListener("click", saveConfigValues);
+
+    // Initialize play button to clean state
+    drawPlayButton('play', '#4aa85c');
 
   }, 1000);
 }

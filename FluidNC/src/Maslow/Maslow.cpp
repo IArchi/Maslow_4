@@ -430,9 +430,9 @@ void Maslow_::loadZPos() {
         fi.i = value2;
         targetZ = fi.f;
 
-        int zAxis = 4;  // Z axis is now at index 4 with ABCDZX naming
+        // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)
         float* mpos = get_mpos();
-        mpos[zAxis] = targetZ;
+        mpos[Z_AXIS] = targetZ;
         set_motor_steps_from_mpos(mpos);
 
         log_info("Current z-axis position loaded as: " << targetZ);
@@ -448,9 +448,9 @@ void Maslow_::setZStop() {
 
     targetZ = 0;
 
-    int zAxis = 4;  // Z axis is now at index 4 with ABCDZX naming
+    // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)
     float* mpos = get_mpos();
-    mpos[zAxis] = targetZ;
+    mpos[Z_AXIS] = targetZ;
     set_motor_steps_from_mpos(mpos);
 
     gc_sync_position();//This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps

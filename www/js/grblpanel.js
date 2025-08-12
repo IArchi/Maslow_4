@@ -39,8 +39,7 @@ const grblpanel = () => {
     id("grblpanel_interval_status").addEventListener("change", onstatusIntervalChange);
 
     id("clear_status_btn").addEventListener("click", grblPanelClearStatus);
-    id("sd_pause_btn").addEventListener("click", grblPanelPause);
-    id("sd_resume_btn").addEventListener("click", grblPanelResume);
+    // sd_pause_btn and sd_resume_btn event handlers are managed dynamically by updateUnifiedPlayPauseButton
     id("sd_reset_btn").addEventListener("click", grbl_reset);
 
     id("grblpanel_F10_minus").addEventListener("click", grblPanelF10Minus);

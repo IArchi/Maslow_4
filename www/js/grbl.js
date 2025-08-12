@@ -412,6 +412,47 @@ const clickableFromStateName = (state = "", hasSD = false) => {
   return clickable;
 }
 
+// Update the unified play/pause button based on machine state
+const updateUnifiedPlayPauseButton = (stateName, clickable) => {
+  const button = id("sd_resume_btn");
+  if (!button) return;
+
+  // Show button only when machine is in a relevant state
+  const shouldShowButton = clickable.pause || clickable.resume;
+  setClickability("sd_resume_btn", shouldShowButton);
+
+  if (!shouldShowButton) return;
+
+  // Update button appearance and functionality based on state
+  if (clickable.pause) {
+    // Machine is running - show orange pause button
+    button.className = "btn btn-warning"; // Orange background
+    button.innerHTML = `
+      <svg width="2em" height="1.4em" viewBox="0 0 1300 1200">
+        <g transform="translate(50,1200) scale(1, -1)">
+          <path fill="white"
+            d="M250 1000h200q21 0 35.5 -14.5t14.5 -35.5v-800q0 -21 -14.5 -35.5t-35.5 -14.5h-200q-21 0 -35.5 14.5t-14.5 35.5v800q0 21 14.5 35.5t35.5 14.5zM650 1000h200q21 0 35.5 -14.5t14.5 -35.5v-800q0 -21 -14.5 -35.5t-35.5 -14.5h-200q-21 0 -35.5 14.5t-14.5 35.5v800 q0 21 14.5 35.5t35.5 14.5z">
+          </path>
+        </g>
+      </svg>`;
+    // Update click handler to pause
+    button.onclick = () => SendRealtimeCmd(0x21);
+  } else if (clickable.resume) {
+    // Machine is paused - show green play button
+    button.className = "btn btn-success"; // Green background
+    button.innerHTML = `
+      <svg width="2em" height="1.4em" viewBox="0 0 1300 1200">
+        <g transform="translate(50,1200) scale(1, -1)">
+          <path fill="white"
+            d="M243 1074l814 -498q18 -11 18 -26t-18 -26l-814 -498q-18 -11 -30.5 -4t-12.5 28v1000q0 21 12.5 28t30.5 -4z">
+          </path>
+        </g>
+      </svg>`;
+    // Update click handler to resume
+    button.onclick = () => SendRealtimeCmd(0x7e);
+  }
+};
+
 function show_grbl_position(wpos, mpos) {
   if (wpos) {
     wpos.forEach(function (pos, axis) {
@@ -445,8 +486,8 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   }
 
   const clickable = clickableFromStateName(stateName, hasSD);
-  setClickability("sd_resume_btn", clickable.resume);
-  setClickability("sd_pause_btn", clickable.pause);
+  updateUnifiedPlayPauseButton(stateName, clickable);
+  setClickability("sd_pause_btn", false); // Always hide separate pause button
   setClickability("sd_reset_btn", clickable.reset);
 
   if (stateName == "Hold" && probe_progress_status != 0) {

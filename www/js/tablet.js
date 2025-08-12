@@ -435,73 +435,9 @@ function setButton(name, isEnabled, color, text) {
   button.innerText = text;
 }
 
-function drawPlayButton(state, color) {
-  const playBtn = document.getElementById("playBtn");
-  if (!playBtn) return;
-  
-  // Set explicit canvas dimensions to match coordinate system
-  playBtn.width = 500;
-  playBtn.height = 500;
-  
-  const playC = playBtn.getContext("2d");
-  
-  // Completely clear the canvas and reset all styles
-  playC.clearRect(0, 0, 500, 500);
-  playC.save(); // Save the current state
-  
-  // Set background
-  playC.fillStyle = color;
-  playC.fillRect(0, 0, 500, 500);
-  
-  // Reset all drawing properties to defaults before setting new ones
-  playC.globalAlpha = 1.0;
-  playC.globalCompositeOperation = 'source-over';
-  playC.strokeStyle = 'transparent';  // Explicitly set to transparent
-  playC.fillStyle = 'white';
-  playC.lineWidth = 1;
-  playC.lineCap = 'butt';
-  playC.lineJoin = 'miter';
-  
-  if (state === 'play' || state === 'resume') {
-    // Draw play triangle
-    playC.beginPath();
-    playC.moveTo(60 + 44.053484, 147.608260 - 35);
-    playC.lineTo(60 + 44.053484, 68.502834 - 35);
-    playC.lineTo(60 + 112.311470, 106.828610 - 35);
-    playC.closePath();
-    playC.fill();
-    // Explicitly don't stroke
-  } else if (state === 'pause') {
-    // Draw pause bars - thinner and better spaced, no border
-    playC.beginPath();
-    playC.rect(60 + 50, 65 - 35, 12, 80);
-    playC.fill();
-    
-    playC.beginPath();
-    playC.rect(60 + 75, 65 - 35, 12, 80);
-    playC.fill();
-    // Explicitly don't stroke
-  }
-  
-  playC.restore(); // Restore the saved state
-}
-
 var playButtonHandler
 function setPlayButton(isEnabled, color, text, click) {
-  const button = id('playBtn');
-  if (button) {
-    button.disabled = !isEnabled;
-  }
-  
-  // Determine button state based on text
-  let state = 'play';
-  if (text === 'Pause') {
-    state = 'pause';
-  } else if (text === 'Resume') {
-    state = 'resume';
-  }
-  
-  drawPlayButton(state, color);
+  setButton('playBtn', isEnabled, color, text);
   playButtonHandler = click;
 }
 function doPlayButton() {
@@ -635,7 +571,7 @@ function tabletGrblState(grbl, response) {
       break
     case 'Jog':
     case 'Home':
-      setPlayButton(true, gray, 'Start', null)
+      setPlayButton(false, gray, 'Start', null)
       break
     case 'Run':
       setPlayButton(true, orange, 'Pause', pauseGCode)
@@ -868,9 +804,6 @@ function tabletInit() {
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);
     id("configuration_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_config_save").addEventListener("click", saveConfigValues);
-
-    // Initialize play button to clean state
-    drawPlayButton('play', '#4aa85c');
 
   }, 1000);
 }

@@ -269,7 +269,6 @@ playC.fillStyle = "#4aa85c";
 playC.fillRect(0, 0, 500, 500);
 
 playC.beginPath();
-playC.strokeStyle = 'white';
 playC.fillStyle = 'white';
 playC.lineWidth = 1;
 playC.lineCap = 'butt';
@@ -277,9 +276,8 @@ playC.lineJoin = 'miter';
 playC.moveTo(60 + 44.053484, 147.608260 - 35);
 playC.lineTo(60 + 44.053484, 68.502834 - 35);
 playC.lineTo(60 + 112.311470, 106.828610 - 35);
-playC.closePath;
+playC.closePath();
 playC.fill();
-playC.stroke();
 
 
 const stopC = document.getElementById("stopBtn").getContext("2d");

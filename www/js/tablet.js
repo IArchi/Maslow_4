@@ -439,6 +439,10 @@ function drawPlayButton(state, color) {
   const playBtn = document.getElementById("playBtn");
   if (!playBtn) return;
   
+  // Set explicit canvas dimensions to match coordinate system
+  playBtn.width = 500;
+  playBtn.height = 500;
+  
   const playC = playBtn.getContext("2d");
   
   // Completely clear the canvas and reset all styles

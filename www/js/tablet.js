@@ -462,6 +462,7 @@ function doPlayButton() {
 const green = "#86f686";
 const red = "#f64646";
 const gray = "#f6f6f6";
+const orange = "#ff9500";
 
 function setRunControls() {
   if (gCodeLoaded) {
@@ -570,9 +571,10 @@ function tabletGrblState(grbl, response) {
       break
     case 'Jog':
     case 'Home':
-    case 'Run':
       setPlayButton(false, gray, 'Start', null)
-      //setPauseButton(true, red, 'Pause', pauseGCode)
+      break
+    case 'Run':
+      setPlayButton(true, orange, 'Pause', pauseGCode)
       break
     case 'Check':
       setPlayButton(true, gray, 'Start', null)

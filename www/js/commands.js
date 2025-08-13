@@ -65,7 +65,8 @@ const Monitor_output_Update = (message) => {
 				outlc.startsWith("Config:") ||
 				outlc.startsWith('echo:Unknown command: "echo"') ||
 				outlc.startsWith("[MSG:INFO: Heartbeat]") ||
-				outlc.startsWith('echo:enqueueing "*"')
+				outlc.startsWith('echo:enqueueing "*"') ||
+				/\[MSG:INFO:\s*TLC:\s*[\d.]+\s*TRC:\s*[\d.]+\s*BLC:\s*[\d.]+\s*BRC:\s*[\d.]+\]/.test(outlc)
 			) {
 				continue;
 			}

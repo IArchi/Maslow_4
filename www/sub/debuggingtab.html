@@ -2,7 +2,7 @@
   <div class="debugging-container">
     <div class="debugging-header">
       <h2 translate>Motor Current Monitoring</h2>
-      <p translate>Real-time current draw for each motor (0-4000 range)</p>
+      <p translate>Real-time current draw for each motor in milliamps (mA)</p>
     </div>
     
     <div class="debugging-gauges">
@@ -69,28 +69,6 @@
 
     <div class="debugging-info">
       <div class="info-section">
-        <h3 translate>Motor Current Status</h3>
-        <div class="status-grid">
-          <div class="status-item">
-            <span class="status-label" translate>TLC:</span>
-            <span class="status-value" id="tlc-status">0 mA</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label" translate>TRC:</span>
-            <span class="status-value" id="trc-status">0 mA</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label" translate>BLC:</span>
-            <span class="status-value" id="blc-status">0 mA</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label" translate>BRC:</span>
-            <span class="status-value" id="brc-status">0 mA</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="info-section">
         <h3 translate>Last Update</h3>
         <div id="last-update" class="last-update" translate>No data received</div>
       </div>
@@ -122,9 +100,13 @@
 
 .debugging-gauges {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 30px;
   margin-bottom: 40px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .gauge-container {
@@ -174,32 +156,6 @@
   font-size: 18px;
 }
 
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-}
-
-.status-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.status-label {
-  font-weight: bold;
-  color: #333;
-}
-
-.status-value {
-  color: #666;
-  font-family: monospace;
-}
-
 .last-update {
   font-family: monospace;
   color: #666;
@@ -209,18 +165,16 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .debugging-gauges {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-  }
-  
-  .status-grid {
-    grid-template-columns: 1fr;
+    max-width: 400px;
   }
 }
 
 @media (max-width: 480px) {
   .debugging-gauges {
     grid-template-columns: 1fr;
+    max-width: 200px;
   }
   
   .gauge {

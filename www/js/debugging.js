@@ -8,7 +8,16 @@ let motorCurrentData = {
     lastUpdate: null
 };
 
-const MAX_CURRENT = 4000; // Maximum current value for gauge scaling
+const MAX_CURRENT = 2200; // Maximum current value for gauge scaling in mA (at max ADC)
+
+/**
+ * Convert ADC value (0-4095) to milliamps using the formula: I(mA) = 1000*((3.3*(ADC/4095))/1.5)
+ * @param {number} adcValue - ADC value from 0 to 4095
+ * @returns {number} Current in milliamps
+ */
+const convertAdcToMilliamps = (adcValue) => {
+    return 1000 * ((3.3 * (adcValue / 4095)) / 1.5);
+};
 
 /**
  * Parse motor current message in format: [MSG:INFO: TLC: 0.000 TRC: 0.000 BLC: 0.000 BRC: 0.000]
@@ -19,10 +28,11 @@ const parseMotorCurrentMessage = (message) => {
     const match = message.match(motorCurrentRegex);
     
     if (match) {
-        motorCurrentData.TLC = Number.parseFloat(match[1]);
-        motorCurrentData.TRC = Number.parseFloat(match[2]);
-        motorCurrentData.BLC = Number.parseFloat(match[3]);
-        motorCurrentData.BRC = Number.parseFloat(match[4]);
+        // Convert ADC values to milliamps
+        motorCurrentData.TLC = convertAdcToMilliamps(Number.parseFloat(match[1]));
+        motorCurrentData.TRC = convertAdcToMilliamps(Number.parseFloat(match[2]));
+        motorCurrentData.BLC = convertAdcToMilliamps(Number.parseFloat(match[3]));
+        motorCurrentData.BRC = convertAdcToMilliamps(Number.parseFloat(match[4]));
         motorCurrentData.lastUpdate = new Date();
         
         updateMotorCurrentDisplay();
@@ -64,12 +74,6 @@ const updateMotorCurrentDisplay = () => {
         const valueElement = id(`${motor.toLowerCase()}-value`);
         if (valueElement) {
             valueElement.textContent = Math.round(value);
-        }
-        
-        // Update status text
-        const statusElement = id(`${motor.toLowerCase()}-status`);
-        if (statusElement) {
-            statusElement.textContent = `${Math.round(value)} mA`;
         }
     });
     
@@ -123,6 +127,7 @@ if (typeof module !== 'undefined' && module.exports) {
         updateMotorCurrentDisplay,
         initDebuggingTab,
         resetMotorCurrentData,
+        convertAdcToMilliamps,
         motorCurrentData
     };
 }

@@ -65,7 +65,8 @@ function loadApp() {
 		connect: { msg: "", fldId: "connectdlg.html", errMsg: "Error loading connect dialog:" },
 		controls: { msg: "", fldId: "controlPanel", errMsg: "Error loading controls panel:" },
 		navBar: { msg: "", fldId: "navbar", errMsg: "Error loading navigation bar:" },
-		tabletTab: { msg: "", fldId: "tablettab", errMsg: "Error loading tablet tab:" }
+		tabletTab: { msg: "", fldId: "tablettab", errMsg: "Error loading tablet tab:" },
+		debuggingTab: { msg: "", fldId: "debuggingtab", errMsg: "Error loading debugging tab:" }
 	};
 
 	const doPanelStartUp = (panel) => {
@@ -93,6 +94,7 @@ function loadApp() {
 			startUp.controls.fn = ControlsPanel;
 			startUp.navBar.fn = navbar;
 			startUp.tabletTab.fn = tabletInit;
+			startUp.debuggingTab.fn = initDebuggingTab;
 		} catch (error) {
 			console.warn("Error setting up function references:", error);
 			// Ensure that we always break out of this
@@ -106,8 +108,9 @@ function loadApp() {
 		doPanelStartUp(startUp.controls);
 		doPanelStartUp(startUp.navBar);
 		doPanelStartUp(startUp.tabletTab);
+		doPanelStartUp(startUp.debuggingTab);
 
-		if ((startUp.connect.msg && startUp.controls.msg && startUp.navBar.msg && startUp.tabletTab.msg) || failSafe <= 0) {
+		if ((startUp.connect.msg && startUp.controls.msg && startUp.navBar.msg && startUp.tabletTab.msg && startUp.debuggingTab.msg) || failSafe <= 0) {
 			clearInterval(startUpInt);
 			startUpInt = null;
 		}

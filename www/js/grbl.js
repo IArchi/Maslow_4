@@ -714,6 +714,10 @@ const grblHandleMessage = (msg) => {
     return;
   }
   if (valueStartsWith(msg, ["[MSG:"])) {
+    // Check for motor current debugging messages
+    if (typeof parseMotorCurrentMessage === 'function' && parseMotorCurrentMessage(msg)) {
+      return;
+    }
     return;
   }
   if (valueStartsWith(msg, ["error:"])) {

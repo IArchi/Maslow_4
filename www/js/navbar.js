@@ -5,6 +5,7 @@ const navBarCamTabLink = (event) => opentab(event, "cameratab", "mainuitabsconte
 const navBarConfigTabLink = (event) => opentab(event, "configtab", "mainuitabscontent", "mainuitablinks");
 const navBarSettingTabLink = (event) => opentab(event, "settingstab", "mainuitabscontent", "mainuitablinks");
 const navBarTabletTabLink = (event) => opentab(event, "tablettab", "mainuitabscontent", "mainuitablinks");
+const navBarDebuggingTabLink = (event) => opentab(event, "debuggingtab", "mainuitabscontent", "mainuitablinks");
 
 const navBarLogout = () => confirmdlg(translate_text_item("Disconnection requested"), translate_text_item("Please confirm disconnection."), DisconnectLogin);
 
@@ -22,6 +23,7 @@ const navbar = () => {
 	id("configtablink").addEventListener("click", navBarConfigTabLink);
 	id("settingtablink").addEventListener("click", navBarSettingTabLink);
 	id("tablettablink").addEventListener("click", navBarTabletTabLink);
+	id("debuggingtablink").addEventListener("click", navBarDebuggingTabLink);
 
 	id("password_menu").addEventListener("click", changepassworddlg);
 	id("showLoginDlg").addEventListener("click", logindlg);

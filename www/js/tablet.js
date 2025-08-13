@@ -357,6 +357,11 @@ function tabletShowMessage(msg, collecting) {
     return; //We don't want to display these messages
   }
 
+  // Filter out motor current messages from console display (they're still processed for debugging)
+  if (/\[MSG:INFO:\s*TLC:\s*[\d.]+\s*TRC:\s*[\d.]+\s*BLC:\s*[\d.]+\s*BRC:\s*[\d.]+\]/.test(msg)) {
+    return; //We don't want to display these messages
+  }
+
   addMessage(`${maslowErrorMsgHandling(msg) || msg}`);
 }
 

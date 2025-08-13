@@ -420,49 +420,40 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
   
   if (!playButton || !stopButton) return;
 
-  // Show/hide buttons based on machine state
-  const shouldShowPlayPause = clickable.pause || clickable.resume;
+  // Always show the stop button
+  stopButton.style.display = '';
   
-  if (shouldShowPlayPause) {
-    if (clickable.pause) {
-      // Machine is running - show pause button (convert play button to pause)
-      playButton.style.display = '';
-      playButton.style.backgroundColor = '#f0ad4e'; // Orange background
-      playButton.innerHTML = `
-        <svg width="2em" height="1.4em" viewBox="0 0 1300 1200">
-          <g transform="translate(50,1200) scale(1, -1)">
-            <path fill="white"
-              d="M250 1000h200q21 0 35.5 -14.5t14.5 -35.5v-800q0 -21 -14.5 -35.5t-35.5 -14.5h-200q-21 0 -35.5 14.5t-14.5 35.5v800q0 21 14.5 35.5t35.5 14.5zM650 1000h200q21 0 35.5 -14.5t14.5 -35.5v-800q0 -21 -14.5 -35.5t-35.5 -14.5h-200q-21 0 -35.5 14.5t-14.5 35.5v800 q0 21 14.5 35.5t35.5 14.5z">
-            </path>
-          </g>
-        </svg>`;
-      playButton.onclick = () => SendRealtimeCmd(0x21); // Pause command
-      
-      // Keep stop button as-is for reset functionality
-      stopButton.style.display = '';
-      
-    } else if (clickable.resume) {
-      // Machine is paused - show play button
-      playButton.style.display = '';
-      playButton.style.backgroundColor = '#5cb85c'; // Green background
-      playButton.innerHTML = `
-        <svg width="2em" height="1.4em" viewBox="0 0 1300 1200">
-          <g transform="translate(50,1200) scale(1, -1)">
-            <path fill="white"
-              d="M243 1074l814 -498q18 -11 18 -26t-18 -26l-814 -498q-18 -11 -30.5 -4t-12.5 28v1000q0 21 12.5 28t30.5 -4z">
-            </path>
-          </g>
-        </svg>`;
-      playButton.onclick = () => SendRealtimeCmd(0x7e); // Resume command
-      
-      // Keep stop button as-is for reset functionality  
-      stopButton.style.display = '';
-    }
-  } else {
-    // Hide both buttons when machine is idle
-    playButton.style.display = 'none';
-    stopButton.style.display = 'none';
+  // Always show the play button
+  playButton.style.display = '';
+  
+  if (clickable.pause) {
+    // Machine is running - show pause button (convert play button to pause)
+    playButton.style.backgroundColor = '#f0ad4e'; // Orange background
+    playButton.innerHTML = `
+      <svg width="2em" height="1.4em" viewBox="0 0 1300 1200">
+        <g transform="translate(50,1200) scale(1, -1)">
+          <path fill="white"
+            d="M250 1000h200q21 0 35.5 -14.5t14.5 -35.5v-800q0 -21 -14.5 -35.5t-35.5 -14.5h-200q-21 0 -35.5 14.5t-14.5 35.5v800q0 21 14.5 35.5t35.5 14.5zM650 1000h200q21 0 35.5 -14.5t14.5 -35.5v-800q0 -21 -14.5 -35.5t-35.5 -14.5h-200q-21 0 -35.5 14.5t-14.5 35.5v800 q0 21 14.5 35.5t35.5 14.5z">
+          </path>
+        </g>
+      </svg>`;
+    playButton.onclick = () => SendRealtimeCmd(0x21); // Pause command
+    
+  } else if (clickable.resume) {
+    // Machine is paused - show play button
+    playButton.style.backgroundColor = '#5cb85c'; // Green background
+    playButton.innerHTML = `
+      <svg width="2em" height="1.4em" viewBox="0 0 1300 1200">
+        <g transform="translate(50,1200) scale(1, -1)">
+          <path fill="white"
+            d="M243 1074l814 -498q18 -11 18 -26t-18 -26l-814 -498q-18 -11 -30.5 -4t-12.5 28v1000q0 21 12.5 28t30.5 -4z">
+          </path>
+        </g>
+      </svg>`;
+    playButton.onclick = () => SendRealtimeCmd(0x7e); // Resume command
   }
+  // For idle state, don't override the button - let tablet.js handle it
+  // The existing tablet.js system will set up the appropriate start functionality
 };
 
 function show_grbl_position(wpos, mpos) {

@@ -607,15 +607,18 @@ bool Calibration::computeXYfromLengths(double TL, double TR, float &x, float &y)
  * - Takes a measurement once both belts are tight and stores it in the calibration data array.
  * 
  * In HORIZONTAL orientation:
- * - Pulls belts tight based on the direction of the last move.
+ * - For the first waypoint (waypoint == 0), pulls all 4 belts tight to ensure proper initial tension
+ * - For subsequent waypoints, pulls belts tight based on the direction of the last move.
  * - Takes a measurement once both belts are tight and stores it in the calibration data array.
  * 
- * @param waypoint The waypoint number to store the result.
- * @param dir The direction of the last move (UP, DOWN, LEFT, RIGHT). This is used to descide which belts to tighten first
- * @param run The run mode (0 for sequential tightening, non-zero for simultaneous tightening).
+ * @param result The array to store the measurement result.
+ * @param dir The direction of the last move (UP, DOWN, LEFT, RIGHT). This is used to decide which belts to tighten first
+ * @param run The measurement run number at current waypoint (0-3, with first 2 discarded).
+ * @param current The current threshold for pulling belts tight.
+ * @param waypoint The waypoint number being measured (0 = first waypoint).
  * @return True when the measurement is done, false otherwise.
  */
-bool Calibration::take_measurement(float result[4], int dir, int run, int current) {
+bool Calibration::take_measurement(float result[4], int dir, int run, int current, int waypoint) {
 
     //Shouldn't this be handled with the same code as below but with the direction set to UP?
     if (orientation == VERTICAL) {
@@ -678,8 +681,8 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
     }
     // in HoRIZONTAL orientation we pull on the belts depending on the direction of the last move. This is important because the other two belts are likely slack
     else if (orientation == HORIZONTAL) {
-        // For the first measurement (run == 0), pull all four belts tight to ensure proper initial tension
-        if (run == 0) {
+        // For the first waypoint (waypoint == 0), pull all four belts tight to ensure proper initial tension
+        if (waypoint == 0) {
             static bool tl_tight = false;
             static bool tr_tight = false;
             static bool bl_tight = false;
@@ -727,7 +730,7 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                 return true;
             }
         }
-        // For subsequent measurements, use directional logic to pull only relevant belts
+        // For subsequent waypoints, use directional logic to pull only relevant belts
         else {
             static MotorUnit* pullAxis1;
             static MotorUnit* pullAxis2;
@@ -845,7 +848,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
         howHardToPull = calibrationCurrentThreshold + 500;
     }
 
-    if (take_measurement(measurements[max(run-2, 0)], dir, run, howHardToPull)) { //Throw away measurements are stored in [0]
+    if (take_measurement(measurements[max(run-2, 0)], dir, run, howHardToPull, waypoint)) { //Throw away measurements are stored in [0]
         if (run < 2) {
             run++;
             return false;  //discard the first two measurements

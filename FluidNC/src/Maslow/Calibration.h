@@ -48,7 +48,7 @@ public:
     bool   move_with_slack(double fromX, double fromY, double toX, double toY);
     int    get_direction(double x, double y, double targetX, double targetY);
     bool   take_measurement_avg_with_check(int waypoint, int dir);
-    bool   take_measurement(float result[4], int dir, int run, int current);
+    bool   take_measurement(float result[4], int dir, int run, int current, int waypoint);
     float  measurementToXYPlane(float measurement, float zHeight);
     float  measurementFromXYPlane(float xyPlaneDistance, float zHeight);
     bool   takeSlackFunc();

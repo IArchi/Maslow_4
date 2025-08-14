@@ -469,7 +469,7 @@ bool Calibration::takeSlackFunc() {
 
     //Take a measurement
     if(takeSlackState == 0){
-        if (take_measurement_avg_with_check(2, UP)) { //We really shouldn't be using the second position to store the data, it should have it's own array
+        if (take_measurement_avg_with_check(0, UP)) { //We really shouldn't be using the first position to store the data, it should have it's own array
             
             float x = 0;
             float y = 0;

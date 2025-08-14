@@ -231,6 +231,8 @@ void Maslow_::update() {
             int elapsedTime = millis() - lastCallToUpdate;
             log_error("Emergency stop. Update function not being called enough." << elapsedTime << "ms since last call");
         }
+
+        print_motor_currents();
     }
 
     prevState = sys.state(); //Store for next time
@@ -546,6 +548,18 @@ void Maslow_::blinkIPAddress() {
         } else {
             digitalWrite(WIFILED, HIGH);
         }
+    }
+}
+
+//Print the motor currents. Used for monitioring the power consumption of each motor.
+void Maslow_::print_motor_currents() {
+    static unsigned long lastExecutionTime = 0;
+    unsigned long currentTime = millis();
+
+    if (currentTime - lastExecutionTime >= 1000) {
+        log_info("TLC: " << axisTL.getMotorCurrent() << " TRC: " << axisTR.getMotorCurrent()
+                 << " BLC: " << axisBL.getMotorCurrent() << " BRC: " << axisBR.getMotorCurrent());
+        lastExecutionTime = currentTime;
     }
 }
 

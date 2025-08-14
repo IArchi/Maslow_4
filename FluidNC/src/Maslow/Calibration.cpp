@@ -688,30 +688,18 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             static bool bl_tight = false;
             static bool br_tight = false;
 
-            // Pull all four belts tight in horizontal mode since there's no gravity to maintain tension
-            if (!tl_tight) {
-                if (Maslow.axisTL.pull_tight(current)) {
-                    tl_tight = true;
-                }
-                return false;
+            // Pull all four belts tight simultaneously in horizontal mode since there's no gravity to maintain tension
+            if (Maslow.axisTL.pull_tight(current)) {
+                tl_tight = true;
             }
-            if (!tr_tight) {
-                if (Maslow.axisTR.pull_tight(current)) {
-                    tr_tight = true;
-                }
-                return false;
+            if (Maslow.axisTR.pull_tight(current)) {
+                tr_tight = true;
             }
-            if (!bl_tight) {
-                if (Maslow.axisBL.pull_tight(current)) {
-                    bl_tight = true;
-                }
-                return false;
+            if (Maslow.axisBL.pull_tight(current)) {
+                bl_tight = true;
             }
-            if (!br_tight) {
-                if (Maslow.axisBR.pull_tight(current)) {
-                    br_tight = true;
-                }
-                return false;
+            if (Maslow.axisBR.pull_tight(current)) {
+                br_tight = true;
             }
 
             // Once all belts are tight, reset the flags and take the measurement
@@ -729,6 +717,7 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                 br_tight = false;
                 return true;
             }
+            return false;
         }
         // For subsequent waypoints, use directional logic to pull only relevant belts
         else {

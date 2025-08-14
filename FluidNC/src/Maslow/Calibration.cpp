@@ -676,88 +676,41 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
         }
         return false;
     }
-    // in HoRIZONTAL orientation we pull on the belts depending on the direction of the last move. This is important because the other two belts are likely slack
+    // in HoRIZONTAL orientation we pull on all four belts to ensure proper tension since gravity doesn't help
     else if (orientation == HORIZONTAL) {
-        static MotorUnit* pullAxis1;
-        static MotorUnit* pullAxis2;
-        static MotorUnit* holdAxis1;
-        static MotorUnit* holdAxis2;
-        static bool       pull1_tight = false;
-        static bool       pull2_tight = false;
-        switch (dir) {
-            case UP:
-                holdAxis1 = &Maslow.axisTL;
-                holdAxis2 = &Maslow.axisTR;
-                if (Maslow.x < 0) {
-                    pullAxis1 = &Maslow.axisBL;
-                    pullAxis2 = &Maslow.axisBR;
-                } else {
-                    pullAxis1 = &Maslow.axisBR;
-                    pullAxis2 = &Maslow.axisBL;
-                }
-                break;
-            case DOWN:
-                holdAxis1 = &Maslow.axisBL;
-                holdAxis2 = &Maslow.axisBR;
-                if (Maslow.x < 0) {
-                    pullAxis1 = &Maslow.axisTL;
-                    pullAxis2 = &Maslow.axisTR;
-                } else {
-                    pullAxis1 = &Maslow.axisTR;
-                    pullAxis2 = &Maslow.axisTL;
-                }
-                break;
-            case LEFT:
-                holdAxis1 = &Maslow.axisTL;
-                holdAxis2 = &Maslow.axisBL;
-                if (Maslow.y < 0) {
-                    pullAxis1 = &Maslow.axisBR;
-                    pullAxis2 = &Maslow.axisTR;
-                } else {
-                    pullAxis1 = &Maslow.axisTR;
-                    pullAxis2 = &Maslow.axisBR;
-                }
-                break;
-            case RIGHT:
-                holdAxis1 = &Maslow.axisTR;
-                holdAxis2 = &Maslow.axisBR;
-                if (Maslow.y < 0) {
-                    pullAxis1 = &Maslow.axisBL;
-                    pullAxis2 = &Maslow.axisTL;
-                } else {
-                    pullAxis1 = &Maslow.axisTL;
-                    pullAxis2 = &Maslow.axisBL;
-                }
-                break;
-        }
-        holdAxis1->recomputePID();
-        holdAxis2->recomputePID();
+        static bool tl_tight = false;
+        static bool tr_tight = false;
+        static bool bl_tight = false;
+        static bool br_tight = false;
 
-        if(run == 0){
-            if (!pull1_tight) {
-                if (pullAxis1->pull_tight(current)) {
-                    pull1_tight      = true;
-                }
-                if (run == 0) //Second axis complies while first is pulling
-                    pullAxis2->comply();
-                return false;
+        // Pull all four belts tight in horizontal mode since there's no gravity to maintain tension
+        if (!tl_tight) {
+            if (Maslow.axisTL.pull_tight(current)) {
+                tl_tight = true;
             }
-            if (!pull2_tight) {
-                if (pullAxis2->pull_tight(current)) {
-                    pull2_tight      = true;
-                }
-                return false;
-            }
+            return false;
         }
-        else{
-            if (pullAxis1->pull_tight(current)) {
-                pull1_tight      = true;
+        if (!tr_tight) {
+            if (Maslow.axisTR.pull_tight(current)) {
+                tr_tight = true;
             }
-            if (pullAxis2->pull_tight(current)) {
-                pull2_tight      = true;
-            }
+            return false;
         }
-        if (pull1_tight && pull2_tight) {
+        if (!bl_tight) {
+            if (Maslow.axisBL.pull_tight(current)) {
+                bl_tight = true;
+            }
+            return false;
+        }
+        if (!br_tight) {
+            if (Maslow.axisBR.pull_tight(current)) {
+                br_tight = true;
+            }
+            return false;
+        }
+
+        // Once all belts are tight, reset the flags and take the measurement
+        if (tl_tight && tr_tight && bl_tight && br_tight) {
             auto kinematics = getKinematics();
             if (!kinematics) return false;
             //take measurement and record it to the calibration data array.
@@ -765,8 +718,10 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             result[1] = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
             result[2] = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
             result[3] = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
-            pull1_tight                   = false;
-            pull2_tight                   = false;
+            tl_tight = false;
+            tr_tight = false;
+            bl_tight = false;
+            br_tight = false;
             return true;
         }
     }

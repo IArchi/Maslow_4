@@ -215,9 +215,15 @@ namespace Kinematics {
         float tlBeltLength = motors[0];  // Top Left belt length (A axis)
         float trBeltLength = motors[1];  // Top Right belt length (B axis)
         
-        // Convert angled belt measurements to XY plane distances
-        float tlXYDistance = measurementToXYPlane(tlBeltLength, _tlZ);
-        float trXYDistance = measurementToXYPlane(trBeltLength, _trZ);
+        // Calculate complete z-components including spoilboard and work thickness
+        // This must match the z-component calculation used in forward kinematics
+        float z = motors[4];
+        float tlTotalZ = 0.0f - (z + _tlZ + _spoilboardThickness + _workThickness);
+        float trTotalZ = 0.0f - (z + _trZ + _spoilboardThickness + _workThickness);
+        
+        // Convert angled belt measurements to XY plane distances using complete z-components
+        float tlXYDistance = measurementToXYPlane(tlBeltLength, fabs(tlTotalZ));
+        float trXYDistance = measurementToXYPlane(trBeltLength, fabs(trTotalZ));
         
         // Solve for X,Y position using intersection of circles
         float x, y;
@@ -305,7 +311,7 @@ namespace Kinematics {
         float a = _trX - x;
         float b = _trY - y;
         float c = 0.0f - (z + _trZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
-        
+
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
         float length = sqrt(XYBeltLength * XYBeltLength + c * c); // Get the angled belt length

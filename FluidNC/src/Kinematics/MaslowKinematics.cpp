@@ -453,6 +453,115 @@ namespace Kinematics {
         log_info("Work thickness set to " << thickness << " mm");
     }
 
+    void MaslowKinematics::validate() {
+        validateAndCorrectAnchorCoordinates();
+    }
+
+    void MaslowKinematics::validateAndCorrectAnchorCoordinates() {
+        const float TOLERANCE = 0.1f;  // Allow small floating point differences
+        bool coordinatesCorrected = false;
+        
+        // Default reasonable values (rounded for clarity that these are placeholder values)
+        const float DEFAULT_TLX = -30.0f;
+        const float DEFAULT_TLY = 2100.0f;
+        const float DEFAULT_TRX = 2950.0f;
+        const float DEFAULT_TRY = 2100.0f;
+        const float DEFAULT_BLX = 0.0f;
+        const float DEFAULT_BLY = 0.0f;
+        const float DEFAULT_BRX = 3000.0f;
+        const float DEFAULT_BRY = 0.0f;
+        
+        // Check that blX, blY, and brY should be zero (or very close to zero)
+        if (std::abs(_blX) > TOLERANCE) {
+            log_warn("Bottom left X coordinate (blX) should be 0.0, but is " << _blX << ". Correcting to 0.0.");
+            _blX = 0.0f;
+            coordinatesCorrected = true;
+        }
+        
+        if (std::abs(_blY) > TOLERANCE) {
+            log_warn("Bottom left Y coordinate (blY) should be 0.0, but is " << _blY << ". Correcting to 0.0.");
+            _blY = 0.0f;
+            coordinatesCorrected = true;
+        }
+        
+        if (std::abs(_brY) > TOLERANCE) {
+            log_warn("Bottom right Y coordinate (brY) should be 0.0, but is " << _brY << ". Correcting to 0.0.");
+            _brY = 0.0f;
+            coordinatesCorrected = true;
+        }
+        
+        // Check that tlX < trX (left should be to the left of right)
+        if (_tlX >= _trX) {
+            log_warn("Top left X coordinate (tlX=" << _tlX << ") should be less than top right X coordinate (trX=" << _trX << "). Correcting to reasonable defaults.");
+            _tlX = DEFAULT_TLX;
+            _trX = DEFAULT_TRX;
+            coordinatesCorrected = true;
+        }
+        
+        // Check that top points are above bottom points
+        if (_tlY <= _blY || _trY <= _brY) {
+            log_warn("Top anchor points should be above bottom anchor points. tlY=" << _tlY << " should be > blY=" << _blY << ", trY=" << _trY << " should be > brY=" << _brY << ". Correcting to reasonable defaults.");
+            _tlY = DEFAULT_TLY;
+            _trY = DEFAULT_TRY;
+            coordinatesCorrected = true;
+        }
+        
+        // Check side lengths - minimum 500mm, maximum 5000mm
+        const float MIN_SIDE_LENGTH = 500.0f;
+        const float MAX_SIDE_LENGTH = 5000.0f;
+        
+        // Calculate distances for each side of the frame
+        float topSideLength = sqrt((_trX - _tlX) * (_trX - _tlX) + (_trY - _tlY) * (_trY - _tlY));
+        float rightSideLength = sqrt((_brX - _trX) * (_brX - _trX) + (_brY - _trY) * (_brY - _trY));
+        float bottomSideLength = sqrt((_brX - _blX) * (_brX - _blX) + (_brY - _blY) * (_brY - _blY));
+        float leftSideLength = sqrt((_tlX - _blX) * (_tlX - _blX) + (_tlY - _blY) * (_tlY - _blY));
+        
+        // Check if any side length is outside the valid range
+        if (topSideLength < MIN_SIDE_LENGTH || topSideLength > MAX_SIDE_LENGTH ||
+            rightSideLength < MIN_SIDE_LENGTH || rightSideLength > MAX_SIDE_LENGTH ||
+            bottomSideLength < MIN_SIDE_LENGTH || bottomSideLength > MAX_SIDE_LENGTH ||
+            leftSideLength < MIN_SIDE_LENGTH || leftSideLength > MAX_SIDE_LENGTH) {
+            
+            log_warn("Frame side lengths are outside valid range (500-5000mm). " <<
+                     "Top=" << topSideLength << "mm, Right=" << rightSideLength << "mm, " <<
+                     "Bottom=" << bottomSideLength << "mm, Left=" << leftSideLength << "mm. " <<
+                     "Correcting to reasonable defaults.");
+            
+            _tlX = DEFAULT_TLX;
+            _tlY = DEFAULT_TLY;
+            _trX = DEFAULT_TRX;
+            _trY = DEFAULT_TRY;
+            _blX = DEFAULT_BLX;
+            _blY = DEFAULT_BLY;
+            _brX = DEFAULT_BRX;
+            _brY = DEFAULT_BRY;
+            coordinatesCorrected = true;
+        }
+        
+        // Sanity check for reasonable coordinate values (not negative for most coordinates, not excessively large)
+        const float MAX_REASONABLE_COORD = 10000.0f;  // 10 meters should be more than enough for any Maslow frame
+        
+        if (_tlY < 0 || _trY < 0 || _tlY > MAX_REASONABLE_COORD || _trY > MAX_REASONABLE_COORD ||
+            _blX < 0 || _brX < 0 || _brX > MAX_REASONABLE_COORD) {
+            log_warn("Anchor coordinates contain unrealistic values. Resetting to reasonable defaults.");
+            _tlX = DEFAULT_TLX;
+            _tlY = DEFAULT_TLY;
+            _trX = DEFAULT_TRX;
+            _trY = DEFAULT_TRY;
+            _blX = DEFAULT_BLX;
+            _blY = DEFAULT_BLY;
+            _brX = DEFAULT_BRX;
+            _brY = DEFAULT_BRY;
+            coordinatesCorrected = true;
+        }
+        
+        if (coordinatesCorrected) {
+            log_info("Anchor coordinates corrected. New values: tlX=" << _tlX << " tlY=" << _tlY << " trX=" << _trX << " trY=" << _trY << " blX=" << _blX << " blY=" << _blY << " brX=" << _brX << " brY=" << _brY);
+            // Recalculate center coordinates after correction
+            calculateCenter();
+        }
+    }
+
     // Destructor - clear global pointer
     MaslowKinematics::~MaslowKinematics() {
         if (g_maslowKinematics == this) {

@@ -41,7 +41,7 @@ namespace Kinematics {
         bool limitReached(AxisMask& axisMask, MotorMask& motors, MotorMask limited) override;
 
         // Configuration handlers:
-        void validate() override {}
+        void validate() override;
         void group(Configuration::HandlerBase& handler) override;
         void afterParse() override {}
 
@@ -90,6 +90,9 @@ namespace Kinematics {
         void setWorkThickness(float thickness);
 
     private:
+        // Validation and correction helper method
+        void validateAndCorrectAnchorCoordinates();
+        
         // Anchor point coordinates (in mm)
         float _tlX = -27.6f;   // Top left X
         float _tlY = 2064.9f;  // Top left Y  

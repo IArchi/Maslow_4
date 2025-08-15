@@ -54,6 +54,53 @@ Test(MaslowKinematicsUpdateAnchors, CalibrationTest) {
     Assert(kinematics.getBrZ() == brZ, "Bottom right Z not set correctly");
 }
 
+// Test anchor coordinate validation functionality
+Test(MaslowKinematicsValidation, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with valid coordinates (should not trigger warnings)
+    kinematics.updateAnchorCoordinates(
+        100.0f, 2000.0f, 100.0f,    // tlX, tlY, tlZ
+        3000.0f, 2000.0f, 56.0f,    // trX, trY, trZ  
+        0.0f, 0.0f, 34.0f,          // blX, blY, blZ
+        3100.0f, 0.0f, 78.0f        // brX, brY, brZ
+    );
+    
+    // Verify coordinates are set as expected
+    Assert(kinematics.getTlX() == 100.0f, "Valid tlX should be preserved");
+    Assert(kinematics.getTrX() == 3000.0f, "Valid trX should be preserved");
+    Assert(kinematics.getBlX() == 0.0f, "Valid blX should be preserved");
+    Assert(kinematics.getBrY() == 0.0f, "Valid brY should be preserved");
+}
+
+// Test anchor coordinate validation with invalid values
+Test(MaslowKinematicsValidationInvalid, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with invalid coordinates (blX, blY, brY not zero, tlX >= trX)
+    kinematics.updateAnchorCoordinates(
+        3000.0f, 2000.0f, 100.0f,   // tlX, tlY, tlZ (tlX > trX - invalid)
+        100.0f, 2000.0f, 56.0f,     // trX, trY, trZ  
+        50.0f, 10.0f, 34.0f,        // blX, blY, blZ (should be 0, 0, *)
+        3100.0f, 5.0f, 78.0f        // brX, brY, brZ (brY should be 0)
+    );
+    
+    // Run validation to trigger corrections
+    kinematics.validate();
+    
+    // Verify that invalid coordinates were corrected
+    Assert(kinematics.getBlX() == 0.0f, "blX should be corrected to 0.0");
+    Assert(kinematics.getBlY() == 0.0f, "blY should be corrected to 0.0");
+    Assert(kinematics.getBrY() == 0.0f, "brY should be corrected to 0.0");
+    Assert(kinematics.getTlX() < kinematics.getTrX(), "tlX should be less than trX after correction");
+}
+
 // Test spoilboard and work thickness functionality
 Test(MaslowKinematicsMaterialThickness, CalibrationTest) {
     using namespace Kinematics;
@@ -131,4 +178,78 @@ Test(MaslowKinematicsThicknessConfiguration, CalibrationTest) {
     // Test that all belt computation functions are working consistently
     Assert(originalTL > 0 && originalTR > 0 && originalBL > 0 && originalBR > 0, 
            "All original belt lengths should be positive");
+}
+
+// Test side length validation functionality
+Test(MaslowKinematicsSideLengthValidation, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with valid side lengths (should not trigger warnings)
+    kinematics.updateAnchorCoordinates(
+        0.0f, 2000.0f, 100.0f,       // tlX, tlY, tlZ
+        2000.0f, 2000.0f, 56.0f,     // trX, trY, trZ  
+        0.0f, 0.0f, 34.0f,           // blX, blY, blZ
+        2000.0f, 0.0f, 78.0f         // brX, brY, brZ
+    );
+    
+    kinematics.validate();
+    
+    // Verify coordinates are preserved (all sides should be 2000mm which is valid)
+    Assert(kinematics.getTlX() == 0.0f, "Valid tlX should be preserved");
+    Assert(kinematics.getTrX() == 2000.0f, "Valid trX should be preserved");
+    Assert(kinematics.getBlX() == 0.0f, "Valid blX should be preserved");
+    Assert(kinematics.getBrX() == 2000.0f, "Valid brX should be preserved");
+}
+
+// Test side length validation with invalid side lengths
+Test(MaslowKinematicsSideLengthValidationInvalid, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with side lengths that are too small (< 500mm)
+    kinematics.updateAnchorCoordinates(
+        0.0f, 200.0f, 100.0f,        // tlX, tlY, tlZ (top/left sides will be 200mm - too small)
+        200.0f, 200.0f, 56.0f,       // trX, trY, trZ  
+        0.0f, 0.0f, 34.0f,           // blX, blY, blZ
+        200.0f, 0.0f, 78.0f          // brX, brY, brZ
+    );
+    
+    // Run validation to trigger corrections
+    kinematics.validate();
+    
+    // Verify that coordinates were corrected to defaults (which have valid side lengths)
+    Assert(kinematics.getTlX() == -30.0f, "tlX should be corrected to default value");
+    Assert(kinematics.getTlY() == 2100.0f, "tlY should be corrected to default value");
+    Assert(kinematics.getTrX() == 2950.0f, "trX should be corrected to default value");
+    Assert(kinematics.getBrX() == 3000.0f, "brX should be corrected to default value");
+}
+
+// Test side length validation with side lengths that are too large
+Test(MaslowKinematicsSideLengthValidationTooLarge, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with side lengths that are too large (> 5000mm)
+    kinematics.updateAnchorCoordinates(
+        0.0f, 6000.0f, 100.0f,       // tlX, tlY, tlZ (top/left sides will be 6000mm - too large)
+        6000.0f, 6000.0f, 56.0f,     // trX, trY, trZ  
+        0.0f, 0.0f, 34.0f,           // blX, blY, blZ
+        6000.0f, 0.0f, 78.0f         // brX, brY, brZ
+    );
+    
+    // Run validation to trigger corrections
+    kinematics.validate();
+    
+    // Verify that coordinates were corrected to defaults (which have valid side lengths)
+    Assert(kinematics.getTlX() == -30.0f, "tlX should be corrected to default value");
+    Assert(kinematics.getTlY() == 2100.0f, "tlY should be corrected to default value");
+    Assert(kinematics.getTrX() == 2950.0f, "trX should be corrected to default value");
+    Assert(kinematics.getBrX() == 3000.0f, "brX should be corrected to default value");
 }

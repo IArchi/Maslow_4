@@ -461,14 +461,14 @@ namespace Kinematics {
         const float TOLERANCE = 0.1f;  // Allow small floating point differences
         bool coordinatesCorrected = false;
         
-        // Default reasonable values based on the class defaults
-        const float DEFAULT_TLX = -27.6f;
-        const float DEFAULT_TLY = 2064.9f;
-        const float DEFAULT_TRX = 2924.3f;
-        const float DEFAULT_TRY = 2066.5f;
+        // Default reasonable values (rounded for clarity that these are placeholder values)
+        const float DEFAULT_TLX = -30.0f;
+        const float DEFAULT_TLY = 2100.0f;
+        const float DEFAULT_TRX = 2950.0f;
+        const float DEFAULT_TRY = 2100.0f;
         const float DEFAULT_BLX = 0.0f;
         const float DEFAULT_BLY = 0.0f;
-        const float DEFAULT_BRX = 2953.2f;
+        const float DEFAULT_BRX = 3000.0f;
         const float DEFAULT_BRY = 0.0f;
         
         // Check that blX, blY, and brY should be zero (or very close to zero)
@@ -490,7 +490,7 @@ namespace Kinematics {
             coordinatesCorrected = true;
         }
         
-        // Check that tlX < trX (reasonable trapezoid shape)
+        // Check that tlX < trX (left should be to the left of right)
         if (_tlX >= _trX) {
             log_warn("Top left X coordinate (tlX=" << _tlX << ") should be less than top right X coordinate (trX=" << _trX << "). Correcting to reasonable defaults.");
             _tlX = DEFAULT_TLX;
@@ -503,14 +503,6 @@ namespace Kinematics {
             log_warn("Top anchor points should be above bottom anchor points. tlY=" << _tlY << " should be > blY=" << _blY << ", trY=" << _trY << " should be > brY=" << _brY << ". Correcting to reasonable defaults.");
             _tlY = DEFAULT_TLY;
             _trY = DEFAULT_TRY;
-            coordinatesCorrected = true;
-        }
-        
-        // Check that brX > blX (reasonable trapezoid width)
-        if (_brX <= _blX) {
-            log_warn("Bottom right X coordinate (brX=" << _brX << ") should be greater than bottom left X coordinate (blX=" << _blX << "). Correcting to reasonable defaults.");
-            _blX = DEFAULT_BLX;
-            _brX = DEFAULT_BRX;
             coordinatesCorrected = true;
         }
         

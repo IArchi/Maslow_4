@@ -506,6 +506,38 @@ namespace Kinematics {
             coordinatesCorrected = true;
         }
         
+        // Check side lengths - minimum 500mm, maximum 5000mm
+        const float MIN_SIDE_LENGTH = 500.0f;
+        const float MAX_SIDE_LENGTH = 5000.0f;
+        
+        // Calculate distances for each side of the frame
+        float topSideLength = sqrt((_trX - _tlX) * (_trX - _tlX) + (_trY - _tlY) * (_trY - _tlY));
+        float rightSideLength = sqrt((_brX - _trX) * (_brX - _trX) + (_brY - _trY) * (_brY - _trY));
+        float bottomSideLength = sqrt((_brX - _blX) * (_brX - _blX) + (_brY - _blY) * (_brY - _blY));
+        float leftSideLength = sqrt((_tlX - _blX) * (_tlX - _blX) + (_tlY - _blY) * (_tlY - _blY));
+        
+        // Check if any side length is outside the valid range
+        if (topSideLength < MIN_SIDE_LENGTH || topSideLength > MAX_SIDE_LENGTH ||
+            rightSideLength < MIN_SIDE_LENGTH || rightSideLength > MAX_SIDE_LENGTH ||
+            bottomSideLength < MIN_SIDE_LENGTH || bottomSideLength > MAX_SIDE_LENGTH ||
+            leftSideLength < MIN_SIDE_LENGTH || leftSideLength > MAX_SIDE_LENGTH) {
+            
+            log_warn("Frame side lengths are outside valid range (500-5000mm). " <<
+                     "Top=" << topSideLength << "mm, Right=" << rightSideLength << "mm, " <<
+                     "Bottom=" << bottomSideLength << "mm, Left=" << leftSideLength << "mm. " <<
+                     "Correcting to reasonable defaults.");
+            
+            _tlX = DEFAULT_TLX;
+            _tlY = DEFAULT_TLY;
+            _trX = DEFAULT_TRX;
+            _trY = DEFAULT_TRY;
+            _blX = DEFAULT_BLX;
+            _blY = DEFAULT_BLY;
+            _brX = DEFAULT_BRX;
+            _brY = DEFAULT_BRY;
+            coordinatesCorrected = true;
+        }
+        
         // Sanity check for reasonable coordinate values (not negative for most coordinates, not excessively large)
         const float MAX_REASONABLE_COORD = 10000.0f;  // 10 meters should be more than enough for any Maslow frame
         

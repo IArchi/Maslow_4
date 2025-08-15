@@ -453,6 +453,91 @@ namespace Kinematics {
         log_info("Work thickness set to " << thickness << " mm");
     }
 
+    void MaslowKinematics::validate() {
+        validateAndCorrectAnchorCoordinates();
+    }
+
+    void MaslowKinematics::validateAndCorrectAnchorCoordinates() {
+        const float TOLERANCE = 0.1f;  // Allow small floating point differences
+        bool coordinatesCorrected = false;
+        
+        // Default reasonable values based on the class defaults
+        const float DEFAULT_TLX = -27.6f;
+        const float DEFAULT_TLY = 2064.9f;
+        const float DEFAULT_TRX = 2924.3f;
+        const float DEFAULT_TRY = 2066.5f;
+        const float DEFAULT_BLX = 0.0f;
+        const float DEFAULT_BLY = 0.0f;
+        const float DEFAULT_BRX = 2953.2f;
+        const float DEFAULT_BRY = 0.0f;
+        
+        // Check that blX, blY, and brY should be zero (or very close to zero)
+        if (std::abs(_blX) > TOLERANCE) {
+            log_warn("Bottom left X coordinate (blX) should be 0.0, but is " << _blX << ". Correcting to 0.0.");
+            _blX = 0.0f;
+            coordinatesCorrected = true;
+        }
+        
+        if (std::abs(_blY) > TOLERANCE) {
+            log_warn("Bottom left Y coordinate (blY) should be 0.0, but is " << _blY << ". Correcting to 0.0.");
+            _blY = 0.0f;
+            coordinatesCorrected = true;
+        }
+        
+        if (std::abs(_brY) > TOLERANCE) {
+            log_warn("Bottom right Y coordinate (brY) should be 0.0, but is " << _brY << ". Correcting to 0.0.");
+            _brY = 0.0f;
+            coordinatesCorrected = true;
+        }
+        
+        // Check that tlX < trX (reasonable trapezoid shape)
+        if (_tlX >= _trX) {
+            log_warn("Top left X coordinate (tlX=" << _tlX << ") should be less than top right X coordinate (trX=" << _trX << "). Correcting to reasonable defaults.");
+            _tlX = DEFAULT_TLX;
+            _trX = DEFAULT_TRX;
+            coordinatesCorrected = true;
+        }
+        
+        // Check that top points are above bottom points
+        if (_tlY <= _blY || _trY <= _brY) {
+            log_warn("Top anchor points should be above bottom anchor points. tlY=" << _tlY << " should be > blY=" << _blY << ", trY=" << _trY << " should be > brY=" << _brY << ". Correcting to reasonable defaults.");
+            _tlY = DEFAULT_TLY;
+            _trY = DEFAULT_TRY;
+            coordinatesCorrected = true;
+        }
+        
+        // Check that brX > blX (reasonable trapezoid width)
+        if (_brX <= _blX) {
+            log_warn("Bottom right X coordinate (brX=" << _brX << ") should be greater than bottom left X coordinate (blX=" << _blX << "). Correcting to reasonable defaults.");
+            _blX = DEFAULT_BLX;
+            _brX = DEFAULT_BRX;
+            coordinatesCorrected = true;
+        }
+        
+        // Sanity check for reasonable coordinate values (not negative for most coordinates, not excessively large)
+        const float MAX_REASONABLE_COORD = 10000.0f;  // 10 meters should be more than enough for any Maslow frame
+        
+        if (_tlY < 0 || _trY < 0 || _tlY > MAX_REASONABLE_COORD || _trY > MAX_REASONABLE_COORD ||
+            _blX < 0 || _brX < 0 || _brX > MAX_REASONABLE_COORD) {
+            log_warn("Anchor coordinates contain unrealistic values. Resetting to reasonable defaults.");
+            _tlX = DEFAULT_TLX;
+            _tlY = DEFAULT_TLY;
+            _trX = DEFAULT_TRX;
+            _trY = DEFAULT_TRY;
+            _blX = DEFAULT_BLX;
+            _blY = DEFAULT_BLY;
+            _brX = DEFAULT_BRX;
+            _brY = DEFAULT_BRY;
+            coordinatesCorrected = true;
+        }
+        
+        if (coordinatesCorrected) {
+            log_info("Anchor coordinates corrected. New values: tlX=" << _tlX << " tlY=" << _tlY << " trX=" << _trX << " trY=" << _trY << " blX=" << _blX << " blY=" << _blY << " brX=" << _brX << " brY=" << _brY);
+            // Recalculate center coordinates after correction
+            calculateCenter();
+        }
+    }
+
     // Destructor - clear global pointer
     MaslowKinematics::~MaslowKinematics() {
         if (g_maslowKinematics == this) {

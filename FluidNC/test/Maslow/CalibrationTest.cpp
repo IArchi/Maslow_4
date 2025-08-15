@@ -54,6 +54,53 @@ Test(MaslowKinematicsUpdateAnchors, CalibrationTest) {
     Assert(kinematics.getBrZ() == brZ, "Bottom right Z not set correctly");
 }
 
+// Test anchor coordinate validation functionality
+Test(MaslowKinematicsValidation, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with valid coordinates (should not trigger warnings)
+    kinematics.updateAnchorCoordinates(
+        100.0f, 2000.0f, 100.0f,    // tlX, tlY, tlZ
+        3000.0f, 2000.0f, 56.0f,    // trX, trY, trZ  
+        0.0f, 0.0f, 34.0f,          // blX, blY, blZ
+        3100.0f, 0.0f, 78.0f        // brX, brY, brZ
+    );
+    
+    // Verify coordinates are set as expected
+    Assert(kinematics.getTlX() == 100.0f, "Valid tlX should be preserved");
+    Assert(kinematics.getTrX() == 3000.0f, "Valid trX should be preserved");
+    Assert(kinematics.getBlX() == 0.0f, "Valid blX should be preserved");
+    Assert(kinematics.getBrY() == 0.0f, "Valid brY should be preserved");
+}
+
+// Test anchor coordinate validation with invalid values
+Test(MaslowKinematicsValidationInvalid, CalibrationTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Test with invalid coordinates (blX, blY, brY not zero, tlX >= trX)
+    kinematics.updateAnchorCoordinates(
+        3000.0f, 2000.0f, 100.0f,   // tlX, tlY, tlZ (tlX > trX - invalid)
+        100.0f, 2000.0f, 56.0f,     // trX, trY, trZ  
+        50.0f, 10.0f, 34.0f,        // blX, blY, blZ (should be 0, 0, *)
+        3100.0f, 5.0f, 78.0f        // brX, brY, brZ (brY should be 0)
+    );
+    
+    // Run validation to trigger corrections
+    kinematics.validate();
+    
+    // Verify that invalid coordinates were corrected
+    Assert(kinematics.getBlX() == 0.0f, "blX should be corrected to 0.0");
+    Assert(kinematics.getBlY() == 0.0f, "blY should be corrected to 0.0");
+    Assert(kinematics.getBrY() == 0.0f, "brY should be corrected to 0.0");
+    Assert(kinematics.getTlX() < kinematics.getTrX(), "tlX should be less than trX after correction");
+}
+
 // Test spoilboard and work thickness functionality
 Test(MaslowKinematicsMaterialThickness, CalibrationTest) {
     using namespace Kinematics;

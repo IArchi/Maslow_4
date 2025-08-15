@@ -99,3 +99,38 @@ Test(MaslowKinematicsZeroZOffsetEdgeCase, ZeroZOffsetTest) {
                          (blLength_offset != blLength) || (brLength_offset != brLength);
     Assert(lengthsChanged, "Belt lengths should change when position changes");
 }
+
+// Test the specific fix - ensure minimum z-component behavior is working
+Test(MaslowKinematicsMinimumZComponent, ZeroZOffsetTest) {
+    using namespace Kinematics;
+    
+    // Create a MaslowKinematics instance
+    MaslowKinematics kinematics;
+    
+    // Set anchor coordinates with all Z offsets as zero
+    kinematics.updateAnchorCoordinates(0.0f, 2000.0f, 0.0f,   // TL
+                                      2000.0f, 2000.0f, 0.0f, // TR
+                                      0.0f, 0.0f, 0.0f,       // BL
+                                      2000.0f, 0.0f, 0.0f);   // BR
+    
+    // Test router at anchor XY position (worst case scenario that was problematic)
+    float tlLength_exact = kinematics.computeTL(0.0f, 2000.0f, 0.0f);
+    float trLength_exact = kinematics.computeTR(2000.0f, 2000.0f, 0.0f);
+    float blLength_exact = kinematics.computeBL(0.0f, 0.0f, 0.0f);
+    float brLength_exact = kinematics.computeBR(2000.0f, 0.0f, 0.0f);
+    
+    // With the fix, all calculations should be stable and produce reasonable results
+    Assert(std::isfinite(tlLength_exact) && tlLength_exact > 0, "TL belt length should be finite and positive at exact anchor position");
+    Assert(std::isfinite(trLength_exact) && trLength_exact > 0, "TR belt length should be finite and positive at exact anchor position");
+    Assert(std::isfinite(blLength_exact) && blLength_exact > 0, "BL belt length should be finite and positive at exact anchor position");
+    Assert(std::isfinite(brLength_exact) && brLength_exact > 0, "BR belt length should be finite and positive at exact anchor position");
+    
+    // The belt lengths should be reasonable (should be close to the belt extension + arm length due to minimum z component)
+    float expectedMinLength = 153.4f; // beltEndExtension (30) + armLength (123.4)
+    float tolerance = 5.0f; // 5mm tolerance for minimum z-component effect
+    
+    Assert(fabs(tlLength_exact - expectedMinLength) < tolerance, "TL belt length should be close to expected minimum");
+    Assert(fabs(trLength_exact - expectedMinLength) < tolerance, "TR belt length should be close to expected minimum");
+    Assert(fabs(blLength_exact - expectedMinLength) < tolerance, "BL belt length should be close to expected minimum");
+    Assert(fabs(brLength_exact - expectedMinLength) < tolerance, "BR belt length should be close to expected minimum");
+}

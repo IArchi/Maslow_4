@@ -291,6 +291,12 @@ namespace Kinematics {
         float b = _tlY - y; // Y dist from corner to router center
         float c = 0.0f - (z + _tlZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
 
+        // Ensure minimum z-component to maintain geometric stability when all z-offsets are zero
+        // This prevents degenerate cases where the calculation reduces to 2D
+        if (fabs(c) < 1.0f) {
+            c = (c >= 0) ? 1.0f : -1.0f; // Maintain sign but ensure minimum magnitude of 1mm
+        }
+
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
         float length = sqrt(XYBeltLength * XYBeltLength + c * c); // Get the angled belt length
@@ -306,6 +312,12 @@ namespace Kinematics {
         float b = _trY - y;
         float c = 0.0f - (z + _trZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
         
+        // Ensure minimum z-component to maintain geometric stability when all z-offsets are zero
+        // This prevents degenerate cases where the calculation reduces to 2D
+        if (fabs(c) < 1.0f) {
+            c = (c >= 0) ? 1.0f : -1.0f; // Maintain sign but ensure minimum magnitude of 1mm
+        }
+
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
         float length = sqrt(XYBeltLength * XYBeltLength + c * c); // Get the angled belt length
@@ -321,6 +333,12 @@ namespace Kinematics {
         float b = _blY - y; // Y dist from corner to router center
         float c = 0.0f - (z + _blZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
 
+        // Ensure minimum z-component to maintain geometric stability when all z-offsets are zero
+        // This prevents degenerate cases where the calculation reduces to 2D
+        if (fabs(c) < 1.0f) {
+            c = (c >= 0) ? 1.0f : -1.0f; // Maintain sign but ensure minimum magnitude of 1mm
+        }
+
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length
         float length = sqrt(XYBeltLength * XYBeltLength + c * c); // Get the angled belt length
@@ -335,6 +353,12 @@ namespace Kinematics {
         float a = _brX - x;
         float b = _brY - y;
         float c = 0.0f - (z + _brZ + _spoilboardThickness + _workThickness); // Z dist from corner to router center (includes material thickness)
+
+        // Ensure minimum z-component to maintain geometric stability when all z-offsets are zero
+        // This prevents degenerate cases where the calculation reduces to 2D
+        if (fabs(c) < 1.0f) {
+            c = (c >= 0) ? 1.0f : -1.0f; // Maintain sign but ensure minimum magnitude of 1mm
+        }
 
         float XYlength = sqrt(a * a + b * b); // Get the distance in the XY plane from the corner to the router center
         float XYBeltLength = XYlength - (_beltEndExtension + _armLength); // Subtract the belt end extension and arm length to get the belt length

@@ -215,9 +215,23 @@ namespace Kinematics {
         float tlBeltLength = motors[0];  // Top Left belt length (A axis)
         float trBeltLength = motors[1];  // Top Right belt length (B axis)
         
-        // Convert angled belt measurements to XY plane distances
-        float tlXYDistance = measurementToXYPlane(tlBeltLength, _tlZ);
-        float trXYDistance = measurementToXYPlane(trBeltLength, _trZ);
+        // Calculate complete z-components including spoilboard and work thickness
+        // This must match the z-component calculation used in forward kinematics
+        float z = motors[4];
+        float tlTotalZ = 0.0f - (z + _tlZ + _spoilboardThickness + _workThickness);
+        float trTotalZ = 0.0f - (z + _trZ + _spoilboardThickness + _workThickness);
+        
+        // Apply minimum z-component safeguard to maintain geometric stability
+        if (fabs(tlTotalZ) < 1.0f) {
+            tlTotalZ = (tlTotalZ >= 0) ? 1.0f : -1.0f;
+        }
+        if (fabs(trTotalZ) < 1.0f) {
+            trTotalZ = (trTotalZ >= 0) ? 1.0f : -1.0f;
+        }
+        
+        // Convert angled belt measurements to XY plane distances using complete z-components
+        float tlXYDistance = measurementToXYPlane(tlBeltLength, fabs(tlTotalZ));
+        float trXYDistance = measurementToXYPlane(trBeltLength, fabs(trTotalZ));
         
         // Solve for X,Y position using intersection of circles
         float x, y;

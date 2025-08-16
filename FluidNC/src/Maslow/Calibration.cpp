@@ -681,29 +681,77 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
     }
     // in HoRIZONTAL orientation we pull on the belts depending on the direction of the last move. This is important because the other two belts are likely slack
     else if (orientation == HORIZONTAL) {
-        // For the first waypoint (waypoint == 0), pull all four belts tight to ensure proper initial tension
+        // For the first waypoint (waypoint == 0), use a two-phase approach to ensure proper tension
         if (waypoint == 0) {
             static bool tl_tight = false;
             static bool tr_tight = false;
             static bool bl_tight = false;
             static bool br_tight = false;
+            static bool initial_tension_complete = false;
 
-            // Pull all four belts tight simultaneously in horizontal mode since there's no gravity to maintain tension
-            if (Maslow.axisTL.pull_tight(current)) {
-                tl_tight = true;
-            }
-            if (Maslow.axisTR.pull_tight(current)) {
-                tr_tight = true;
-            }
-            if (Maslow.axisBL.pull_tight(current)) {
-                bl_tight = true;
-            }
-            if (Maslow.axisBR.pull_tight(current)) {
-                br_tight = true;
+            // Phase 1: Pull all four belts tight simultaneously to eliminate slack
+            if (!initial_tension_complete) {
+                if (Maslow.axisTL.pull_tight(current)) {
+                    tl_tight = true;
+                }
+                if (Maslow.axisTR.pull_tight(current)) {
+                    tr_tight = true;
+                }
+                if (Maslow.axisBL.pull_tight(current)) {
+                    bl_tight = true;
+                }
+                if (Maslow.axisBR.pull_tight(current)) {
+                    br_tight = true;
+                }
+
+                // Once all belts are tight, move to phase 2
+                if (tl_tight && tr_tight && bl_tight && br_tight) {
+                    initial_tension_complete = true;
+                    // Reset belt tight flags for the actual measurement phase
+                    bl_tight = false;
+                    br_tight = false;
+                }
+                return false;
             }
 
-            // Once all belts are tight, reset the flags and take the measurement
-            if (tl_tight && tr_tight && bl_tight && br_tight) {
+            // Phase 2: Hold TL and TR in position, then pull BL and BR based on x-coordinate
+            // This ensures TL and TR remain as stable reference points for position calculation
+            Maslow.axisTL.recomputePID();
+            Maslow.axisTR.recomputePID();
+
+            // Pull bottom belts based on x-coordinate (same logic as vertical mode)
+            if (Maslow.x < 0) {
+                // On the left side, pull BL first, then BR
+                if (!bl_tight) {
+                    if (Maslow.axisBL.pull_tight(current)) {
+                        bl_tight = true;
+                    }
+                    return false;
+                }
+                if (!br_tight) {
+                    if (Maslow.axisBR.pull_tight(current)) {
+                        br_tight = true;
+                    }
+                    return false;
+                }
+            } else {
+                // On the right side, pull BR first, then BL
+                if (!br_tight) {
+                    if (Maslow.axisBR.pull_tight(current)) {
+                        br_tight = true;
+                    }
+                    return false;
+                }
+                if (!bl_tight) {
+                    if (Maslow.axisBL.pull_tight(current)) {
+                        bl_tight = true;
+                    }
+                    return false;
+                }
+            }
+
+            // Once both bottom belts are tight, take the measurement
+            if (bl_tight && br_tight) {
                 auto kinematics = getKinematics();
                 if (!kinematics) return false;
                 //take measurement and record it to the calibration data array.
@@ -711,10 +759,12 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                 result[1] = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
                 result[2] = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
                 result[3] = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
+                // Reset all flags for next measurement
                 tl_tight = false;
                 tr_tight = false;
                 bl_tight = false;
                 br_tight = false;
+                initial_tension_complete = false;
                 return true;
             }
             return false;

@@ -235,7 +235,10 @@ namespace Kinematics {
             // This can happen if belt lengths are inconsistent
             cartesian[X_AXIS] = 0.0f;
             cartesian[Y_AXIS] = 0.0f;
-            log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
+            // Don't spam the console during belt retraction - this is expected behavior
+            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED) {
+                log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
+            }
         }
         
         // Copy any additional axes directly (none expected beyond Z for now)

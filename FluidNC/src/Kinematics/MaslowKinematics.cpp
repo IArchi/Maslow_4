@@ -412,8 +412,6 @@ namespace Kinematics {
         handler.item("brZ", _brZ);
         handler.item("beltEndExtension", _beltEndExtension);
         handler.item("armLength", _armLength);
-        handler.item("spoilboardThickness", _spoilboardThickness);
-        handler.item("workThickness", _workThickness);
         handler.item("maxSegmentLength", _maxSegmentLength);
     }
 

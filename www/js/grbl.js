@@ -451,9 +451,22 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
         </g>
       </svg>`;
     playButton.onclick = () => SendRealtimeCmd(0x7e); // Resume command
+  } else {
+    // Machine is idle or in another state - reset button and let tablet.js handle it
+    // Only reset if the button was previously in pause mode (orange background) or resume mode (green background)
+    const currentBgColor = playButton.style.backgroundColor;
+    if (currentBgColor === 'rgb(240, 173, 78)' || currentBgColor === '#f0ad4e' || 
+        currentBgColor === 'rgb(92, 184, 92)' || currentBgColor === '#5cb85c') {
+      // Reset the button styling and let tablet.js control it
+      playButton.style.backgroundColor = '';
+      playButton.innerHTML = '';
+      playButton.onclick = null;
+      // Trigger tablet.js to set the correct state for idle
+      if (typeof setRunControls === 'function') {
+        setRunControls();
+      }
+    }
   }
-  // For idle state, don't override the button - let tablet.js handle it
-  // The existing tablet.js system will set up the appropriate start functionality
 };
 
 function show_grbl_position(wpos, mpos) {

@@ -3,7 +3,7 @@
 #include "../../src/Maslow/Maslow.h"
 #include <cmath>
 
-// Test to verify Z-axis position is preserved during tension release/apply cycles
+// Test to verify Z-axis motor position is left untouched during tension release/apply cycles
 Test(ZAxisPreservation, TensionReleaseApplyTest) {
     // Create a calibration instance
     Calibration calibration;
@@ -11,35 +11,29 @@ Test(ZAxisPreservation, TensionReleaseApplyTest) {
     // Simulate being in a stable state ready for tension release
     calibration.currentState = READY_TO_CUT;
     
-    // Mock setting the initial Z position
-    float initialZPosition = -25.4f; // 1 inch below surface
+    // During tension release/apply, the Z motor position should NOT be modified
+    // Only the belt motor positions (A, B, C, D) should be updated
     
-    // Simulate the current position being at the initial Z position
-    // In real system this would come from get_mpos(), but for test we'll verify the logic
-    
-    // Request tension release - this should save the Z position
+    // Request tension release - this should NOT save any Z position
     bool releaseSuccess = calibration.requestStateChange(RELEASE_TENSION);
     Assert(releaseSuccess, "Should be able to release tension from READY_TO_CUT state");
     Assert(calibration.currentState == RELEASE_TENSION, "State should be RELEASE_TENSION");
-    
-    // Verify that savedZPosition would be set (we can't easily test the actual value without mocking get_mpos)
-    // The key is that the request succeeds and the state transitions properly
     
     // Simulate completing tension release and moving to EXTENDEDOUT
     bool extendSuccess = calibration.requestStateChange(EXTENDEDOUT);
     Assert(extendSuccess, "Should be able to transition to EXTENDEDOUT from RELEASE_TENSION");
     Assert(calibration.currentState == EXTENDEDOUT, "State should be EXTENDEDOUT");
     
-    // Now test taking slack which should restore the saved Z position
+    // Now test taking slack which should only update belt positions, not Z
     bool slackSuccess = calibration.requestStateChange(TAKING_SLACK);
     Assert(slackSuccess, "Should be able to take slack from EXTENDEDOUT state");
     Assert(calibration.currentState == TAKING_SLACK, "State should be TAKING_SLACK");
     
-    // The critical test is that takeSlackFunc() now uses savedZPosition instead of 0
-    // This is tested implicitly through the state machine behavior
+    // The critical behavior is that takeSlackFunc() only sets belt motor positions
+    // and leaves the Z motor position completely untouched
 }
 
-// Test to verify Z-axis preservation works from different starting states
+// Test to verify Z-axis motor position remains untouched from different starting states
 Test(ZAxisPreservation, MultipleStateTransitionsTest) {
     Calibration calibration;
     

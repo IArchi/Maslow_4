@@ -114,9 +114,6 @@ private:
     // Store the previous state before entering RELEASE_TENSION
     int previousState = UNKNOWN;
 
-    // Store the Z-axis position before releasing tension to restore it later
-    float savedZPosition = 0.0f;
-
     //Variables used by extending
     bool extendedTL   = false;
     bool extendedTR   = false;

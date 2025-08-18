@@ -229,11 +229,6 @@ bool Calibration::requestStateChange(int newState) {
                 currentState == CALIBRATION_COMPUTING) {
                 previousState = currentState;  // Store the previous state
 
-                // Store the current Z-axis position before releasing tension
-                float* mpos    = get_mpos();
-                savedZPosition = mpos[Z_AXIS];
-                log_info("Saving Z position before releasing tension: " << savedZPosition);
-
                 currentState    = RELEASE_TENSION;
                 complyCallTimer = millis();
                 retractingTL    = false;
@@ -516,17 +511,15 @@ bool Calibration::takeSlackFunc() {
 
                 // Set motor positions directly from measured belt lengths
                 // Axis mapping: A=TL(0), B=TR(1), C=BL(2), D=BR(3), Z=router(4)
+                // Note: Z motor position is NOT set during tension operations - it should remain untouched
                 set_motor_steps(0, mpos_to_steps(tlBeltLength, 0));    // A axis = TL belt
                 set_motor_steps(1, mpos_to_steps(trBeltLength, 1));    // B axis = TR belt
                 set_motor_steps(2, mpos_to_steps(blBeltLength, 2));    // C axis = BL belt
                 set_motor_steps(3, mpos_to_steps(brBeltLength, 3));    // D axis = BR belt
-                set_motor_steps(4, mpos_to_steps(savedZPosition, 4));  // Z axis = restore saved position
 
-                log_info("Restored Z position to: " << savedZPosition);
-
-                // Verify that the position was set correctly by reading back from motors
+                // Verify that the belt positions were set correctly by reading back from motors
                 float* verify_mpos = get_mpos();
-                log_info("After update - mpos: X=" << verify_mpos[0] << " Y=" << verify_mpos[1] << " Z=" << verify_mpos[2]);
+                log_info("After belt position update - mpos: X=" << verify_mpos[0] << " Y=" << verify_mpos[1] << " Z=" << verify_mpos[2] << " (Z unchanged)");
 
                 gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
                 plan_sync_position();

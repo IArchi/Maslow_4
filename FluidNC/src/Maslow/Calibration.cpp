@@ -531,7 +531,7 @@ bool Calibration::takeSlackFunc() {
                 set_motor_steps(1, mpos_to_steps(trBeltLength, 1)); // B axis = TR belt
                 set_motor_steps(2, mpos_to_steps(blBeltLength, 2)); // C axis = BL belt
                 set_motor_steps(3, mpos_to_steps(brBeltLength, 3)); // D axis = BR belt
-                set_motor_steps(4, mpos_to_steps(0.0, 4));          // Z axis = 0 (surface level)
+
                 
                 // Verify that the position was set correctly by reading back from motors
                 float* verify_mpos = get_mpos();

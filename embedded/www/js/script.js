@@ -352,6 +352,7 @@ function startSocket(){
       };
       ws_source.onmessage = function(e){
         var msg = "";
+        var isProtocolMessage = false;
         //bin
         if(!(e.data instanceof ArrayBuffer)){
           msg = e.data;
@@ -360,11 +361,13 @@ function startSocket(){
           if (tval[0] == 'currentID') {
               page_id = tval[1];
               console.log("ID " + page_id); 
+              isProtocolMessage = true;
           }
           if (tval[0] == 'activeID') {
               if(page_id != tval[1]) {
                 HideAll("It seems you are connect from another location, your are now disconnected");
                 }
+              isProtocolMessage = true;
             }
          if (tval[0] == 'ERROR') {
               esp_error_message = tval[2];
@@ -372,9 +375,14 @@ function startSocket(){
               console.log(tval[2] + " code:" +  tval[1]);
               uploadError();
               xmlhttpupload.abort();
+              isProtocolMessage = true;
             }
           }
           
+          // Close "Connecting..." popup when any message is received from the machine
+          if (!isProtocolMessage && document.getElementById('MSG').innerHTML === "Connecting...") {
+              document.getElementById('MSG').innerHTML = "Connected";
+          }
         }
         //console.log(msg);
         

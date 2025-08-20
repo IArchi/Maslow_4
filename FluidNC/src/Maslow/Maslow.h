@@ -14,7 +14,7 @@
 
 #define TCAADDR 0x70
 
-#define CALIBRATION_GRID_SIZE_MAX (10 * 10) + 2
+#define CALIBRATION_GRID_SIZE_MAX (10*10)+2
 
 #define UP 1
 #define DOWN 2
@@ -32,10 +32,10 @@ const std::string M = "Maslow";
 //const char * nvs_t = "maslow";
 
 struct TelemetryFileHeader {
-    unsigned int structureSize;  // 4 bytes
-    char         version[10];    // 10
+    unsigned int structureSize; // 4 bytes
+    char version[10];       // 10
     // if you add to the header take bytes from this
-    char _unused[64];  // 64 bytes
+    char _unused[64]; // 64 bytes
 };
 
 struct TelemetryData {
@@ -55,7 +55,7 @@ struct TelemetryData {
     double trSpeed;
     double blSpeed;
     double brSpeed;
-    // position
+     // position
     double tlPos;
     double trPos;
     double blPos;
@@ -75,7 +75,7 @@ struct TelemetryData {
     bool complyALL;
     bool takeSlack;
 
-    bool   safetyOn;
+    bool safetyOn;
     double targetX;
     double targetY;
     double targetZ;
@@ -83,15 +83,15 @@ struct TelemetryData {
     double y;
     double z;
 
-    bool          test;
-    int           pointCount;
-    int           waypoint;
-    int           calibrationGridSize;
+    bool test;
+    int pointCount;
+    int waypoint;
+    int calibrationGridSize;
     unsigned long holdTimer;
-    bool          holding;
+    bool holding;
     unsigned long holdTime;
-    float         centerX;
-    float         centerY;
+    float centerX;
+    float centerY;
     unsigned long lastCallToPID;
     unsigned long lastMiss;
     unsigned long lastCallToUpdate;
@@ -150,8 +150,7 @@ public:
     bool complyALL    = false;
     bool takeSlack    = false;
 
-    bool safetyOn           = true;
-    bool printMotorCurrents = false;  // Controls whether motor currents are printed to log
+    bool safetyOn = true;
 
     Calibration calibration;
 
@@ -162,7 +161,7 @@ public:
     TelemetryData get_telemetry_data();
     // turns on or off telemetry gathering
     void set_telemetry(bool enabled);
-    void dump_telemetry(const char* filename);
+    void dump_telemetry(const char * filename);
     // writes whatever is in teh telemetry buffer to SD card
     void write_telemetry_buffer(uint8_t* buffer, size_t length);
 
@@ -180,20 +179,22 @@ public:
     bool using_default_config = false;
     QWIICMUX I2CMux;
 
-    bool   error = false;
+    bool   error                                     = false;
     String errorMessage;
-
-    void test_();
-    void reset_all_axis();
+    
+    void   test_();
+    void   reset_all_axis();
     //keep track of where Maslow actually is
     double x;
     double y;
-    float  scaleX = 1.0;
-    float  scaleY = 1.0;
+    float scaleX = 1.0;
+    float scaleY = 1.0;
 
-    bool test = false;
+    bool   test = false;
+    bool   printMotorCurrents = false;
 
 private:
+
     //Used to keep track of how often the PID controller is updated
     unsigned long lastCallToPID    = millis();
     unsigned long lastMiss         = millis();
@@ -205,14 +206,14 @@ private:
     void (*_sys_rt)() = nullptr;
 
     //Used to overide and drive motors directly...dangerous
-    bool          TLIOveride   = false;
-    bool          TRIOveride   = false;
-    bool          BLIOveride   = false;
-    bool          BRIOveride   = false;
-    bool          TLOOveride   = false;
-    bool          TROOveride   = false;
-    bool          BLOOveride   = false;
-    bool          BROOveride   = false;
+    bool TLIOveride = false;
+    bool TRIOveride = false;
+    bool BLIOveride = false;
+    bool BRIOveride = false;
+    bool TLOOveride = false;
+    bool TROOveride = false;
+    bool BLOOveride = false;
+    bool BROOveride = false;
     unsigned long overideTimer = millis();
 
     bool HeartBeatEnabled = true;
@@ -223,4 +224,4 @@ private:
 extern Maslow_& Maslow;
 
 // actual task loop for gathering telemetry data (runs on utility core)
-void telemetry_loop(void* unused);
+void   telemetry_loop(void* unused);

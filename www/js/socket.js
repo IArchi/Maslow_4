@@ -1,4 +1,4 @@
-// import - Monitor_output_Update, id, HTMLDecode, setHTML, on_autocheck_position, enable_ping, grblHandleMessage, reportNone, clear_cmd_list, translate_text_item, UIdisableddlg
+// import - Monitor_output_Update, id, HTMLDecode, setHTML, on_autocheck_position, enable_ping, grblHandleMessage, reportNone, clear_cmd_list, translate_text_item, UIdisableddlg, closeModal
 
 let convertDHT2Fahrenheit = false;
 let event_source;
@@ -166,6 +166,14 @@ const startSocket = () => {
 					if (!noNeedToShowMsg && thismsg !== "ok") {
 						console.log(thismsg);
 					}
+					
+					// Close stuck connection dialog if any message received from machine
+					// This indicates the machine is connected and communicating
+					const connectModal = id("connectdlg.html");
+					if (connectModal && connectModal.style.display !== "none") {
+						console.log("SOCKET FIX: Machine message received - closing stuck connection dialog");
+						closeModal("Machine connected");
+					}
 				}
 			}
 			wsmsg += msg;
@@ -205,6 +213,14 @@ const startSocket = () => {
 				if (tval[0] === "MSG") {
 					console.info(`MSG: ${tval[2]} code:${tval[1]}`);
 				}
+			}
+			
+			// Close stuck connection dialog if any message received from machine
+			// This indicates the machine is connected and communicating  
+			const connectModal = id("connectdlg.html");
+			if (connectModal && connectModal.style.display !== "none") {
+				console.log("SOCKET FIX: Machine message received - closing stuck connection dialog");
+				closeModal("Machine connected");
 			}
 		}
 		//console.log(msg);

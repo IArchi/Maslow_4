@@ -553,6 +553,10 @@ void Maslow_::blinkIPAddress() {
 
 //Print the motor currents. Used for monitioring the power consumption of each motor.
 void Maslow_::print_motor_currents() {
+    if (!printMotorCurrents) {
+        return;
+    }
+    
     static unsigned long lastExecutionTime = 0;
     unsigned long currentTime = millis();
 

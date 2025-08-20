@@ -457,10 +457,16 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
     const currentBgColor = playButton.style.backgroundColor;
     if (currentBgColor === 'rgb(240, 173, 78)' || currentBgColor === '#f0ad4e' || 
         currentBgColor === 'rgb(92, 184, 92)' || currentBgColor === '#5cb85c') {
-      // Reset the button styling and let tablet.js control it
+      // Reset the button styling
       playButton.style.backgroundColor = '';
-      playButton.innerHTML = '';
       playButton.onclick = null;
+      
+      // Restore the canvas element that tablet.js expects, if it doesn't exist
+      const playBtnCanvas = id("playBtn");
+      if (!playBtnCanvas) {
+        playButton.innerHTML = '<canvas id="playBtn" style="width:100%;height:100%"></canvas>';
+      }
+      
       // Trigger tablet.js to set the correct state for idle
       if (typeof setRunControls === 'function') {
         setRunControls();

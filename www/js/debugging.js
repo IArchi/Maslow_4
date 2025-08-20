@@ -8,6 +8,8 @@ let motorCurrentData = {
     lastUpdate: null
 };
 
+let debugTabVisible = false; // Track if debug tab has been shown
+
 const MAX_CURRENT = 2200; // Maximum current value for gauge scaling in mA (at max ADC)
 
 /**
@@ -20,6 +22,19 @@ const convertAdcToMilliamps = (adcValue) => {
 };
 
 /**
+ * Show the debug tab by removing the hide_it class
+ */
+const showDebugTab = () => {
+    if (!debugTabVisible) {
+        const debugTabLink = id('debuggingtablink');
+        if (debugTabLink) {
+            debugTabLink.classList.remove('hide_it');
+            debugTabVisible = true;
+        }
+    }
+};
+
+/**
  * Parse motor current message in format: [MSG:INFO: TLC: 0.000 TRC: 0.000 BLC: 0.000 BRC: 0.000]
  * @param {string} message - The motor current message to parse
  */
@@ -28,6 +43,9 @@ const parseMotorCurrentMessage = (message) => {
     const match = message.match(motorCurrentRegex);
     
     if (match) {
+        // Show debug tab when motor current messages are received
+        showDebugTab();
+        
         // Convert ADC values to milliamps
         motorCurrentData.TLC = convertAdcToMilliamps(Number.parseFloat(match[1]));
         motorCurrentData.TRC = convertAdcToMilliamps(Number.parseFloat(match[2]));

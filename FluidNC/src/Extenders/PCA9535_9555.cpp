@@ -4,9 +4,13 @@
 #include "PCA9535_9555.h"
 
 namespace Extenders {
-    PCA9535_9555::PCA9535_9555() { _baseAddress = 0x20; }
+    PCA9535_9555::PCA9535_9555() {
+        _baseAddress = 0x20;
+    }
 
-    const char* PCA9535_9555::name() const { return "pca9535_9555"; }
+    const char* PCA9535_9555::name() const {
+        return "pca9535_9555";
+    }
 
     // Register extender:
     namespace {

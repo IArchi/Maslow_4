@@ -16,7 +16,7 @@ namespace Pins {
         static std::vector<bool> _claimed;
 
         bool              _lastWrittenValue = false;
-        Machine::I2SOBus* _i2soDriver              = nullptr;
+        Machine::I2SOBus* _i2soDriver       = nullptr;
 
     public:
         I2SOPinDetail(pinnum_t index, const PinOptionsParser& options);

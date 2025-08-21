@@ -37,10 +37,10 @@ namespace Spindles {
         //     _min_rpm(minRpm), _max_rpm(maxRpm), _output_pin(std::move(output)), _enable_pin(std::move(enable)),
         //     _direction_pin(std::move(direction)) {}
 
-        HBridge(const HBridge&) = delete;
-        HBridge(HBridge&&)      = delete;
+        HBridge(const HBridge&)            = delete;
+        HBridge(HBridge&&)                 = delete;
         HBridge& operator=(const HBridge&) = delete;
-        HBridge& operator=(HBridge&&) = delete;
+        HBridge& operator=(HBridge&&)      = delete;
 
         void init() override;
         void setSpeedfromISR(uint32_t dev_speed) override;

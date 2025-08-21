@@ -29,9 +29,13 @@ namespace WebUI {
         }
     }
 
-    WSChannel::operator bool() const { return true; }
+    WSChannel::operator bool() const {
+        return true;
+    }
 
-    size_t WSChannel::write(uint8_t c) { return write(&c, 1); }
+    size_t WSChannel::write(uint8_t c) {
+        return write(&c, 1);
+    }
 
     size_t WSChannel::write(const uint8_t* buffer, size_t size) {
         if (buffer == NULL || _dead) {
@@ -53,7 +57,9 @@ namespace WebUI {
         return size;
     }
 
-    void WSChannel::pushRT(char ch) { _rtchar = ch; }
+    void WSChannel::pushRT(char ch) {
+        _rtchar = ch;
+    }
 
     bool WSChannel::push(const uint8_t* data, size_t length) {
         if (_dead) {
@@ -66,7 +72,9 @@ namespace WebUI {
         return true;
     }
 
-    bool WSChannel::push(std::string& s) { return push((uint8_t*)s.c_str(), s.length()); }
+    bool WSChannel::push(std::string& s) {
+        return push((uint8_t*)s.c_str(), s.length());
+    }
 
     void WSChannel::handle() {
         if (_dead) {

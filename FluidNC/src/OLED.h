@@ -79,10 +79,10 @@ private:
 public:
     OLED() : Channel("oled") {}
 
-    OLED(const OLED&) = delete;
-    OLED(OLED&&)      = delete;
+    OLED(const OLED&)            = delete;
+    OLED(OLED&&)                 = delete;
     OLED& operator=(const OLED&) = delete;
-    OLED& operator=(OLED&&) = delete;
+    OLED& operator=(OLED&&)      = delete;
 
     virtual ~OLED() = default;
 

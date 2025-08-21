@@ -29,7 +29,9 @@ namespace MotorDrivers {
         TrinamicBase::config_motor();
     }
 
-    bool TMC5160Driver::test() { return checkVersion(0x30, tmc5160->version()); }
+    bool TMC5160Driver::test() {
+        return checkVersion(0x30, tmc5160->version());
+    }
 
     void TMC5160Driver::set_registers(bool isHoming) {
         if (_has_errors) {

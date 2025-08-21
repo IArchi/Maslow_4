@@ -30,10 +30,10 @@ namespace Spindles {
     public:
         OnOff() = default;
 
-        OnOff(const OnOff&) = delete;
-        OnOff(OnOff&&)      = delete;
+        OnOff(const OnOff&)            = delete;
+        OnOff(OnOff&&)                 = delete;
         OnOff& operator=(const OnOff&) = delete;
-        OnOff& operator=(OnOff&&) = delete;
+        OnOff& operator=(OnOff&&)      = delete;
 
         void init() override;
 

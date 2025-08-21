@@ -15,10 +15,10 @@ namespace Spindles {
     public:
         Relay() = default;
 
-        Relay(const Relay&) = delete;
-        Relay(Relay&&)      = delete;
+        Relay(const Relay&)            = delete;
+        Relay(Relay&&)                 = delete;
         Relay& operator=(const Relay&) = delete;
-        Relay& operator=(Relay&&) = delete;
+        Relay& operator=(Relay&&)      = delete;
 
         ~Relay() {}
 

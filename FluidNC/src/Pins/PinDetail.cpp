@@ -11,8 +11,12 @@ namespace Pins {
         Assert(false, "Interrupts are not supported by pin %d", _index);
     }
 
-    void PinDetail::detachInterrupt() { Assert(false, "Interrupts are not supported by pin %d", _index); }
+    void PinDetail::detachInterrupt() {
+        Assert(false, "Interrupts are not supported by pin %d", _index);
+    }
 
-    void IRAM_ATTR PinDetail::synchronousWrite(int high) { write(high); }
+    void IRAM_ATTR PinDetail::synchronousWrite(int high) {
+        write(high);
+    }
 
 }

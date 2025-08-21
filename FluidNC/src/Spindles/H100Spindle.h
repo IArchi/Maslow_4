@@ -11,7 +11,7 @@ namespace Spindles {
         int reg;
 
     protected:
-        uint16_t _minFrequency = 0;   
+        uint16_t _minFrequency = 0;
         uint16_t _maxFrequency = 4000;  // H100 works with frequencies scaled by 10.
 
         void updateRPM();

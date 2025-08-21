@@ -36,7 +36,9 @@ namespace WebUI {
     /**
      * Restart ESP
      */
-    void COMMANDS::restart_MCU() { _restart_MCU = true; }
+    void COMMANDS::restart_MCU() {
+        _restart_MCU = true;
+    }
 
     /**
      * Handle not critical actions that must be done in sync environement

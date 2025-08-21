@@ -14,10 +14,16 @@ namespace Pins {
     }
 
     void IRAM_ATTR VoidPinDetail::write(int high) {}
-    int            VoidPinDetail::read() { return 0; }
-    void           VoidPinDetail::setAttr(PinAttributes value) {}
-    PinAttributes  VoidPinDetail::getAttr() const { return PinAttributes::None; }
+    int            VoidPinDetail::read() {
+        return 0;
+    }
+    void          VoidPinDetail::setAttr(PinAttributes value) {}
+    PinAttributes VoidPinDetail::getAttr() const {
+        return PinAttributes::None;
+    }
 
-    std::string VoidPinDetail::toString() { return std::string("NO_PIN"); }
+    std::string VoidPinDetail::toString() {
+        return std::string("NO_PIN");
+    }
 
 }

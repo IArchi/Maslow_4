@@ -20,7 +20,7 @@ public:
     StringRange(StringRange&& o)      = default;
 
     StringRange& operator=(const StringRange& o) = default;
-    StringRange& operator=(StringRange&& o) = default;
+    StringRange& operator=(StringRange&& o)      = default;
     inline bool  operator==(const char* s) {
         const char* p = start_;
         while (p != end_ && *s) {
@@ -58,7 +58,8 @@ public:
         return StringRange(s, e);
     }
 
-    char operator[](int index) const { const char* s = start_ + index;
+    char operator[](int index) const {
+        const char* s = start_ + index;
         if (s >= end_) {
             return '\0';
         } else {

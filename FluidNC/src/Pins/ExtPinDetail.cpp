@@ -19,7 +19,9 @@ namespace Pins {
         }
     }
 
-    PinCapabilities ExtPinDetail::capabilities() const { return PinCapabilities::Input | PinCapabilities::Output | PinCapabilities::ISR; }
+    PinCapabilities ExtPinDetail::capabilities() const {
+        return PinCapabilities::Input | PinCapabilities::Output | PinCapabilities::ISR;
+    }
 
     // I/O:
     void ExtPinDetail::write(int high) {
@@ -66,7 +68,9 @@ namespace Pins {
         _owner->writePin(_index, value.has(PinAttributes::InitialOn));
     }
 
-    PinAttributes ExtPinDetail::getAttr() const { return _attributes; }
+    PinAttributes ExtPinDetail::getAttr() const {
+        return _attributes;
+    }
 
     void ExtPinDetail::attachInterrupt(void (*callback)(void*, bool), void* arg, int mode) {
         Assert(_owner != nullptr, "Cannot attach ISR on uninitialized pin");

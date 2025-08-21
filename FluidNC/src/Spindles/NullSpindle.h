@@ -17,10 +17,10 @@ namespace Spindles {
     public:
         Null() = default;
 
-        Null(const Null&) = delete;
-        Null(Null&&)      = delete;
+        Null(const Null&)            = delete;
+        Null(Null&&)                 = delete;
         Null& operator=(const Null&) = delete;
-        Null& operator=(Null&&) = delete;
+        Null& operator=(Null&&)      = delete;
 
         void init() override;
         void setSpeedfromISR(uint32_t dev_speed) override;

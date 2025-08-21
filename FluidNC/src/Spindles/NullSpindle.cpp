@@ -25,8 +25,7 @@ namespace Spindles {
         _current_state = state;
         sys.set_spindle_speed(speed);
     }
-    void Null::config_message() { /*log_info("No spindle");*/
-    }
+    void Null::config_message() { /*log_info("No spindle");*/ }
 
     // Configuration registration
     namespace {

@@ -244,9 +244,8 @@ namespace Spindles {
                     huanyang->_minFrequency = value;
 
                     log_info(huanyang->name() << " PD005,PD011 Freq range (" << (huanyang->_minFrequency / 100) << ","
-                                              << (huanyang->_maxFrequency / 100) << ") Hz"
-                                              << " (" << (huanyang->_minFrequency / 100 * 60) << "," << (huanyang->_maxFrequency / 100 * 60)
-                                              << ") RPM");
+                                              << (huanyang->_maxFrequency / 100) << ") Hz" << " (" << (huanyang->_minFrequency / 100 * 60)
+                                              << "," << (huanyang->_maxFrequency / 100 * 60) << ") RPM");
 
                     return true;
                 };

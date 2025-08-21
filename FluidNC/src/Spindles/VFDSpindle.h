@@ -80,10 +80,10 @@ namespace Spindles {
 
     public:
         VFD() {}
-        VFD(const VFD&) = delete;
-        VFD(VFD&&)      = delete;
+        VFD(const VFD&)            = delete;
+        VFD(VFD&&)                 = delete;
         VFD& operator=(const VFD&) = delete;
-        VFD& operator=(VFD&&) = delete;
+        VFD& operator=(VFD&&)      = delete;
 
         void init();
         void config_message();

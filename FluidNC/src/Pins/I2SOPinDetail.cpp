@@ -31,7 +31,9 @@ namespace Pins {
         _readWriteMask = _attributes.has(PinAttributes::ActiveLow);
     }
 
-    PinCapabilities I2SOPinDetail::capabilities() const { return PinCapabilities::Output | PinCapabilities::I2S; }
+    PinCapabilities I2SOPinDetail::capabilities() const {
+        return PinCapabilities::Output | PinCapabilities::I2S;
+    }
 
     // The write will not happen immediately; the data is queued for
     // delivery to the serial shift register chain via DMA and a FIFO
@@ -49,7 +51,7 @@ namespace Pins {
 
             _i2soDriver->write(_index, _readWriteMask ^ high);
             _i2soDriver->push();
-            
+
             // Not sure if we need to wait for the write to be reflected; let's just do it:
             const uint32_t I2S_OUT_USEC_PER_PULSE = 4;
             delay_us(I2S_OUT_USEC_PER_PULSE * 2);
@@ -83,7 +85,9 @@ namespace Pins {
         _i2soDriver->write(_index, value.has(PinAttributes::InitialOn) ^ _readWriteMask);
     }
 
-    PinAttributes I2SOPinDetail::getAttr() const { return _attributes; }
+    PinAttributes I2SOPinDetail::getAttr() const {
+        return _attributes;
+    }
 
     std::string I2SOPinDetail::toString() {
         std::string s("I2SO.");

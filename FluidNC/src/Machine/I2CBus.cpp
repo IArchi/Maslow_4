@@ -113,13 +113,15 @@ namespace Machine {
             }
         }
         if (nDevices == 0) {
-            log_info("No I2C devices found"); 
+            log_info("No I2C devices found");
         } else {
             log_info("done");
         }
     }
 
-    const char* I2CBus::ErrorDescription(int code) { return esp_err_to_name(code); }
+    const char* I2CBus::ErrorDescription(int code) {
+        return esp_err_to_name(code);
+    }
 
     int I2CBus::write(uint8_t address, const uint8_t* data, size_t count) {
         // log_info("I2C write addr=" << int(address) << ", count=" << int(count) << ", data " << (data ? "non null" : "null") << ", i2c "

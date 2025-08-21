@@ -158,7 +158,9 @@ namespace MotorDrivers {
         }
         finish_message();
     }
-    void Dynamixel2::update() { update_all(); }
+    void Dynamixel2::update() {
+        update_all();
+    }
 
     void Dynamixel2::set_location() {}
 
@@ -177,7 +179,9 @@ namespace MotorDrivers {
         return false;    // Cannot do conventional homing
     }
 
-    void Dynamixel2::add_uint8(uint8_t n) { _tx_message[_msg_index++] = n & 0xff; }
+    void Dynamixel2::add_uint8(uint8_t n) {
+        _tx_message[_msg_index++] = n & 0xff;
+    }
     void Dynamixel2::add_uint16(uint16_t n) {
         add_uint8(n);
         add_uint8(n >> 8);

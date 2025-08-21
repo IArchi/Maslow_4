@@ -9,7 +9,7 @@
 
 #else
 
-#    define WEAK_LINK 
+#    define WEAK_LINK
 #    define IRAM_ATTR
 
 #endif

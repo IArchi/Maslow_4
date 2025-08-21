@@ -10,9 +10,7 @@ namespace Machine {
         const char _letter;  // The name that appears in init() messages and the name of the configuration item
 
     public:
-        ControlPin(Event* event, const char* legend, char letter) :
-            EventPin(event, legend, &_pin), _letter(letter) 
-        {}
+        ControlPin(Event* event, const char* legend, char letter) : EventPin(event, legend, &_pin), _letter(letter) {}
 
         Pin _pin;
 

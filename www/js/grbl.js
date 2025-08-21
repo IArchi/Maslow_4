@@ -451,9 +451,63 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
         </g>
       </svg>`;
     playButton.onclick = () => SendRealtimeCmd(0x7e); // Resume command
+  } else {
+    // Machine is idle or in another state - reset button and let tablet.js handle it
+    // Only reset if the button was previously in pause mode (orange background) or resume mode (green background)
+    const currentBgColor = playButton.style.backgroundColor;
+    if (currentBgColor === 'rgb(240, 173, 78)' || currentBgColor === '#f0ad4e' || 
+        currentBgColor === 'rgb(92, 184, 92)' || currentBgColor === '#5cb85c') {
+      // Reset the button styling
+      playButton.style.backgroundColor = '#4aa85c'; // Set div background to green (same as HTML template)
+      playButton.onclick = null;
+      
+      // Restore the canvas element that tablet.js expects, if it doesn't exist
+      let playBtnCanvas = id("playBtn");
+      if (!playBtnCanvas) {
+        playButton.innerHTML = '<canvas id="playBtn" style="width:100%;height:100%"></canvas>';
+        playBtnCanvas = id("playBtn");
+      }
+      
+      // Set up the proper click handler for idle state (same as tablet.js would do)
+      if (typeof doPlayButton === 'function') {
+        playButton.onclick = doPlayButton;
+      }
+      
+      // Draw the white triangle on transparent canvas so div's green background shows through
+      if (playBtnCanvas) {
+        // Clear any text content and draw triangle
+        playBtnCanvas.innerHTML = '';
+        
+        // Set canvas size to match container
+        const rect = playButton.getBoundingClientRect();
+        playBtnCanvas.width = rect.width || 200;
+        playBtnCanvas.height = rect.height || 200;
+        
+        const playC = playBtnCanvas.getContext("2d");
+        // Clear the canvas (transparent background)
+        playC.clearRect(0, 0, playBtnCanvas.width, playBtnCanvas.height);
+        
+        // Calculate center and size for triangle
+        const centerX = playBtnCanvas.width / 2;
+        const centerY = playBtnCanvas.height / 2;
+        const size = Math.min(playBtnCanvas.width, playBtnCanvas.height) * 0.3;
+        
+        // Draw white triangle
+        playC.beginPath();
+        playC.strokeStyle = 'white';
+        playC.fillStyle = 'white';
+        playC.lineWidth = 1;
+        playC.lineCap = 'butt';
+        playC.lineJoin = 'miter';
+        playC.moveTo(centerX - size/2, centerY - size/2);
+        playC.lineTo(centerX - size/2, centerY + size/2);
+        playC.lineTo(centerX + size/2, centerY);
+        playC.closePath();
+        playC.fill();
+        playC.stroke();
+      }
+    }
   }
-  // For idle state, don't override the button - let tablet.js handle it
-  // The existing tablet.js system will set up the appropriate start functionality
 };
 
 function show_grbl_position(wpos, mpos) {

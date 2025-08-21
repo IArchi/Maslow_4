@@ -32,8 +32,7 @@ Command* Command::List = NULL;
 
 Command::Command(
     const char* description, type_t type, permissions_t permissions, const char* grblName, const char* fullName, bool (*cmdChecker)()) :
-    Word(type, permissions, description, grblName, fullName),
-    _cmdChecker(cmdChecker) {
+    Word(type, permissions, description, grblName, fullName), _cmdChecker(cmdChecker) {
     link = List;
     List = this;
 }
@@ -42,8 +41,7 @@ Setting* Setting::List = NULL;
 
 Setting::Setting(
     const char* description, type_t type, permissions_t permissions, const char* grblName, const char* fullName, bool (*checker)(char*)) :
-    Word(type, permissions, description, grblName, fullName),
-    _checker(checker) {
+    Word(type, permissions, description, grblName, fullName), _checker(checker) {
     link = List;
     List = this;
 
@@ -94,8 +92,8 @@ IntSetting::IntSetting(const char*   description,
                        int32_t       maxVal,
                        bool (*checker)(char*) = NULL,
                        bool currentIsNvm) :
-    Setting(description, type, permissions, grblName, name, checker),
-    _defaultValue(defVal), _currentValue(defVal), _minValue(minVal), _maxValue(maxVal), _currentIsNvm(currentIsNvm) {
+    Setting(description, type, permissions, grblName, name, checker), _defaultValue(defVal), _currentValue(defVal), _minValue(minVal),
+    _maxValue(maxVal), _currentIsNvm(currentIsNvm) {
     _storedValue = std::numeric_limits<int32_t>::min();
 }
 
@@ -193,8 +191,7 @@ StringSetting::StringSetting(const char*   description,
                              const char*   defVal,
                              int           min,
                              int           max,
-                             bool (*checker)(char*)) :
-    Setting(description, type, permissions, grblName, name, checker) {
+                             bool (*checker)(char*)) : Setting(description, type, permissions, grblName, name, checker) {
     _defaultValue = defVal;
     _currentValue = defVal;
     _minLength    = min;
@@ -289,8 +286,7 @@ EnumSetting::EnumSetting(const char*   description,
                          int8_t        defVal,
                          enum_opt_t*   opts,
                          bool (*checker)(char*) = NULL) :
-    Setting(description, type, permissions, grblName, name, checker),
-    _defaultValue(defVal), _options(opts) {}
+    Setting(description, type, permissions, grblName, name, checker), _defaultValue(defVal), _options(opts) {}
 
 void EnumSetting::load() {
     esp_err_t err = nvs_get_i8(_handle, _keyName, &_storedValue);
@@ -451,8 +447,7 @@ IPaddrSetting::IPaddrSetting(const char*   description,
                              const char*   grblName,
                              const char*   name,
                              const char*   defVal,
-                             bool (*checker)(char*) = NULL) :
-    Setting(description, type, permissions, grblName, name, checker) {
+                             bool (*checker)(char*) = NULL) : Setting(description, type, permissions, grblName, name, checker) {
     IPAddress ipaddr;
     if (ipaddr.fromString(defVal)) {
         _defaultValue = ipaddr;

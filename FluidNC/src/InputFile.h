@@ -38,7 +38,7 @@ public:
     // channel is the I/O channel on which status about the use of this file will be reported
     InputFile(const char* fsname, const char* path, WebUI::AuthenticationLevel auth_level, Channel& channel);
 
-    InputFile(const InputFile&) = delete;
+    InputFile(const InputFile&)            = delete;
     InputFile& operator=(const InputFile&) = delete;
 
     // readLine() differs from pollLine() in the Channel API as follows:

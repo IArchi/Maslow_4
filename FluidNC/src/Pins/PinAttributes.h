@@ -23,7 +23,7 @@ namespace Pins {
         constexpr PinAttributes(const uint32_t value) : _value(value) {}
 
     public:
-        PinAttributes(const PinAttributes&) = default;
+        PinAttributes(const PinAttributes&)            = default;
         PinAttributes& operator=(const PinAttributes&) = default;
 
         // All the capabilities we use and test:

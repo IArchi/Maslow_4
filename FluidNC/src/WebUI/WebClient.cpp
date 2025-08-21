@@ -50,7 +50,9 @@ namespace WebUI {
         return length;
     }
 
-    size_t WebClient::write(uint8_t data) { return write(&data, 1); }
+    size_t WebClient::write(uint8_t data) {
+        return write(&data, 1);
+    }
 
     void WebClient::flush() {
         if (_webserver && _buflen) {

@@ -4,8 +4,8 @@
 #include "USBCDCChannel.h"
 #if ARDUINO_USB_CDC_ON_BOOT
 
-#include "Machine/MachineConfig.h"  // config
-#include "Serial.h"                 // allChannels
+#    include "Machine/MachineConfig.h"  // config
+#    include "Serial.h"                 // allChannels
 
 USBCDCChannel::USBCDCChannel(bool addCR) : Channel("usbcdc", addCR) {
     _lineedit = new Lineedit(this, _line, Channel::maxLine - 1);
@@ -57,7 +57,7 @@ int USBCDCChannel::peek() {
 }
 
 int USBCDCChannel::rx_buffer_available() {
-    return 64-_uart->available();
+    return 64 - _uart->available();
 }
 
 bool USBCDCChannel::realtimeOkay(char c) {
@@ -106,19 +106,19 @@ size_t USBCDCChannel::timedReadBytes(char* buffer, size_t length, TickType_t tim
     if (avail > remlen) {
         avail = remlen;
     }
-    
+
     int res = int(_uart->read(buffer, remlen));
     // If res < 0, no bytes were read
     remlen -= (res < 0) ? 0 : res;
     return length - remlen;
 }
 
-#if ARDUINO_USB_CDC_ON_BOOT
+#    if ARDUINO_USB_CDC_ON_BOOT
 USBCDCChannel Uart0(true);  // Primary serial channel with LF to CRLF conversion
 
 void uartInit() {
     Serial.begin(115200);
     Uart0.init();
 }
-#endif
+#    endif
 #endif

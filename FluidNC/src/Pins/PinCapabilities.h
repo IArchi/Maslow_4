@@ -21,7 +21,7 @@ namespace Pins {
         friend class PinAttributes;  // Wants access to _value for validation
 
     public:
-        PinCapabilities(const PinCapabilities&) = default;
+        PinCapabilities(const PinCapabilities&)            = default;
         PinCapabilities& operator=(const PinCapabilities&) = default;
 
         // All the capabilities we use and test:

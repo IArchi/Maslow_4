@@ -9,7 +9,9 @@
 namespace Machine {
     EventPin::EventPin(Event* event, const char* legend, Pin* pin) : _event(event), _legend(legend), _pin(pin) {}
 
-    bool EventPin::get() { return _pin->read(); }
+    bool EventPin::get() {
+        return _pin->read();
+    }
 
     void EventPin::gpioAction(void* arg, bool active) {
         EventPin* obj = static_cast<EventPin*>(arg);

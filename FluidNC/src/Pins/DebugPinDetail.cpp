@@ -72,7 +72,9 @@ namespace Pins {
         _implementation->setAttr(value);
     }
 
-    PinAttributes DebugPinDetail::getAttr() const { return _implementation->getAttr(); }
+    PinAttributes DebugPinDetail::getAttr() const {
+        return _implementation->getAttr();
+    }
 
     void DebugPinDetail::CallbackHandler::handle(void* arg, bool v) {
         auto handler = static_cast<CallbackHandler*>(arg);
@@ -93,7 +95,9 @@ namespace Pins {
         }
         _implementation->attachInterrupt(_isrHandler.handle, &_isrHandler, mode);
     }
-    void DebugPinDetail::detachInterrupt() { _implementation->detachInterrupt(); }
+    void DebugPinDetail::detachInterrupt() {
+        _implementation->detachInterrupt();
+    }
 
     bool DebugPinDetail::shouldEvent() {
         // This method basically ensures we don't flood users:

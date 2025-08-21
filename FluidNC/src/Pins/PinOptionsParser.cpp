@@ -8,7 +8,9 @@
 #include <cstdlib>
 
 namespace Pins {
-    PinOption::PinOption(const char* start, const char* end) : _start(start), _end(end), _key(start), _value(start) { tokenize(); }
+    PinOption::PinOption(const char* start, const char* end) : _start(start), _end(end), _key(start), _value(start) {
+        tokenize();
+    }
 
     // Copy the value into a null-terminated string, converting to lower case
     const char* PinOption::value() const {

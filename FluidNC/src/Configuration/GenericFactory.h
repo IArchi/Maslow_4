@@ -18,7 +18,7 @@ namespace Configuration {
 
         GenericFactory() = default;
 
-        GenericFactory(const GenericFactory&) = delete;
+        GenericFactory(const GenericFactory&)            = delete;
         GenericFactory& operator=(const GenericFactory&) = delete;
 
         class BuilderBase {
@@ -27,7 +27,7 @@ namespace Configuration {
         public:
             BuilderBase(const char* name) : name_(name) {}
 
-            BuilderBase(const BuilderBase& o) = delete;
+            BuilderBase(const BuilderBase& o)            = delete;
             BuilderBase& operator=(const BuilderBase& o) = delete;
 
             virtual BaseType* create() const = 0;

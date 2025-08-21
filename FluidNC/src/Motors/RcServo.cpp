@@ -96,7 +96,9 @@ namespace MotorDrivers {
         return false;  // Cannot be homed in the conventional way
     }
 
-    void RcServo::update() { set_location(); }
+    void RcServo::update() {
+        set_location();
+    }
 
     void RcServo::set_location() {
         if (_disabled || _has_errors) {

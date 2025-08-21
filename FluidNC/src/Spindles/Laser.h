@@ -18,10 +18,10 @@ namespace Spindles {
     public:
         Laser() = default;
 
-        Laser(const Laser&) = delete;
-        Laser(Laser&&)      = delete;
+        Laser(const Laser&)            = delete;
+        Laser(Laser&&)                 = delete;
         Laser& operator=(const Laser&) = delete;
-        Laser& operator=(Laser&&) = delete;
+        Laser& operator=(Laser&&)      = delete;
 
         bool isRateAdjusted() override;
         void config_message() override;

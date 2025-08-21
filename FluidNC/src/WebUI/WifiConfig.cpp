@@ -139,7 +139,9 @@ namespace WebUI {
         { "WPA2-ENTERPRISE", WIFI_AUTH_WPA2_ENTERPRISE },
     };
 
-    static void print_mac(Channel& out, const char* prefix, const char* mac) { log_to(out, prefix, " (" << mac << ")"); }
+    static void print_mac(Channel& out, const char* prefix, const char* mac) {
+        log_to(out, prefix, " (" << mac << ")");
+    }
 
     static Error showIP(char* parameter, AuthenticationLevel auth_level, Channel& out) {  // ESP111
         log_to(out, parameter, IP_string(WiFi.getMode() == WIFI_STA ? WiFi.localIP() : WiFi.softAPIP()));
@@ -638,7 +640,7 @@ namespace WebUI {
         WiFi.mode(WIFI_STA);
         WiFi.setMinSecurity(static_cast<wifi_auth_mode_t>(wifi_sta_min_security->get()));
         WiFi.setScanMethod(wifi_fast_scan->get() ? WIFI_FAST_SCAN : WIFI_ALL_CHANNEL_SCAN);
-        
+
         //password
         const char* password = wifi_sta_password->get();
         int8_t      IP_mode  = wifi_sta_mode->get();
@@ -768,8 +770,7 @@ namespace WebUI {
             case WiFiFallback:
                 if (StartSTA()) {
                     goto wifi_on;
-                }
-                else{ // STA failed, reset
+                } else {  // STA failed, reset
                     WiFi.mode(WIFI_OFF);
                     esp_wifi_restore();
                     delay(100);
@@ -806,7 +807,9 @@ namespace WebUI {
     /**
      * End WiFi
      */
-    void WiFiConfig::end() { StopWiFi(); }
+    void WiFiConfig::end() {
+        StopWiFi();
+    }
 
     /**
      * Reset ESP
@@ -826,12 +829,16 @@ namespace WebUI {
         }
         log_info("WiFi reset done");
     }
-    bool WiFiConfig::isOn() { return !(WiFi.getMode() == WIFI_MODE_NULL); }
+    bool WiFiConfig::isOn() {
+        return !(WiFi.getMode() == WIFI_MODE_NULL);
+    }
 
     /**
      * Handle not critical actions that must be done in sync environment
      */
-    void WiFiConfig::handle() { wifi_services.handle(); }
+    void WiFiConfig::handle() {
+        wifi_services.handle();
+    }
 
     // Used by js/scanwifidlg.js
     Error WiFiConfig::listAPs(char* parameter, AuthenticationLevel auth_level, Channel& out) {  // ESP410
@@ -870,6 +877,8 @@ namespace WebUI {
         return Error::Ok;
     }
 
-    WiFiConfig::~WiFiConfig() { end(); }
+    WiFiConfig::~WiFiConfig() {
+        end();
+    }
 }
 #endif

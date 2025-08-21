@@ -45,10 +45,10 @@ namespace Spindles {
     public:
         BESC() = default;
 
-        BESC(const BESC&) = delete;
-        BESC(BESC&&)      = delete;
+        BESC(const BESC&)            = delete;
+        BESC(BESC&&)                 = delete;
         BESC& operator=(const BESC&) = delete;
-        BESC& operator=(BESC&&) = delete;
+        BESC& operator=(BESC&&)      = delete;
 
         void init() override;
         void config_message() override;

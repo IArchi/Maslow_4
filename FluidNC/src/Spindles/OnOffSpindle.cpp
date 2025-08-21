@@ -54,9 +54,13 @@ namespace Spindles {
         spindleDelay(state, speed);
     }
 
-    void IRAM_ATTR OnOff::set_output(uint32_t dev_speed) { _output_pin.synchronousWrite(dev_speed != 0); }
+    void IRAM_ATTR OnOff::set_output(uint32_t dev_speed) {
+        _output_pin.synchronousWrite(dev_speed != 0);
+    }
 
-    void IRAM_ATTR OnOff::setSpeedfromISR(uint32_t dev_speed) { set_output(dev_speed != 0); }
+    void IRAM_ATTR OnOff::setSpeedfromISR(uint32_t dev_speed) {
+        set_output(dev_speed != 0);
+    }
 
     void IRAM_ATTR OnOff::set_enable(bool enable) {
         if (_disable_with_zero_speed && sys.spindle_speed() == 0) {
@@ -66,7 +70,9 @@ namespace Spindles {
         _enable_pin.synchronousWrite(enable);
     }
 
-    void OnOff::set_direction(bool Clockwise) { _direction_pin.synchronousWrite(Clockwise); }
+    void OnOff::set_direction(bool Clockwise) {
+        _direction_pin.synchronousWrite(Clockwise);
+    }
 
     void OnOff::deinit() {
         stop();

@@ -34,9 +34,9 @@ namespace Configuration {
         friend class GenericFactory;
 
     public:
-        virtual void item(const char* name, bool& value)                                                            = 0;
+        virtual void item(const char* name, bool& value) = 0;
         virtual void item(const std::string name, bool& value) { item(name.c_str(), value); };
-        virtual void item(const char* name, int32_t& value, int32_t minValue = 0, int32_t maxValue = INT32_MAX)     = 0;
+        virtual void item(const char* name, int32_t& value, int32_t minValue = 0, int32_t maxValue = INT32_MAX) = 0;
         virtual void item(const std::string name, int32_t& value, int32_t minValue = 0, int32_t maxValue = INT32_MAX) {
             item(name.c_str(), value, minValue, maxValue);
         };
@@ -53,7 +53,7 @@ namespace Configuration {
             value = uint8_t(v);
         }
 
-        virtual void item(const char* name, float& value, float minValue = -3e38, float maxValue = 3e38)  = 0;
+        virtual void item(const char* name, float& value, float minValue = -3e38, float maxValue = 3e38) = 0;
         virtual void item(const std::string name, float& value, float minValue = -3e38, float maxValue = 3e38) {
             item(name.c_str(), value, minValue, maxValue);
         };

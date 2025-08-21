@@ -23,10 +23,10 @@ namespace Spindles {
         //     _min_rpm(minRpm), _max_rpm(maxRpm), _output_pin(std::move(output)), _enable_pin(std::move(enable)),
         //     _direction_pin(std::move(direction)) {}
 
-        PWM(const PWM&) = delete;
-        PWM(PWM&&)      = delete;
+        PWM(const PWM&)            = delete;
+        PWM(PWM&&)                 = delete;
         PWM& operator=(const PWM&) = delete;
-        PWM& operator=(PWM&&) = delete;
+        PWM& operator=(PWM&&)      = delete;
 
         void init() override;
         void setSpeedfromISR(uint32_t dev_speed) override;
@@ -60,7 +60,7 @@ namespace Spindles {
 
     protected:
         uint32_t _current_pwm_duty = 0;
-        PwmPin* _pwm              = nullptr;
+        PwmPin*  _pwm              = nullptr;
 
         // Configurable
         uint32_t _pwm_freq = 5000;

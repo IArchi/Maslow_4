@@ -36,6 +36,20 @@ This project is a fork from the original FluidNC project specifically for Maslow
 - `wifibt` - ESP32 with WiFi and Bluetooth
 - `noradio` - ESP32 without wireless
 
+## Pull Request Best Practices
+
+### Minimizing Changes
+- **Scope changes narrowly**: Only modify files directly related to the feature/fix being implemented
+- **Avoid formatting-only changes**: Do not include whitespace or formatting changes in files unrelated to your functional changes
+- **Surgical modifications**: Make the smallest possible changes to achieve the desired functionality
+- **Review diff before committing**: Always check `git diff` to ensure only intended changes are included
+
+### Code Formatting Guidelines
+- **Format selectively**: Only run clang-format on files you have functionally modified
+- **Avoid global formatting**: Do NOT run formatting tools across the entire repository
+- **IDE auto-format**: Configure IDE to only format files being actively edited
+- **Pre-commit review**: Check that formatting changes are limited to functionally modified files
+
 ## Testing and Validation
 
 ### Unit Tests (Currently Broken)
@@ -49,6 +63,11 @@ This project is a fork from the original FluidNC project specifically for Maslow
 - **IDE Integration**: Most IDEs automatically pick up `.clang-format` file
 - **Manual format**: `clang-format -i <filename>` for individual files
 - **CRITICAL**: Always format code before committing to maintain project standards
+- **MINIMIZE WHITESPACE CHANGES**: Only format files that you are functionally modifying
+  - Do NOT run global formatting commands across the entire codebase
+  - Do NOT format files that are not directly related to your changes
+  - Focus formatting only on files where you made functional code changes
+  - Avoid unnecessary whitespace-only changes that increase PR noise and review burden
 
 ## Validation Scenarios
 
@@ -56,7 +75,7 @@ This project is a fork from the original FluidNC project specifically for Maslow
 1. **Build test**: `pio run -e wifi_s3` (must succeed without errors)
 2. **Filesystem test**: `pio run -e wifi_s3 -t buildfs` (must succeed)
 3. **Web UI test**: `cd embedded && python3 build.py` (if web changes made)
-4. **Format test**: Run clang-format on modified C++ files
+4. **Format test**: Run clang-format ONLY on C++ files you functionally modified (not entire codebase)
 5. **Clean build test**: `pio run -e wifi_s3 -t clean && pio run -e wifi_s3` (final verification)
 
 ### Hardware Testing Requirements  

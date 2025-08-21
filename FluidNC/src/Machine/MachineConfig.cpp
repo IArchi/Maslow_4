@@ -23,7 +23,7 @@
 #include "../Configuration/ParseException.h"
 #include "../Config.h"  // ENABLE_*
 
-#include "../Maslow/Maslow.h"  // using_default_config
+#include "../Maslow/Maslow.h" // using_default_config
 
 #include <cstdio>
 #include <cstring>
@@ -95,28 +95,28 @@ namespace Machine {
     }
 
     void MachineConfig::groupM4Items(Configuration::HandlerBase& handler) {
-        handler.item(M + "_vertical", Maslow.calibration.orientation);
-        handler.item(M + "_calibration_grid_width_mm_X", Maslow.calibration.calibration_grid_width_mm_X, 100, 3000);
-        handler.item(M + "_calibration_grid_height_mm_Y", Maslow.calibration.calibration_grid_height_mm_Y, 100, 3000);
-        handler.item(M + "_calibration_grid_size", Maslow.calibration.calibrationGridSize, 3, 9);
+        handler.item(M+"_vertical", Maslow.calibration.orientation);
+        handler.item(M+"_calibration_grid_width_mm_X", Maslow.calibration.calibration_grid_width_mm_X, 100, 3000);
+        handler.item(M+"_calibration_grid_height_mm_Y", Maslow.calibration.calibration_grid_height_mm_Y, 100, 3000);
+        handler.item(M+"_calibration_grid_size", Maslow.calibration.calibrationGridSize, 3, 9);
 
-        handler.item(M + "_Retract_Current_Threshold", Maslow.calibration.retractCurrentThreshold, 0, 3500);
-        handler.item(M + "_Calibration_Current_Threshold", Maslow.calibration.calibrationCurrentThreshold, 0, 3500);
-        handler.item(M + "_Acceptable_Calibration_Threshold", Maslow.calibration.acceptableCalibrationThreshold, 0, 1);
-        handler.item(M + "_Extend_Dist", Maslow.calibration.extendDist, 0, 4250);
+        handler.item(M+"_Retract_Current_Threshold", Maslow.calibration.retractCurrentThreshold, 0, 3500);
+        handler.item(M+"_Calibration_Current_Threshold", Maslow.calibration.calibrationCurrentThreshold, 0, 3500);
+        handler.item(M+"_Acceptable_Calibration_Threshold", Maslow.calibration.acceptableCalibrationThreshold, 0, 1);
+        handler.item(M+"_Extend_Dist", Maslow.calibration.extendDist, 0, 4250);
 
-        handler.item(M + "_Scale_X", Maslow.scaleX, .8, 1.2);
-        handler.item(M + "_Scale_Y", Maslow.scaleY, .8, 1.2);
-        handler.item(M + "_debugEnabled", Maslow.debugEnabled);
-
+        handler.item(M+"_Scale_X", Maslow.scaleX, .8, 1.2);
+        handler.item(M+"_Scale_Y", Maslow.scaleY, .8, 1.2);
+        handler.item(M+"_debugEnabled", Maslow.debugEnabled);
+        
         // Material thickness parameters - temporary storage for machine-level config
-        handler.item(M + "_spoilboardThickness", _tempSpoilboardThickness, 0.0, 50.0);
-        handler.item(M + "_workThickness", _tempWorkThickness, 0.0, 50.0);
+        handler.item(M+"_spoilboardThickness", _tempSpoilboardThickness, 0.0, 50.0);
+        handler.item(M+"_workThickness", _tempWorkThickness, 0.0, 50.0);
     }
 
     void MachineConfig::afterParse() {
         if (_axes == nullptr) {
-            log_config_error(M + "M4 expects the 'axes' section to be defined in the file or the default config");
+            log_config_error(M+"M4 expects the 'axes' section to be defined in the file or the default config");
             // The following is NOT expected to yield the correct result for the M4
             _axes = new Axes();
         }
@@ -139,19 +139,19 @@ namespace Machine {
         }
 
         if (_sdCard == nullptr) {
-            log_config_error(M + " M4 expects the 'scCard' section to be defined in the file or the default config");
+            log_config_error(M+" M4 expects the 'scCard' section to be defined in the file or the default config");
             // The following is NOT expected to yield the correct result for the M4
             _sdCard = new SDCard();
         }
 
         if (_spi == nullptr) {
-            log_config_error(M + " M4 expects the 'spi' section to be defined in the file or the default config");
+            log_config_error(M+" M4 expects the 'spi' section to be defined in the file or the default config");
             // The following is NOT expected to yield the correct result for the M4
             _spi = new SPIBus();
         }
 
         if (_stepping == nullptr) {
-            log_config_error(M + " M4 expects the 'stepping' section to be defined in the file or the default config");
+            log_config_error(M+" M4 expects the 'stepping' section to be defined in the file or the default config");
             // The following is NOT expected to yield the correct result for the M4
             _stepping = new Stepping();
         }
@@ -200,49 +200,51 @@ namespace Machine {
     }
 
     // Common Default Config partial strings
-    const std::string mcgrid = M + "_calibration_grid_";
+    const std::string mcgrid = M+"_calibration_grid_";
 
     // Individual Default Config items and sections
     // Default Config - Board
-    const std::string dcBoard = "name: Default (" + M + " S3 Board)\nboard: " + M + "\n";
+    const std::string dcBoard = "name: Default ("+M+" S3 Board)\nboard: "+M+"\n";
 
-    const std::string dcM4Vert            = M + "_vertical: false\n";
+    const std::string dcM4Vert = M+"_vertical: false\n";
     const std::string dcM4CalibrationGrid = mcgrid + "width_mm_X: 2000\n" + mcgrid + "height_mm_Y: 1000\n" + mcgrid + "size: 9\n";
 
-    const std::string dcM4Anchors = M + "_tlX: -27.6\n" + M + "_tlY: 2064.9\n" + M + "_trX: 2924.3\n" + M + "_trY: 2066.5\n" + M +
-                                    "_blX: 0\n" + M + "_blY: 0\n" + M + "_brX: 2953.2\n" + M + "_brY: 0\n";
-    const std::string dcM4ZAxis = M + "_tlZ: 100\n" + M + "_trZ: 56\n" + M + "_blZ: 34\n" + M + "_brZ: 78\n";
+    const std::string dcM4Anchors =
+        M+"_tlX: -27.6\n"+M+"_tlY: 2064.9\n"
+        +M+"_trX: 2924.3\n"+M+"_trY: 2066.5\n"
+        +M+"_blX: 0\n"+M+"_blY: 0\n"
+        +M+"_brX: 2953.2\n"+M+"_brY: 0\n";
+    const std::string dcM4ZAxis = M+"_tlZ: 100\n"+M+"_trZ: 56\n"+M+"_blZ: 34\n"+M+"_brZ: 78\n";
 
-    const std::string dcM4CurrentThreshold = M + "_Retract_Current_Threshold: 1300\n" + M + "_Calibration_Current_Threshold: 1500\n" + M +
-                                             "_Acceptable_Calibration_Threshold: 0.5\n";
+    const std::string dcM4CurrentThreshold = M+"_Retract_Current_Threshold: 1300\n"+M+"_Calibration_Current_Threshold: 1500\n"+M+"_Acceptable_Calibration_Threshold: 0.5\n";
+    
+    const std::string dcM4Thickness = M+"_spoilboardThickness: 0.0\n"+M+"_workThickness: 0.0\n";
 
-    const std::string dcM4Thickness = M + "_spoilboardThickness: 0.0\n" + M + "_workThickness: 0.0\n";
-
-    const std::string dcSpi      = "spi:\n  miso_pin: gpio.13\n  mosi_pin: gpio.11\n  sck_pin: gpio.12\n";
-    const std::string dcSDCard   = "sdcard:\n  card_detect_pin: NO_PIN\n  cs_pin: gpio.10\n";
+    const std::string dcSpi = "spi:\n  miso_pin: gpio.13\n  mosi_pin: gpio.11\n  sck_pin: gpio.12\n";
+    const std::string dcSDCard = "sdcard:\n  card_detect_pin: NO_PIN\n  cs_pin: gpio.10\n";
     const std::string dcStepping = "stepping:\n  engine: RMT\n  idle_ms: 240\n";
-    const std::string dcUart1    = "uart1:\n  txd_pin: gpio.1\n  rxd_pin: gpio.2\n  baud: 115200\n  mode: 8N1\n";
+    const std::string dcUart1 = "uart1:\n  txd_pin: gpio.1\n  rxd_pin: gpio.2\n  baud: 115200\n  mode: 8N1\n";
 
-    const std::string dcZMotor = "        uart_num: 1\n        cs_pin: NO_PIN\n        r_sense_ohms: 0.110\n"
-                                 "        run_amps: 1.000\n        hold_amps: 0.500\n        microsteps: 0\n"
-                                 "        stallguard: 0\n        stallguard_debug: false\n"
-                                 "        toff_disable: 0\n        toff_stealthchop: 5\n        toff_coolstep: 3\n"
-                                 "        run_mode: StealthChop\n        homing_mode: StealthChop\n        use_enable: true\n";
+    const std::string dcZMotor = 
+        "        uart_num: 1\n        cs_pin: NO_PIN\n        r_sense_ohms: 0.110\n"
+        "        run_amps: 1.000\n        hold_amps: 0.500\n        microsteps: 0\n"
+        "        stallguard: 0\n        stallguard_debug: false\n"
+        "        toff_disable: 0\n        toff_stealthchop: 5\n        toff_coolstep: 3\n"
+        "        run_mode: StealthChop\n        homing_mode: StealthChop\n        use_enable: true\n";
 
     const std::string defaultConfig =
         dcBoard +
         // Maslow M4 default items
         dcM4Vert + dcM4CalibrationGrid + dcM4Anchors + dcM4ZAxis + dcM4CurrentThreshold + dcM4Thickness +
         // Default sections
-        dcSpi + dcSDCard + dcStepping + dcUart1 +
+        dcSpi + dcSDCard + dcStepping + dcUart1 + 
         "axes:\n"
         "  x:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 2438.4\n    homing:\n      cycle: -1\n"
         "    motor0:\n      dc_servo:\n"
         "  y:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 1219.2\n    homing:\n      cycle: -1\n"
-        "  z:\n    max_rate_mm_per_min: 400\n    acceleration_mm_per_sec2: 10\n    max_travel_mm: 100\n    steps_per_mm: 100\n    "
-        "homing:\n      cycle: -1\n"
-        "    motor0:\n      tmc_2209:\n        addr: 0\n        direction_pin: gpio.16\n        step_pin: gpio.15\n" +
-        dcZMotor + "    motor1:\n      tmc_2209:\n        addr: 1\n        direction_pin: gpio.38\n        step_pin: gpio.46\n" + dcZMotor;
+        "  z:\n    max_rate_mm_per_min: 400\n    acceleration_mm_per_sec2: 10\n    max_travel_mm: 100\n    steps_per_mm: 100\n    homing:\n      cycle: -1\n"
+        "    motor0:\n      tmc_2209:\n        addr: 0\n        direction_pin: gpio.16\n        step_pin: gpio.15\n" + dcZMotor +
+        "    motor1:\n      tmc_2209:\n        addr: 1\n        direction_pin: gpio.38\n        step_pin: gpio.46\n" + dcZMotor;
 
     bool MachineConfig::load() {
         bool configOkay;
@@ -262,7 +264,7 @@ namespace Machine {
 
         if (!configOkay) {
             log_info("Using default configuration");
-            configOkay                  = load_yaml(new StringRange(defaultConfig.c_str()));
+            configOkay = load_yaml(new StringRange(defaultConfig.c_str()));
             Maslow.using_default_config = true;
         }
         //configOkay = load(config_filename->get());
@@ -329,7 +331,9 @@ namespace Machine {
                 Configuration::Validator validator;
                 config->validate();
                 config->group(validator);
-            } catch (std::exception& ex) { log_config_error("Validation error: " << ex.what()); }
+            } catch (std::exception& ex) {
+                log_config_error("Validation error: " << ex.what());
+            }
 
             // log_info("Heap size after configuation load is " << uint32_t(xPortGetFreeHeapSize()));
 
@@ -357,7 +361,7 @@ namespace Machine {
         delete[] input;
 
         std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
-
+        
         return successful;
     }
 

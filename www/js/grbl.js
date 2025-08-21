@@ -468,15 +468,14 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
         playBtnCanvas = id("playBtn");
       }
       
-      // First trigger tablet.js to set the correct state for idle
-      if (typeof setRunControls === 'function') {
-        setRunControls();
+      // Set up the proper click handler for idle state (same as tablet.js would do)
+      if (typeof doPlayButton === 'function') {
+        playButton.onclick = doPlayButton;
       }
       
-      // Then redraw the proper canvas appearance over any text that was set
-      playBtnCanvas = id("playBtn"); // Re-get in case setRunControls modified it
+      // Draw the proper canvas appearance with green background and white triangle
       if (playBtnCanvas) {
-        // Clear any background color that tablet.js might have set
+        // Clear any background color that might have been set on the canvas
         playBtnCanvas.style.backgroundColor = '';
         
         const playC = playBtnCanvas.getContext("2d");

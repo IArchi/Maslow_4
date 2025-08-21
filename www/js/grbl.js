@@ -462,14 +462,39 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
       playButton.onclick = null;
       
       // Restore the canvas element that tablet.js expects, if it doesn't exist
-      const playBtnCanvas = id("playBtn");
+      let playBtnCanvas = id("playBtn");
       if (!playBtnCanvas) {
         playButton.innerHTML = '<canvas id="playBtn" style="width:100%;height:100%"></canvas>';
+        playBtnCanvas = id("playBtn");
       }
       
-      // Trigger tablet.js to set the correct state for idle
+      // First trigger tablet.js to set the correct state for idle
       if (typeof setRunControls === 'function') {
         setRunControls();
+      }
+      
+      // Then redraw the proper canvas appearance over any text that was set
+      playBtnCanvas = id("playBtn"); // Re-get in case setRunControls modified it
+      if (playBtnCanvas) {
+        // Clear any background color that tablet.js might have set
+        playBtnCanvas.style.backgroundColor = '';
+        
+        const playC = playBtnCanvas.getContext("2d");
+        playC.fillStyle = "#4aa85c";
+        playC.fillRect(0, 0, 500, 500);
+        
+        playC.beginPath();
+        playC.strokeStyle = 'white';
+        playC.fillStyle = 'white';
+        playC.lineWidth = 1;
+        playC.lineCap = 'butt';
+        playC.lineJoin = 'miter';
+        playC.moveTo(60 + 44.053484, 147.608260 - 35);
+        playC.lineTo(60 + 44.053484, 68.502834 - 35);
+        playC.lineTo(60 + 112.311470, 106.828610 - 35);
+        playC.closePath();
+        playC.fill();
+        playC.stroke();
       }
     }
   }

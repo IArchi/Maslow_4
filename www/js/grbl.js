@@ -458,7 +458,7 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
     if (currentBgColor === 'rgb(240, 173, 78)' || currentBgColor === '#f0ad4e' || 
         currentBgColor === 'rgb(92, 184, 92)' || currentBgColor === '#5cb85c') {
       // Reset the button styling
-      playButton.style.backgroundColor = '';
+      playButton.style.backgroundColor = '#4aa85c'; // Set div background to green
       playButton.onclick = null;
       
       // Restore the canvas element that tablet.js expects, if it doesn't exist
@@ -473,24 +473,35 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
         playButton.onclick = doPlayButton;
       }
       
-      // Draw the proper canvas appearance with green background and white triangle
+      // Draw the white triangle on transparent canvas so div's green background shows through
       if (playBtnCanvas) {
-        // Clear any background color that might have been set on the canvas
-        playBtnCanvas.style.backgroundColor = '';
+        // Clear any text content and draw triangle
+        playBtnCanvas.innerHTML = '';
+        
+        // Set canvas size to match container
+        const rect = playButton.getBoundingClientRect();
+        playBtnCanvas.width = rect.width || 200;
+        playBtnCanvas.height = rect.height || 200;
         
         const playC = playBtnCanvas.getContext("2d");
-        playC.fillStyle = "#4aa85c";
-        playC.fillRect(0, 0, 500, 500);
+        // Clear the canvas (transparent background)
+        playC.clearRect(0, 0, playBtnCanvas.width, playBtnCanvas.height);
         
+        // Calculate center and size for triangle
+        const centerX = playBtnCanvas.width / 2;
+        const centerY = playBtnCanvas.height / 2;
+        const size = Math.min(playBtnCanvas.width, playBtnCanvas.height) * 0.3;
+        
+        // Draw white triangle
         playC.beginPath();
         playC.strokeStyle = 'white';
         playC.fillStyle = 'white';
         playC.lineWidth = 1;
         playC.lineCap = 'butt';
         playC.lineJoin = 'miter';
-        playC.moveTo(60 + 44.053484, 147.608260 - 35);
-        playC.lineTo(60 + 44.053484, 68.502834 - 35);
-        playC.lineTo(60 + 112.311470, 106.828610 - 35);
+        playC.moveTo(centerX - size/2, centerY - size/2);
+        playC.lineTo(centerX - size/2, centerY + size/2);
+        playC.lineTo(centerX + size/2, centerY);
         playC.closePath();
         playC.fill();
         playC.stroke();

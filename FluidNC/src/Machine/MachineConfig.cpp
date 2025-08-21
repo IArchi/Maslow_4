@@ -107,7 +107,7 @@ namespace Machine {
 
         handler.item(M+"_Scale_X", Maslow.scaleX, .8, 1.2);
         handler.item(M+"_Scale_Y", Maslow.scaleY, .8, 1.2);
-        handler.item(M+"_print_motor_currents", Maslow.printMotorCurrents);
+        handler.item(M+"_debugEnabled", Maslow.debugEnabled);
         
         // Material thickness parameters - temporary storage for machine-level config
         handler.item(M+"_spoilboardThickness", _tempSpoilboardThickness, 0.0, 50.0);

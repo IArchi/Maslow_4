@@ -191,7 +191,7 @@ public:
     float scaleY = 1.0;
 
     bool   test = false;
-    bool   printMotorCurrents = false;
+    bool   debugEnabled = false;
 
 private:
 

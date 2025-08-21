@@ -458,7 +458,7 @@ const updateUnifiedPlayPauseButton = (stateName, clickable) => {
     if (currentBgColor === 'rgb(240, 173, 78)' || currentBgColor === '#f0ad4e' || 
         currentBgColor === 'rgb(92, 184, 92)' || currentBgColor === '#5cb85c') {
       // Reset the button styling
-      playButton.style.backgroundColor = '#4aa85c'; // Set div background to green
+      playButton.style.backgroundColor = '#86f686'; // Set div background to green (same as tablet.js)
       playButton.onclick = null;
       
       // Restore the canvas element that tablet.js expects, if it doesn't exist

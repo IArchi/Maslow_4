@@ -18,7 +18,9 @@ namespace Configuration {
 
     Tokenizer::Tokenizer(const char* start, const char* end) : current_(start), end_(end), start_(start), line_(0), token_() {}
 
-    void Tokenizer::ParseError(const char* description) const { throw ParseException(line_, description); }
+    void Tokenizer::ParseError(const char* description) const {
+        throw ParseException(line_, description);
+    }
 
     void Tokenizer::Tokenize() {
         // Release a held token

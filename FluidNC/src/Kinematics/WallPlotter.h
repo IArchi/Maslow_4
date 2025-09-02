@@ -16,10 +16,10 @@ namespace Kinematics {
     public:
         WallPlotter() = default;
 
-        WallPlotter(const WallPlotter&) = delete;
-        WallPlotter(WallPlotter&&)      = delete;
+        WallPlotter(const WallPlotter&)            = delete;
+        WallPlotter(WallPlotter&&)                 = delete;
         WallPlotter& operator=(const WallPlotter&) = delete;
-        WallPlotter& operator=(WallPlotter&&) = delete;
+        WallPlotter& operator=(WallPlotter&&)      = delete;
 
         // Kinematic Interface
 

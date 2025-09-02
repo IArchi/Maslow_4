@@ -1,16 +1,17 @@
 board: Maslow
 name: Maslow S3 Board
 meta: 
-Maslow_vertical: true
-Maslow_calibration_grid_width_mm_X: 500.000000
-Maslow_calibration_grid_height_mm_Y: 500.000000
+Maslow_vertical: false
+Maslow_calibration_grid_width_mm_X: 400.000000
+Maslow_calibration_grid_height_mm_Y: 400.000000
 Maslow_calibration_grid_size: 3
-Maslow_Retract_Current_Threshold: 1100
-Maslow_Calibration_Current_Threshold: 900
+Maslow_Retract_Current_Threshold: 1300
+Maslow_Calibration_Current_Threshold: 1000
 Maslow_Acceptable_Calibration_Threshold: 0.450000
-Maslow_Extend_Dist: 1700.000000
+Maslow_Extend_Dist: 2600.000000
 Maslow_Scale_X: 1.000000
 Maslow_Scale_Y: 1.000000
+Maslow_debugEnabled: false
 stepping: 
   engine: Timed
   idle_ms: 240
@@ -39,29 +40,28 @@ sdcard:
 
 kinematics: 
   MaslowKinematics: 
-    tlX: -6.200000
-    tlY: 2188.000000
+    tlX: 139.199997
+    tlY: 3230.600098
     tlZ: 100.000000
-    trX: 2991.199951
-    trY: 2197.399902
+    trX: 4308.899902
+    trY: 3230.699951
     trZ: 56.000000
     blX: 0.000000
     blY: 0.000000
     blZ: 34.000000
-    brX: 2989.800049
+    brX: 4340.399902
     brY: 0.000000
     brZ: 78.000000
     beltEndExtension: 30.000000
     armLength: 123.400002
-    spoilboardThickness: 0.000000
-    workThickness: 0.000000
+    maxSegmentLength: 5.000000
 
 axes: 
   shared_stepper_disable_pin: NO_PIN
   shared_stepper_reset_pin: NO_PIN
   a: 
     steps_per_mm: 80.000000
-    max_rate_mm_per_min: 2200.000000
+    max_rate_mm_per_min: 2000.000000
     acceleration_mm_per_sec2: 50.000000
     max_travel_mm: 5000.000000
     soft_limits: false
@@ -86,7 +86,7 @@ axes:
 
   b: 
     steps_per_mm: 80.000000
-    max_rate_mm_per_min: 2200.000000
+    max_rate_mm_per_min: 2000.000000
     acceleration_mm_per_sec2: 50.000000
     max_travel_mm: 5000.000000
     soft_limits: false
@@ -111,7 +111,7 @@ axes:
 
   c: 
     steps_per_mm: 80.000000
-    max_rate_mm_per_min: 2200.000000
+    max_rate_mm_per_min: 2000.000000
     acceleration_mm_per_sec2: 50.000000
     max_travel_mm: 5000.000000
     soft_limits: false
@@ -136,7 +136,7 @@ axes:
 
   d: 
     steps_per_mm: 80.000000
-    max_rate_mm_per_min: 2200.000000
+    max_rate_mm_per_min: 2000.000000
     acceleration_mm_per_sec2: 50.000000
     max_travel_mm: 5000.000000
     soft_limits: false
@@ -161,8 +161,8 @@ axes:
 
   z: 
     steps_per_mm: 100.000000
-    max_rate_mm_per_min: 1500.000000
-    acceleration_mm_per_sec2: 100.000000
+    max_rate_mm_per_min: 400.000000
+    acceleration_mm_per_sec2: 10.000000
     max_travel_mm: 100.000000
     soft_limits: false
     homing: 

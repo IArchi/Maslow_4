@@ -110,7 +110,7 @@ public:
     }
 
     State IRAM_ATTR state() const { return state_; }
-    void IRAM_ATTR set_state(State value) {
+    void IRAM_ATTR  set_state(State value) {
         // We don't have to check the old value always... just when state changes can happen a lot or at more or less the same time.
         // It's also not too bad if there are concurrency issues; it will just trigger more events.
         if (value != state_) {
@@ -126,19 +126,19 @@ public:
     }
 
     Suspend IRAM_ATTR suspend() const { return suspend_; }
-    void IRAM_ATTR set_suspend(Suspend value) {
+    void IRAM_ATTR    set_suspend(Suspend value) {
         dirty_   = SystemDirty(int(dirty_) | int(SystemDirty::Suspend));
         suspend_ = value;
     }
 
     Percent IRAM_ATTR f_override() const { return f_override_; }
-    void IRAM_ATTR set_f_override(Percent value) {
+    void IRAM_ATTR    set_f_override(Percent value) {
         dirty_      = SystemDirty(int(dirty_) | int(SystemDirty::FeedOverride));
         f_override_ = value;
     }
 
     Percent IRAM_ATTR r_override() const { return r_override_; }
-    void IRAM_ATTR set_r_override(Percent value) {
+    void IRAM_ATTR    set_r_override(Percent value) {
         dirty_      = SystemDirty(int(dirty_) | int(SystemDirty::RapidOverride));
         r_override_ = value;
     }
@@ -150,13 +150,13 @@ public:
     Percent IRAM_ATTR spindle_speed_ovr() const { return spindle_speed_ovr_; }
 
     Override IRAM_ATTR override_ctrl() const { return override_ctrl_; }
-    void IRAM_ATTR set_override_ctrl(Override value) {
+    void IRAM_ATTR     set_override_ctrl(Override value) {
         dirty_         = SystemDirty(int(dirty_) | int(SystemDirty::OverrideControl));
         override_ctrl_ = value;
     }
 
     SpindleSpeed IRAM_ATTR spindle_speed() const { return spindle_speed_; }
-    void IRAM_ATTR set_spindle_speed(SpindleSpeed value) {
+    void IRAM_ATTR         set_spindle_speed(SpindleSpeed value) {
         if (spindle_speed_ != value) {
             dirty_         = SystemDirty(int(dirty_) | int(SystemDirty::SpindleSpeed));
             spindle_speed_ = value;

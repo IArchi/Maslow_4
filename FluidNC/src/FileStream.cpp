@@ -21,7 +21,7 @@ int FileStream::available() {
 int FileStream::read() {
     Maslow.readingFromSD = true;
     char   data;
-    size_t res = fread(&data, 1, 1, _fd);
+    size_t res           = fread(&data, 1, 1, _fd);
     Maslow.readingFromSD = false;
     return res == 1 ? data : -1;
 }
@@ -34,21 +34,21 @@ void FileStream::flush() {}
 
 size_t FileStream::read(char* buffer, size_t length) {
     Maslow.readingFromSD = true;
-    size_t res = fread(buffer, 1, length, _fd);
+    size_t res           = fread(buffer, 1, length, _fd);
     Maslow.readingFromSD = false;
     return res;
 }
 
 size_t FileStream::write(uint8_t c) {
     Maslow.readingFromSD = true;
-    size_t res = FileStream::write(&c, 1);
+    size_t res           = FileStream::write(&c, 1);
     Maslow.readingFromSD = false;
     return res;
 }
 
 size_t FileStream::write(const uint8_t* buffer, size_t length) {
     Maslow.readingFromSD = true;
-    size_t res = fwrite(buffer, 1, length, _fd);
+    size_t res           = fwrite(buffer, 1, length, _fd);
     Maslow.readingFromSD = false;
     return res;
 }

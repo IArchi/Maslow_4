@@ -126,7 +126,9 @@ namespace fs {
         }
     }
 
-    File::operator bool() const { return _p != nullptr && *_p != false; }
+    File::operator bool() const {
+        return _p != nullptr && *_p != false;
+    }
 
     const char* File::path() const {
         if (!*this) {
@@ -166,7 +168,9 @@ namespace fs {
         _p->rewindDirectory();
     }
 
-    File FS::open(const String& path, const char* mode) { return open(path.c_str(), mode); }
+    File FS::open(const String& path, const char* mode) {
+        return open(path.c_str(), mode);
+    }
 
     File FS::open(const char* path, const char* mode) {
         if (!_impl) {
@@ -183,7 +187,9 @@ namespace fs {
         return _impl->exists(path);
     }
 
-    bool FS::exists(const String& path) { return exists(path.c_str()); }
+    bool FS::exists(const String& path) {
+        return exists(path.c_str());
+    }
 
     bool FS::remove(const char* path) {
         if (!_impl) {
@@ -192,7 +198,9 @@ namespace fs {
         return _impl->remove(path);
     }
 
-    bool FS::remove(const String& path) { return remove(path.c_str()); }
+    bool FS::remove(const String& path) {
+        return remove(path.c_str());
+    }
 
     bool FS::rename(const char* pathFrom, const char* pathTo) {
         if (!_impl) {
@@ -201,7 +209,9 @@ namespace fs {
         return _impl->rename(pathFrom, pathTo);
     }
 
-    bool FS::rename(const String& pathFrom, const String& pathTo) { return rename(pathFrom.c_str(), pathTo.c_str()); }
+    bool FS::rename(const String& pathFrom, const String& pathTo) {
+        return rename(pathFrom.c_str(), pathTo.c_str());
+    }
 
     bool FS::mkdir(const char* path) {
         if (!_impl) {
@@ -210,7 +220,9 @@ namespace fs {
         return _impl->mkdir(path);
     }
 
-    bool FS::mkdir(const String& path) { return mkdir(path.c_str()); }
+    bool FS::mkdir(const String& path) {
+        return mkdir(path.c_str());
+    }
 
     bool FS::rmdir(const char* path) {
         if (!_impl) {
@@ -219,9 +231,15 @@ namespace fs {
         return _impl->rmdir(path);
     }
 
-    bool FS::rmdir(const String& path) { return rmdir(path.c_str()); }
+    bool FS::rmdir(const String& path) {
+        return rmdir(path.c_str());
+    }
 
-    void FSImpl::mountpoint(const char* mp) { _mountpoint = mp; }
+    void FSImpl::mountpoint(const char* mp) {
+        _mountpoint = mp;
+    }
 
-    const char* FSImpl::mountpoint() { return _mountpoint; }
+    const char* FSImpl::mountpoint() {
+        return _mountpoint;
+    }
 }

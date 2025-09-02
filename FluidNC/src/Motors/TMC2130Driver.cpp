@@ -29,7 +29,9 @@ namespace MotorDrivers {
         TrinamicBase::config_motor();
     }
 
-    bool TMC2130Driver::test() { return checkVersion(0x11, tmc2130->version()); }
+    bool TMC2130Driver::test() {
+        return checkVersion(0x11, tmc2130->version());
+    }
 
     void TMC2130Driver::set_registers(bool isHoming) {
         if (_has_errors) {

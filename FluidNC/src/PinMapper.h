@@ -21,7 +21,7 @@ public:
     PinMapper(Pin& pin);
 
     // We do not want object copies
-    PinMapper(const Pin& o) = delete;
+    PinMapper(const Pin& o)            = delete;
     PinMapper& operator=(const Pin& o) = delete;
 
     // For return values, we have to add some move semantics. This is just to

@@ -21,10 +21,10 @@ namespace Spindles {
     public:
         _10v() = default;
 
-        _10v(const _10v&) = delete;
-        _10v(_10v&&)      = delete;
+        _10v(const _10v&)            = delete;
+        _10v(_10v&&)                 = delete;
         _10v& operator=(const _10v&) = delete;
-        _10v& operator=(_10v&&) = delete;
+        _10v& operator=(_10v&&)      = delete;
 
         void init() override;
         void config_message() override;

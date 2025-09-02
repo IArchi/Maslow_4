@@ -23,7 +23,7 @@ void MotorUnit::begin(int forwardPin, int backwardPin, int readbackPin, int enco
     Maslow.I2CMux.setPort(_encoderAddress);
     if (!encoder.begin()) {
         log_error("Encoder not found on " << encAddrLabel.c_str());
-        Maslow.error = true;
+        Maslow.error        = true;
         Maslow.errorMessage = "Encoder not found on " + encAddrLabel;
     } else {
         log_info("Encoder connected on " << encAddrLabel.c_str());
@@ -37,7 +37,7 @@ void MotorUnit::begin(int forwardPin, int backwardPin, int readbackPin, int enco
 
     if (!motor_test()) {
         log_error("Motor not found on " << encAddrLabel.c_str());
-        Maslow.error = true;
+        Maslow.error        = true;
         Maslow.errorMessage = "Motor not found on " + encAddrLabel;
     } else {
         log_info("Motor detected on " << encAddrLabel.c_str());
@@ -46,7 +46,6 @@ void MotorUnit::begin(int forwardPin, int backwardPin, int readbackPin, int enco
 
 //Test the motor unit by testing the motor and checking the encoder
 bool MotorUnit::test() {
-
     bool allTestsPassed = true;
 
     String encAddrLabel = Maslow.axis_id_to_label(_encoderAddress);
@@ -54,17 +53,17 @@ bool MotorUnit::test() {
     //Check if the motor / motor driver are connected
     if (!motor_test()) {
         log_warn("Motor not found on " << encAddrLabel.c_str());
-        Maslow.error = true;
+        Maslow.error        = true;
         Maslow.errorMessage = "Motor not found on " + encAddrLabel;
-        allTestsPassed = false;
+        allTestsPassed      = false;
     }
 
     //Check if the encoder is connected
     if (!updateEncoderPosition()) {
         log_warn("Encoder not found on " << encAddrLabel.c_str());
-        Maslow.error = true;
+        Maslow.error        = true;
         Maslow.errorMessage = "Encoder not found on " + encAddrLabel;
-        allTestsPassed = false;
+        allTestsPassed      = false;
     }
 
     //Check for the presence of the magnet
@@ -73,7 +72,7 @@ bool MotorUnit::test() {
         allTestsPassed = false;
     }
 
-    if(allTestsPassed){
+    if (allTestsPassed) {
         log_info("All tests passed on " << encAddrLabel.c_str());
     }
 
@@ -196,7 +195,7 @@ bool MotorUnit::retract() {
     String encAddrLabel = Maslow.axis_id_to_label(_encoderAddress);
     log_info(encAddrLabel.c_str() << " pulled tight with offset " << getPosition());
     zero();
-    
+
     return true;
 }
 
@@ -209,12 +208,12 @@ bool MotorUnit::pull_tight(int currentThreshold) {
     lastCallToRetract = millis();
 
     //Gradually increase the pulling speed
-    if (random(0, 2) == 1){
+    if (random(0, 2) == 1) {
         retract_speed = min(retract_speed + 1, 1023);
     }
 
     motor.backward(retract_speed);
-    _commandPWM = -retract_speed; //This is only used for the getPWM function. There's got to be a tidier way to do this.
+    _commandPWM = -retract_speed;  //This is only used for the getPWM function. There's got to be a tidier way to do this.
 
     //When taught
     int currentMeasurement = motor.readCurrent();
@@ -227,8 +226,7 @@ bool MotorUnit::pull_tight(int currentThreshold) {
         incrementalThresholdHits = 0;
     }
 
-
-    if (retract_speed > 15) { //20 is not the actual speed, it is the amount of time so we don't trigger immediately
+    if (retract_speed > 15) {  //20 is not the actual speed, it is the amount of time so we don't trigger immediately
         if (currentMeasurement > currentThreshold || incrementalThresholdHits > 2) {
             //stop motor, reset variables
             stop();

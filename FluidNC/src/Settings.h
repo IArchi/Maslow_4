@@ -288,8 +288,7 @@ public:
                 const char*   name,
                 int8_t        defVal,
                 enum_opt_t*   opts,
-                bool (*checker)(char*) = NULL) :
-        EnumSetting(NULL, type, permissions, grblName, name, defVal, opts, checker) {}
+                bool (*checker)(char*) = NULL) : EnumSetting(NULL, type, permissions, grblName, name, defVal, opts, checker) {}
 
     void        load();
     void        setDefault();
@@ -352,8 +351,7 @@ public:
                const char*   name,
                Error (*action)(char*, WebUI::AuthenticationLevel, Channel& out),
                bool (*cmdChecker)() = notIdleOrAlarm) :
-        Command(description, type, permissions, grblName, name, cmdChecker),
-        _action(action) {}
+        Command(description, type, permissions, grblName, name, cmdChecker), _action(action) {}
 
     Error action(char* value, WebUI::AuthenticationLevel auth_level, Channel& out);
 };
@@ -367,15 +365,12 @@ public:
                 const char* name,
                 Error (*action)(const char*, WebUI::AuthenticationLevel, Channel&),
                 bool (*cmdChecker)(),
-                permissions_t auth = WG) :
-        Command(NULL, GRBLCMD, auth, grblName, name, cmdChecker),
-        _action(action) {}
-    UserCommand(const char* grblName,
+                permissions_t auth = WG) : Command(NULL, GRBLCMD, auth, grblName, name, cmdChecker), _action(action) {}
+    UserCommand(const char*       grblName,
                 const std::string name,
                 Error (*action)(const char*, WebUI::AuthenticationLevel, Channel&),
                 bool (*cmdChecker)(),
-                permissions_t auth = WG) :
-        UserCommand(grblName, &name[0], action, cmdChecker, auth) {}
+                permissions_t auth = WG) : UserCommand(grblName, &name[0], action, cmdChecker, auth) {}
 
     Error action(char* value, WebUI::AuthenticationLevel auth_level, Channel& response);
 };

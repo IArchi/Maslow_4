@@ -47,7 +47,9 @@ namespace Spindles {
         log_info(name() << " Spindle Out:" << _output_pin.name() << " Dir:" << _direction_pin.name() << " Res:8bits");
     }
 
-    void IRAM_ATTR Dac::setSpeedfromISR(uint32_t speed) { set_output(speed); };
+    void IRAM_ATTR Dac::setSpeedfromISR(uint32_t speed) {
+        set_output(speed);
+    };
     void IRAM_ATTR Dac::set_output(uint32_t duty) {
         if (_gpio_ok) {
             auto outputNative = _output_pin.getNative(Pin::Capabilities::DAC);

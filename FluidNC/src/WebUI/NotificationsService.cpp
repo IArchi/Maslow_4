@@ -161,7 +161,9 @@ namespace WebUI {
         return false;
     }
 
-    bool NotificationsService::started() { return _started; }
+    bool NotificationsService::started() {
+        return _started;
+    }
 
     const char* NotificationsService::getTypeString() {
         switch (_notificationType) {
@@ -231,7 +233,7 @@ namespace WebUI {
         Notificationclient.stop();
         return res;
     }
-    
+
     bool NotificationsService::sendEmailMSG(const char* title, const char* message) {
         WiFiClientSecure Notificationclient;
         // Switch off secure mode because the connect command always fails in secure mode:(
@@ -240,7 +242,7 @@ namespace WebUI {
         if (!Notificationclient.connect(_serveraddress.c_str(), _port)) {
             //Read & log error message (in debug mode)
             if (atMsgLevel(MsgLevelDebug)) {
-                char errMsg[150];
+                char      errMsg[150];
                 const int lastError = Notificationclient.lastError(errMsg, sizeof(errMsg));
                 if (0 == lastError) {
                     errMsg[0] = 0;
@@ -430,6 +432,8 @@ namespace WebUI {
         if (_started) {}
     }
 
-    NotificationsService::~NotificationsService() { end(); }
+    NotificationsService::~NotificationsService() {
+        end();
+    }
 }
 #endif

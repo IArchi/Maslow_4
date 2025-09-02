@@ -9,7 +9,9 @@ namespace WebUI {
 
     InputBuffer::InputBuffer() : Channel("macros") {}
 
-    InputBuffer::operator bool() const { return true; }
+    InputBuffer::operator bool() const {
+        return true;
+    }
 
     bool InputBuffer::push(const char* data) {
         char c;

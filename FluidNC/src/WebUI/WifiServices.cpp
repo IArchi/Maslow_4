@@ -10,9 +10,13 @@ namespace WebUI {
     WiFiServices wifi_services;
 
     WiFiServices::WiFiServices() {}
-    WiFiServices::~WiFiServices() { end(); }
+    WiFiServices::~WiFiServices() {
+        end();
+    }
 
-    bool WiFiServices::begin() { return false; }
+    bool WiFiServices::begin() {
+        return false;
+    }
     void WiFiServices::end() {}
     void WiFiServices::handle() {}
 }
@@ -33,7 +37,9 @@ namespace WebUI {
     WiFiServices wifi_services;
 
     WiFiServices::WiFiServices() {}
-    WiFiServices::~WiFiServices() { end(); }
+    WiFiServices::~WiFiServices() {
+        end();
+    }
 
     bool WiFiServices::begin() {
         bool no_error = true;

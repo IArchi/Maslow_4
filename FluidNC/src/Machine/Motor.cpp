@@ -53,7 +53,9 @@ namespace Machine {
     }
 
     // true if there is at least one switch for this motor
-    bool Motor::hasSwitches() { return (_negPin.defined() || _posPin.defined() || _allPin.defined()); }
+    bool Motor::hasSwitches() {
+        return (_negPin.defined() || _posPin.defined() || _allPin.defined());
+    }
 
     // Used when a single switch input is wired to 2 axes.
     void Motor::makeDualSwitches() {
@@ -69,7 +71,9 @@ namespace Machine {
         _allLimitPin->setExtraMotorLimit(axis, _motorNum);
     }
 
-    bool Motor::isReal() { return _driver->isReal(); }
+    bool Motor::isReal() {
+        return _driver->isReal();
+    }
 
     void IRAM_ATTR Motor::step(bool reverse) {
         // Skip steps based on limit pins
@@ -82,7 +86,11 @@ namespace Machine {
         _steps += reverse ? -1 : 1;
     }
 
-    void IRAM_ATTR Motor::unstep() { _driver->unstep(); }
+    void IRAM_ATTR Motor::unstep() {
+        _driver->unstep();
+    }
 
-    Motor::~Motor() { delete _driver; }
+    Motor::~Motor() {
+        delete _driver;
+    }
 }

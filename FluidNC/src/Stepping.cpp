@@ -8,7 +8,7 @@
 
 namespace Machine {
 
-    int Stepping::_engine = TIMED; // RMT;
+    int Stepping::_engine = TIMED;  // RMT;
 
     EnumItem stepTypes[] = { { Stepping::TIMED, "Timed" },
                              // { Stepping::RMT, "RMT" },

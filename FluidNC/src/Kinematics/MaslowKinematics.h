@@ -24,10 +24,10 @@ namespace Kinematics {
     public:
         MaslowKinematics() = default;
 
-        MaslowKinematics(const MaslowKinematics&) = delete;
-        MaslowKinematics(MaslowKinematics&&)      = delete;
+        MaslowKinematics(const MaslowKinematics&)            = delete;
+        MaslowKinematics(MaslowKinematics&&)                 = delete;
         MaslowKinematics& operator=(const MaslowKinematics&) = delete;
-        MaslowKinematics& operator=(MaslowKinematics&&) = delete;
+        MaslowKinematics& operator=(MaslowKinematics&&)      = delete;
 
         // Kinematic Interface
         void init() override;
@@ -41,7 +41,7 @@ namespace Kinematics {
         bool limitReached(AxisMask& axisMask, MotorMask& motors, MotorMask limited) override;
 
         // Configuration handlers:
-        void validate() override {}
+        void validate() override;
         void group(Configuration::HandlerBase& handler) override;
         void afterParse() override {}
 
@@ -52,10 +52,10 @@ namespace Kinematics {
 
         // Public access to compute functions for calibration system
         float computeTL(float x, float y, float z);
-        float computeTR(float x, float y, float z);  
+        float computeTR(float x, float y, float z);
         float computeBL(float x, float y, float z);
         float computeBR(float x, float y, float z);
-        
+
         // Getters for parameters used by calibration system
         float getTlX() const { return _tlX; }
         float getTlY() const { return _tlY; }
@@ -77,58 +77,59 @@ namespace Kinematics {
         float getCenterY() const { return _centerY; }
 
         // Forward kinematics methods for position synchronization
-        bool computeXYfromBeltLengths(float tlLength, float trLength, float& x, float& y) const;
+        bool  computeXYfromBeltLengths(float tlLength, float trLength, float& x, float& y) const;
         float measurementToXYPlane(float measurement, float zHeight) const;
-        
+
         // Setter methods for calibration system to update frame parameters
         void setFrameSize(float frameSize);
-        void updateAnchorCoordinates(float tlX, float tlY, float tlZ, 
-                                   float trX, float trY, float trZ,
-                                   float blX, float blY, float blZ,
-                                   float brX, float brY, float brZ);
+        void updateAnchorCoordinates(
+            float tlX, float tlY, float tlZ, float trX, float trY, float trZ, float blX, float blY, float blZ, float brX, float brY, float brZ);
         void setSpoilboardThickness(float thickness);
         void setWorkThickness(float thickness);
 
     private:
+        // Validation and correction helper method
+        void validateAndCorrectAnchorCoordinates();
+
         // Anchor point coordinates (in mm)
         float _tlX = -27.6f;   // Top left X
-        float _tlY = 2064.9f;  // Top left Y  
+        float _tlY = 2064.9f;  // Top left Y
         float _tlZ = 100.0f;   // Top left Z
-        
+
         float _trX = 2924.3f;  // Top right X
         float _trY = 2066.5f;  // Top right Y
         float _trZ = 56.0f;    // Top right Z
-        
-        float _blX = 0.0f;     // Bottom left X
-        float _blY = 0.0f;     // Bottom left Y
-        float _blZ = 34.0f;    // Bottom left Z
-        
+
+        float _blX = 0.0f;   // Bottom left X
+        float _blY = 0.0f;   // Bottom left Y
+        float _blZ = 34.0f;  // Bottom left Z
+
         float _brX = 2953.2f;  // Bottom right X
         float _brY = 0.0f;     // Bottom right Y
         float _brZ = 78.0f;    // Bottom right Z
 
         // Belt and arm parameters (in mm)
         float _beltEndExtension = 30.0f;   // Belt end extension
-        float _armLength = 123.4f;         // Arm length
-        
+        float _armLength        = 123.4f;  // Arm length
+
         // Material thickness offsets (in mm) - accounts for spoil board and work piece thickness
-        float _spoilboardThickness = 0.0f;   // Spoil board thickness added to all anchor heights
-        float _workThickness = 0.0f;         // Work piece thickness added to all anchor heights
-        
+        float _spoilboardThickness = 0.0f;  // Spoil board thickness added to all anchor heights
+        float _workThickness       = 0.0f;  // Work piece thickness added to all anchor heights
+
         // Center offset for coordinate system transformation
         float _centerX = 0.0f;  // Will be calculated from frame dimensions
         float _centerY = 0.0f;  // Will be calculated from frame dimensions
-        
+
         // Segmentation parameters for belt length synchronization
-        float _maxSegmentLength = 5.0f;    // Maximum segment length (mm) before breaking into smaller segments
-        
+        float _maxSegmentLength = 5.0f;  // Maximum segment length (mm) before breaking into smaller segments
+
         // Flag to prevent recursion during segmentation
         bool _isSegmenting = false;
-        
+
         // Initialize center coordinates
         void calculateCenter();
     };
-    
+
     // Global accessor function to get the current MaslowKinematics instance
     MaslowKinematics* getMaslowKinematics();
 }  //  namespace Kinematics

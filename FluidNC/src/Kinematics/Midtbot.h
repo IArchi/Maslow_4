@@ -18,10 +18,10 @@ namespace Kinematics {
     public:
         Midtbot() = default;
 
-        Midtbot(const Midtbot&) = delete;
-        Midtbot(Midtbot&&)      = delete;
+        Midtbot(const Midtbot&)            = delete;
+        Midtbot(Midtbot&&)                 = delete;
         Midtbot& operator=(const Midtbot&) = delete;
-        Midtbot& operator=(Midtbot&&) = delete;
+        Midtbot& operator=(Midtbot&&)      = delete;
 
         // Kinematic Interface
 

@@ -10,10 +10,16 @@ namespace fs {
                          const char* partitionLabel /*= NULL*/) {
         return true;
     }
-    bool   SPIFFSFS::format() { return true; }
-    size_t SPIFFSFS::totalBytes() { return 1024 * 1024; /* 1 MB */ }
-    size_t SPIFFSFS::usedBytes() { return 0; }
-    void   SPIFFSFS::end() {}
+    bool SPIFFSFS::format() {
+        return true;
+    }
+    size_t SPIFFSFS::totalBytes() {
+        return 1024 * 1024; /* 1 MB */
+    }
+    size_t SPIFFSFS::usedBytes() {
+        return 0;
+    }
+    void SPIFFSFS::end() {}
 }
 
 fs::SPIFFSFS SPIFFS;

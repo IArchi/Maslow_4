@@ -970,7 +970,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             log_info("Measured waypoint " << waypoint);
 
             //A check to see if the results on the first point are within the expected range
-            if(waypoint == 0){
+            //This logic should only run during calibration, not during Apply Tension
+            if(waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS){
 
                 //Recompute the machine position with the belt lenths and compare the results to that
                 float x = 0;

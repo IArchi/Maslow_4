@@ -707,6 +707,9 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                 // Once all belts are tight, move to phase 2
                 if (tl_tight && tr_tight && bl_tight && br_tight) {
                     initial_tension_complete = true;
+                    // Set TL and TR targets to their current positions to prevent unwanted movement
+                    Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
+                    Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
                     // Reset belt tight flags for the actual measurement phase
                     bl_tight = false;
                     br_tight = false;

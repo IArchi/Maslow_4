@@ -13,9 +13,6 @@ static Kinematics::MaslowKinematics* getKinematics() {
     return kinematics;
 }
 
-
-
-
 // #define UNKNOWN 0
 // #define RETRACTING 1
 // #define RETRACTED 2
@@ -27,8 +24,6 @@ static Kinematics::MaslowKinematics* getKinematics() {
 // #define RELEASE_TENSION 8
 // #define CALIBRATION_COMPUTING 9
 
-
-
 // Constructor
 Calibration::Calibration() {
     currentState = UNKNOWN;
@@ -37,29 +32,27 @@ Calibration::Calibration() {
 //------------------------------------------------------
 //------------------------------------------------------ State Machine Functions
 //------------------------------------------------------
-int Calibration::getCurrentState(){
+int Calibration::getCurrentState() {
     return currentState;
 }
 
 //Prints the machine's current state
-void Calibration::printCurrentState(){
+void Calibration::printCurrentState() {
     log_info("Current state: " << currentState);
 }
 
-
 //Request a state change to a new state. Returns true on success and false on failure (although return value is never used atm)
-bool Calibration::requestStateChange(int newState){
-
+bool Calibration::requestStateChange(int newState) {
     log_info("Requesting state change from " << stateNames[currentState].name << " to " << stateNames[newState].name);
 
     bool success = false;
 
-    switch(newState){
-        case UNKNOWN: //We can enter unknown from any stable state (the machine is not currently performing an action)
+    switch (newState) {
+        case UNKNOWN:  //We can enter unknown from any stable state (the machine is not currently performing an action)
             currentState = UNKNOWN;
-            success =  true;
+            success      = true;
             break;
-        case RETRACTING: //We can enter retracting from any state
+        case RETRACTING:  //We can enter retracting from any state
             currentState = RETRACTING;
 
             retractingTL = true;
@@ -73,23 +66,22 @@ bool Calibration::requestStateChange(int newState){
             Maslow.axisBL.reset();
             Maslow.axisBR.reset();
 
-            success =  true;
+            success = true;
             break;
-        case RETRACTED: //We can enter retracted from retracting only
-            if(currentState == RETRACTING){
+        case RETRACTED:  //We can enter retracted from retracting only
+            if (currentState == RETRACTING) {
                 currentState = RETRACTED;
                 sys.set_state(State::Idle);
-                success =  true;
+                success = true;
+                break;
+            } else {
                 break;
             }
-            else{
-                break;
-            }
-        case EXTENDING: //We can enter extending from retracted or extended out
-            if(currentState == RETRACTED || currentState == EXTENDEDOUT){
+        case EXTENDING:  //We can enter extending from retracted or extended out
+            if (currentState == RETRACTED || currentState == EXTENDEDOUT) {
                 currentState = EXTENDING;
                 Maslow.stop();
-                extendingALL = true; //This should be replaced by state variables
+                extendingALL = true;  //This should be replaced by state variables
                 sys.set_state(State::Homing);
 
                 extendedTL = false;
@@ -97,29 +89,27 @@ bool Calibration::requestStateChange(int newState){
                 extendedBL = false;
                 extendedBR = false;
 
-                updateCenterXY(); //Why is this needed here?
-                success =  true;
+                updateCenterXY();  //Why is this needed here?
+                success = true;
                 break;
-            }
-            else{
+            } else {
                 log_info("Cannot extend the belts until they have been retracted");
                 break;
             }
-        case EXTENDEDOUT: //We can enter extended from extending or in the event of a failure from taking slack or release tension
-            if(currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION){
+        case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack or release tension
+            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
-                success =  true;
+                success = true;
+                break;
+            } else {
                 break;
             }
-            else{
-                break;
-            }
-        case TAKING_SLACK: //We can enter taking slack from extended only
-            if(currentState == EXTENDEDOUT){
+        case TAKING_SLACK:  //We can enter taking slack from extended only
+            if (currentState == EXTENDEDOUT) {
                 currentState = TAKING_SLACK;
 
-                retractingTL = false; //Should be replaced by state now
+                retractingTL = false;  //Should be replaced by state now
                 retractingTR = false;
                 retractingBL = false;
                 retractingBR = false;
@@ -130,31 +120,30 @@ bool Calibration::requestStateChange(int newState){
                 Maslow.axisTR.reset();
                 Maslow.axisBL.reset();
                 Maslow.axisBR.reset();
-            
-                Maslow.x         = 0;
-                Maslow.y         = 0;
+
+                Maslow.x  = 0;
+                Maslow.y  = 0;
                 takeSlack = true;
-            
+
                 //Alocate the memory to store the measurements in. This is used here because take slack will use the same memory as the calibration
                 allocateCalibrationMemory();
-                success =  true;
+                success = true;
                 break;
-            }
-            else{
+            } else {
                 log_info("Cannot take slack until the belts have been extended");
                 break;
             }
-        case CALIBRATION_IN_PROGRESS: //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
-            if(currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING){
+        case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
+            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
                 currentState = CALIBRATION_IN_PROGRESS;
                 sys.set_state(State::Homing);
-                
+
                 // Log the calibration orientation mode for debugging
                 log_info("Calibration starting in " << (orientation == VERTICAL ? "VERTICAL" : "HORIZONTAL") << " orientation mode");
-                
+
                 //If we are at the first point we need to generate the grid before we can start
                 if (waypoint == 0) {
-                    if(!generate_calibration_grid()){ //Fail out if the grid cannot be generated
+                    if (!generate_calibration_grid()) {  //Fail out if the grid cannot be generated
                         return false;
                     }
                 }
@@ -167,17 +156,18 @@ bool Calibration::requestStateChange(int newState){
                 //Recalculate the center position because the machine dimensions may have been updated
                 updateCenterXY();
 
-
                 //At this point it's likely that we have just sent the machine new cordinates for the anchor points so we need to figure out our new XY
                 //cordinates by looking at the current lengths of the top two belts.
                 //If we can't load the position, that's OK, we can still go ahead with the calibration and the first point will make a guess for it
-                float x = 0;
-                float y = 0;
-                auto kinematics = getKinematics();
-                if(kinematics && computeXYfromLengths(measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ()), measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ()), x, y)){
-                    
+                float x          = 0;
+                float y          = 0;
+                auto  kinematics = getKinematics();
+                if (kinematics && computeXYfromLengths(measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ()),
+                                                       measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ()),
+                                                       x,
+                                                       y)) {
                     //We reset the last waypoint to where it actually is so that we can move from the updated position to the next waypoint
-                    if(waypoint > 0){
+                    if (waypoint > 0) {
                         calibrationGrid[waypoint - 1][0] = x;
                         calibrationGrid[waypoint - 1][1] = y;
                     }
@@ -186,62 +176,59 @@ bool Calibration::requestStateChange(int newState){
 
                     //Set the internal machine position using actual belt positions to avoid synchronization issues
                     // Get current belt positions from hardware and set motor steps directly
-                    float tlBeltLength = Maslow.axisTL.getPosition(); // Actual belt position from hardware
-                    float trBeltLength = Maslow.axisTR.getPosition(); 
-                    float blBeltLength = Maslow.axisBL.getPosition(); 
-                    float brBeltLength = Maslow.axisBR.getPosition(); 
-                    
+                    float tlBeltLength = Maslow.axisTL.getPosition();  // Actual belt position from hardware
+                    float trBeltLength = Maslow.axisTR.getPosition();
+                    float blBeltLength = Maslow.axisBL.getPosition();
+                    float brBeltLength = Maslow.axisBR.getPosition();
+
                     log_info("Setting motor positions from hardware readings:");
                     log_info("TL: " << tlBeltLength << " TR: " << trBeltLength << " BL: " << blBeltLength << " BR: " << brBeltLength);
-                    
+
                     // Set motor positions directly from hardware readings
                     // Axis mapping: A=TL(0), B=TR(1), C=BL(2), D=BR(3), Z=router(4)
-                    set_motor_steps(0, mpos_to_steps(tlBeltLength, 0)); // A axis = TL belt
-                    set_motor_steps(1, mpos_to_steps(trBeltLength, 1)); // B axis = TR belt
-                    set_motor_steps(2, mpos_to_steps(blBeltLength, 2)); // C axis = BL belt
-                    set_motor_steps(3, mpos_to_steps(brBeltLength, 3)); // D axis = BR belt
+                    set_motor_steps(0, mpos_to_steps(tlBeltLength, 0));  // A axis = TL belt
+                    set_motor_steps(1, mpos_to_steps(trBeltLength, 1));  // B axis = TR belt
+                    set_motor_steps(2, mpos_to_steps(blBeltLength, 2));  // C axis = BL belt
+                    set_motor_steps(3, mpos_to_steps(brBeltLength, 3));  // D axis = BR belt
                     // Z axis is left unchanged
-                    
-                    gc_sync_position();//This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
+
+                    gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
                     plan_sync_position();
-                    
                 }
 
                 sys.set_state(State::Homing);
 
-                calibrationInProgress = true; //Should be replaced by state machine
-                success =  true;
+                calibrationInProgress = true;  //Should be replaced by state machine
+                success               = true;
                 break;
-            }
-            else{
+            } else {
                 log_info("Cannot start calibration until the belts have been extended");
                 break;
             }
-        case CALIBRATION_COMPUTING: //We can enter calibration computing from calibration in progress
-            if(currentState == CALIBRATION_IN_PROGRESS){
-                currentState = CALIBRATION_COMPUTING;
+        case CALIBRATION_COMPUTING:  //We can enter calibration computing from calibration in progress
+            if (currentState == CALIBRATION_IN_PROGRESS) {
+                currentState          = CALIBRATION_COMPUTING;
                 calibrationInProgress = false;
-                success =  true;
+                success               = true;
                 break;
-            }
-            else{
+            } else {
                 log_info("Cannot enter calibration computing from state " << stateNames[currentState].name);
                 break;
             }
-        case READY_TO_CUT: //We can enter ready to cut from calibration in progress, calibration computing or taking slack
-            if(currentState == CALIBRATION_IN_PROGRESS || currentState == CALIBRATION_COMPUTING || currentState == TAKING_SLACK){
+        case READY_TO_CUT:  //We can enter ready to cut from calibration in progress, calibration computing or taking slack
+            if (currentState == CALIBRATION_IN_PROGRESS || currentState == CALIBRATION_COMPUTING || currentState == TAKING_SLACK) {
                 currentState = READY_TO_CUT;
                 sys.set_state(State::Idle);
-                success =  true;
+                success = true;
+                break;
+            } else {
                 break;
             }
-            else{
-                break;
-            }
-        case RELEASE_TENSION: //We can enter release tension from any stable state (the machine is not currently performing an action)
-            if(currentState == READY_TO_CUT || currentState == UNKNOWN || currentState == EXTENDEDOUT || currentState == CALIBRATION_COMPUTING){
-                previousState = currentState; // Store the previous state
-                currentState = RELEASE_TENSION;
+        case RELEASE_TENSION:  //We can enter release tension from any stable state (the machine is not currently performing an action)
+            if (currentState == READY_TO_CUT || currentState == UNKNOWN || currentState == EXTENDEDOUT ||
+                currentState == CALIBRATION_COMPUTING) {
+                previousState   = currentState;  // Store the previous state
+                currentState    = RELEASE_TENSION;
                 complyCallTimer = millis();
                 retractingTL    = false;
                 retractingTR    = false;
@@ -249,14 +236,13 @@ bool Calibration::requestStateChange(int newState){
                 retractingBR    = false;
                 extendingALL    = false;
                 complyALL       = true;
-                Maslow.axisTL.reset(); //This just resets the thresholds for pull tight
+                Maslow.axisTL.reset();  //This just resets the thresholds for pull tight
                 Maslow.axisTR.reset();
                 Maslow.axisBL.reset();
                 Maslow.axisBR.reset();
-                success =  true;
+                success = true;
                 break;
-            }
-            else{
+            } else {
                 log_info("Cannot release tension from state " << stateNames[currentState].name);
                 break;
             }
@@ -264,7 +250,7 @@ bool Calibration::requestStateChange(int newState){
             return false;
     }
 
-    if(success){
+    if (success) {
         log_info("Succeeded");
     }
 
@@ -273,11 +259,9 @@ bool Calibration::requestStateChange(int newState){
     return success;
 }
 
-
 // -Maslow homing loop. This is used whenver any of the homing funcitons are active (belts extending or retracting)
 void Calibration::home() {
-
-    switch (currentState){
+    switch (currentState) {
         case RETRACTING:
             //run all the retract functions untill we hit the current limit
             if (retractingTL) {
@@ -345,7 +329,7 @@ void Calibration::home() {
             }
             break;
         case TAKING_SLACK:
-            if (takeSlackFunc()) { //Returns true. Requests correct state transition within function
+            if (takeSlackFunc()) {  //Returns true. Requests correct state transition within function
                 takeSlack = false;
                 deallocateCalibrationMemory();
             }
@@ -357,20 +341,19 @@ void Calibration::home() {
                 Maslow.axisBL.decompressBelt();
                 Maslow.axisTR.decompressBelt();
                 Maslow.axisTL.decompressBelt();
-            } else if(millis() - complyCallTimer < 800){
+            } else if (millis() - complyCallTimer < 800) {
                 Maslow.axisTL.comply();
                 Maslow.axisTR.comply();
                 Maslow.axisBL.comply();
                 Maslow.axisBR.comply();
-            }
-            else {
+            } else {
                 Maslow.axisTL.stop();
                 Maslow.axisTR.stop();
                 Maslow.axisBL.stop();
                 Maslow.axisBR.stop();
                 complyALL = false;
                 sys.set_state(State::Idle);
-                
+
                 // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
                 // return to EXTENDEDOUT state, otherwise go to UNKNOWN
                 if (previousState == READY_TO_CUT || previousState == EXTENDEDOUT || previousState == CALIBRATION_COMPUTING) {
@@ -398,16 +381,16 @@ void Calibration::home() {
 //------------------------------------------------------ Homing and calibration functions
 //------------------------------------------------------
 
-
 // --Maslow calibration loop
 void Calibration::calibration_loop() {
     static int  direction             = UP;
-    static bool measurementInProgress = true; //We start by taking a measurement, then we move
-    if(waypoint > pointCount){ //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
+    static bool measurementInProgress = true;  //We start by taking a measurement, then we move
+    if (waypoint >
+        pointCount) {  //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
         calibrationInProgress = false;
         //Reset all of the calibration variables to the defaults so that calibraiton can be run again
-        waypoint              = 0;
-        recomputeCountIndex   = 0;
+        waypoint            = 0;
+        recomputeCountIndex = 0;
         deallocateCalibrationMemory();
         requestStateChange(READY_TO_CUT);
         log_info("Calibration complete");
@@ -426,8 +409,7 @@ void Calibration::calibration_loop() {
                 calibrationDataWaiting = millis();
                 sys.set_state(State::Idle);
                 recomputeCountIndex++;
-            }
-            else {
+            } else {
                 hold(250);
             }
         }
@@ -435,19 +417,18 @@ void Calibration::calibration_loop() {
 
     //Move to the next point in the grid
     else {
-
         if (move_with_slack(calibrationGrid[waypoint - 1][0],
                             calibrationGrid[waypoint - 1][1],
                             calibrationGrid[waypoint][0],
                             calibrationGrid[waypoint][1])) {
-
             measurementInProgress = true;
-            direction             = get_direction(calibrationGrid[waypoint - 1][0],
-                                      calibrationGrid[waypoint - 1][1],
-                                      calibrationGrid[waypoint][0],
-                                      calibrationGrid[waypoint][1]); //This is used to set the order that the belts are pulled tight in the following measurement
-            Maslow.x                     = calibrationGrid[waypoint][0]; //Are these ever used anywhere?
-            Maslow.y                     = calibrationGrid[waypoint][1];
+            direction             = get_direction(
+                calibrationGrid[waypoint - 1][0],
+                calibrationGrid[waypoint - 1][1],
+                calibrationGrid[waypoint][0],
+                calibrationGrid[waypoint][1]);  //This is used to set the order that the belts are pulled tight in the following measurement
+            Maslow.x = calibrationGrid[waypoint][0];  //Are these ever used anywhere?
+            Maslow.y = calibrationGrid[waypoint][1];
             hold(250);
         }
     }
@@ -462,27 +443,29 @@ void Calibration::calibration_loop() {
 * Returns true when it is finished regardless of result. Otherwise returns false. 
 */
 bool Calibration::takeSlackFunc() {
-    static int takeSlackState = 0; //0 -> Starting, 1-> Moving to (0,0), 2-> Taking a measurement. Where should this be defined correctly?
+    static int takeSlackState = 0;  //0 -> Starting, 1-> Moving to (0,0), 2-> Taking a measurement. Where should this be defined correctly?
     static unsigned long holdTimer = millis();
-    static float startingX    = 0;
-    static float startingY    = 0;
+    static float         startingX = 0;
+    static float         startingY = 0;
 
     //Take a measurement
-    if(takeSlackState == 0){
-        if (take_measurement_avg_with_check(0, UP)) { //We really shouldn't be using the first position to store the data, it should have it's own array
-            
+    if (takeSlackState == 0) {
+        if (take_measurement_avg_with_check(
+                0, UP)) {  //We really shouldn't be using the first position to store the data, it should have it's own array
+
             float x = 0;
             float y = 0;
-            if(!computeXYfromLengths(calibration_data[2][0], calibration_data[2][1], x, y)){
+            if (!computeXYfromLengths(calibration_data[2][0], calibration_data[2][1], x, y)) {
                 log_error("Failed to compute XY from lengths");
                 return true;
             }
 
             auto kinematics = getKinematics();
-            if (!kinematics) return true;
-            
+            if (!kinematics)
+                return true;
+
             float extension = kinematics->getBeltEndExtension() + kinematics->getArmLength();
-            
+
             //This should use it's own array, this is not calibration data
             float diffTL = calibration_data[2][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
             float diffTR = calibration_data[2][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
@@ -491,53 +474,53 @@ bool Calibration::takeSlackFunc() {
             log_info("Center point deviation: TL: " << diffTL << " TR: " << diffTR << " BL: " << diffBL << " BR: " << diffBR);
             double threshold = 12;
             if (abs(diffTL) > threshold || abs(diffTR) > threshold || abs(diffBL) > threshold || abs(diffBR) > threshold) {
-                log_error("Center point deviation over " << threshold << "mm, your coordinate system is not accurate, maybe try running calibration again?");
+                log_error("Center point deviation over "
+                          << threshold << "mm, your coordinate system is not accurate, maybe try running calibration again?");
                 //Should we enter an alarm state here to prevent things from going wrong?
 
                 //Reset
                 takeSlackState = 0;
                 requestStateChange(EXTENDEDOUT);
                 return true;
-            }
-            else{
+            } else {
                 log_info("Center point deviation within " << threshold << "mm, your coordinate system is accurate");
                 takeSlackState = 0;
-                holdTimer = millis();
+                holdTimer      = millis();
 
-                log_info("Current machine position loaded as X: " << x << " Y: " << y );
+                log_info("Current machine position loaded as X: " << x << " Y: " << y);
 
                 // Instead of setting cartesian position and letting kinematics recalculate motor positions,
                 // we need to set the motor positions directly from the measured belt lengths to avoid
                 // position synchronization issues between hardware and FluidNC's motion planning system
-                
+
                 // Get current motor position array
                 float* mpos = get_mpos();
                 log_info("Before update - mpos: X=" << mpos[0] << " Y=" << mpos[1] << " Z=" << mpos[2]);
-                
+
                 // Convert measured XY plane distances to actual belt lengths for motor positions
                 // calibration_data[2] contains measured XY plane distances: [TL, TR, BL, BR]
                 float tlBeltLength = measurementFromXYPlane(calibration_data[2][0], kinematics->getTlZ());
                 float trBeltLength = measurementFromXYPlane(calibration_data[2][1], kinematics->getTrZ());
                 float blBeltLength = measurementFromXYPlane(calibration_data[2][2], kinematics->getBlZ());
                 float brBeltLength = measurementFromXYPlane(calibration_data[2][3], kinematics->getBrZ());
-                
+
                 log_info("Setting motor positions directly from measurements:");
                 log_info("TL belt: " << tlBeltLength << " TR belt: " << trBeltLength);
                 log_info("BL belt: " << blBeltLength << " BR belt: " << brBeltLength);
-                
+
                 // Set motor positions directly from measured belt lengths
                 // Axis mapping: A=TL(0), B=TR(1), C=BL(2), D=BR(3), Z=router(4)
-                set_motor_steps(0, mpos_to_steps(tlBeltLength, 0)); // A axis = TL belt
-                set_motor_steps(1, mpos_to_steps(trBeltLength, 1)); // B axis = TR belt
-                set_motor_steps(2, mpos_to_steps(blBeltLength, 2)); // C axis = BL belt
-                set_motor_steps(3, mpos_to_steps(brBeltLength, 3)); // D axis = BR belt
-                set_motor_steps(4, mpos_to_steps(0.0, 4));          // Z axis = 0 (surface level)
-                
+                set_motor_steps(0, mpos_to_steps(tlBeltLength, 0));  // A axis = TL belt
+                set_motor_steps(1, mpos_to_steps(trBeltLength, 1));  // B axis = TR belt
+                set_motor_steps(2, mpos_to_steps(blBeltLength, 2));  // C axis = BL belt
+                set_motor_steps(3, mpos_to_steps(brBeltLength, 3));  // D axis = BR belt
+                set_motor_steps(4, mpos_to_steps(0.0, 4));           // Z axis = 0 (surface level)
+
                 // Verify that the position was set correctly by reading back from motors
                 float* verify_mpos = get_mpos();
                 log_info("After update - mpos: X=" << verify_mpos[0] << " Y=" << verify_mpos[1] << " Z=" << verify_mpos[2]);
-                
-                gc_sync_position();//This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
+
+                gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
                 plan_sync_position();
 
                 sys.set_state(State::Idle);
@@ -547,45 +530,43 @@ bool Calibration::takeSlackFunc() {
     }
 
     //Position hold for 2 seconds
-    if(takeSlackState == 1){
-        if(millis() - holdTimer > 2000){
+    if (takeSlackState == 1) {
+        if (millis() - holdTimer > 2000) {
             takeSlackState = 0;
             return true;
         }
     }
 
-
-
     return false;
 }
-
 
 /*
 *Computes the current xy cordinates of the sled based on the lengths of the upper two belts
 */
-bool Calibration::computeXYfromLengths(double TL, double TR, float &x, float &y) {
+bool Calibration::computeXYfromLengths(double TL, double TR, float& x, float& y) {
     auto kinematics = getKinematics();
-    if (!kinematics) return false;
-    
-    double tlLength = TL;//measurementToXYPlane(TL, tlZ);
-    double trLength = TR;//measurementToXYPlane(TR, trZ);
+    if (!kinematics)
+        return false;
+
+    double tlLength = TL;  //measurementToXYPlane(TL, tlZ);
+    double trLength = TR;  //measurementToXYPlane(TR, trZ);
 
     //Find the intersection of the two circles centered at tlX, tlY and trX, trY with radii tlLength and trLength
     double tlX = kinematics->getTlX();
     double tlY = kinematics->getTlY();
     double trX = kinematics->getTrX();
     double trY = kinematics->getTrY();
-    
+
     double d = sqrt((tlX - trX) * (tlX - trX) + (tlY - trY) * (tlY - trY));
     if (d > tlLength + trLength || d < abs(tlLength - trLength)) {
         log_info("Unable to determine machine position");
         return false;
     }
-    
-    double a = (tlLength * tlLength - trLength * trLength + d * d) / (2 * d);
-    double h = sqrt(tlLength * tlLength - a * a);
-    double x0 = tlX + a * (trX - tlX) / d;
-    double y0 = tlY + a * (trY - tlY) / d;
+
+    double a    = (tlLength * tlLength - trLength * trLength + d * d) / (2 * d);
+    double h    = sqrt(tlLength * tlLength - a * a);
+    double x0   = tlX + a * (trX - tlX) / d;
+    double y0   = tlY + a * (trY - tlY) / d;
     double rawX = x0 + h * (trY - tlY) / d;
     double rawY = y0 - h * (trX - tlX) / d;
 
@@ -619,7 +600,6 @@ bool Calibration::computeXYfromLengths(double TL, double TR, float &x, float &y)
  * @return True when the measurement is done, false otherwise.
  */
 bool Calibration::take_measurement(float result[4], int dir, int run, int current, int waypoint) {
-
     //Shouldn't this be handled with the same code as below but with the direction set to UP?
     if (orientation == VERTICAL) {
         //first we pull two bottom belts tight one after another, if x<0 we pull left belt first, if x>0 we pull right belt first
@@ -667,14 +647,15 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
         //once both belts are pulled, take a measurement
         if (BR_tight && BL_tight) {
             auto kinematics = getKinematics();
-            if (!kinematics) return false;
+            if (!kinematics)
+                return false;
             //take measurement and record it to the calibration data array.
             result[0] = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
             result[1] = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
             result[2] = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
             result[3] = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
-            BR_tight                      = false;
-            BL_tight                      = false;
+            BR_tight  = false;
+            BL_tight  = false;
             return true;
         }
         return false;
@@ -683,10 +664,10 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
     else if (orientation == HORIZONTAL) {
         // For the first waypoint (waypoint == 0), use a two-phase approach to ensure proper tension
         if (waypoint == 0) {
-            static bool tl_tight = false;
-            static bool tr_tight = false;
-            static bool bl_tight = false;
-            static bool br_tight = false;
+            static bool tl_tight                 = false;
+            static bool tr_tight                 = false;
+            static bool bl_tight                 = false;
+            static bool br_tight                 = false;
             static bool initial_tension_complete = false;
 
             // Phase 1: Pull all four belts tight simultaneously to eliminate slack
@@ -756,17 +737,18 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             // Once both bottom belts are tight, take the measurement
             if (bl_tight && br_tight) {
                 auto kinematics = getKinematics();
-                if (!kinematics) return false;
+                if (!kinematics)
+                    return false;
                 //take measurement and record it to the calibration data array.
                 result[0] = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
                 result[1] = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
                 result[2] = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
                 result[3] = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
                 // Reset all flags for next measurement
-                tl_tight = false;
-                tr_tight = false;
-                bl_tight = false;
-                br_tight = false;
+                tl_tight                 = false;
+                tr_tight                 = false;
+                bl_tight                 = false;
+                br_tight                 = false;
                 initial_tension_complete = false;
                 return true;
             }
@@ -835,15 +817,16 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             if (pullAxis2->pull_tight(current)) {
                 pull2_tight = true;
             }
-            
+
             if (pull1_tight && pull2_tight) {
                 auto kinematics = getKinematics();
-                if (!kinematics) return false;
+                if (!kinematics)
+                    return false;
                 //take measurement and record it to the calibration data array.
-                result[0] = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
-                result[1] = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
-                result[2] = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
-                result[3] = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
+                result[0]   = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
+                result[1]   = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
+                result[2]   = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
+                result[3]   = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
                 pull1_tight = false;
                 pull2_tight = false;
                 return true;
@@ -875,22 +858,21 @@ void freeMeasurements() {
 // There is way too much being done in this function. It needs to be split apart and cleaned up
 bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
     //take 5 measurements in a row, (ignoring the first one), if they are all within 1mm of each other, take the average and record it to the calibration data array
-    static int           run                = 0;
-    static float         avg                = 0;
-    static float         sum                = 0;
-    static bool          measureFlex        = false;
+    static int   run         = 0;
+    static float avg         = 0;
+    static float sum         = 0;
+    static bool  measureFlex = false;
 
     if (measurements == nullptr) {
-        allocateMeasurements(); //This is structured [[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]]
+        allocateMeasurements();  //This is structured [[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]]
     }
 
-
     int howHardToPull = calibrationCurrentThreshold;
-    if(measureFlex){
+    if (measureFlex) {
         howHardToPull = calibrationCurrentThreshold + 500;
     }
 
-    if (take_measurement(measurements[max(run-2, 0)], dir, run, howHardToPull, waypoint)) { //Throw away measurements are stored in [0]
+    if (take_measurement(measurements[max(run - 2, 0)], dir, run, howHardToPull, waypoint)) {  //Throw away measurements are stored in [0]
         if (run < 2) {
             run++;
             return false;  //discard the first two measurements
@@ -908,7 +890,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 3; j++) {
                     //find max deviation between measurements
-                    maxDeviation[i] = max(maxDeviation[i], abs(measurements[j][i] - measurements[j+1][i]));
+                    maxDeviation[i] = max(maxDeviation[i], abs(measurements[j][i] - measurements[j + 1][i]));
                 }
             }
 
@@ -927,7 +909,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
                     }
                 }
                 //reset the run counter to run the measurements again
-                if (criticalCounter++ > 8) { //This updates the counter and checks
+                if (criticalCounter++ > 8) {  //This updates the counter and checks
                     log_error("Critical error, measurements are not within 1.5mm of each other 8 times in a row, stopping calibration");
                     calibrationInProgress = false;
                     waypoint              = 0;
@@ -941,7 +923,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             }
 
             //If we are measurring the flex we don't want to save the result and instead we want to compare it to the last result
-            if(measureFlex){
+            if (measureFlex) {
                 float newLenTLBR = measurements[0][0] + measurements[0][3];
                 float newLenTRBL = measurements[0][1] + measurements[0][2];
 
@@ -955,15 +937,15 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
                 measureFlex = false;
 
-                freeMeasurements(); //We have completed this measurement, but we don't want to store anything this time
+                freeMeasurements();  //We have completed this measurement, but we don't want to store anything this time
                 return true;
             }
 
             //If the measurements seem valid, take the average and record it to the calibration data array. This is the only place we should be writing to the calibration_data array
-            for (int i = 0; i < 4; i++) { //For each axis
-                sum = measurements[0][i] + measurements[1][i] + measurements[2][i] + measurements[3][i];
+            for (int i = 0; i < 4; i++) {  //For each axis
+                sum                           = measurements[0][i] + measurements[1][i] + measurements[2][i] + measurements[3][i];
                 avg                           = sum / 4;
-                calibration_data[waypoint][i] = avg; //This is the only time we should be writing to the calibration data array
+                calibration_data[waypoint][i] = avg;  //This is the only time we should be writing to the calibration data array
                 sum                           = 0;
                 criticalCounter               = 0;
             }
@@ -971,8 +953,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
             //A check to see if the results on the first point are within the expected range
             //This logic should only run during calibration, not during Apply Tension
-            if(waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS){
-
+            if (waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS) {
                 //Recompute the machine position with the belt lenths and compare the results to that
                 float x = 0;
                 float y = 0;
@@ -980,19 +961,20 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
                 //If the frame size is way off, we will compute a rough (assumed to be a square) frame size from the first measurmeent
                 auto kinematics = getKinematics();
-                if (!kinematics) return false;
-                
+                if (!kinematics)
+                    return false;
+
                 double threshold = 100;
-                float diffTL = measurements[0][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
-                float diffTR = measurements[0][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
-                float diffBL = measurements[0][2] - measurementToXYPlane(kinematics->computeBL(x, y, 0), kinematics->getBlZ());
-                float diffBR = measurements[0][3] - measurementToXYPlane(kinematics->computeBR(x, y, 0), kinematics->getBrZ());
+                float  diffTL    = measurements[0][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
+                float  diffTR    = measurements[0][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
+                float  diffBL    = measurements[0][2] - measurementToXYPlane(kinematics->computeBL(x, y, 0), kinematics->getBlZ());
+                float  diffBR    = measurements[0][3] - measurementToXYPlane(kinematics->computeBR(x, y, 0), kinematics->getBrZ());
                 log_info("Center point off by: TL: " << diffTL << " TR: " << diffTR << " BL: " << diffBL << " BR: " << diffBR);
 
                 if (abs(diffTL) > threshold || abs(diffTR) > threshold || abs(diffBL) > threshold || abs(diffBR) > threshold) {
                     log_error("Center point off by over " << threshold << "mm");
 
-                    if(!adjustFrameSizeToMatchFirstMeasurement()){
+                    if (!adjustFrameSizeToMatchFirstMeasurement()) {
                         Maslow.eStop("Unable to find a valid frame size to match the first measurement");
                         calibrationInProgress = false;
                         waypoint              = 0;
@@ -1004,7 +986,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
                 }
 
                 //Compute the current XY position from the top two belt measurements...needs to be redone because we've adjusted the frame size by here
-                if(!computeXYfromLengths(calibration_data[0][0], calibration_data[0][1], x, y)){
+                if (!computeXYfromLengths(calibration_data[0][0], calibration_data[0][1], x, y)) {
                     Maslow.eStop("Unable to find machine position from measurements");
                     calibrationInProgress = false;
                     waypoint              = 0;
@@ -1017,7 +999,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
                 log_info("Machine Position computed as X: " << x << " Y: " << y);
 
                 //Recompute the first four waypoint locations based on the current position
-                calibrationGrid[0][0] = x;//This first point is never really used because we've already measured here, but it shouldn't be left undefined
+                calibrationGrid[0][0] =
+                    x;  //This first point is never really used because we've already measured here, but it shouldn't be left undefined
                 calibrationGrid[0][1] = y;
                 calibrationGrid[1][0] = x + 150;
                 calibrationGrid[1][1] = y;
@@ -1029,7 +1012,6 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
                 calibrationGrid[4][1] = y + 150;
                 calibrationGrid[5][0] = x - 150;
                 calibrationGrid[5][1] = y;
-                
             }
 
             //This is the exit to indicate that the measurement was successful
@@ -1037,13 +1019,13 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
             //Special case where we have a good measurement but we need to take another at this point to measure the flex of the frame
             //Frame flex should only be measured during calibration process, not during "Apply Tension"
-            if(waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS){
+            if (waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS) {
                 measureFlex = true;
                 log_info("Measuring Frame Flex");
                 return false;
             }
 
-            return true; 
+            return true;
         }
     }
     //We don't free memory alocated here because we will cycle through again and need it
@@ -1066,17 +1048,17 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     static bool trExtending = false;
     static bool blExtending = false;
     static bool brExtending = false;
-    
+
     bool withSlack = true;
-    if(waypoint > recomputePoints[0]){ //If we have completed the first round of calibraiton
+    if (waypoint > recomputePoints[0]) {  //If we have completed the first round of calibraiton
         withSlack = false;
     }
 
     //This runs once at the beginning of the move
     if (decompress) {
         moveBeginTimer = millis();
-        decompress = false;
-        direction = get_direction(fromX, fromY, toX, toY);
+        decompress     = false;
+        direction      = get_direction(fromX, fromY, toX, toY);
 
         //Compute the X and Y step Size
         if (abs(toX - fromX) > abs(toY - fromY)) {
@@ -1089,8 +1071,9 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
 
         //Compute which belts will be getting longer. If the current length is less than the final length the belt needs to get longer
         auto kinematics = getKinematics();
-        if (!kinematics) return false;
-        
+        if (!kinematics)
+            return false;
+
         if (kinematics->computeTL(fromX, fromY, 0) < kinematics->computeTL(toX, toY, 0)) {
             tlExtending = true;
         } else {
@@ -1157,7 +1140,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     //Set the targets
     Maslow.setTargets(Maslow.getTargetX() + xStepSize, Maslow.getTargetY() + yStepSize, 0);
 
-        //Check to see if we have reached our target position
+    //Check to see if we have reached our target position
     if (abs(Maslow.getTargetX() - toX) < 5 && abs(Maslow.getTargetY() - toY) < 5) {
         Maslow.stopMotors();
         Maslow.reset_all_axis();
@@ -1166,46 +1149,39 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     }
 
     //In vertical orientation we want to move with the top two belts and always have the lower ones be slack
-    if(orientation == VERTICAL){
+    if (orientation == VERTICAL) {
         Maslow.axisTL.recomputePID();
         Maslow.axisTR.recomputePID();
-        if(withSlack){
+        if (withSlack) {
             Maslow.axisBL.comply();
             Maslow.axisBR.comply();
-        }
-        else{
+        } else {
             Maslow.axisBL.recomputePID();
             Maslow.axisBR.recomputePID();
         }
-    }
-    else{
-
+    } else {
         //For each belt we check to see if it should be slack
-        if(withSlack && tlExtending){
+        if (withSlack && tlExtending) {
             Maslow.axisTL.comply();
-        }
-        else{
+        } else {
             Maslow.axisTL.recomputePID();
         }
 
-        if(withSlack && trExtending){
+        if (withSlack && trExtending) {
             Maslow.axisTR.comply();
-        }
-        else{
+        } else {
             Maslow.axisTR.recomputePID();
         }
 
-        if(withSlack && blExtending){
+        if (withSlack && blExtending) {
             Maslow.axisBL.comply();
-        }
-        else{
+        } else {
             Maslow.axisBL.recomputePID();
         }
 
-        if(withSlack && brExtending){
+        if (withSlack && brExtending) {
             Maslow.axisBR.comply();
-        }
-        else{
+        } else {
             Maslow.axisBR.recomputePID();
         }
     }
@@ -1213,12 +1189,8 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     return false;  //We have not yet reached our target position
 }
 
-
-
-
 //The number of points high and wide  must be an odd number
 bool Calibration::generate_calibration_grid() {
-
     //Allocate memory for the calibration grid
     allocateCalibrationMemory();
 
@@ -1227,25 +1199,25 @@ bool Calibration::generate_calibration_grid() {
 
     int numberOfCycles = 0;
 
-    switch(calibrationGridSize) {
+    switch (calibrationGridSize) {
         case 3:
-            numberOfCycles = 1; // 3x3 grid
+            numberOfCycles = 1;  // 3x3 grid
             break;
         case 5:
-            numberOfCycles = 2; // 5x5 grid
+            numberOfCycles = 2;  // 5x5 grid
             break;
         case 7:
-            numberOfCycles = 3; // 7x7 grid
+            numberOfCycles = 3;  // 7x7 grid
             break;
         case 9:
-            numberOfCycles = 4; // 9x9 grid
+            numberOfCycles = 4;  // 9x9 grid
             break;
         default:
-            log_error("Invalid "+M+"_calibration_grid_size: " << calibrationGridSize);
-            return false; // return false or handle error appropriately
+            log_error("Invalid " + M + "_calibration_grid_size: " << calibrationGridSize);
+            return false;  // return false or handle error appropriately
     }
 
-    pointCount = 6; //The first four points are computed dynamically
+    pointCount         = 6;  //The first four points are computed dynamically
     recomputePoints[0] = 5;
 
     //The point in the center
@@ -1262,27 +1234,26 @@ bool Calibration::generate_calibration_grid() {
 
     recomputeCount = 1;
 
-
-    while(maxX <= numberOfCycles){ //4 produces a 9x9 grid
-        while(currentX > -1*maxX){
+    while (maxX <= numberOfCycles) {  //4 produces a 9x9 grid
+        while (currentX > -1 * maxX) {
             calibrationGrid[pointCount][0] = currentX * xSpacing;
             calibrationGrid[pointCount][1] = currentY * ySpacing;
             pointCount++;
             currentX--;
         }
-        while(currentY < maxY){
+        while (currentY < maxY) {
             calibrationGrid[pointCount][0] = currentX * xSpacing;
             calibrationGrid[pointCount][1] = currentY * ySpacing;
             pointCount++;
             currentY++;
         }
-        while(currentX < maxX){
+        while (currentX < maxX) {
             calibrationGrid[pointCount][0] = currentX * xSpacing;
             calibrationGrid[pointCount][1] = currentY * ySpacing;
             pointCount++;
             currentX++;
         }
-        while(currentY > -1*maxY){
+        while (currentY > -1 * maxY) {
             calibrationGrid[pointCount][0] = currentX * xSpacing;
             calibrationGrid[pointCount][1] = currentY * ySpacing;
             pointCount++;
@@ -1294,7 +1265,7 @@ bool Calibration::generate_calibration_grid() {
         calibrationGrid[pointCount][1] = currentY * ySpacing;
         pointCount++;
 
-        recomputePoints[recomputeCount] = pointCount - 1; //Minus one because we increment after each point is generated
+        recomputePoints[recomputeCount] = pointCount - 1;  //Minus one because we increment after each point is generated
         recomputeCount++;
 
         maxX = maxX + 1;
@@ -1305,7 +1276,7 @@ bool Calibration::generate_calibration_grid() {
 
     //Move back to the center
     calibrationGrid[pointCount][0] = 0;
-    calibrationGrid[pointCount][1] = (currentY+1) * ySpacing; //The last loop added an nunecessary -1 to the y position
+    calibrationGrid[pointCount][1] = (currentY + 1) * ySpacing;  //The last loop added an nunecessary -1 to the y position
     pointCount++;
 
     calibrationGrid[pointCount][0] = 0;
@@ -1320,7 +1291,6 @@ bool Calibration::generate_calibration_grid() {
 * This function takes a single measurement and adjusts the frame dimensions to find a valid frame size that matches the measurement
 */
 bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
-
     //Get the last measurments
     double tlLen = measurements[0][0];
     double trLen = measurements[0][1];
@@ -1330,15 +1300,15 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     //Check that we are in fact on the center line. The math assumes that we are roughly centered on the frame and so
     //the topleft and topright measurements should be roughly the same. It doesn't need to be exact.
     if (std::abs(tlLen - trLen) > 20) {
-        log_error("Unable to adjust frame size. Not centered."); //There exists a more generalized solution which should be implimented here: https://math.stackexchange.com/questions/5013127/find-square-size-from-inscribed-triangles?noredirect=1#comment10752043_5013127
+        log_error("Unable to adjust frame size. Not centered.");  //There exists a more generalized solution which should be implimented here: https://math.stackexchange.com/questions/5013127/find-square-size-from-inscribed-triangles?noredirect=1#comment10752043_5013127
         return false;
     }
 
     //Compute the size of the frame from the given measurements
 
-    double numerator = sqrt(pow(tlLen, 2) + sqrt(-pow(tlLen, 4) + 6 * pow(tlLen, 2) * pow(blLen, 2) - pow(blLen, 4)) + pow(blLen, 2));
+    double numerator   = sqrt(pow(tlLen, 2) + sqrt(-pow(tlLen, 4) + 6 * pow(tlLen, 2) * pow(blLen, 2) - pow(blLen, 4)) + pow(blLen, 2));
     double denominator = sqrt(2);
-    float L = numerator / denominator;
+    float  L           = numerator / denominator;
 
     //Adjust the frame size to match the computed size
     auto kinematics = getKinematics();
@@ -1346,16 +1316,13 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
         log_error("adjustFrameSizeToMatchFirstMeasurement: MaslowKinematics not available");
         return false;
     }
-    
+
     // Update the frame size in the MaslowKinematics system
     kinematics->setFrameSize(L);
-    
+
     log_info("Frame size successfully adjusted to: " << L << " x " << L);
     return true;
 }
-
-
-
 
 // ------------------------------------------------------
 // ------------------------------------------------------ Communication Functions
@@ -1375,8 +1342,9 @@ void Calibration::checkCalibrationData() {
 // function for outputting calibration data in the log line by line like this: {bl:2376.69,   br:923.40,   tr:1733.87,   tl:2801.87},
 void Calibration::print_calibration_data() {
     auto kinematics = getKinematics();
-    if (!kinematics) return;
-    
+    if (!kinematics)
+        return;
+
     //These are used to set the browser side initial guess for the frame size
     log_data("$/" << M << "_tlX=" << kinematics->getTlX());
     log_data("$/" << M << "_tlY=" << kinematics->getTlY());
@@ -1396,12 +1364,10 @@ void Calibration::print_calibration_data() {
 }
 
 //Runs when the calibration data has been acknowledged as received by the computer and the calibration process is progressing
-void Calibration::calibrationDataRecieved(){
+void Calibration::calibrationDataRecieved() {
     // log_info("Calibration data acknowledged received by computer");
     calibrationDataWaiting = -1;
 }
-
-
 
 //non-blocking delay, just pauses everything for specified time
 void Calibration::hold(unsigned long time) {
@@ -1423,11 +1389,7 @@ void Calibration::hold(unsigned long time) {
 
 //     log_info("Times to recompute: " << recomputeCount);
 
-
 // }
-
-
-
 
 //------------------------------------------------------
 //------------------------------------------------------ Utility Functions
@@ -1442,7 +1404,7 @@ void Calibration::comply() {
     retractingBR    = false;
     extendingALL    = false;
     complyALL       = true;
-    Maslow.axisTL.reset(); //This just resets the thresholds for pull tight
+    Maslow.axisTL.reset();  //This just resets the thresholds for pull tight
     Maslow.axisTR.reset();
     Maslow.axisBL.reset();
     Maslow.axisBR.reset();
@@ -1467,10 +1429,10 @@ int Calibration::get_direction(double x, double y, double targetX, double target
 
 // Function to allocate memory for calibration arrays
 void Calibration::allocateCalibrationMemory() {
-    if(calibrationGrid == nullptr){ //Check to prevent realocating
+    if (calibrationGrid == nullptr) {  //Check to prevent realocating
         calibrationGrid = new float[CALIBRATION_GRID_SIZE_MAX][2];
     }
-    if(calibration_data == nullptr){
+    if (calibration_data == nullptr) {
         calibration_data = new float*[CALIBRATION_GRID_SIZE_MAX];
         for (int i = 0; i < CALIBRATION_GRID_SIZE_MAX; ++i) {
             calibration_data[i] = new float[4];
@@ -1484,28 +1446,31 @@ void Calibration::deallocateCalibrationMemory() {
     calibrationGrid = nullptr;
     for (int i = 0; i < CALIBRATION_GRID_SIZE_MAX; ++i) {
         delete[] calibration_data[i];
-        }
+    }
     delete[] calibration_data;
     calibration_data = nullptr;
 }
 
-
 //Takes a raw measurement, projects it into the XY plane, then adds the belt end extension and arm length to get the actual distance.
-float Calibration::measurementToXYPlane(float measurement, float zHeight){
+float Calibration::measurementToXYPlane(float measurement, float zHeight) {
     auto kinematics = getKinematics();
-    if (!kinematics) return 0.0f;
-    
+    if (!kinematics)
+        return 0.0f;
+
     float lengthInXY = sqrt(measurement * measurement - zHeight * zHeight);
-    return lengthInXY + kinematics->getBeltEndExtension() + kinematics->getArmLength(); //Add the belt end extension and arm length to get the actual distance
+    return lengthInXY + kinematics->getBeltEndExtension() +
+           kinematics->getArmLength();  //Add the belt end extension and arm length to get the actual distance
 }
 
 //Takes an XY plane distance, subtracts the belt end extension and arm length, then calculates the angled belt measurement.
-float Calibration::measurementFromXYPlane(float xyPlaneDistance, float zHeight){
+float Calibration::measurementFromXYPlane(float xyPlaneDistance, float zHeight) {
     auto kinematics = getKinematics();
-    if (!kinematics) return 0.0f;
-    
-    float lengthInXY = xyPlaneDistance - kinematics->getBeltEndExtension() - kinematics->getArmLength(); //Subtract the belt end extension and arm length
-    return sqrt(lengthInXY * lengthInXY + zHeight * zHeight); //Calculate the angled belt length
+    if (!kinematics)
+        return 0.0f;
+
+    float lengthInXY =
+        xyPlaneDistance - kinematics->getBeltEndExtension() - kinematics->getArmLength();  //Subtract the belt end extension and arm length
+    return sqrt(lengthInXY * lengthInXY + zHeight * zHeight);                              //Calculate the angled belt length
 }
 
 /* Calculates and updates the center (X, Y) position based on the coordinates of the four corners
@@ -1532,8 +1497,8 @@ bool Calibration::allAxisExtended() {
     return extendedTL && extendedTR && extendedBL && extendedBR;
 }
 
-bool Calibration::checkOverides(){
-    if(TLIOveride || TRIOveride || BLIOveride || BRIOveride || TLOOveride || TROOveride || BLOOveride || BROOveride){
+bool Calibration::checkOverides() {
+    if (TLIOveride || TRIOveride || BLIOveride || BRIOveride || TLOOveride || TROOveride || BLOOveride || BROOveride) {
         return true;
     }
     return false;
@@ -1543,122 +1508,116 @@ void Calibration::setSafety(bool state) {
     safetyOn = state;
 }
 
-
-
-
-
-
 //------------------------------------------------------
 //------------------------------------------------------ Motor Overides
 //------------------------------------------------------
 
-
 //These are used to force one motor to rotate
-void Calibration::TLI(){
-    TLIOveride = true;
+void Calibration::TLI() {
+    TLIOveride   = true;
     overideTimer = millis();
 }
-void Calibration::TRI(){
-    TRIOveride = true;
+void Calibration::TRI() {
+    TRIOveride   = true;
     overideTimer = millis();
 }
-void Calibration::BLI(){
-    BLIOveride = true;
+void Calibration::BLI() {
+    BLIOveride   = true;
     overideTimer = millis();
 }
-void Calibration::BRI(){
-    BRIOveride = true;
+void Calibration::BRI() {
+    BRIOveride   = true;
     overideTimer = millis();
 }
-void Calibration::TLO(){
-    TLOOveride = true;
+void Calibration::TLO() {
+    TLOOveride   = true;
     overideTimer = millis();
 }
-void Calibration::TRO(){
-    TROOveride = true;
+void Calibration::TRO() {
+    TROOveride   = true;
     overideTimer = millis();
 }
-void Calibration::BLO(){
-    BLOOveride = true;
+void Calibration::BLO() {
+    BLOOveride   = true;
     overideTimer = millis();
 }
-void Calibration::BRO(){
-    BROOveride = true;
+void Calibration::BRO() {
+    BROOveride   = true;
     overideTimer = millis();
 }
 
 /*
 * This function is used to manuall force the motors to move for a fraction of a second to clear jams
 */
-void Calibration::handleMotorOverides(){
-    if(TLIOveride){
+void Calibration::handleMotorOverides() {
+    if (TLIOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisTL.fullIn();
-        }else{
+        } else {
             TLIOveride = false;
             Maslow.axisTL.stop();
         }
     }
-    if(BRIOveride){
+    if (BRIOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisBR.fullIn();
-        }else{
+        } else {
             BRIOveride = false;
             Maslow.axisBR.stop();
         }
     }
-    if(TRIOveride){
+    if (TRIOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisTR.fullIn();
-        }else{
+        } else {
             TRIOveride = false;
             Maslow.axisTR.stop();
         }
     }
-    if(BLIOveride){
+    if (BLIOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisBL.fullIn();
-        }else{
+        } else {
             BLIOveride = false;
             Maslow.axisBL.stop();
         }
     }
-    if(TLOOveride){
+    if (TLOOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisTL.fullOut();
-        }else{
+        } else {
             TLOOveride = false;
             Maslow.axisTL.stop();
         }
     }
-    if(BROOveride){
+    if (BROOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisBR.fullOut();
-        }else{
+        } else {
             BROOveride = false;
             Maslow.axisBR.stop();
         }
     }
-    if(TROOveride){
+    if (TROOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisTR.fullOut();
-        }else{
+        } else {
             TROOveride = false;
             Maslow.axisTR.stop();
         }
     }
-    if(BLOOveride){
+    if (BLOOveride) {
         log_info(int(millis() - overideTimer));
-        if(millis() - overideTimer < 200){
+        if (millis() - overideTimer < 200) {
             Maslow.axisBL.fullOut();
-        }else{
+        } else {
             BLOOveride = false;
             Maslow.axisBL.stop();
         }

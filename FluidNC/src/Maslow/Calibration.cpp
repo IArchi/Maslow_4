@@ -923,6 +923,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             }
 
             //If we are measurring the flex we don't want to save the result and instead we want to compare it to the last result
+            // COMMENTED OUT: Frame flex measurement calculation disabled
+            /*
             if (measureFlex) {
                 float newLenTLBR = measurements[0][0] + measurements[0][3];
                 float newLenTRBL = measurements[0][1] + measurements[0][2];
@@ -940,6 +942,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
                 freeMeasurements();  //We have completed this measurement, but we don't want to store anything this time
                 return true;
             }
+            */
 
             //If the measurements seem valid, take the average and record it to the calibration data array. This is the only place we should be writing to the calibration_data array
             for (int i = 0; i < 4; i++) {  //For each axis
@@ -1019,11 +1022,14 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
             //Special case where we have a good measurement but we need to take another at this point to measure the flex of the frame
             //Frame flex should only be measured during calibration process, not during "Apply Tension"
+            // COMMENTED OUT: Frame flex measurement disabled
+            /*
             if (waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS) {
                 measureFlex = true;
                 log_info("Measuring Frame Flex");
                 return false;
             }
+            */
 
             return true;
         }

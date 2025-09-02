@@ -455,7 +455,7 @@ bool Calibration::takeSlackFunc() {
 
             float x = 0;
             float y = 0;
-            if (!computeXYfromLengths(calibration_data[2][0], calibration_data[2][1], x, y)) {
+            if (!computeXYfromLengths(calibration_data[0][0], calibration_data[0][1], x, y)) {
                 log_error("Failed to compute XY from lengths");
                 return true;
             }
@@ -467,10 +467,10 @@ bool Calibration::takeSlackFunc() {
             float extension = kinematics->getBeltEndExtension() + kinematics->getArmLength();
 
             //This should use it's own array, this is not calibration data
-            float diffTL = calibration_data[2][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
-            float diffTR = calibration_data[2][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
-            float diffBL = calibration_data[2][2] - measurementToXYPlane(kinematics->computeBL(x, y, 0), kinematics->getBlZ());
-            float diffBR = calibration_data[2][3] - measurementToXYPlane(kinematics->computeBR(x, y, 0), kinematics->getBrZ());
+            float diffTL = calibration_data[0][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
+            float diffTR = calibration_data[0][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
+            float diffBL = calibration_data[0][2] - measurementToXYPlane(kinematics->computeBL(x, y, 0), kinematics->getBlZ());
+            float diffBR = calibration_data[0][3] - measurementToXYPlane(kinematics->computeBR(x, y, 0), kinematics->getBrZ());
             log_info("Center point deviation: TL: " << diffTL << " TR: " << diffTR << " BL: " << diffBL << " BR: " << diffBR);
             double threshold = 12;
             if (abs(diffTL) > threshold || abs(diffTR) > threshold || abs(diffBL) > threshold || abs(diffBR) > threshold) {
@@ -498,11 +498,11 @@ bool Calibration::takeSlackFunc() {
                 log_info("Before update - mpos: X=" << mpos[0] << " Y=" << mpos[1] << " Z=" << mpos[2]);
 
                 // Convert measured XY plane distances to actual belt lengths for motor positions
-                // calibration_data[2] contains measured XY plane distances: [TL, TR, BL, BR]
-                float tlBeltLength = measurementFromXYPlane(calibration_data[2][0], kinematics->getTlZ());
-                float trBeltLength = measurementFromXYPlane(calibration_data[2][1], kinematics->getTrZ());
-                float blBeltLength = measurementFromXYPlane(calibration_data[2][2], kinematics->getBlZ());
-                float brBeltLength = measurementFromXYPlane(calibration_data[2][3], kinematics->getBrZ());
+                // calibration_data[0] contains measured XY plane distances: [TL, TR, BL, BR]
+                float tlBeltLength = measurementFromXYPlane(calibration_data[0][0], kinematics->getTlZ());
+                float trBeltLength = measurementFromXYPlane(calibration_data[0][1], kinematics->getTrZ());
+                float blBeltLength = measurementFromXYPlane(calibration_data[0][2], kinematics->getBlZ());
+                float brBeltLength = measurementFromXYPlane(calibration_data[0][3], kinematics->getBrZ());
 
                 log_info("Setting motor positions directly from measurements:");
                 log_info("TL belt: " << tlBeltLength << " TR belt: " << trBeltLength);

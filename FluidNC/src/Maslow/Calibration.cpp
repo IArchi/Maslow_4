@@ -1035,7 +1035,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             freeMeasurements();
 
             //Special case where we have a good measurement but we need to take another at this point to measure the flex of the frame
-            if(waypoint == 0){
+            //Frame flex should only be measured during calibration process, not during "Apply Tension"
+            if(waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS){
                 measureFlex = true;
                 log_info("Measuring Frame Flex");
                 return false;

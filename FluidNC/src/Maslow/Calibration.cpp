@@ -1154,7 +1154,24 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
         Maslow.axisBL.setTarget(Maslow.axisBL.getPosition());
         Maslow.axisBR.setTarget(Maslow.axisBR.getPosition());
         
-        // Then stop and reset only the belts that should be slack for the upcoming measurement
+        // Stabilize all belts at their new target positions to prevent unwinding
+        Maslow.axisTL.recomputePID();
+        Maslow.axisTR.recomputePID();
+        Maslow.axisBL.recomputePID();
+        Maslow.axisBR.recomputePID();
+        
+        // Small delay to allow stabilization
+        static unsigned long stabilizeTimer = 0;
+        if (stabilizeTimer == 0) {
+            stabilizeTimer = millis();
+            return false;  // Continue stabilizing
+        }
+        if (millis() - stabilizeTimer < 50) {  // 50ms stabilization period
+            return false;  // Continue stabilizing
+        }
+        stabilizeTimer = 0;  // Reset for next waypoint
+        
+        // Now stop and reset only the belts that should be slack for the upcoming measurement
         if (orientation == VERTICAL) {
             // In vertical mode, maintain top belt tension, allow bottom belts to slack
             Maslow.axisBL.stop();

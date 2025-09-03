@@ -1148,7 +1148,50 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
 
     //Check to see if we have reached our target position
     if (abs(Maslow.getTargetX() - toX) < 5 && abs(Maslow.getTargetY() - toY) < 5) {
-        Maslow.stopMotors();
+        // Instead of stopping all motors, maintain tension on belts that were pulling
+        // and only stop the belts that should be slack for the upcoming measurement
+        if (orientation == VERTICAL) {
+            // In vertical mode, maintain top belt tension, allow bottom belts to slack
+            Maslow.axisTL.recomputePID();
+            Maslow.axisTR.recomputePID();
+            Maslow.axisBL.stop();
+            Maslow.axisBR.stop();
+        } else {
+            // In horizontal mode, maintain tension on belts that were pulling during movement
+            // and will be used as hold belts in the upcoming measurement
+            int measurementDirection = get_direction(fromX, fromY, toX, toY);
+            switch (measurementDirection) {
+                case UP:
+                    // TL and TR will be hold belts, maintain their tension
+                    Maslow.axisTL.recomputePID();
+                    Maslow.axisTR.recomputePID();
+                    Maslow.axisBL.stop();
+                    Maslow.axisBR.stop();
+                    break;
+                case DOWN:
+                    // BL and BR will be hold belts, maintain their tension
+                    Maslow.axisBL.recomputePID();
+                    Maslow.axisBR.recomputePID();
+                    Maslow.axisTL.stop();
+                    Maslow.axisTR.stop();
+                    break;
+                case LEFT:
+                    // TL and BL will be hold belts, maintain their tension
+                    Maslow.axisTL.recomputePID();
+                    Maslow.axisBL.recomputePID();
+                    Maslow.axisTR.stop();
+                    Maslow.axisBR.stop();
+                    break;
+                case RIGHT:
+                    // TR and BR will be hold belts, maintain their tension
+                    Maslow.axisTR.recomputePID();
+                    Maslow.axisBR.recomputePID();
+                    Maslow.axisTL.stop();
+                    Maslow.axisBL.stop();
+                    break;
+            }
+        }
+        
         Maslow.reset_all_axis();
         decompress = true;  //Reset for the next pass
         return true;

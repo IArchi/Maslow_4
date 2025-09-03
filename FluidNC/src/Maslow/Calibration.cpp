@@ -451,11 +451,11 @@ bool Calibration::takeSlackFunc() {
     //Take a measurement
     if (takeSlackState == 0) {
         if (take_measurement_avg_with_check(
-                2, UP)) {  //We really shouldn't be using the second position to store the data, it should have it's own array
+                0, UP)) {  //We really shouldn't be using the first position to store the data, it should have it's own array
 
             float x = 0;
             float y = 0;
-            if (!computeXYfromLengths(calibration_data[2][0], calibration_data[2][1], x, y)) {
+            if (!computeXYfromLengths(calibration_data[0][0], calibration_data[0][1], x, y)) {
                 log_error("Failed to compute XY from lengths");
                 return true;
             }
@@ -467,10 +467,10 @@ bool Calibration::takeSlackFunc() {
             float extension = kinematics->getBeltEndExtension() + kinematics->getArmLength();
 
             //This should use it's own array, this is not calibration data
-            float diffTL = calibration_data[2][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
-            float diffTR = calibration_data[2][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
-            float diffBL = calibration_data[2][2] - measurementToXYPlane(kinematics->computeBL(x, y, 0), kinematics->getBlZ());
-            float diffBR = calibration_data[2][3] - measurementToXYPlane(kinematics->computeBR(x, y, 0), kinematics->getBrZ());
+            float diffTL = calibration_data[0][0] - measurementToXYPlane(kinematics->computeTL(x, y, 0), kinematics->getTlZ());
+            float diffTR = calibration_data[0][1] - measurementToXYPlane(kinematics->computeTR(x, y, 0), kinematics->getTrZ());
+            float diffBL = calibration_data[0][2] - measurementToXYPlane(kinematics->computeBL(x, y, 0), kinematics->getBlZ());
+            float diffBR = calibration_data[0][3] - measurementToXYPlane(kinematics->computeBR(x, y, 0), kinematics->getBrZ());
             log_info("Center point deviation: TL: " << diffTL << " TR: " << diffTR << " BL: " << diffBL << " BR: " << diffBR);
             double threshold = 12;
             if (abs(diffTL) > threshold || abs(diffTR) > threshold || abs(diffBL) > threshold || abs(diffBR) > threshold) {
@@ -498,11 +498,11 @@ bool Calibration::takeSlackFunc() {
                 log_info("Before update - mpos: X=" << mpos[0] << " Y=" << mpos[1] << " Z=" << mpos[2]);
 
                 // Convert measured XY plane distances to actual belt lengths for motor positions
-                // calibration_data[2] contains measured XY plane distances: [TL, TR, BL, BR]
-                float tlBeltLength = measurementFromXYPlane(calibration_data[2][0], kinematics->getTlZ());
-                float trBeltLength = measurementFromXYPlane(calibration_data[2][1], kinematics->getTrZ());
-                float blBeltLength = measurementFromXYPlane(calibration_data[2][2], kinematics->getBlZ());
-                float brBeltLength = measurementFromXYPlane(calibration_data[2][3], kinematics->getBrZ());
+                // calibration_data[0] contains measured XY plane distances: [TL, TR, BL, BR]
+                float tlBeltLength = measurementFromXYPlane(calibration_data[0][0], kinematics->getTlZ());
+                float trBeltLength = measurementFromXYPlane(calibration_data[0][1], kinematics->getTrZ());
+                float blBeltLength = measurementFromXYPlane(calibration_data[0][2], kinematics->getBlZ());
+                float brBeltLength = measurementFromXYPlane(calibration_data[0][3], kinematics->getBrZ());
 
                 log_info("Setting motor positions directly from measurements:");
                 log_info("TL belt: " << tlBeltLength << " TR belt: " << trBeltLength);
@@ -514,6 +514,7 @@ bool Calibration::takeSlackFunc() {
                 set_motor_steps(1, mpos_to_steps(trBeltLength, 1));  // B axis = TR belt
                 set_motor_steps(2, mpos_to_steps(blBeltLength, 2));  // C axis = BL belt
                 set_motor_steps(3, mpos_to_steps(brBeltLength, 3));  // D axis = BR belt
+                set_motor_steps(4, mpos_to_steps(0.0, 4));           // Z axis = 0 (surface level)
 
                 // Verify that the position was set correctly by reading back from motors
                 float* verify_mpos = get_mpos();
@@ -587,15 +588,18 @@ bool Calibration::computeXYfromLengths(double TL, double TR, float& x, float& y)
  * - Takes a measurement once both belts are tight and stores it in the calibration data array.
  * 
  * In HORIZONTAL orientation:
- * - Pulls belts tight based on the direction of the last move.
+ * - For the first waypoint (waypoint == 0), pulls all 4 belts tight to ensure proper initial tension
+ * - For subsequent waypoints, pulls belts tight based on the direction of the last move.
  * - Takes a measurement once both belts are tight and stores it in the calibration data array.
  * 
- * @param waypoint The waypoint number to store the result.
- * @param dir The direction of the last move (UP, DOWN, LEFT, RIGHT). This is used to descide which belts to tighten first
- * @param run The run mode (0 for sequential tightening, non-zero for simultaneous tightening).
+ * @param result The array to store the measurement result.
+ * @param dir The direction of the last move (UP, DOWN, LEFT, RIGHT). This is used to decide which belts to tighten first
+ * @param run The measurement run number at current waypoint (0-3, with first 2 discarded).
+ * @param current The current threshold for pulling belts tight.
+ * @param waypoint The waypoint number being measured (0 = first waypoint).
  * @return True when the measurement is done, false otherwise.
  */
-bool Calibration::take_measurement(float result[4], int dir, int run, int current) {
+bool Calibration::take_measurement(float result[4], int dir, int run, int current, int waypoint) {
     //Shouldn't this be handled with the same code as below but with the direction set to UP?
     if (orientation == VERTICAL) {
         //first we pull two bottom belts tight one after another, if x<0 we pull left belt first, if x>0 we pull right belt first
@@ -658,96 +662,175 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
     }
     // in HoRIZONTAL orientation we pull on the belts depending on the direction of the last move. This is important because the other two belts are likely slack
     else if (orientation == HORIZONTAL) {
-        static MotorUnit* pullAxis1;
-        static MotorUnit* pullAxis2;
-        static MotorUnit* holdAxis1;
-        static MotorUnit* holdAxis2;
-        static bool       pull1_tight = false;
-        static bool       pull2_tight = false;
-        switch (dir) {
-            case UP:
-                holdAxis1 = &Maslow.axisTL;
-                holdAxis2 = &Maslow.axisTR;
-                if (Maslow.x < 0) {
-                    pullAxis1 = &Maslow.axisBL;
-                    pullAxis2 = &Maslow.axisBR;
-                } else {
-                    pullAxis1 = &Maslow.axisBR;
-                    pullAxis2 = &Maslow.axisBL;
-                }
-                break;
-            case DOWN:
-                holdAxis1 = &Maslow.axisBL;
-                holdAxis2 = &Maslow.axisBR;
-                if (Maslow.x < 0) {
-                    pullAxis1 = &Maslow.axisTL;
-                    pullAxis2 = &Maslow.axisTR;
-                } else {
-                    pullAxis1 = &Maslow.axisTR;
-                    pullAxis2 = &Maslow.axisTL;
-                }
-                break;
-            case LEFT:
-                holdAxis1 = &Maslow.axisTL;
-                holdAxis2 = &Maslow.axisBL;
-                if (Maslow.y < 0) {
-                    pullAxis1 = &Maslow.axisBR;
-                    pullAxis2 = &Maslow.axisTR;
-                } else {
-                    pullAxis1 = &Maslow.axisTR;
-                    pullAxis2 = &Maslow.axisBR;
-                }
-                break;
-            case RIGHT:
-                holdAxis1 = &Maslow.axisTR;
-                holdAxis2 = &Maslow.axisBR;
-                if (Maslow.y < 0) {
-                    pullAxis1 = &Maslow.axisBL;
-                    pullAxis2 = &Maslow.axisTL;
-                } else {
-                    pullAxis1 = &Maslow.axisTL;
-                    pullAxis2 = &Maslow.axisBL;
-                }
-                break;
-        }
-        holdAxis1->recomputePID();
-        holdAxis2->recomputePID();
+        // For the first waypoint (waypoint == 0), use a two-phase approach to ensure proper tension
+        if (waypoint == 0) {
+            static bool tl_tight                 = false;
+            static bool tr_tight                 = false;
+            static bool bl_tight                 = false;
+            static bool br_tight                 = false;
+            static bool initial_tension_complete = false;
 
-        if (run == 0) {
-            if (!pull1_tight) {
-                if (pullAxis1->pull_tight(current)) {
-                    pull1_tight = true;
+            // Phase 1: Pull all four belts tight simultaneously to eliminate slack
+            if (!initial_tension_complete) {
+                if (Maslow.axisTL.pull_tight(current)) {
+                    tl_tight = true;
                 }
-                if (run == 0)  //Second axis complies while first is pulling
-                    pullAxis2->comply();
+                if (Maslow.axisTR.pull_tight(current)) {
+                    tr_tight = true;
+                }
+                if (Maslow.axisBL.pull_tight(current)) {
+                    bl_tight = true;
+                }
+                if (Maslow.axisBR.pull_tight(current)) {
+                    br_tight = true;
+                }
+
+                // Once all belts are tight, move to phase 2
+                if (tl_tight && tr_tight && bl_tight && br_tight) {
+                    initial_tension_complete = true;
+                    // Set TL and TR targets to their current positions to prevent unwanted movement
+                    Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
+                    Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
+                    // Reset belt tight flags for the actual measurement phase
+                    bl_tight = false;
+                    br_tight = false;
+                }
                 return false;
             }
-            if (!pull2_tight) {
-                if (pullAxis2->pull_tight(current)) {
-                    pull2_tight = true;
+
+            // Phase 2: Hold TL and TR in position, then pull BL and BR based on x-coordinate
+            // This ensures TL and TR remain as stable reference points for position calculation
+            Maslow.axisTL.recomputePID();
+            Maslow.axisTR.recomputePID();
+
+            // Pull bottom belts based on x-coordinate (same logic as vertical mode)
+            if (Maslow.x < 0) {
+                // On the left side, pull BL first, then BR
+                if (!bl_tight) {
+                    if (Maslow.axisBL.pull_tight(current)) {
+                        bl_tight = true;
+                    }
+                    return false;
                 }
-                return false;
+                if (!br_tight) {
+                    if (Maslow.axisBR.pull_tight(current)) {
+                        br_tight = true;
+                    }
+                    return false;
+                }
+            } else {
+                // On the right side, pull BR first, then BL
+                if (!br_tight) {
+                    if (Maslow.axisBR.pull_tight(current)) {
+                        br_tight = true;
+                    }
+                    return false;
+                }
+                if (!bl_tight) {
+                    if (Maslow.axisBL.pull_tight(current)) {
+                        bl_tight = true;
+                    }
+                    return false;
+                }
             }
-        } else {
+
+            // Once both bottom belts are tight, take the measurement
+            if (bl_tight && br_tight) {
+                auto kinematics = getKinematics();
+                if (!kinematics)
+                    return false;
+                //take measurement and record it to the calibration data array.
+                result[0] = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
+                result[1] = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
+                result[2] = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
+                result[3] = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
+                // Reset all flags for next measurement
+                tl_tight                 = false;
+                tr_tight                 = false;
+                bl_tight                 = false;
+                br_tight                 = false;
+                initial_tension_complete = false;
+                return true;
+            }
+            return false;
+        }
+        // For subsequent waypoints, use directional logic to pull only relevant belts
+        else {
+            static MotorUnit* pullAxis1;
+            static MotorUnit* pullAxis2;
+            static MotorUnit* holdAxis1;
+            static MotorUnit* holdAxis2;
+            static bool       pull1_tight = false;
+            static bool       pull2_tight = false;
+            switch (dir) {
+                case UP:
+                    holdAxis1 = &Maslow.axisTL;
+                    holdAxis2 = &Maslow.axisTR;
+                    if (Maslow.x < 0) {
+                        pullAxis1 = &Maslow.axisBL;
+                        pullAxis2 = &Maslow.axisBR;
+                    } else {
+                        pullAxis1 = &Maslow.axisBR;
+                        pullAxis2 = &Maslow.axisBL;
+                    }
+                    break;
+                case DOWN:
+                    holdAxis1 = &Maslow.axisBL;
+                    holdAxis2 = &Maslow.axisBR;
+                    if (Maslow.x < 0) {
+                        pullAxis1 = &Maslow.axisTL;
+                        pullAxis2 = &Maslow.axisTR;
+                    } else {
+                        pullAxis1 = &Maslow.axisTR;
+                        pullAxis2 = &Maslow.axisTL;
+                    }
+                    break;
+                case LEFT:
+                    holdAxis1 = &Maslow.axisTL;
+                    holdAxis2 = &Maslow.axisBL;
+                    if (Maslow.y < 0) {
+                        pullAxis1 = &Maslow.axisBR;
+                        pullAxis2 = &Maslow.axisTR;
+                    } else {
+                        pullAxis1 = &Maslow.axisTR;
+                        pullAxis2 = &Maslow.axisBR;
+                    }
+                    break;
+                case RIGHT:
+                    holdAxis1 = &Maslow.axisTR;
+                    holdAxis2 = &Maslow.axisBR;
+                    if (Maslow.y < 0) {
+                        pullAxis1 = &Maslow.axisBL;
+                        pullAxis2 = &Maslow.axisTL;
+                    } else {
+                        pullAxis1 = &Maslow.axisTL;
+                        pullAxis2 = &Maslow.axisBL;
+                    }
+                    break;
+            }
+            holdAxis1->recomputePID();
+            holdAxis2->recomputePID();
+
             if (pullAxis1->pull_tight(current)) {
                 pull1_tight = true;
             }
             if (pullAxis2->pull_tight(current)) {
                 pull2_tight = true;
             }
-        }
-        if (pull1_tight && pull2_tight) {
-            auto kinematics = getKinematics();
-            if (!kinematics)
-                return false;
-            //take measurement and record it to the calibration data array.
-            result[0]   = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
-            result[1]   = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
-            result[2]   = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
-            result[3]   = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
-            pull1_tight = false;
-            pull2_tight = false;
-            return true;
+
+            if (pull1_tight && pull2_tight) {
+                auto kinematics = getKinematics();
+                if (!kinematics)
+                    return false;
+                //take measurement and record it to the calibration data array.
+                result[0]   = measurementToXYPlane(Maslow.axisTL.getPosition(), kinematics->getTlZ());
+                result[1]   = measurementToXYPlane(Maslow.axisTR.getPosition(), kinematics->getTrZ());
+                result[2]   = measurementToXYPlane(Maslow.axisBL.getPosition(), kinematics->getBlZ());
+                result[3]   = measurementToXYPlane(Maslow.axisBR.getPosition(), kinematics->getBrZ());
+                pull1_tight = false;
+                pull2_tight = false;
+                return true;
+            }
         }
     }
 
@@ -789,7 +872,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
         howHardToPull = calibrationCurrentThreshold + 500;
     }
 
-    if (take_measurement(measurements[max(run - 2, 0)], dir, run, howHardToPull)) {  //Throw away measurements are stored in [0]
+    if (take_measurement(measurements[max(run - 2, 0)], dir, run, howHardToPull, waypoint)) {  //Throw away measurements are stored in [0]
         if (run < 2) {
             run++;
             return false;  //discard the first two measurements
@@ -840,6 +923,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             }
 
             //If we are measurring the flex we don't want to save the result and instead we want to compare it to the last result
+            // COMMENTED OUT: Frame flex measurement calculation disabled
+            /*
             if (measureFlex) {
                 float newLenTLBR = measurements[0][0] + measurements[0][3];
                 float newLenTRBL = measurements[0][1] + measurements[0][2];
@@ -857,6 +942,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
                 freeMeasurements();  //We have completed this measurement, but we don't want to store anything this time
                 return true;
             }
+            */
 
             //If the measurements seem valid, take the average and record it to the calibration data array. This is the only place we should be writing to the calibration_data array
             for (int i = 0; i < 4; i++) {  //For each axis
@@ -869,7 +955,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             log_info("Measured waypoint " << waypoint);
 
             //A check to see if the results on the first point are within the expected range
-            if (waypoint == 0) {
+            //This logic should only run during calibration, not during Apply Tension
+            if (waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS) {
                 //Recompute the machine position with the belt lenths and compare the results to that
                 float x = 0;
                 float y = 0;
@@ -934,11 +1021,15 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
             freeMeasurements();
 
             //Special case where we have a good measurement but we need to take another at this point to measure the flex of the frame
-            if (waypoint == 0) {
+            //Frame flex should only be measured during calibration process, not during "Apply Tension"
+            // COMMENTED OUT: Frame flex measurement disabled
+            /*
+            if (waypoint == 0 && currentState == CALIBRATION_IN_PROGRESS) {
                 measureFlex = true;
                 log_info("Measuring Frame Flex");
                 return false;
             }
+            */
 
             return true;
         }
@@ -1057,8 +1148,76 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
 
     //Check to see if we have reached our target position
     if (abs(Maslow.getTargetX() - toX) < 5 && abs(Maslow.getTargetY() - toY) < 5) {
-        Maslow.stopMotors();
-        Maslow.reset_all_axis();
+        // First, set ALL belt targets to their current position to prevent unwinding
+        Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
+        Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
+        Maslow.axisBL.setTarget(Maslow.axisBL.getPosition());
+        Maslow.axisBR.setTarget(Maslow.axisBR.getPosition());
+        
+        // Stabilize all belts at their new target positions to prevent unwinding
+        Maslow.axisTL.recomputePID();
+        Maslow.axisTR.recomputePID();
+        Maslow.axisBL.recomputePID();
+        Maslow.axisBR.recomputePID();
+        
+        // Small delay to allow stabilization
+        static unsigned long stabilizeTimer = 0;
+        if (stabilizeTimer == 0) {
+            stabilizeTimer = millis();
+            return false;  // Continue stabilizing
+        }
+        if (millis() - stabilizeTimer < 50) {  // 50ms stabilization period
+            return false;  // Continue stabilizing
+        }
+        stabilizeTimer = 0;  // Reset for next waypoint
+        
+        // Now stop and reset only the belts that should be slack for the upcoming measurement
+        if (orientation == VERTICAL) {
+            // In vertical mode, maintain top belt tension, allow bottom belts to slack
+            Maslow.axisBL.stop();
+            Maslow.axisBR.stop();
+            // Reset only the stopped axes
+            Maslow.axisBL.reset();
+            Maslow.axisBR.reset();
+        } else {
+            // In horizontal mode, stop belts based on measurement direction
+            int measurementDirection = get_direction(fromX, fromY, toX, toY);
+            switch (measurementDirection) {
+                case UP:
+                    // TL and TR will be hold belts, stop BL and BR
+                    Maslow.axisBL.stop();
+                    Maslow.axisBR.stop();
+                    // Reset only the stopped axes
+                    Maslow.axisBL.reset();
+                    Maslow.axisBR.reset();
+                    break;
+                case DOWN:
+                    // BL and BR will be hold belts, stop TL and TR
+                    Maslow.axisTL.stop();
+                    Maslow.axisTR.stop();
+                    // Reset only the stopped axes
+                    Maslow.axisTL.reset();
+                    Maslow.axisTR.reset();
+                    break;
+                case LEFT:
+                    // TL and BL will be hold belts, stop TR and BR
+                    Maslow.axisTR.stop();
+                    Maslow.axisBR.stop();
+                    // Reset only the stopped axes
+                    Maslow.axisTR.reset();
+                    Maslow.axisBR.reset();
+                    break;
+                case RIGHT:
+                    // TR and BR will be hold belts, stop TL and BL
+                    Maslow.axisTL.stop();
+                    Maslow.axisBL.stop();
+                    // Reset only the stopped axes
+                    Maslow.axisTL.reset();
+                    Maslow.axisBL.reset();
+                    break;
+            }
+        }
+        
         decompress = true;  //Reset for the next pass
         return true;
     }

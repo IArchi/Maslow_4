@@ -1148,26 +1148,26 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
 
     //Check to see if we have reached our target position
     if (abs(Maslow.getTargetX() - toX) < 5 && abs(Maslow.getTargetY() - toY) < 5) {
-        // Instead of stopping all motors, maintain tension on belts that were pulling
-        // and only stop the belts that should be slack for the upcoming measurement
+        // First, set ALL belt targets to their current position to prevent unwinding
+        Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
+        Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
+        Maslow.axisBL.setTarget(Maslow.axisBL.getPosition());
+        Maslow.axisBR.setTarget(Maslow.axisBR.getPosition());
+        
+        // Then stop and reset only the belts that should be slack for the upcoming measurement
         if (orientation == VERTICAL) {
             // In vertical mode, maintain top belt tension, allow bottom belts to slack
-            Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
-            Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
             Maslow.axisBL.stop();
             Maslow.axisBR.stop();
             // Reset only the stopped axes
             Maslow.axisBL.reset();
             Maslow.axisBR.reset();
         } else {
-            // In horizontal mode, maintain tension on belts that were pulling during movement
-            // and will be used as hold belts in the upcoming measurement
+            // In horizontal mode, stop belts based on measurement direction
             int measurementDirection = get_direction(fromX, fromY, toX, toY);
             switch (measurementDirection) {
                 case UP:
-                    // TL and TR will be hold belts, maintain their position
-                    Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
-                    Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
+                    // TL and TR will be hold belts, stop BL and BR
                     Maslow.axisBL.stop();
                     Maslow.axisBR.stop();
                     // Reset only the stopped axes
@@ -1175,9 +1175,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
                     Maslow.axisBR.reset();
                     break;
                 case DOWN:
-                    // BL and BR will be hold belts, maintain their position
-                    Maslow.axisBL.setTarget(Maslow.axisBL.getPosition());
-                    Maslow.axisBR.setTarget(Maslow.axisBR.getPosition());
+                    // BL and BR will be hold belts, stop TL and TR
                     Maslow.axisTL.stop();
                     Maslow.axisTR.stop();
                     // Reset only the stopped axes
@@ -1185,9 +1183,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
                     Maslow.axisTR.reset();
                     break;
                 case LEFT:
-                    // TL and BL will be hold belts, maintain their position
-                    Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
-                    Maslow.axisBL.setTarget(Maslow.axisBL.getPosition());
+                    // TL and BL will be hold belts, stop TR and BR
                     Maslow.axisTR.stop();
                     Maslow.axisBR.stop();
                     // Reset only the stopped axes
@@ -1195,9 +1191,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
                     Maslow.axisBR.reset();
                     break;
                 case RIGHT:
-                    // TR and BR will be hold belts, maintain their position
-                    Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
-                    Maslow.axisBR.setTarget(Maslow.axisBR.getPosition());
+                    // TR and BR will be hold belts, stop TL and BL
                     Maslow.axisTL.stop();
                     Maslow.axisBL.stop();
                     // Reset only the stopped axes

@@ -127,14 +127,14 @@ private:
     bool takeSlack = false;
 
     //Variables used by calibration
-    float** calibration_data    = nullptr;
-    int     pointCount          = 0;    //number of actual points in the grid,  < GRID_SIZE_MAX
-    int     waypoint            = 0;    //The current waypoint in the calibration process
-    int     calibrationDirection = 0;   //Direction for calibration measurements (replaces static variable)
-    bool    measurementInProgress = true; //Whether currently taking measurement or moving (replaces static variable)
-    int     frame_dimention_MIN = 400;  //Is this used? This should be enforced by the user settings. TODO.
-    int     frame_dimention_MAX = 15000;
-    float (*calibrationGrid)[2] = nullptr;
+    float** calibration_data      = nullptr;
+    int     pointCount            = 0;     //number of actual points in the grid,  < GRID_SIZE_MAX
+    int     waypoint              = 0;     //The current waypoint in the calibration process
+    int     calibrationDirection  = 0;     //Direction for calibration measurements (replaces static variable)
+    bool    measurementInProgress = true;  //Whether currently taking measurement or moving (replaces static variable)
+    int     frame_dimention_MIN   = 400;   //Is this used? This should be enforced by the user settings. TODO.
+    int     frame_dimention_MAX   = 15000;
+    float (*calibrationGrid)[2]   = nullptr;
     int    recomputePoints[10];          // Stores the index of the points where we want to trigger a recompute
     int    recomputeCountIndex    = 0;   // Stores the index of the recompute point we are currently on
     int    recomputeCount         = 0;   // Stores the number of recompute points

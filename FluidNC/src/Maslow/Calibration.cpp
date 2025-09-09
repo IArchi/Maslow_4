@@ -27,6 +27,9 @@ static Kinematics::MaslowKinematics* getKinematics() {
 // Constructor
 Calibration::Calibration() {
     currentState = UNKNOWN;
+    // Initialize calibration loop state variables
+    calibrationDirection  = UP;
+    measurementInProgress = true;
 }
 
 //------------------------------------------------------
@@ -144,9 +147,9 @@ bool Calibration::requestStateChange(int newState) {
                 //If we are at the first point we need to generate the grid before we can start
                 if (waypoint == 0) {
                     // Initialize calibration loop state for fresh start
-                    calibrationDirection = UP;
+                    calibrationDirection  = UP;
                     measurementInProgress = true;
-                    
+
                     if (!generate_calibration_grid()) {  //Fail out if the grid cannot be generated
                         return false;
                     }
@@ -1149,13 +1152,13 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
         Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
         Maslow.axisBL.setTarget(Maslow.axisBL.getPosition());
         Maslow.axisBR.setTarget(Maslow.axisBR.getPosition());
-        
+
         // Stabilize all belts at their new target positions to prevent unwinding
         Maslow.axisTL.recomputePID();
         Maslow.axisTR.recomputePID();
         Maslow.axisBL.recomputePID();
         Maslow.axisBR.recomputePID();
-        
+
         // Small delay to allow stabilization
         static unsigned long stabilizeTimer = 0;
         if (stabilizeTimer == 0) {
@@ -1163,10 +1166,10 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
             return false;  // Continue stabilizing
         }
         if (millis() - stabilizeTimer < 50) {  // 50ms stabilization period
-            return false;  // Continue stabilizing
+            return false;                      // Continue stabilizing
         }
         stabilizeTimer = 0;  // Reset for next waypoint
-        
+
         // Now stop and reset only the belts that should be slack for the upcoming measurement
         if (orientation == VERTICAL) {
             // In vertical mode, maintain top belt tension, allow bottom belts to slack
@@ -1213,7 +1216,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
                     break;
             }
         }
-        
+
         decompress = true;  //Reset for the next pass
         return true;
     }
@@ -1524,19 +1527,19 @@ void Calibration::deallocateCalibrationMemory() {
 // Function to reset all calibration state variables to initial values
 void Calibration::resetCalibrationState() {
     // Reset calibration progress variables
-    waypoint = 0;
-    pointCount = 0;
-    recomputeCountIndex = 0;
-    calibrationInProgress = false;
+    waypoint               = 0;
+    pointCount             = 0;
+    recomputeCountIndex    = 0;
+    calibrationInProgress  = false;
     calibrationDataWaiting = -1;
-    
+
     // Reset calibration loop state variables
-    calibrationDirection = UP;  // Default direction
+    calibrationDirection  = UP;    // Default direction
     measurementInProgress = true;  // Start by taking a measurement
-    
+
     // Deallocate memory if allocated
     deallocateCalibrationMemory();
-    
+
     log_info("Calibration state reset");
 }
 

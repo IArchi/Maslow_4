@@ -190,7 +190,7 @@ bool Calibration::requestStateChange(int newState) {
                     set_motor_steps(1, mpos_to_steps(trBeltLength, 1));  // B axis = TR belt
                     set_motor_steps(2, mpos_to_steps(blBeltLength, 2));  // C axis = BL belt
                     set_motor_steps(3, mpos_to_steps(brBeltLength, 3));  // D axis = BR belt
-                    // Z axis is left unchanged
+                    set_motor_steps(4, mpos_to_steps(0.0, 4));           // Z axis = 0 (surface level) during calibration
 
                     gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
                     plan_sync_position();

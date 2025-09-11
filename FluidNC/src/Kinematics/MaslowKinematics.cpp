@@ -236,8 +236,8 @@ namespace Kinematics {
             cartesian[X_AXIS] = 0.0f;
             cartesian[Y_AXIS] = 0.0f;
             // Don't spam the console during belt extension/retraction - this is expected behavior
-            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED && 
-                Maslow.calibration.currentState != EXTENDING) {
+            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED &&
+                Maslow.calibration.currentState != EXTENDING && Maslow.calibration.currentState != RELEASE_TENSION) {
                 log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
             }
         }
@@ -262,7 +262,7 @@ namespace Kinematics {
         // Extract X, Y, Z coordinates from cartesian space and apply scale factors
         float x = cartesian[X_AXIS] * Maslow.scaleX;  // Apply X scale factor
         float y = cartesian[Y_AXIS] * Maslow.scaleY;  // Apply Y scale factor
-        float z = cartesian[Z_AXIS];  // Z_AXIS = 2 (no scaling for Z)
+        float z = cartesian[Z_AXIS];                  // Z_AXIS = 2 (no scaling for Z)
 
         // Check if belts are ready to cut - if not, don't compute belt movements
         // This allows the Z-axis to move independently when belts are not calibrated
@@ -375,8 +375,8 @@ namespace Kinematics {
         double d = sqrt((_tlX - _trX) * (_tlX - _trX) + (_tlY - _trY) * (_tlY - _trY));
         if (d > tlLength + trLength || d < abs(tlLength - trLength)) {
             // Don't spam the console during belt extension/retraction - this is expected behavior
-            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED && 
-                Maslow.calibration.currentState != EXTENDING) {
+            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED &&
+                Maslow.calibration.currentState != EXTENDING && Maslow.calibration.currentState != RELEASE_TENSION) {
                 log_info("Unable to determine machine position from belt lengths");
             }
             return false;

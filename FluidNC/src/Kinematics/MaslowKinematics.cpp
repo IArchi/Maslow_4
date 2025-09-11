@@ -235,9 +235,8 @@ namespace Kinematics {
             // This can happen if belt lengths are inconsistent
             cartesian[X_AXIS] = 0.0f;
             cartesian[Y_AXIS] = 0.0f;
-            // Don't spam the console during belt extension/retraction or when belts are at zero length - this is expected behavior
-            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED &&
-                Maslow.calibration.currentState != EXTENDING && !(tlBeltLength == 0.0f || trBeltLength == 0.0f)) {
+            // Don't spam the console when belts are at zero length - this is expected behavior
+            if (!(tlBeltLength == 0.0f || trBeltLength == 0.0f)) {
                 log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
             }
         }
@@ -374,9 +373,8 @@ namespace Kinematics {
 
         double d = sqrt((_tlX - _trX) * (_tlX - _trX) + (_tlY - _trY) * (_tlY - _trY));
         if (d > tlLength + trLength || d < abs(tlLength - trLength)) {
-            // Don't spam the console during belt extension/retraction or when belts are at zero length - this is expected behavior
-            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED &&
-                Maslow.calibration.currentState != EXTENDING && !(tlLength == 0.0f || trLength == 0.0f)) {
+            // Don't spam the console when belts are at zero length - this is expected behavior
+            if (!(tlLength == 0.0f || trLength == 0.0f)) {
                 log_info("Unable to determine machine position from belt lengths");
             }
             return false;

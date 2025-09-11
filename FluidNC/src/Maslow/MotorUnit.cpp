@@ -122,6 +122,16 @@ bool MotorUnit::updateEncoderPosition() {
 
     if (encoder.isConnected()) {                                               //this func has 50ms timeout (or worse?, hard to tell)
         mostRecentCumulativeEncoderReading = encoder.getCumulativePosition();  //This updates and returns the encoder value
+        
+        // Check for I2C communication errors using new AS5600 error handling
+        int error = encoder.lastError();
+        if (error != 0) {  // AS5600_OK = 0
+            if (millis() - encoderReadFailurePrintTime > 5000) {
+                encoderReadFailurePrintTime = millis();
+                log_warn("Encoder I2C error " << error << " on " << encAddrLabel.c_str());
+            }
+            return false;
+        }
         return true;
     } else if (millis() - encoderReadFailurePrintTime > 5000) {
         encoderReadFailurePrintTime = millis();

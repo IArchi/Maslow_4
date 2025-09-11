@@ -227,15 +227,17 @@ namespace Kinematics {
         // Solve for X,Y position using intersection of circles
         float x, y;
         if (computeXYfromBeltLengths(tlXYDistance, trXYDistance, x, y)) {
-            cartesian[X_AXIS] = x;
-            cartesian[Y_AXIS] = y;
+            // Apply inverse scale factors to convert from scaled motor space back to cartesian space
+            cartesian[X_AXIS] = x / Maslow.scaleX;
+            cartesian[Y_AXIS] = y / Maslow.scaleY;
         } else {
             // If we can't solve the kinematics, fall back to (0,0)
             // This can happen if belt lengths are inconsistent
             cartesian[X_AXIS] = 0.0f;
             cartesian[Y_AXIS] = 0.0f;
-            // Don't spam the console during belt retraction - this is expected behavior
-            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED) {
+            // Don't spam the console during belt extension/retraction - this is expected behavior
+            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED && 
+                Maslow.calibration.currentState != EXTENDING) {
                 log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
             }
         }
@@ -257,10 +259,10 @@ namespace Kinematics {
         // motors[4] = Z axis = Router position
         // motors[5] = X axis = (not used, keep as 0)
 
-        // Extract X, Y, Z coordinates from cartesian space
-        float x = cartesian[X_AXIS];  // X_AXIS = 0
-        float y = cartesian[Y_AXIS];  // Y_AXIS = 1
-        float z = cartesian[Z_AXIS];  // Z_AXIS = 2
+        // Extract X, Y, Z coordinates from cartesian space and apply scale factors
+        float x = cartesian[X_AXIS] * Maslow.scaleX;  // Apply X scale factor
+        float y = cartesian[Y_AXIS] * Maslow.scaleY;  // Apply Y scale factor
+        float z = cartesian[Z_AXIS];  // Z_AXIS = 2 (no scaling for Z)
 
         // Check if belts are ready to cut - if not, don't compute belt movements
         // This allows the Z-axis to move independently when belts are not calibrated
@@ -372,7 +374,11 @@ namespace Kinematics {
 
         double d = sqrt((_tlX - _trX) * (_tlX - _trX) + (_tlY - _trY) * (_tlY - _trY));
         if (d > tlLength + trLength || d < abs(tlLength - trLength)) {
-            log_info("Unable to determine machine position from belt lengths");
+            // Don't spam the console during belt extension/retraction - this is expected behavior
+            if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED && 
+                Maslow.calibration.currentState != EXTENDING) {
+                log_info("Unable to determine machine position from belt lengths");
+            }
             return false;
         }
 

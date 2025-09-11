@@ -1,8 +1,8 @@
 name: Compile Firmware on MaslowBot Review Request
 
 on:
-  pull_request_review_request:
-    types: [requested]
+  pull_request:
+    types: [review_requested]
 
 jobs:
   compile-firmware:

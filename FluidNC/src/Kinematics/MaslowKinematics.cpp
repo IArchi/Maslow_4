@@ -237,7 +237,7 @@ namespace Kinematics {
             cartesian[Y_AXIS] = 0.0f;
             // Don't spam the console during belt extension/retraction - this is expected behavior
             if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED &&
-                Maslow.calibration.currentState != EXTENDING && Maslow.calibration.currentState != RELEASE_TENSION) {
+                Maslow.calibration.currentState != EXTENDING && Maslow.calibration.currentState != TAKING_SLACK) {
                 log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
             }
         }
@@ -376,7 +376,7 @@ namespace Kinematics {
         if (d > tlLength + trLength || d < abs(tlLength - trLength)) {
             // Don't spam the console during belt extension/retraction - this is expected behavior
             if (Maslow.calibration.currentState != RETRACTING && Maslow.calibration.currentState != RETRACTED &&
-                Maslow.calibration.currentState != EXTENDING && Maslow.calibration.currentState != RELEASE_TENSION) {
+                Maslow.calibration.currentState != EXTENDING && Maslow.calibration.currentState != TAKING_SLACK) {
                 log_info("Unable to determine machine position from belt lengths");
             }
             return false;

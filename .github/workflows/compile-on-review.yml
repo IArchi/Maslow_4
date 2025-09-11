@@ -1,0 +1,109 @@
+name: Compile Firmware on MaslowBot Review Request
+
+on:
+  pull_request:
+    types: [review_requested]
+
+jobs:
+  compile-firmware:
+    runs-on: ubuntu-latest
+    
+    # Only run when MaslowBot is requested as reviewer
+    if: contains(github.event.requested_reviewers.*.login, 'MaslowBot')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Cache PlatformIO
+      uses: actions/cache@v4
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-platformio-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-platformio-
+          
+    - name: Cache npm dependencies
+      uses: actions/cache@v4
+      with:
+        path: embedded/node_modules
+        key: ${{ runner.os }}-npm-${{ hashFiles('embedded/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+          
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
+        
+    - name: Install npm dependencies
+      run: |
+        cd embedded
+        npm install
+        
+    - name: Build embedded web page
+      run: |
+        cd embedded
+        python3 build.py
+        
+    - name: Build firmware
+      run: |
+        pio run -e wifi_s3
+        
+    - name: Upload firmware as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware-${{ github.event.pull_request.head.sha }}
+        path: .pio/build/wifi_s3/firmware.bin
+        retention-days: 30
+        
+    - name: Comment on PR with firmware info
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = '.pio/build/wifi_s3/firmware.bin';
+          const stats = fs.statSync(path);
+          const fileSizeInBytes = stats.size;
+          const fileSizeInMB = (fileSizeInBytes / (1024*1024)).toFixed(2);
+          
+          const comment = `🤖 **Firmware Compilation Complete** 🤖
+          
+          ✅ Successfully compiled FluidNC firmware for ESP32-S3 (wifi_s3 environment)
+          
+          **Build Details:**
+          - Commit: \`${{ github.event.pull_request.head.sha }}\`
+          - Environment: \`wifi_s3\`
+          - Firmware size: ${fileSizeInMB} MB
+          - Build time: ~2 minutes
+          
+          **Download:**
+          The compiled firmware.bin file has been uploaded as a build artifact and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          
+          **Installation:**
+          Use the install scripts in the \`install_scripts\` directory or flash directly with esptool.py:
+          \`\`\`bash
+          esptool.py --chip esp32s3 --baud 921600 \\
+            --before default_reset --after hard_reset write_flash \\
+            -z --flash_mode dio --flash_freq 80m --flash_size detect \\
+            0x10000 firmware.bin
+          \`\`\`
+          
+          _This comment was automatically generated when @MaslowBot was requested as a reviewer._`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

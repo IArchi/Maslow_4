@@ -49,6 +49,12 @@ This project requires a lot of work and often expensive items for testing. Pleas
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=8DYLB6ZYYDG7Y)
 
 
+## Automatic Firmware Compilation
+
+When @MaslowBot is requested as a reviewer on a pull request, a GitHub Action automatically compiles the firmware and posts a comment with download instructions. The compiled `firmware.bin` file is available as a downloadable artifact from the Actions tab.
+
+## Development Commands
+
 Two useful command from the platform IO terminal are 
 
 pio run -e wifi_s3 -t  erase

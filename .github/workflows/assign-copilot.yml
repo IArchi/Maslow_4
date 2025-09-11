@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Assign issue to Copilot
         run: |
           gh issue edit ${{ github.event.issue.number }} --add-assignee "Copilot"

@@ -134,15 +134,6 @@ jobs:
           **Download:**
           The compiled firmware.bin file has been uploaded as a build artifact and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           
-          **Installation:**
-          Use the install scripts in the \`install_scripts\` directory or flash directly with esptool.py:
-          \`\`\`bash
-          esptool.py --chip esp32s3 --baud 921600 \\
-            --before default_reset --after hard_reset write_flash \\
-            -z --flash_mode dio --flash_freq 80m --flash_size detect \\
-            0x10000 firmware.bin
-          \`\`\`
-          
           ${triggerText}`;
           
           github.rest.issues.createComment({

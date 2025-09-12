@@ -1361,55 +1361,81 @@ bool Calibration::generate_calibration_grid() {
 }
 
 /*
+* Heron formula for triangle area given triangle sides
+*/
+double Calibration::heronTriangleArea(double a, double b, double c) {
+    double s = (a + b + c) / 2.0;
+    return sqrt(s * (s - a) * (s - b) * (s - c));
+}
+
+/*
+* Calculate side length of square ABCD given distances a, b, c, d
+* from interior point E to vertices using the Stack Exchange algorithm
+*/
+double Calibration::calculateSquareSideLength(double a, double b, double c, double d) {
+    // 4 orthogonal equilateral triangles contribution
+    double surface = (a * a + b * b + c * c + d * d) / 2.0;
+
+    // 4 extra triangular triangles with one side * sqrt(2)
+    surface += heronTriangleArea(a, sqrt(2.0) * b, c);
+    surface += heronTriangleArea(b, sqrt(2.0) * c, d);
+    surface += heronTriangleArea(c, sqrt(2.0) * d, a);
+    surface += heronTriangleArea(d, sqrt(2.0) * a, b);
+
+    // surface is twice square surface, so side length is square root of (surface / 2)
+    return sqrt(surface / 2.0);
+}
+
+/*
+* Calculate distance d to vertex D of square ABCD
+* given distances a, b, c from interior point E to vertices A, B, C
+*/
+double Calibration::calculateMissingDistance(double a, double b, double c) {
+    return sqrt(a * a - b * b + c * c);
+}
+
+/*
 * This function takes a single measurement and adjusts the frame dimensions to find a valid frame size that matches the measurement
+* Uses the Stack Exchange algorithm for calculating square size from distances to vertices
 */
 bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
-    //Get the last measurments
-    double tlLen = measurements[0][0];
-    double trLen = measurements[0][1];
-    double blLen = measurements[0][2];
-    double brLen = measurements[0][3];
+    //Get the last measurements
+    double tlLen = measurements[0][0];  // distance to A (top-left)
+    double trLen = measurements[0][1];  // distance to B (top-right)
+    double blLen = measurements[0][2];  // distance to C (bottom-left)
+    double brLen = measurements[0][3];  // distance to D (bottom-right)
 
-    //Compute the size of the frame from the given measurements using coordinate solving
-    //This general solution works for any point E inside the square, not just centered points.
+    // Use the Stack Exchange algorithm to compute the square side length
+    // The algorithm works for any interior point E inside the square
     //
-    // Method: If square has corners at (0,0), (L,0), (L,L), (0,L) and point E at (x,y):
-    // - BL distance = sqrt(x² + y²)
-    // - BR distance = sqrt((L-x)² + y²)
-    // - TL distance = sqrt(x² + (L-y)²)
-    // - TR distance = sqrt((L-x)² + (L-y)²)
-    //
-    // We solve iteratively to find L that satisfies all distance constraints
+    // In our coordinate system:
+    // A = TL (top-left corner)
+    // B = TR (top-right corner)
+    // C = BL (bottom-left corner)
+    // D = BR (bottom-right corner)
 
-    double bestL     = -1;
-    double bestError = 1e6;
+    log_info("Computing square size using Stack Exchange algorithm");
+    log_info("Distances: TL=" << tlLen << " TR=" << trLen << " BL=" << blLen << " BR=" << brLen);
 
-    // Search for the square size that minimizes error across all measurements
-    for (double L = 500.0; L <= 5000.0; L += 1.0) {
-        // Calculate where point E would be given this square size L
-        double x = (L * L + blLen * blLen - brLen * brLen) / (2.0 * L);
-        double y = (L * L + blLen * blLen - tlLen * tlLen) / (2.0 * L);
+    double L = calculateSquareSideLength(tlLen, trLen, blLen, brLen);
 
-        // Check if point is within valid square bounds
-        if (x >= 0 && x <= L && y >= 0 && y <= L) {
-            // Calculate what TR distance should be given this L, x, y
-            double predicted_tr = sqrt((L - x) * (L - x) + (L - y) * (L - y));
-            double error        = abs(predicted_tr - trLen);
+    // Validate the result by checking if the calculated missing distance matches
+    // We can verify using any three distances to calculate the fourth
+    double calculatedBR = calculateMissingDistance(tlLen, trLen, blLen);
+    double error        = abs(calculatedBR - brLen);
 
-            if (error < bestError) {
-                bestError = error;
-                bestL     = L;
-            }
-        }
-    }
+    log_info("Calculated square side length: " << L);
+    log_info("Verification: calculated BR=" << calculatedBR << " measured BR=" << brLen << " error=" << error);
 
-    if (bestL < 0 || bestError > 10.0) {  // Allow up to 10mm error tolerance
-        log_error("Unable to adjust frame size. No valid square size found for measurements.");
-        log_error("Best candidate: L=" << bestL << "mm with error=" << bestError << "mm");
+    if (error > 20.0) {  // Allow reasonable error tolerance for measurement noise
+        log_error("Unable to adjust frame size. Verification failed with error=" << error << "mm");
         return false;
     }
 
-    float L = bestL;
+    if (L < 500.0 || L > 5000.0) {  // Sanity check on square size
+        log_error("Unable to adjust frame size. Calculated size " << L << "mm is outside reasonable range");
+        return false;
+    }
 
     //Adjust the frame size to match the computed size
     auto kinematics = getKinematics();

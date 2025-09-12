@@ -53,10 +53,15 @@ public:
     bool  takeSlackFunc();
     bool  adjustFrameSizeToMatchFirstMeasurement();
     bool  computeXYfromLengths(double TL, double TR, float& x, float& y);
-    void  calibration_loop();
-    void  print_calibration_data();
-    void  calibrationDataRecieved();
-    void  checkCalibrationData();
+
+    // Stack Exchange algorithm helper functions
+    double heronTriangleArea(double a, double b, double c);
+    double calculateSquareSideLength(double a, double b, double c, double d);
+    double calculateMissingDistance(double a, double b, double c);
+    void   calibration_loop();
+    void   print_calibration_data();
+    void   calibrationDataRecieved();
+    void   checkCalibrationData();
 
     void allocateCalibrationMemory();
     void deallocateCalibrationMemory();

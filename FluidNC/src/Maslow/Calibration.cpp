@@ -2,6 +2,7 @@
 #include "Maslow.h"
 #include "../Kinematics/MaslowKinematics.h"
 #include "../System.h"
+#include "SquareCalculation.h"
 
 // Helper function to get MaslowKinematics instance
 static Kinematics::MaslowKinematics* getKinematics() {
@@ -1361,40 +1362,6 @@ bool Calibration::generate_calibration_grid() {
 }
 
 /*
-* Heron formula for triangle area given triangle sides
-*/
-double Calibration::heronTriangleArea(double a, double b, double c) {
-    double s = (a + b + c) / 2.0;
-    return sqrt(s * (s - a) * (s - b) * (s - c));
-}
-
-/*
-* Calculate side length of square ABCD given distances a, b, c, d
-* from interior point E to vertices using the Stack Exchange algorithm
-*/
-double Calibration::calculateSquareSideLength(double a, double b, double c, double d) {
-    // 4 orthogonal equilateral triangles contribution
-    double surface = (a * a + b * b + c * c + d * d) / 2.0;
-
-    // 4 extra triangular triangles with one side * sqrt(2)
-    surface += heronTriangleArea(a, sqrt(2.0) * b, c);
-    surface += heronTriangleArea(b, sqrt(2.0) * c, d);
-    surface += heronTriangleArea(c, sqrt(2.0) * d, a);
-    surface += heronTriangleArea(d, sqrt(2.0) * a, b);
-
-    // surface is twice square surface, so side length is square root of (surface / 2)
-    return sqrt(surface / 2.0);
-}
-
-/*
-* Calculate distance d to vertex D of square ABCD
-* given distances a, b, c from interior point E to vertices A, B, C
-*/
-double Calibration::calculateMissingDistance(double a, double b, double c) {
-    return sqrt(a * a - b * b + c * c);
-}
-
-/*
 * This function takes a single measurement and adjusts the frame dimensions to find a valid frame size that matches the measurement
 * Uses the Stack Exchange algorithm for calculating square size from distances to vertices
 */
@@ -1407,21 +1374,14 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
 
     // Use the Stack Exchange algorithm to compute the square side length
     // The algorithm works for any interior point E inside the square
-    //
-    // In our coordinate system:
-    // A = TL (top-left corner)
-    // B = TR (top-right corner)
-    // C = BL (bottom-left corner)
-    // D = BR (bottom-right corner)
-
     log_info("Computing square size using Stack Exchange algorithm");
     log_info("Distances: TL=" << tlLen << " TR=" << trLen << " BL=" << blLen << " BR=" << brLen);
 
-    double L = calculateSquareSideLength(tlLen, trLen, blLen, brLen);
+    double L = SquareCalculation::calculateSquareSideLength(tlLen, trLen, blLen, brLen);
 
     // Validate the result by checking if the calculated missing distance matches
     // We can verify using any three distances to calculate the fourth
-    double calculatedBR = calculateMissingDistance(tlLen, trLen, blLen);
+    double calculatedBR = SquareCalculation::calculateMissingDistance(tlLen, trLen, blLen);
     double error        = abs(calculatedBR - brLen);
 
     log_info("Calculated square side length: " << L);

@@ -3,20 +3,41 @@ name: Compile Firmware on MaslowBot Review Request
 on:
   pull_request:
     types: [review_requested]
+  issue_comment:
+    types: [created]
 
 jobs:
   compile-firmware:
     runs-on: ubuntu-latest
     
-    # Only run when MaslowBot is requested as reviewer
-    # Handles both single reviewer (requested_reviewer) and multiple reviewers (requested_reviewers) scenarios  
+    # Run when MaslowBot is requested as reviewer OR when MaslowBot is mentioned in a comment on a PR
+    # Handles both single reviewer (requested_reviewer) and multiple reviewers (requested_reviewers) scenarios
+    # Also handles issue_comment trigger for Copilot-created PRs  
     if: |
-      github.event.requested_reviewer.login == 'MaslowBot' ||
-      contains(github.event.requested_reviewers.*.login, 'MaslowBot')
+      (github.event_name == 'pull_request' && (
+        github.event.requested_reviewer.login == 'MaslowBot' ||
+        contains(github.event.requested_reviewers.*.login, 'MaslowBot')
+      )) ||
+      (github.event_name == 'issue_comment' && 
+        github.event.issue.pull_request != null &&
+        (contains(github.event.comment.body, '@MaslowBot') || contains(github.event.comment.body, '/build'))
+      )
     
     steps:
+    - name: Get PR details for issue comment
+      if: github.event_name == 'issue_comment'
+      id: pr
+      run: |
+        PR_NUMBER=${{ github.event.issue.number }}
+        PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}")
+        echo "head_sha=$(echo "$PR_DATA" | jq -r .head.sha)" >> $GITHUB_OUTPUT
+        
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        # For issue_comment events, checkout the PR head commit instead of the default branch
+        ref: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.head_sha || github.sha }}
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -80,12 +101,32 @@ jobs:
           const fileSizeInBytes = stats.size;
           const fileSizeInMB = (fileSizeInBytes / (1024*1024)).toFixed(2);
           
+          // Determine the PR number and commit SHA based on the event type
+          let prNumber, commitSha;
+          if (context.eventName === 'pull_request') {
+            prNumber = context.issue.number;
+            commitSha = context.payload.pull_request.head.sha;
+          } else if (context.eventName === 'issue_comment') {
+            prNumber = context.issue.number;
+            // Get the PR details to get the latest commit SHA
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            commitSha = pr.head.sha;
+          }
+          
+          const triggerText = context.eventName === 'pull_request' 
+            ? '_This comment was automatically generated when @MaslowBot was requested as a reviewer._'
+            : '_This comment was automatically generated in response to a build request comment._';
+          
           const comment = `🤖 **Firmware Compilation Complete** 🤖
           
           ✅ Successfully compiled FluidNC firmware for ESP32-S3 (wifi_s3 environment)
           
           **Build Details:**
-          - Commit: \`${{ github.event.pull_request.head.sha }}\`
+          - Commit: \`${commitSha}\`
           - Environment: \`wifi_s3\`
           - Firmware size: ${fileSizeInMB} MB
           - Build time: ~2 minutes
@@ -102,10 +143,10 @@ jobs:
             0x10000 firmware.bin
           \`\`\`
           
-          _This comment was automatically generated when @MaslowBot was requested as a reviewer._`;
+          ${triggerText}`;
           
           github.rest.issues.createComment({
-            issue_number: context.issue.number,
+            issue_number: prNumber,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: comment

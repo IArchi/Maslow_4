@@ -10,7 +10,7 @@ jobs:
   compile-firmware:
     runs-on: ubuntu-latest
     
-    # Run when MaslowBot is requested as reviewer OR when MaslowBot is mentioned in a comment on a PR
+    # Run when MaslowBot is requested as reviewer OR when specific build commands are used in a comment on a PR
     # Handles both single reviewer (requested_reviewer) and multiple reviewers (requested_reviewers) scenarios
     # Also handles issue_comment trigger for Copilot-created PRs  
     if: |
@@ -20,7 +20,7 @@ jobs:
       )) ||
       (github.event_name == 'issue_comment' && 
         github.event.issue.pull_request != null &&
-        (contains(github.event.comment.body, '@MaslowBot') || contains(github.event.comment.body, '/build'))
+        (contains(github.event.comment.body, 'please build') || contains(github.event.comment.body, '/build'))
       )
     
     steps:

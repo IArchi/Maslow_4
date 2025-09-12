@@ -66,7 +66,7 @@ jobs:
     - name: Upload firmware as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ github.event.pull_request.head.sha }}
+        name: firmware.bin
         path: .pio/build/wifi_s3/firmware.bin
         retention-days: 30
         

@@ -34,6 +34,21 @@ jobs:
               return;
             }
             
+            // Skip build trigger comments that are handled by the compile workflow
+            const buildPatterns = [
+              /(?:^|\s)build(?:\s|$)/i,  // build as a standalone word
+              /(?:^|\s)compile(?:\s|$)/i, // compile as a standalone word  
+              /\/build/i, // /build command
+              /@MaslowBot\s+(please\s+)?build(?:\s|$)/i, // @MaslowBot (please) build
+              /@MaslowBot\s+(please\s+)?compile(?:\s|$)/i // @MaslowBot (please) compile
+            ];
+            
+            const isBuildComment = buildPatterns.some(pattern => pattern.test(originalBody));
+            if (isBuildComment) {
+              console.log('Comment appears to be a build trigger, skipping relay to avoid duplication');
+              return;
+            }
+            
             const divider = '━'.repeat(80);
             const relayComment = '@copilot\n\nUser @' + originalAuthor + ' mentioned @MaslowBot with the following request:\n\n' + divider + '\n\n' + originalBody + '\n\n' + divider + '\n\n_This comment was automatically relayed by MaslowBot so that @copilot can respond to the request._';
             

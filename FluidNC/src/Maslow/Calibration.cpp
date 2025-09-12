@@ -1374,9 +1374,6 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
 
     // Use the Stack Exchange algorithm to compute the square side length
     // The algorithm works for any interior point E inside the square
-    log_info("Computing square size using Stack Exchange algorithm");
-    log_info("Distances: TL=" << tlLen << " TR=" << trLen << " BL=" << blLen << " BR=" << brLen);
-
     double L = SquareCalculation::calculateSquareSideLength(tlLen, trLen, blLen, brLen);
 
     if (L < 500.0 || L > 5000.0) {  // Sanity check on square size

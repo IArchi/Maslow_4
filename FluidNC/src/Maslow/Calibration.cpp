@@ -1370,18 +1370,46 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     double blLen = measurements[0][2];
     double brLen = measurements[0][3];
 
-    //Check that we are in fact on the center line. The math assumes that we are roughly centered on the frame and so
-    //the topleft and topright measurements should be roughly the same. It doesn't need to be exact.
-    if (std::abs(tlLen - trLen) > 20) {
-        log_error("Unable to adjust frame size. Not centered.");  //There exists a more generalized solution which should be implimented here: https://math.stackexchange.com/questions/5013127/find-square-size-from-inscribed-triangles?noredirect=1#comment10752043_5013127
+    //Compute the size of the frame from the given measurements using coordinate solving
+    //This general solution works for any point E inside the square, not just centered points.
+    //
+    // Method: If square has corners at (0,0), (L,0), (L,L), (0,L) and point E at (x,y):
+    // - BL distance = sqrt(x² + y²)  
+    // - BR distance = sqrt((L-x)² + y²)
+    // - TL distance = sqrt(x² + (L-y)²)
+    // - TR distance = sqrt((L-x)² + (L-y)²)
+    //
+    // We solve iteratively to find L that satisfies all distance constraints
+    
+    double bestL = -1;
+    double bestError = 1e6;
+    
+    // Search for the square size that minimizes error across all measurements
+    for (double L = 500.0; L <= 5000.0; L += 1.0) {
+        // Calculate where point E would be given this square size L
+        double x = (L*L + blLen*blLen - brLen*brLen) / (2.0*L);
+        double y = (L*L + blLen*blLen - tlLen*tlLen) / (2.0*L);
+        
+        // Check if point is within valid square bounds
+        if (x >= 0 && x <= L && y >= 0 && y <= L) {
+            // Calculate what TR distance should be given this L, x, y
+            double predicted_tr = sqrt((L-x)*(L-x) + (L-y)*(L-y));
+            double error = abs(predicted_tr - trLen);
+            
+            if (error < bestError) {
+                bestError = error;
+                bestL = L;
+            }
+        }
+    }
+    
+    if (bestL < 0 || bestError > 10.0) {  // Allow up to 10mm error tolerance
+        log_error("Unable to adjust frame size. No valid square size found for measurements.");
+        log_error("Best candidate: L=" << bestL << "mm with error=" << bestError << "mm");
         return false;
     }
-
-    //Compute the size of the frame from the given measurements
-
-    double numerator   = sqrt(pow(tlLen, 2) + sqrt(-pow(tlLen, 4) + 6 * pow(tlLen, 2) * pow(blLen, 2) - pow(blLen, 4)) + pow(blLen, 2));
-    double denominator = sqrt(2);
-    float  L           = numerator / denominator;
+    
+    float L = bestL;
 
     //Adjust the frame size to match the computed size
     auto kinematics = getKinematics();

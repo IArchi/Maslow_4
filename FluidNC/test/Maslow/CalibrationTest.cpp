@@ -253,3 +253,76 @@ Test(MaslowKinematicsSideLengthValidationTooLarge, CalibrationTest) {
     Assert(kinematics.getTrX() == 2950.0f, "trX should be corrected to default value");
     Assert(kinematics.getBrX() == 3000.0f, "brX should be corrected to default value");
 }
+
+// Test the new general square finding algorithm (coordinate solving approach)
+Test(GeneralSquareFindingAlgorithm, CalibrationTest) {
+    // Test the coordinate solving approach that finds L by iteration
+    // For a known square, verify that the algorithm correctly calculates the side length
+    
+    // Known square with side length 2000mm
+    float knownL = 2000.0f;
+    
+    // Test point at center (1000, 1000)
+    float centerX = knownL / 2.0f;
+    float centerY = knownL / 2.0f;
+    
+    // Calculate distances from center to corners
+    float tlLen = sqrt(centerX * centerX + (knownL - centerY) * (knownL - centerY));  
+    float trLen = sqrt((knownL - centerX) * (knownL - centerX) + (knownL - centerY) * (knownL - centerY));  
+    float blLen = sqrt(centerX * centerX + centerY * centerY); 
+    float brLen = sqrt((knownL - centerX) * (knownL - centerX) + centerY * centerY);  
+    
+    // Apply coordinate solving method (simplified version for testing)
+    float bestL = -1;
+    float bestError = 1e6;
+    
+    for (float L = 500.0f; L <= 5000.0f; L += 1.0f) {
+        float x = (L*L + blLen*blLen - brLen*brLen) / (2.0f*L);
+        float y = (L*L + blLen*blLen - tlLen*tlLen) / (2.0f*L);
+        
+        if (x >= 0 && x <= L && y >= 0 && y <= L) {
+            float predicted_tr = sqrt((L-x)*(L-x) + (L-y)*(L-y));
+            float error = abs(predicted_tr - trLen);
+            
+            if (error < bestError) {
+                bestError = error;
+                bestL = L;
+            }
+        }
+    }
+    
+    // For a centered point, should correctly identify the square size
+    Assert(abs(bestL - knownL) < 1.0f, "Calculated side length should match known side length for centered point");
+    
+    // Test point off-center (600, 800) - closer to bottom-left
+    float offCenterX = 600.0f;
+    float offCenterY = 800.0f;
+    
+    // Calculate distances from off-center point to corners
+    tlLen = sqrt(offCenterX * offCenterX + (knownL - offCenterY) * (knownL - offCenterY));  
+    trLen = sqrt((knownL - offCenterX) * (knownL - offCenterX) + (knownL - offCenterY) * (knownL - offCenterY)); 
+    blLen = sqrt(offCenterX * offCenterX + offCenterY * offCenterY);  
+    brLen = sqrt((knownL - offCenterX) * (knownL - offCenterX) + offCenterY * offCenterY);  
+    
+    // Apply coordinate solving method again
+    bestL = -1;
+    bestError = 1e6;
+    
+    for (float L = 500.0f; L <= 5000.0f; L += 1.0f) {
+        float x = (L*L + blLen*blLen - brLen*brLen) / (2.0f*L);
+        float y = (L*L + blLen*blLen - tlLen*tlLen) / (2.0f*L);
+        
+        if (x >= 0 && x <= L && y >= 0 && y <= L) {
+            float predicted_tr = sqrt((L-x)*(L-x) + (L-y)*(L-y));
+            float error = abs(predicted_tr - trLen);
+            
+            if (error < bestError) {
+                bestError = error;
+                bestL = L;
+            }
+        }
+    }
+    
+    // Should still correctly calculate the side length even when not centered
+    Assert(abs(bestL - knownL) < 1.0f, "Calculated side length should match known side length for off-center point");
+}

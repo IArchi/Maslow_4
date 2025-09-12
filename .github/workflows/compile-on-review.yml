@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     
     # Only run when MaslowBot is requested as reviewer  
-    if: contains(toJSON(github.event.requested_reviewers.*.login), '"MaslowBot"')
+    if: github.event.requested_reviewer.login == 'MaslowBot'
     
     steps:
     - name: Checkout repository

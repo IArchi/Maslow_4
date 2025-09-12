@@ -8,8 +8,8 @@ jobs:
   compile-firmware:
     runs-on: ubuntu-latest
     
-    # Only run when MaslowBot is requested as reviewer
-    if: contains(toJSON(github.event.requested_reviewers), 'MaslowBot')
+    # Only run when MaslowBot is requested as reviewer  
+    if: contains(toJSON(github.event.requested_reviewers.*.login), '"MaslowBot"')
     
     steps:
     - name: Checkout repository

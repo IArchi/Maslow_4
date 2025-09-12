@@ -18,10 +18,4 @@ namespace SquareCalculation {
     * from interior point E to vertices using the Stack Exchange algorithm
     */
     double calculateSquareSideLength(double a, double b, double c, double d);
-
-    /*
-    * Calculate distance d to vertex D of square ABCD
-    * given distances a, b, c from interior point E to vertices A, B, C
-    */
-    double calculateMissingDistance(double a, double b, double c);
 }

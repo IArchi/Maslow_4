@@ -1363,7 +1363,7 @@ bool Calibration::generate_calibration_grid() {
 
 /*
 * This function takes a single measurement and adjusts the frame dimensions to find a valid frame size that matches the measurement
-* Uses the Stack Exchange algorithm for calculating square size from distances to vertices
+* Uses the algorithm described in https://math.stackexchange.com/questions/5013127/find-square-size-from-inscribed-triangles?noredirect=1#comment10752043_5013127 for calculating square size from distances to vertices
 */
 bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     //Get the last measurements
@@ -1378,19 +1378,6 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     log_info("Distances: TL=" << tlLen << " TR=" << trLen << " BL=" << blLen << " BR=" << brLen);
 
     double L = SquareCalculation::calculateSquareSideLength(tlLen, trLen, blLen, brLen);
-
-    // Validate the result by checking if the calculated missing distance matches
-    // We can verify using any three distances to calculate the fourth
-    double calculatedBR = SquareCalculation::calculateMissingDistance(tlLen, trLen, blLen);
-    double error        = abs(calculatedBR - brLen);
-
-    log_info("Calculated square side length: " << L);
-    log_info("Verification: calculated BR=" << calculatedBR << " measured BR=" << brLen << " error=" << error);
-
-    if (error > 20.0) {  // Allow reasonable error tolerance for measurement noise
-        log_error("Unable to adjust frame size. Verification failed with error=" << error << "mm");
-        return false;
-    }
 
     if (L < 500.0 || L > 5000.0) {  // Sanity check on square size
         log_error("Unable to adjust frame size. Calculated size " << L << "mm is outside reasonable range");

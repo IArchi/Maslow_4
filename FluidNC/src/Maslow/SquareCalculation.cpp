@@ -34,14 +34,4 @@ double calculateSquareSideLength(double a, double b, double c, double d) {
     return sqrt(surface / 2.0);
 }
 
-/*
-* Calculate distance d to vertex D of square ABCD
-* given distances a, b, c from interior point E to vertices A, B, C
-* 
-* Uses the formula: d = √(a² - b² + c²)
-*/
-double calculateMissingDistance(double a, double b, double c) {
-    return sqrt(a * a - b * b + c * c);
-}
-
 }

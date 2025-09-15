@@ -113,6 +113,10 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == EXTENDEDOUT) {
                 currentState = TAKING_SLACK;
 
+                //Reset the axis targets at the beginning of taking slack
+                Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
+                Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
+
                 retractingTL = false;  //Should be replaced by state now
                 retractingTR = false;
                 retractingBL = false;
@@ -140,6 +144,11 @@ bool Calibration::requestStateChange(int newState) {
         case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
             if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
                 currentState = CALIBRATION_IN_PROGRESS;
+
+                //Reset the axis targets at the beginning of calibration
+                Maslow.axisTL.setTarget(Maslow.axisTL.getPosition());
+                Maslow.axisTR.setTarget(Maslow.axisTR.getPosition());
+
                 sys.set_state(State::Homing);
 
                 // Log the calibration orientation mode for debugging

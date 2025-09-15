@@ -75,13 +75,6 @@ namespace WebUI {
 #    endif
         static void handle_SSDP();
         static void handle_root();
-        void send_204();
-        static void send_success();
-        static void send_microsoft_current();
-        static void send_microsoft_legacy();
-        static void send_gnome();
-        static void send_ok();
-        static void send_204();
         static void handle_login();
         static void handle_not_found();
         static void _handle_web_command(bool);

@@ -81,7 +81,7 @@ const updateDynamicButtons = () => {
 			extendButton.style.backgroundColor = greenBackground;
 
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 1:
@@ -90,7 +90,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greyBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 
 			break;
@@ -101,7 +101,7 @@ const updateDynamicButtons = () => {
 			extendButton.style.backgroundColor = greenBackground;
 
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 
 			break;
@@ -111,7 +111,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greyBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 4:
@@ -122,7 +122,7 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greenBackground;
 			extendButton.style.backgroundColor = greenBackground;
 			
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 
 			break;
 		case 5:
@@ -131,7 +131,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greyBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 6:
@@ -140,7 +140,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greyBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 7:
@@ -160,7 +160,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greyBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 
 			// No buttons are active in this state
@@ -171,7 +171,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greyBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		default:
@@ -180,7 +180,7 @@ const updateDynamicButtons = () => {
 			retractButton.style.backgroundColor = greenBackground;
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
-			relaxButton.style.backgroundColor = greyBackground;
+			relaxButton.style.backgroundColor = greenBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 	}

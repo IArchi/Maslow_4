@@ -65,6 +65,46 @@ jobs:
         path: dist/index.html.gz
         retention-days: 30
         
+    - name: Create temporary release for direct download
+      id: create_release
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Create release
+          const release = await github.rest.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: `build-${context.runId}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`,
+            name: `WebUI Build ${context.runId}`,
+            body: `Temporary release for PR build.
+This release will be automatically deleted after 7 days.
+
+**Build Details:**
+- Commit: ${context.sha}
+- Run ID: ${context.runId}
+- Triggered by: ${context.eventName}`,
+            draft: false,
+            prerelease: true
+          });
+          
+          // Upload asset
+          const assetData = fs.readFileSync('dist/index.html.gz');
+          await github.rest.repos.uploadReleaseAsset({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: release.data.id,
+            name: 'index.html.gz',
+            data: assetData,
+          });
+          
+          // Set outputs for later steps
+          core.setOutput('release_url', release.data.html_url);
+          core.setOutput('release_id', release.data.id);
+          
+          return release.data;
+        
     - name: Comment on PR with WebUI info
       uses: actions/github-script@v7
       with:
@@ -106,7 +146,8 @@ jobs:
           - Build time: ~3 seconds
           
           **Download:**
-          The compiled index.html.gz file has been uploaded as a build artifact and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          - **Direct download**: [index.html.gz](${{ steps.create_release.outputs.release_url }}) (click "Assets" section)
+          - **Artifact download**: Available from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) (will be zipped)
           
           ${triggerText}`;
           

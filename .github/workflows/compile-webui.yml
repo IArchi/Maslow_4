@@ -79,12 +79,12 @@ jobs:
             tag_name: `build-${context.runId}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`,
             name: `WebUI Build ${context.runId}`,
             body: `Temporary release for PR build.
-This release will be automatically deleted after 7 days.
-
-**Build Details:**
-- Commit: ${context.sha}
-- Run ID: ${context.runId}
-- Triggered by: ${context.eventName}`,
+            This release will be automatically deleted after 7 days.
+            
+            **Build Details:**
+            - Commit: ${context.sha}
+            - Run ID: ${context.runId}
+            - Triggered by: ${context.eventName}`,
             draft: false,
             prerelease: true
           });

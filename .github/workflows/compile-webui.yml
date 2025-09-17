@@ -58,11 +58,24 @@ jobs:
     - name: Build WebUI
       run: gulp package --lang en
         
+    - name: Create README for artifact
+      run: |
+        echo "ESP3D WebUI Update Package" > dist/README.txt
+        echo "" >> dist/README.txt
+        echo "Instructions:" >> dist/README.txt
+        echo "1. Extract this zip file to a folder" >> dist/README.txt
+        echo "2. Upload the index.html.gz file to your ESP3D device" >> dist/README.txt
+        echo "3. The index.html.gz file contains the updated WebUI" >> dist/README.txt
+        echo "" >> dist/README.txt
+        echo "Note: Upload the index.html.gz file directly - do not extract it first." >> dist/README.txt
+        
     - name: Upload WebUI as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: index.html.gz
-        path: dist/index.html.gz
+        name: Updated UI
+        path: |
+          dist/index.html.gz
+          dist/README.txt
         retention-days: 30
         
     - name: Comment on PR with WebUI info
@@ -106,7 +119,12 @@ jobs:
           - Build time: ~3 seconds
           
           **Download:**
-          The compiled index.html.gz file has been uploaded as a build artifact and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          Download the "Updated UI.zip" file from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}). 
+          
+          **Installation Instructions:**
+          1. Download and extract the "Updated UI.zip" file
+          2. Upload the index.html.gz file from the extracted folder to your ESP3D device
+          3. The README.txt file in the zip contains detailed instructions
           
           ${triggerText}`;
           

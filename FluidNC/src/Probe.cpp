@@ -34,7 +34,7 @@ bool Probe::get_state() {
 // Should be called only in situations where the probe pin is known to be defined.
 bool IRAM_ATTR Probe::tripped() {
     bool pin_state = _probePin.read();
-    
+
     // For ProbeToward (G38.2/G38.3): trigger when probe becomes active
     // For ProbeAway (G38.4/G38.5): trigger when probe becomes inactive
     // Fixed logic to ensure proper behavior for Maslow CNC probe operations

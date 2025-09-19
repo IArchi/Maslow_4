@@ -96,11 +96,7 @@ jobs:
 
         Installation Instructions:
         1. Extract this entire folder to your desired location
-        2. Use your preferred ESP32 flashing tool to install firmware.bin
-        3. Common flashing methods:
-           - Use the FluidNC installer scripts
-           - Use esptool.py: esptool.py --port COM_PORT write_flash 0x0 firmware.bin
-           - Use platformio: pio run -t upload (if you have the source code)
+        2. Upload to the machine as normal.
 
         This firmware was automatically compiled from the pull request changes.
         EOF

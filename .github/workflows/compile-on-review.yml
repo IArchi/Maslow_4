@@ -84,11 +84,32 @@ jobs:
       run: |
         pio run -e wifi_s3
         
+    - name: Prepare firmware artifact folder
+      run: |
+        mkdir -p firmware-package
+        cp .pio/build/wifi_s3/firmware.bin firmware-package/
+        cat > firmware-package/README.txt << 'EOF'
+        FluidNC Firmware Package
+        ========================
+
+        Please unzip this folder and then install the included firmware.bin file as normal to test these changes.
+
+        Installation Instructions:
+        1. Extract this entire folder to your desired location
+        2. Use your preferred ESP32 flashing tool to install firmware.bin
+        3. Common flashing methods:
+           - Use the FluidNC installer scripts
+           - Use esptool.py: esptool.py --port COM_PORT write_flash 0x0 firmware.bin
+           - Use platformio: pio run -t upload (if you have the source code)
+
+        This firmware was automatically compiled from the pull request changes.
+        EOF
+        
     - name: Upload firmware as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: firmware.bin
-        path: .pio/build/wifi_s3/firmware.bin
+        name: firmware-package
+        path: firmware-package/
         retention-days: 30
         
     - name: Comment on PR with firmware info
@@ -132,7 +153,7 @@ jobs:
           - Build time: ~2 minutes
           
           **Download:**
-          The compiled firmware.bin file has been uploaded as a build artifact and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          The firmware package (containing firmware.bin and installation instructions) has been uploaded as a build artifact named "firmware-package" and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           
           ${triggerText}`;
           

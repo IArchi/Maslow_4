@@ -33,7 +33,18 @@ bool Probe::get_state() {
 // This function must be extremely efficient as to not bog down the stepper ISR.
 // Should be called only in situations where the probe pin is known to be defined.
 bool IRAM_ATTR Probe::tripped() {
-    return _probePin.read() ^ _isProbeAway;
+    bool pin_state = _probePin.read();
+    
+    // For ProbeToward (G38.2/G38.3): trigger when probe becomes active
+    // For ProbeAway (G38.4/G38.5): trigger when probe becomes inactive
+    // Fixed logic to ensure proper behavior for Maslow CNC probe operations
+    if (_isProbeAway) {
+        // ProbeAway: probe is considered tripped when pin is inactive (not touching)
+        return !pin_state;
+    } else {
+        // ProbeToward: probe is considered tripped when pin is active (touching)
+        return pin_state;
+    }
 }
 
 void Probe::validate() {}

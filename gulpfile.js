@@ -96,10 +96,16 @@ function replaceVersion() {
     .src('dist/index.html')
     .pipe(
       replace(/replaceVERSION/g, function (match, p1) {
-        var buildNumber = execSync('git rev-parse --short HEAD')
+        var version = execSync('git describe --tags --always --dirty')
           .toString()
           .replace(/\r?\n|\r/g, '')
-        return 'github.com/MitchBradley/ESP3D-WEBUI@' + buildNumber
+        
+        // Check if version contains a dash (indicating non-release version)
+        if (version.includes('-')) {
+          console.log('WARNING: Version "' + version + '" contains a dash - this should not be a release version')
+        }
+        
+        return 'github.com/BarbourSmith/ESP3D-WEBUI@' + version
       })
     )
     .pipe(gulp.dest('dist'))

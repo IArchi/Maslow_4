@@ -322,6 +322,9 @@ function SPIFFS_UploadFile() {
 	}
 	const formData = BuildFileUploadFormData(SPIFFS_currentpath, files);
 
+	// Disable ping monitoring during SPIFFS upload
+	disablePingForUpload();
+
 	displayNone("SPIFFS_select_form");
 	displayNone("SPIFFS_uploadbtn");
 	displayBlock("uploadSPIFFSmsg");
@@ -332,6 +335,9 @@ function SPIFFS_UploadFile() {
 }
 
 function SPIFFSUploadsuccess(response) {
+	// Restore ping monitoring after SPIFFS upload completes
+	restorePingAfterUpload();
+	
 	setValue("SPIFFS_select", "");
 	setHTML("SPIFFS_file_name", translate_text_item("No file chosen"));
 	displayBlock("SPIFFS_select_form");
@@ -351,6 +357,9 @@ function SPIFFSUploadsuccess(response) {
 }
 
 function SPIFFSUploadfailed(error_code, response) {
+	// Restore ping monitoring after SPIFFS upload fails
+	restorePingAfterUpload();
+	
 	displayBlock("SPIFFS_select_form");
 	displayNone("SPIFFS_prg");
 	displayBlock("SPIFFS_uploadbtn");

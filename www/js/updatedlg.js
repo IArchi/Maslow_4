@@ -90,6 +90,9 @@ function StartUploadUpdatefile(response) {
 	}
 	const formData = BuildFileUploadFormData("/", files);
 
+	// Disable ping monitoring during firmware upload
+	disablePingForUpload();
+
 	displayNone("fw_select_form");
 	displayNone("uploadfw_button");
 	displayBlock("updatemsg");
@@ -103,6 +106,9 @@ function StartUploadUpdatefile(response) {
 }
 
 function updatesuccess(response) {
+	// Restore ping monitoring after firmware upload completes
+	restorePingAfterUpload();
+	
 	setHTML("updatemsg", translate_text_item("Restarting, please wait...."));
 	setHTML("fw_file_name", "");
 	let i = 0;
@@ -127,6 +133,9 @@ function updatesuccess(response) {
 }
 
 function updatefailed(error_code, response) {
+	// Restore ping monitoring after firmware upload fails
+	restorePingAfterUpload();
+	
 	displayBlock("fw_select_form");
 	displayNone("prgfw");
 	setHTML("fw_file_name", translate_text_item("No file chosen"));

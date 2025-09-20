@@ -441,6 +441,9 @@ const populateTabletFileSelector = (files, path) => {
 };
 
 const files_list_success = (response_text) => {
+	// Restore ping monitoring after upload completes
+	restorePingAfterUpload();
+	
 	displayBlock("files_navigation_buttons");
 	let error = false;
 	let response;
@@ -519,6 +522,9 @@ function files_list_failed(error_code, response) {
 }
 
 function files_directSD_upload_failed(error_code, response) {
+	// Restore ping monitoring after upload fails
+	restorePingAfterUpload();
+	
 	if (esp_error_code !== 0) {
 		alertEspError();
 	} else {
@@ -700,6 +706,9 @@ function files_start_upload() {
 	}
 
 	const formData = BuildFileUploadFormData(files_currentPath(), files, FileUploadNotice);
+
+	// Disable ping monitoring during upload
+	disablePingForUpload();
 
 	displayBlock("files_uploading_msg");
 	displayNone("files_navigation_buttons");

@@ -790,6 +790,9 @@ function tabletInit() {
     id("systemStatus").addEventListener("click", clearAlarm);
 
     id("tablettab_save_serial_msg").addEventListener("click", saveSerialMessages);
+    
+    // Trace boundary button
+    id("tablettab_trace_boundary").addEventListener("click", traceBoundary);
 
     // Buttons - Calibration Pop-up
     id("calibration-popup").addEventListener("click", tabletCalPopupHide);
@@ -827,6 +830,7 @@ const showGCode = (gcode, append = false, updateToolpath = true) => {
     }
     if (gCodeDisplayable && updateToolpath) {
       tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
+      updateJobBoundsDisplay();
     }
   }
 
@@ -971,6 +975,7 @@ async function tabletLoadGCodeFileSequentially(path) {
     if (gCodeDisplayable) {
       const finalContent = getValue("tablettab_gcode");
       tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
+      updateJobBoundsDisplay();
     }
     
   } catch (error) {

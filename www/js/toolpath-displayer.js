@@ -747,7 +747,7 @@ var bboxHandlers = {
         ps = projection(start);
         pe = projection(end);
 
-        // Update overall bounding box for display
+        // Update overall bounding box for display (includes all moves for proper canvas scaling)
         tpBbox.min.x = Math.min(tpBbox.min.x, ps.x, pe.x);
         tpBbox.min.y = Math.min(tpBbox.min.y, ps.y, pe.y);
         tpBbox.min.z = Math.min(tpBbox.min.z, start.z, end.z);
@@ -756,14 +756,16 @@ var bboxHandlers = {
         tpBbox.max.z = Math.max(tpBbox.max.z, start.z, end.z);
         bboxIsSet = true;
         
-        // Update job bounding box in world coordinates
-        jobBbox.min.x = Math.min(jobBbox.min.x, start.x, end.x);
-        jobBbox.min.y = Math.min(jobBbox.min.y, start.y, end.y);
-        jobBbox.min.z = Math.min(jobBbox.min.z, start.z, end.z);
-        jobBbox.max.x = Math.max(jobBbox.max.x, start.x, end.x);
-        jobBbox.max.y = Math.max(jobBbox.max.y, start.y, end.y);
-        jobBbox.max.z = Math.max(jobBbox.max.z, start.z, end.z);
-        jobBboxIsSet = true;
+        // Update job bounding box in world coordinates - exclude G0 rapid moves
+        if (modal.motion !== 'G0') {
+            jobBbox.min.x = Math.min(jobBbox.min.x, start.x, end.x);
+            jobBbox.min.y = Math.min(jobBbox.min.y, start.y, end.y);
+            jobBbox.min.z = Math.min(jobBbox.min.z, start.z, end.z);
+            jobBbox.max.x = Math.max(jobBbox.max.x, start.x, end.x);
+            jobBbox.max.y = Math.max(jobBbox.max.y, start.y, end.y);
+            jobBbox.max.z = Math.max(jobBbox.max.z, start.z, end.z);
+            jobBboxIsSet = true;
+        }
     },
     addArcCurve: function(modal, start, end, center, extraRotations) {
         // To determine the precise bounding box of a circular arc we

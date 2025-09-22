@@ -138,22 +138,14 @@ gulp package                 # All languages
 ```bash
 npm run build        # Same as: gulp package
 npm run build:en     # Same as: gulp package --lang en
-npm run start        # Build English + start test server
-npm run serve        # Start test server only
+npm run start        # Build English only (testing on hardware recommended)
+npm run serve        # Not recommended - test on actual hardware instead
 ```
 
 ### Testing Your Build
-Test your changes locally without uploading to ESP32:
+**⚠️ Important: Always test on actual hardware for reliable results.**
 
-```bash
-# Install Python dependencies (one-time setup)
-pip3 install flask zeroconf websockets requests
-
-# Start local test server
-python3 fluidnc-web-sim.py
-
-# Then open http://127.0.0.1:8080 in your browser
-```
+Upload `dist/index.html.gz` to your ESP32 device for proper testing. Local testing with the proxy server can introduce bugs and doesn't accurately represent how the UI behaves on the actual hardware.
 
 ### Automated Builds via GitHub Actions
 🤖 **Get builds automatically compiled for you!**

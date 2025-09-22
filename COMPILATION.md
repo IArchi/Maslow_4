@@ -45,15 +45,14 @@ npm run start               # Build English + start test server
 
 ## Testing Your Build
 
+⚠️ **Always test on actual hardware for reliable results.**
+
 ```bash
-# Install Python dependencies (one-time)
-pip3 install flask zeroconf websockets requests
-
-# Start test server
-python3 fluidnc-web-sim.py
-
-# Open: http://127.0.0.1:8080
+# Upload dist/index.html.gz to your ESP32 device
+# Access via the ESP32's IP address
 ```
+
+The local proxy server (fluidnc-web-sim.py) can introduce bugs and doesn't accurately represent how the UI behaves on actual hardware. For reliable testing, always upload to your ESP32 device.
 
 ## Automated Compilation
 

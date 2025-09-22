@@ -79,50 +79,34 @@ Note: You may see JSHint warnings about ES6/ES8 syntax - these are expected and 
 
 ## Testing
 
-### Local Testing (Recommended)
-You can test your build locally without uploading to an ESP32:
+### ⚠️ Recommended: Test on Actual Hardware
+Upload `dist/index.html.gz` to a FluidNC ESP32 machine and access it via the ESP32's IP address. This is the only reliable way to test the WebUI functionality.
 
-```bash
-# Start the proxy server
-python3 fluidnc-web-sim.py
+### Local Testing Limitations  
+While a local proxy server (`python3 fluidnc-web-sim.py`) exists, **it is not recommended for testing** as it can introduce bugs and doesn't accurately represent how the UI behaves on actual hardware. Local testing may give false positives or miss real issues that only appear on the ESP32.
 
-# Then browse to: http://localhost:8080
-```
-
-### Advanced Local Testing
-```bash
-# Test with a specific FluidNC IP address
-python3 fluidnc-web-sim.py 192.168.1.25
-
-# Full workflow: build and test
-npm start  # Builds English version and starts server
-```
-
-### How Local Testing Works
-The proxy server:
-- Serves the `dist/index.html` file directly for the initial WebUI load
-- Forwards all other communication to the FluidNC machine
-- Uses MDNS to find "fluidnc.local" by default
-- Allows you to test UI changes without uploading to ESP32
-
-### Production Testing
-Upload `dist/index.html.gz` to a FluidNC ESP32 machine and access it via the ESP32's IP address. This is the normal deployment method.
+If you must use local testing for quick checks, be aware that:
+- The proxy serves `dist/index.html` directly rather than the compressed version
+- Communication patterns differ from the actual ESP32 environment  
+- Some features may work locally but fail on hardware
+- **Always verify any changes on actual hardware before considering them working**
 
 ## Development Workflow
 
-### Typical Development Cycle
+### Recommended Development Cycle
 1. **Make changes** to files in the `www/` directory
 2. **Build**: `gulp package --lang en` 
-3. **Test**: `python3 fluidnc-web-sim.py`
-4. **Browse**: Open http://localhost:8080
+3. **Upload**: Transfer `dist/index.html.gz` to your ESP32 device
+4. **Test**: Access via ESP32's IP address in browser
 5. **Repeat** until satisfied
-6. **Deploy**: Upload `dist/index.html.gz` to ESP32
 
-### Quick Testing
+### Quick Compilation Check
 ```bash
-# One command to build and test
-npm start
+# Verify your changes compile without errors
+gulp package --lang en
 ```
+
+**Important**: Always test on actual hardware. Local testing can miss critical issues that only appear on the ESP32 environment.
 
 ### File Size Monitoring
 ESP32 has limited storage, so monitor file sizes:
@@ -164,11 +148,6 @@ sudo apt install nodejs npm  # Ubuntu/Debian
 brew install node           # macOS
 ```
 
-**Python dependencies missing**
-```bash
-pip3 install flask zeroconf websockets requests
-```
-
 **Build size too large**
 - Use single language: `gulp package --lang en`
 - Avoid multi-language builds for ESP32 deployment
@@ -177,11 +156,10 @@ pip3 install flask zeroconf websockets requests
 - These are expected and don't break the build
 - The codebase uses modern JavaScript features
 
-**Server can't find FluidNC**
-```bash
-# Specify IP address explicitly
-python3 fluidnc-web-sim.py 192.168.1.25
-```
+**UI not working after upload**
+- Verify the `index.html.gz` file uploaded successfully
+- Check ESP32 storage space is sufficient
+- Access via ESP32's IP address, not localhost
 
 ### Build Verification
 ```bash
@@ -194,14 +172,14 @@ du -h dist/index.html.gz   # Should be ~122-125KB
 ## Contributing
 
 ### Before Submitting PRs
-1. **Test locally**: `npm start` and verify UI works
+1. **Test on hardware**: Upload `dist/index.html.gz` to ESP32 and verify UI works
 2. **Check file size**: Ensure build is <130KB
 3. **Test multiple languages** if you modified text
-4. **Use automated builds** for final verification
+4. **Use automated builds** for final verification with @MaslowBot reviewer
 
 ### Code Style
 - Follow existing JavaScript patterns
 - ES6/ES8 syntax is acceptable (ignore JSHint warnings)
 - Minimize file size impact
-- Test changes with real ESP32 when possible
+- **Always test changes on real ESP32 hardware**
 

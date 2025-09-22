@@ -202,6 +202,11 @@ const checkVersionCompatibility = () => {
 	
 	console.log(`Checking version compatibility: FW=${fw_version}, UI=${web_ui_version}`);
 	
+	// Add version check info to serial messages log
+	if (typeof addMessage === 'function') {
+		addMessage(`Version Check: FW=${fw_version}, UI=${web_ui_version}`, true, false);
+	}
+	
 	// Check if versions are compatible
 	if (!areVersionsCompatible(fwVersionInfo, uiVersionInfo)) {
 		const warningTitle = "Version Compatibility Warning";
@@ -210,11 +215,31 @@ const checkVersionCompatibility = () => {
 			<p>• WebUI version: <code>${web_ui_version}</code></p>
 			<p><br/>This may cause unexpected behavior or missing features. Consider updating to matching versions.</p>`;
 		
-		// Show warning dialog
-		alertdlg(warningTitle, warningMessage);
+		// Add warning to serial messages log
+		if (typeof addMessage === 'function') {
+			addMessage(`WARNING: Version mismatch detected! FW: ${fw_version} vs UI: ${web_ui_version}`, true, false);
+		}
+		
+		// Show warning dialog with a longer delay to ensure UI initialization is complete
+		// and any existing modals are closed
+		setTimeout(() => {
+			// Force close any existing modals first
+			const activeModal = getactiveModal ? getactiveModal() : null;
+			if (activeModal) {
+				closeModal("Version check - closing previous modal");
+			}
+			
+			// Then show the version warning
+			alertdlg(warningTitle, warningMessage);
+		}, 3000); // 3 second delay to allow full UI initialization
+		
 		console.warn("Version compatibility warning shown:", { fw_version, web_ui_version });
 	} else {
 		console.log("Version compatibility check passed");
+		// Add success message to serial log
+		if (typeof addMessage === 'function') {
+			addMessage(`Version compatibility check PASSED`, true, false);
+		}
 	}
 };
 

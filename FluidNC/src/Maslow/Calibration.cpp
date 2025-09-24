@@ -1537,6 +1537,7 @@ void Calibration::resetCalibrationState() {
     waypoint               = 0;
     pointCount             = 0;
     recomputeCountIndex    = 0;
+    recomputeCount         = 0;  // Reset recompute count to ensure consistent grid generation
     calibrationInProgress  = false;
     calibrationDataWaiting = -1;
 

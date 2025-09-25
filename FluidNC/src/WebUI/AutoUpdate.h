@@ -17,6 +17,8 @@ namespace WebUI {
         int contentLength = -1;
         std::string redirectLocation;
         bool headersParsed = false;
+        bool wasRedirected = false;
+        std::string finalUrl;  // The final URL after following redirects
     };
 
     class AutoUpdate {
@@ -30,7 +32,7 @@ namespace WebUI {
         static bool        downloadAndInstallFirmware(const std::string& firmwareUrl);
         static bool        isNewerVersion(const std::string& latestVersion, const std::string& currentVersion);
         static std::string extractAssetDownloadURL(const std::string& jsonResponse, const std::string& assetName);
-        static HttpResponse sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix);
+        static HttpResponse sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix, int maxRedirects = 5);
     };
 }
 

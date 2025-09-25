@@ -30,24 +30,11 @@ namespace WebUI {
         // Get the configurable update URL
         std::string updateURL = config->_maslowUpdateURL;
         
-        // Send HTTP request and parse headers
+        // Send HTTP request, parse headers, and handle redirects automatically
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, updateURL, "Accept: application/vnd.github.v3+json\r\n", "API");
         
         if (!httpResp.headersParsed) {
             return "";
-        }
-        
-        // Handle redirects (301, 302, 303, 307, 308)
-        if (httpResp.httpStatus >= 301 && httpResp.httpStatus <= 308 && !httpResp.redirectLocation.empty()) {
-            log_info("AutoUpdate: Following API redirect to: " << httpResp.redirectLocation);
-            client.stop();
-            
-            // Update the URL and make recursive call
-            std::string originalURL = config->_maslowUpdateURL;
-            config->_maslowUpdateURL = httpResp.redirectLocation;
-            std::string result = getLatestReleaseInfo();
-            config->_maslowUpdateURL = originalURL; // Restore original URL
-            return result;
         }
         
         if (httpResp.httpStatus != 200) {
@@ -130,91 +117,126 @@ namespace WebUI {
         }
     }
 
-    // Consolidated HTTP request and header parsing function
-    HttpResponse AutoUpdate::sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix) {
+    // Consolidated HTTP request, header parsing, and redirect handling function
+    HttpResponse AutoUpdate::sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix, int maxRedirects) {
         HttpResponse response;
-
-        // Parse URL to get host and path
-        size_t hostStart = url.find("://") + 3;
-        size_t pathStart = url.find("/", hostStart);
-        std::string host = url.substr(hostStart, pathStart - hostStart);
-        std::string path = url.substr(pathStart);
-
-        if (!client->connect(host.c_str(), 443)) {
-            log_error("AutoUpdate: Failed to connect to " << host << " for " << logPrefix);
-            return response;
-        }
-
-        // Send HTTP request
-        client->print("GET ");
-        client->print(path.c_str());
-        client->print(" HTTP/1.1\r\n");
-        client->print("Host: ");
-        client->print(host.c_str());
-        client->print("\r\n");
-        client->print("User-Agent: FluidNC-AutoUpdate\r\n");
-        if (!extraHeaders.empty()) {
-            client->print(extraHeaders.c_str());
-        }
-        client->print("Connection: close\r\n\r\n");
-
-        // Wait for response
-        unsigned long timeout = millis() + 10000;  // 10 second timeout
-        while (!client->available() && millis() < timeout) {
-            delay(10);
-        }
-
-        if (!client->available()) {
-            log_error("AutoUpdate: " << logPrefix << " request timeout");
-            client->stop();
-            return response;
-        }
-
-        // Parse HTTP response headers
-        bool headersPassed = false;
+        response.finalUrl = url;
         
-        while (client->connected() && !headersPassed) {
-            if (client->available()) {
-                String line = client->readStringUntil('\n');
-                line.trim();
-                
-                // Parse HTTP status line
-                if (line.startsWith("HTTP/")) {
-                    int statusStart = line.indexOf(' ') + 1;
-                    int statusEnd   = line.indexOf(' ', statusStart);
-                    if (statusStart > 0 && statusEnd > statusStart) {
-                        response.httpStatus = line.substring(statusStart, statusEnd).toInt();
-                        log_info("AutoUpdate: " << logPrefix << " HTTP Status: " << response.httpStatus);
+        // Handle redirects automatically up to maxRedirects times
+        for (int redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
+            // Parse URL to get host and path
+            size_t hostStart = response.finalUrl.find("://") + 3;
+            size_t pathStart = response.finalUrl.find("/", hostStart);
+            std::string host = response.finalUrl.substr(hostStart, pathStart - hostStart);
+            std::string path = response.finalUrl.substr(pathStart);
+
+            if (!client->connect(host.c_str(), 443)) {
+                log_error("AutoUpdate: Failed to connect to " << host << " for " << logPrefix);
+                response.headersParsed = false;
+                return response;
+            }
+
+            // Send HTTP request
+            client->print("GET ");
+            client->print(path.c_str());
+            client->print(" HTTP/1.1\r\n");
+            client->print("Host: ");
+            client->print(host.c_str());
+            client->print("\r\n");
+            client->print("User-Agent: FluidNC-AutoUpdate\r\n");
+            if (!extraHeaders.empty()) {
+                client->print(extraHeaders.c_str());
+            }
+            client->print("Connection: close\r\n\r\n");
+
+            // Wait for response
+            unsigned long timeout = millis() + 10000;  // 10 second timeout
+            while (!client->available() && millis() < timeout) {
+                delay(10);
+            }
+
+            if (!client->available()) {
+                log_error("AutoUpdate: " << logPrefix << " request timeout");
+                client->stop();
+                response.headersParsed = false;
+                return response;
+            }
+
+            // Reset response data for each attempt
+            response.httpStatus = 0;
+            response.contentLength = -1;
+            response.redirectLocation.clear();
+            
+            // Parse HTTP response headers
+            bool headersPassed = false;
+            
+            while (client->connected() && !headersPassed) {
+                if (client->available()) {
+                    String line = client->readStringUntil('\n');
+                    line.trim();
+                    
+                    // Parse HTTP status line
+                    if (line.startsWith("HTTP/")) {
+                        int statusStart = line.indexOf(' ') + 1;
+                        int statusEnd   = line.indexOf(' ', statusStart);
+                        if (statusStart > 0 && statusEnd > statusStart) {
+                            response.httpStatus = line.substring(statusStart, statusEnd).toInt();
+                            log_info("AutoUpdate: " << logPrefix << " HTTP Status: " << response.httpStatus);
+                        }
+                    }
+                    
+                    // Parse Content-Length header
+                    if (line.startsWith("Content-Length:")) {
+                        response.contentLength = line.substring(15).toInt();
+                        log_info("AutoUpdate: " << logPrefix << " Content-Length: " << response.contentLength);
+                    }
+                    
+                    // Parse Location header for redirects
+                    if (line.startsWith("Location:")) {
+                        response.redirectLocation = line.substring(9).c_str();
+                        response.redirectLocation.erase(0, response.redirectLocation.find_first_not_of(" \t\r\n"));
+                        log_info("AutoUpdate: " << logPrefix << " redirect location: " << response.redirectLocation);
+                    }
+                    
+                    if (line.length() == 0) {  // Empty line means end of headers
+                        headersPassed = true;
                     }
                 }
-                
-                // Parse Content-Length header
-                if (line.startsWith("Content-Length:")) {
-                    response.contentLength = line.substring(15).toInt();
-                    log_info("AutoUpdate: " << logPrefix << " Content-Length: " << response.contentLength);
-                }
-                
-                // Parse Location header for redirects
-                if (line.startsWith("Location:")) {
-                    response.redirectLocation = line.substring(9).c_str();
-                    response.redirectLocation.erase(0, response.redirectLocation.find_first_not_of(" \t\r\n"));
-                    log_info("AutoUpdate: " << logPrefix << " redirect location: " << response.redirectLocation);
-                }
-                
-                if (line.length() == 0) {  // Empty line means end of headers
-                    headersPassed = true;
-                }
+                delay(1);
             }
-            delay(1);
-        }
 
-        if (!headersPassed) {
-            log_error("AutoUpdate: Failed to read " << logPrefix << " response headers");
-            client->stop();
+            if (!headersPassed) {
+                log_error("AutoUpdate: Failed to read " << logPrefix << " response headers");
+                client->stop();
+                response.headersParsed = false;
+                return response;
+            }
+
+            // Check if we need to follow a redirect
+            if (response.httpStatus >= 301 && response.httpStatus <= 308 && !response.redirectLocation.empty()) {
+                if (redirectCount >= maxRedirects) {
+                    log_error("AutoUpdate: " << logPrefix << " too many redirects (" << redirectCount + 1 << ")");
+                    client->stop();
+                    response.headersParsed = false;
+                    return response;
+                }
+                
+                log_info("AutoUpdate: Following " << logPrefix << " redirect to: " << response.redirectLocation);
+                client->stop();
+                response.finalUrl = response.redirectLocation;
+                response.wasRedirected = true;
+                
+                // Continue the loop to follow the redirect
+                continue;
+            }
+            
+            // If we get here, no redirect needed - we have our final response
+            response.headersParsed = true;
             return response;
         }
-
-        response.headersParsed = true;
+        
+        // Should not reach here, but just in case
+        response.headersParsed = false;
         return response;
     }
 
@@ -389,18 +411,11 @@ namespace WebUI {
         WiFiClientSecure client;
         client.setInsecure();
 
-        // Send HTTP request and parse headers
+        // Send HTTP request, parse headers, and handle redirects automatically
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, url, "", "WebUI download");
         
         if (!httpResp.headersParsed) {
             return false;
-        }
-        
-        // Handle redirects (301, 302, 303, 307, 308)
-        if (httpResp.httpStatus >= 301 && httpResp.httpStatus <= 308 && !httpResp.redirectLocation.empty()) {
-            log_info("AutoUpdate: Following redirect to: " << httpResp.redirectLocation);
-            client.stop();
-            return downloadFileToLocalFS(httpResp.redirectLocation, filename);  // Recursive call to follow redirect
         }
         
         if (httpResp.httpStatus != 200) {
@@ -471,18 +486,11 @@ namespace WebUI {
         WiFiClientSecure client;
         client.setInsecure();
 
-        // Send HTTP request and parse headers
+        // Send HTTP request, parse headers, and handle redirects automatically
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, firmwareUrl, "", "Firmware");
         
         if (!httpResp.headersParsed) {
             return false;
-        }
-        
-        // Handle redirects (301, 302, 303, 307, 308)
-        if (httpResp.httpStatus >= 301 && httpResp.httpStatus <= 308 && !httpResp.redirectLocation.empty()) {
-            log_info("AutoUpdate: Following firmware redirect to: " << httpResp.redirectLocation);
-            client.stop();
-            return downloadAndInstallFirmware(httpResp.redirectLocation);  // Recursive call to follow redirect
         }
         
         if (httpResp.httpStatus != 200) {

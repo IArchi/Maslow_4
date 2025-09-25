@@ -511,37 +511,112 @@ namespace WebUI {
             return false;
         }
 
-        log_info("AutoUpdate: Installing firmware directly (" << httpResp.contentLength << " bytes)...");
+        log_info("AutoUpdate: Downloading firmware to SD card (" << httpResp.contentLength << " bytes)...");
 
-        if (!Update.begin(httpResp.contentLength)) {
-            log_error("AutoUpdate: Failed to begin firmware update");
+        // Download firmware to SD card first
+        std::string firmwareFilename = "firmware.bin.tmp";
+        std::error_code ec;
+        FluidPath firmwareTempPath(firmwareFilename, sdName, ec);
+        if (ec) {
+            log_error("AutoUpdate: Failed to create SD firmware path: " << ec.message());
+            client.stop();
+            return false;
+        }
+
+        // Save to temporary file on SD card
+        FILE* file = fopen(firmwareTempPath.c_str(), "wb");
+        if (!file) {
+            log_error("AutoUpdate: Failed to create firmware file on SD card: " << firmwareTempPath.c_str());
             client.stop();
             return false;
         }
 
         uint8_t buffer[1024];
-        size_t bytesWritten = 0;
+        size_t bytesDownloaded = 0;
 
+        // Download firmware to SD card
         while (client.connected() || client.available()) {
             if (client.available()) {
                 size_t bytesRead = client.readBytes(buffer, sizeof(buffer));
                 if (bytesRead > 0) {
-                    if (Update.write(buffer, bytesRead) != bytesRead) {
-                        log_error("AutoUpdate: Failed to write firmware data");
-                        Update.abort();
+                    if (fwrite(buffer, 1, bytesRead, file) != bytesRead) {
+                        log_error("AutoUpdate: Failed to write firmware data to SD card");
+                        fclose(file);
                         client.stop();
                         return false;
                     }
-                    bytesWritten += bytesRead;
+                    bytesDownloaded += bytesRead;
                 }
             }
             delay(1);
         }
 
+        fclose(file);
         client.stop();
 
-        if (bytesWritten != (size_t)httpResp.contentLength) {
-            log_error("AutoUpdate: Incomplete firmware download (" << bytesWritten << "/" << httpResp.contentLength << " bytes)");
+        // Validate download size
+        if (bytesDownloaded != (size_t)httpResp.contentLength) {
+            log_error("AutoUpdate: Incomplete firmware download (" << bytesDownloaded << "/" << httpResp.contentLength << " bytes)");
+            return false;
+        }
+
+        if (bytesDownloaded == 0) {
+            log_error("AutoUpdate: No firmware data downloaded");
+            return false;
+        }
+
+        log_info("AutoUpdate: Firmware downloaded to SD card successfully (" << bytesDownloaded << " bytes)");
+
+        // Now install firmware from the saved file
+        log_info("AutoUpdate: Installing firmware from SD card...");
+        
+        // Move temporary file to final location
+        FluidPath firmwareFinalPath("firmware.bin", sdName, ec);
+        if (ec) {
+            log_error("AutoUpdate: Failed to create final SD firmware path: " << ec.message());
+            return false;
+        }
+
+        if (rename(firmwareTempPath.c_str(), firmwareFinalPath.c_str()) != 0) {
+            log_error("AutoUpdate: Failed to rename firmware file to final location");
+            return false;
+        }
+
+        // Open the firmware file for reading
+        FILE* firmwareFile = fopen(firmwareFinalPath.c_str(), "rb");
+        if (!firmwareFile) {
+            log_error("AutoUpdate: Failed to open firmware file for installation: " << firmwareFinalPath.c_str());
+            return false;
+        }
+
+        // Begin firmware update process
+        if (!Update.begin(bytesDownloaded)) {
+            log_error("AutoUpdate: Failed to begin firmware update");
+            fclose(firmwareFile);
+            return false;
+        }
+
+        // Install firmware from saved file
+        size_t bytesInstalled = 0;
+        while (bytesInstalled < bytesDownloaded) {
+            size_t bytesRead = fread(buffer, 1, sizeof(buffer), firmwareFile);
+            if (bytesRead == 0) {
+                break; // End of file or error
+            }
+
+            if (Update.write(buffer, bytesRead) != bytesRead) {
+                log_error("AutoUpdate: Failed to write firmware data during installation");
+                Update.abort();
+                fclose(firmwareFile);
+                return false;
+            }
+            bytesInstalled += bytesRead;
+        }
+
+        fclose(firmwareFile);
+
+        if (bytesInstalled != bytesDownloaded) {
+            log_error("AutoUpdate: Incomplete firmware installation (" << bytesInstalled << "/" << bytesDownloaded << " bytes)");
             Update.abort();
             return false;
         }
@@ -551,7 +626,12 @@ namespace WebUI {
             return false;
         }
 
-        log_info("AutoUpdate: Firmware update completed successfully (" << bytesWritten << " bytes)");
+        log_info("AutoUpdate: Firmware installation completed successfully (" << bytesInstalled << " bytes)");
+
+        // Clean up firmware file after successful installation
+        remove(firmwareFinalPath.c_str());
+        log_info("AutoUpdate: Firmware file removed from SD card after successful installation");
+
         return true;
     }
 

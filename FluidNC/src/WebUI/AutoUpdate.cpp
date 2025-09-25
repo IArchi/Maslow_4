@@ -17,6 +17,8 @@
 #    include <WiFiClientSecure.h>
 #    include <Update.h>
 #    include "Driver/localfs.h"
+#    include <vector>
+#    include <string>
 
 namespace WebUI {
 
@@ -133,6 +135,69 @@ namespace WebUI {
         return response;
     }
 
+    // Helper function to parse version string and extract major.minor.patch components
+    // Handles formats like "v1.12", "v1.12.3", "v1.12-2-abcdef"
+    struct Version {
+        int major = 0;
+        int minor = 0; 
+        int patch = 0;
+        bool hasCommits = false; // true if version has commits after tag (e.g., v1.12-2-abcdef)
+        
+        Version(const std::string& versionStr) {
+            std::string v = versionStr;
+            // Remove 'v' prefix if present
+            if (!v.empty() && v[0] == 'v') {
+                v = v.substr(1);
+            }
+            
+            // Check if this is a git-annotated version (has commits after tag)
+            size_t dashPos = v.find('-');
+            if (dashPos != std::string::npos) {
+                // Extract just the version part before the dash
+                hasCommits = true;
+                v = v.substr(0, dashPos);
+            }
+            
+            // Parse major.minor.patch
+            std::vector<std::string> parts;
+            size_t start = 0;
+            size_t pos = 0;
+            while ((pos = v.find('.', start)) != std::string::npos) {
+                parts.push_back(v.substr(start, pos - start));
+                start = pos + 1;
+            }
+            parts.push_back(v.substr(start)); // Add the last part
+            
+            if (parts.size() >= 1) major = std::stoi(parts[0]);
+            if (parts.size() >= 2) minor = std::stoi(parts[1]);  
+            if (parts.size() >= 3) patch = std::stoi(parts[2]);
+        }
+        
+        // Compare versions: return true if this version is newer than other
+        bool isNewerThan(const Version& other) const {
+            if (major != other.major) return major > other.major;
+            if (minor != other.minor) return minor > other.minor;
+            if (patch != other.patch) return patch > other.patch;
+            
+            // If base versions are equal, consider git-annotated versions as "newer"
+            // This handles cases like v1.12 (release) vs v1.12-2-abcdef (dev build after release)
+            return hasCommits && !other.hasCommits;
+        }
+    };
+    
+    // Check if latestVersion is newer than currentVersion
+    bool AutoUpdate::isNewerVersion(const std::string& latestVersion, const std::string& currentVersion) {
+        try {
+            Version latest(latestVersion);
+            Version current(currentVersion);
+            return latest.isNewerThan(current);
+        } catch (const std::exception& e) {
+            // If version parsing fails, fall back to string comparison
+            log_info("AutoUpdate: Version parsing failed, using string comparison");
+            return latestVersion != currentVersion;
+        }
+    }
+
     bool AutoUpdate::checkForUpdate() {
         // Only check if not in AP mode
         if (WiFi.getMode() == WIFI_AP) {
@@ -179,8 +244,9 @@ namespace WebUI {
             currentVersion = currentVersion.substr(0, spacePos);
         }
         
-        if (tagName == currentVersion || tagName.empty()) {
-            log_info("AutoUpdate: Already running the latest version (" << currentVersion << ")");
+        // Compare versions using semantic versioning logic
+        if (tagName.empty() || !isNewerVersion(tagName, currentVersion)) {
+            log_info("AutoUpdate: Already running the latest version or newer (" << currentVersion << ")");
             return false;
         }
 

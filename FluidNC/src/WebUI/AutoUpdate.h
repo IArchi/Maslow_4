@@ -19,6 +19,7 @@ namespace WebUI {
         static bool        downloadFileToLocalFS(const std::string& url, const std::string& filename);
         static bool        downloadAndInstallFirmware(const std::string& firmwareUrl);
         static bool        installWebUI(const std::string& filename);
+        static bool        isNewerVersion(const std::string& latestVersion, const std::string& currentVersion);
     };
 }
 

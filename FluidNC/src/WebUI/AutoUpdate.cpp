@@ -172,9 +172,13 @@ namespace WebUI {
         log_info("AutoUpdate: Latest release: " << tagName);
 
         // Check if this is a newer version than current
-        // Compare tag names - if they're different, consider it a new version
-        // This is a simple approach; a production system might use semantic versioning
+        // Extract just the version tag from git_info (e.g., "v1.12 (HEAD-08ab30d2)" -> "v1.12")
         std::string currentVersion = git_info;
+        size_t spacePos = currentVersion.find(' ');
+        if (spacePos != std::string::npos) {
+            currentVersion = currentVersion.substr(0, spacePos);
+        }
+        
         if (tagName == currentVersion || tagName.empty()) {
             log_info("AutoUpdate: Already running the latest version (" << currentVersion << ")");
             return false;

@@ -30,101 +30,34 @@ namespace WebUI {
         // Get the configurable update URL
         std::string updateURL = config->_maslowUpdateURL;
         
-        // Parse URL to extract host and path
-        size_t hostStart = updateURL.find("://") + 3;
-        size_t pathStart = updateURL.find("/", hostStart);
-        std::string host = updateURL.substr(hostStart, pathStart - hostStart);
-        std::string path = updateURL.substr(pathStart);
-
-        if (!client.connect(host.c_str(), HTTPS_PORT)) {
-            log_error("AutoUpdate: Failed to connect to " << host);
-            return "";
-        }
-
-        // Send HTTP request
-        client.print("GET ");
-        client.print(path.c_str());
-        client.print(" HTTP/1.1\r\n");
-        client.print("Host: ");
-        client.print(host.c_str());
-        client.print("\r\n");
-        client.print("User-Agent: FluidNC-AutoUpdate\r\n");
-        client.print("Accept: application/vnd.github.v3+json\r\n");
-        client.print("Connection: close\r\n\r\n");
-
-        // Wait for response
-        unsigned long timeout = millis() + 10000;  // 10 second timeout
-        while (!client.available() && millis() < timeout) {
-            delay(10);
-        }
-
-        if (!client.available()) {
-            log_error("AutoUpdate: API request timeout");
-            client.stop();
-            return "";
-        }
-
-        // Parse HTTP response headers
-        bool headersPassed = false;
-        int  httpStatus    = 0;
-        std::string redirectLocation;
-        std::string response;
+        // Send HTTP request and parse headers
+        HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, updateURL, "Accept: application/vnd.github.v3+json\r\n", "API");
         
-        while (client.connected() && !headersPassed) {
-            if (client.available()) {
-                String line = client.readStringUntil('\n');
-                line.trim();
-                
-                // Parse HTTP status line
-                if (line.startsWith("HTTP/")) {
-                    int statusStart = line.indexOf(' ') + 1;
-                    int statusEnd   = line.indexOf(' ', statusStart);
-                    if (statusStart > 0 && statusEnd > statusStart) {
-                        httpStatus = line.substring(statusStart, statusEnd).toInt();
-                        log_info("AutoUpdate: API HTTP Status: " << httpStatus);
-                    }
-                }
-                
-                // Parse Location header for redirects
-                if (line.startsWith("Location:")) {
-                    redirectLocation = line.substring(9).c_str();
-                    redirectLocation.erase(0, redirectLocation.find_first_not_of(" \t\r\n"));
-                    log_info("AutoUpdate: API redirect location: " << redirectLocation);
-                }
-                
-                if (line.length() == 0) {  // Empty line means end of headers
-                    headersPassed = true;
-                }
-            }
-            delay(1);
-        }
-
-        if (!headersPassed) {
-            log_error("AutoUpdate: Failed to read API response headers");
-            client.stop();
+        if (!httpResp.headersParsed) {
             return "";
         }
         
         // Handle redirects (301, 302, 303, 307, 308)
-        if (httpStatus >= 301 && httpStatus <= 308 && !redirectLocation.empty()) {
-            log_info("AutoUpdate: Following API redirect to: " << redirectLocation);
+        if (httpResp.httpStatus >= 301 && httpResp.httpStatus <= 308 && !httpResp.redirectLocation.empty()) {
+            log_info("AutoUpdate: Following API redirect to: " << httpResp.redirectLocation);
             client.stop();
             
             // Update the URL and make recursive call
             std::string originalURL = config->_maslowUpdateURL;
-            config->_maslowUpdateURL = redirectLocation;
+            config->_maslowUpdateURL = httpResp.redirectLocation;
             std::string result = getLatestReleaseInfo();
             config->_maslowUpdateURL = originalURL; // Restore original URL
             return result;
         }
         
-        if (httpStatus != 200) {
-            log_error("AutoUpdate: API HTTP error status: " << httpStatus);
+        if (httpResp.httpStatus != 200) {
+            log_error("AutoUpdate: API HTTP error status: " << httpResp.httpStatus);
             client.stop();
             return "";
         }
 
         // Read response body
+        std::string response;
         while (client.available()) {
             String line = client.readStringUntil('\n');
             response += line.c_str();
@@ -195,6 +128,94 @@ namespace WebUI {
             log_info("AutoUpdate: Version parsing failed, using string comparison");
             return latestVersion != currentVersion;
         }
+    }
+
+    // Consolidated HTTP request and header parsing function
+    HttpResponse AutoUpdate::sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix) {
+        HttpResponse response;
+
+        // Parse URL to get host and path
+        size_t hostStart = url.find("://") + 3;
+        size_t pathStart = url.find("/", hostStart);
+        std::string host = url.substr(hostStart, pathStart - hostStart);
+        std::string path = url.substr(pathStart);
+
+        if (!client->connect(host.c_str(), 443)) {
+            log_error("AutoUpdate: Failed to connect to " << host << " for " << logPrefix);
+            return response;
+        }
+
+        // Send HTTP request
+        client->print("GET ");
+        client->print(path.c_str());
+        client->print(" HTTP/1.1\r\n");
+        client->print("Host: ");
+        client->print(host.c_str());
+        client->print("\r\n");
+        client->print("User-Agent: FluidNC-AutoUpdate\r\n");
+        if (!extraHeaders.empty()) {
+            client->print(extraHeaders.c_str());
+        }
+        client->print("Connection: close\r\n\r\n");
+
+        // Wait for response
+        unsigned long timeout = millis() + 10000;  // 10 second timeout
+        while (!client->available() && millis() < timeout) {
+            delay(10);
+        }
+
+        if (!client->available()) {
+            log_error("AutoUpdate: " << logPrefix << " request timeout");
+            client->stop();
+            return response;
+        }
+
+        // Parse HTTP response headers
+        bool headersPassed = false;
+        
+        while (client->connected() && !headersPassed) {
+            if (client->available()) {
+                String line = client->readStringUntil('\n');
+                line.trim();
+                
+                // Parse HTTP status line
+                if (line.startsWith("HTTP/")) {
+                    int statusStart = line.indexOf(' ') + 1;
+                    int statusEnd   = line.indexOf(' ', statusStart);
+                    if (statusStart > 0 && statusEnd > statusStart) {
+                        response.httpStatus = line.substring(statusStart, statusEnd).toInt();
+                        log_info("AutoUpdate: " << logPrefix << " HTTP Status: " << response.httpStatus);
+                    }
+                }
+                
+                // Parse Content-Length header
+                if (line.startsWith("Content-Length:")) {
+                    response.contentLength = line.substring(15).toInt();
+                    log_info("AutoUpdate: " << logPrefix << " Content-Length: " << response.contentLength);
+                }
+                
+                // Parse Location header for redirects
+                if (line.startsWith("Location:")) {
+                    response.redirectLocation = line.substring(9).c_str();
+                    response.redirectLocation.erase(0, response.redirectLocation.find_first_not_of(" \t\r\n"));
+                    log_info("AutoUpdate: " << logPrefix << " redirect location: " << response.redirectLocation);
+                }
+                
+                if (line.length() == 0) {  // Empty line means end of headers
+                    headersPassed = true;
+                }
+            }
+            delay(1);
+        }
+
+        if (!headersPassed) {
+            log_error("AutoUpdate: Failed to read " << logPrefix << " response headers");
+            client->stop();
+            return response;
+        }
+
+        response.headersParsed = true;
+        return response;
     }
 
     // Helper function to extract download URL for a specific asset from JSON
@@ -368,91 +389,22 @@ namespace WebUI {
         WiFiClientSecure client;
         client.setInsecure();
 
-        // Parse URL to get host and path
-        size_t      hostStart = url.find("://") + 3;
-        size_t      pathStart = url.find("/", hostStart);
-        std::string host      = url.substr(hostStart, pathStart - hostStart);
-        std::string path      = url.substr(pathStart);
-
-        if (!client.connect(host.c_str(), 443)) {
-            log_error("AutoUpdate: Failed to connect for download: " << host);
-            return false;
-        }
-
-        // Send HTTP request
-        client.print(("GET " + path + " HTTP/1.1\r\n").c_str());
-        client.print(("Host: " + host + "\r\n").c_str());
-        client.print("User-Agent: FluidNC-AutoUpdate\r\n");
-        client.print("Connection: close\r\n\r\n");
-
-        // Wait for response
-        unsigned long timeout = millis() + 10000;
-        while (!client.available() && millis() < timeout) {
-            delay(10);
-        }
-
-        if (!client.available()) {
-            log_error("AutoUpdate: Download request timeout");
-            client.stop();
-            return false;
-        }
-
-        // Parse HTTP response headers
-        bool headersPassed = false;
-        int  httpStatus    = 0;
-        int  contentLength = -1;
-        std::string redirectLocation;
+        // Send HTTP request and parse headers
+        HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, url, "", "WebUI download");
         
-        while (client.connected() && !headersPassed) {
-            if (client.available()) {
-                String line = client.readStringUntil('\n');
-                line.trim();
-                
-                // Parse HTTP status line
-                if (line.startsWith("HTTP/")) {
-                    int statusStart = line.indexOf(' ') + 1;
-                    int statusEnd   = line.indexOf(' ', statusStart);
-                    if (statusStart > 0 && statusEnd > statusStart) {
-                        httpStatus = line.substring(statusStart, statusEnd).toInt();
-                        log_info("AutoUpdate: HTTP Status: " << httpStatus);
-                    }
-                }
-                
-                // Parse Content-Length header
-                if (line.startsWith("Content-Length:")) {
-                    contentLength = line.substring(15).toInt();
-                    log_info("AutoUpdate: Content-Length: " << contentLength);
-                }
-                
-                // Parse Location header for redirects
-                if (line.startsWith("Location:")) {
-                    redirectLocation = line.substring(9).c_str();
-                    redirectLocation.erase(0, redirectLocation.find_first_not_of(" \t\r\n"));
-                    log_info("AutoUpdate: Redirect location: " << redirectLocation);
-                }
-                
-                if (line.length() == 0) {  // Empty line means end of headers
-                    headersPassed = true;
-                }
-            }
-            delay(1);
-        }
-
-        if (!headersPassed) {
-            log_error("AutoUpdate: Failed to read download headers");
-            client.stop();
+        if (!httpResp.headersParsed) {
             return false;
         }
         
         // Handle redirects (301, 302, 303, 307, 308)
-        if (httpStatus >= 301 && httpStatus <= 308 && !redirectLocation.empty()) {
-            log_info("AutoUpdate: Following redirect to: " << redirectLocation);
+        if (httpResp.httpStatus >= 301 && httpResp.httpStatus <= 308 && !httpResp.redirectLocation.empty()) {
+            log_info("AutoUpdate: Following redirect to: " << httpResp.redirectLocation);
             client.stop();
-            return downloadFileToLocalFS(redirectLocation, filename);  // Recursive call to follow redirect
+            return downloadFileToLocalFS(httpResp.redirectLocation, filename);  // Recursive call to follow redirect
         }
         
-        if (httpStatus != 200) {
-            log_error("AutoUpdate: HTTP error status: " << httpStatus);
+        if (httpResp.httpStatus != 200) {
+            log_error("AutoUpdate: HTTP error status: " << httpResp.httpStatus);
             client.stop();
             return false;
         }
@@ -490,8 +442,8 @@ namespace WebUI {
         log_info("AutoUpdate: Downloaded " << totalBytes << " bytes to " << tempPath.c_str());
         
         // Validate download size if Content-Length was provided
-        if (contentLength > 0 && totalBytes != contentLength) {
-            log_error("AutoUpdate: Download size mismatch. Expected: " << contentLength << ", Got: " << totalBytes);
+        if (httpResp.contentLength > 0 && totalBytes != (size_t)httpResp.contentLength) {
+            log_error("AutoUpdate: Download size mismatch. Expected: " << httpResp.contentLength << ", Got: " << totalBytes);
             return false;
         }
         
@@ -519,114 +471,41 @@ namespace WebUI {
         WiFiClientSecure client;
         client.setInsecure();
 
-        // Parse URL to get host and path
-        size_t hostStart = firmwareUrl.find("://") + 3;
-        size_t pathStart = firmwareUrl.find("/", hostStart);
-        std::string host = firmwareUrl.substr(hostStart, pathStart - hostStart);
-        std::string path = firmwareUrl.substr(pathStart);
-
-        if (!client.connect(host.c_str(), 443)) {
-            log_error("AutoUpdate: Failed to connect for firmware download: " << host);
-            return false;
-        }
-
-        // Send HTTP request
-        client.print("GET ");
-        client.print(path.c_str());
-        client.print(" HTTP/1.1\r\n");
-        client.print("Host: ");
-        client.print(host.c_str());
-        client.print("\r\n");
-        client.print("User-Agent: FluidNC-AutoUpdate\r\n");
-        client.print("Connection: close\r\n\r\n");
-
-        // Wait for response and parse headers
-        unsigned long timeout = millis() + 10000;
-        while (!client.available() && millis() < timeout) {
-            delay(10);
-        }
-
-        if (!client.available()) {
-            log_error("AutoUpdate: Firmware download request timeout");
-            client.stop();
-            return false;
-        }
-
-        // Parse HTTP response headers
-        bool headersPassed = false;
-        int  httpStatus    = 0;
-        size_t contentLength = 0;
-        std::string redirectLocation;
+        // Send HTTP request and parse headers
+        HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, firmwareUrl, "", "Firmware");
         
-        while (client.connected() && !headersPassed) {
-            if (client.available()) {
-                String line = client.readStringUntil('\n');
-                line.trim();
-                
-                // Parse HTTP status line
-                if (line.startsWith("HTTP/")) {
-                    int statusStart = line.indexOf(' ') + 1;
-                    int statusEnd   = line.indexOf(' ', statusStart);
-                    if (statusStart > 0 && statusEnd > statusStart) {
-                        httpStatus = line.substring(statusStart, statusEnd).toInt();
-                        log_info("AutoUpdate: Firmware HTTP Status: " << httpStatus);
-                    }
-                }
-                
-                // Parse Content-Length header
-                if (line.startsWith("Content-Length:")) {
-                    contentLength = line.substring(15).toInt();
-                    log_info("AutoUpdate: Firmware Content-Length: " << contentLength);
-                }
-                
-                // Parse Location header for redirects
-                if (line.startsWith("Location:")) {
-                    redirectLocation = line.substring(9).c_str();
-                    redirectLocation.erase(0, redirectLocation.find_first_not_of(" \t\r\n"));
-                    log_info("AutoUpdate: Firmware redirect location: " << redirectLocation);
-                }
-                
-                if (line.length() == 0) {  // Empty line means end of headers
-                    headersPassed = true;
-                }
-            }
-            delay(1);
-        }
-
-        if (!headersPassed) {
-            log_error("AutoUpdate: Failed to read firmware download headers");
-            client.stop();
+        if (!httpResp.headersParsed) {
             return false;
         }
         
         // Handle redirects (301, 302, 303, 307, 308)
-        if (httpStatus >= 301 && httpStatus <= 308 && !redirectLocation.empty()) {
-            log_info("AutoUpdate: Following firmware redirect to: " << redirectLocation);
+        if (httpResp.httpStatus >= 301 && httpResp.httpStatus <= 308 && !httpResp.redirectLocation.empty()) {
+            log_info("AutoUpdate: Following firmware redirect to: " << httpResp.redirectLocation);
             client.stop();
-            return downloadAndInstallFirmware(redirectLocation);  // Recursive call to follow redirect
+            return downloadAndInstallFirmware(httpResp.redirectLocation);  // Recursive call to follow redirect
         }
         
-        if (httpStatus != 200) {
-            log_error("AutoUpdate: Firmware HTTP error status: " << httpStatus);
+        if (httpResp.httpStatus != 200) {
+            log_error("AutoUpdate: Firmware HTTP error status: " << httpResp.httpStatus);
             client.stop();
             return false;
         }
 
-        if (contentLength == 0) {
+        if (httpResp.contentLength <= 0) {
             log_error("AutoUpdate: No content length found in firmware download");
             client.stop();
             return false;
         }
 
-        if (contentLength < 100000) { // Firmware should be at least 100KB
-            log_error("AutoUpdate: Firmware file too small (" << contentLength << " bytes)");
+        if (httpResp.contentLength < 100000) { // Firmware should be at least 100KB
+            log_error("AutoUpdate: Firmware file too small (" << httpResp.contentLength << " bytes)");
             client.stop();
             return false;
         }
 
-        log_info("AutoUpdate: Installing firmware directly (" << contentLength << " bytes)...");
+        log_info("AutoUpdate: Installing firmware directly (" << httpResp.contentLength << " bytes)...");
 
-        if (!Update.begin(contentLength)) {
+        if (!Update.begin(httpResp.contentLength)) {
             log_error("AutoUpdate: Failed to begin firmware update");
             client.stop();
             return false;
@@ -653,8 +532,8 @@ namespace WebUI {
 
         client.stop();
 
-        if (bytesWritten != contentLength) {
-            log_error("AutoUpdate: Incomplete firmware download (" << bytesWritten << "/" << contentLength << " bytes)");
+        if (bytesWritten != (size_t)httpResp.contentLength) {
+            log_error("AutoUpdate: Incomplete firmware download (" << bytesWritten << "/" << httpResp.contentLength << " bytes)");
             Update.abort();
             return false;
         }

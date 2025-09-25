@@ -4,10 +4,21 @@
 #pragma once
 
 #include "../Config.h"
+#include <string>
 
 #ifdef ENABLE_WIFI
+// Forward declaration
+class WiFiClientSecure;
 
 namespace WebUI {
+    // HTTP response information structure
+    struct HttpResponse {
+        int httpStatus = 0;
+        int contentLength = -1;
+        std::string redirectLocation;
+        bool headersParsed = false;
+    };
+
     class AutoUpdate {
     public:
         static bool checkForUpdate();
@@ -19,6 +30,7 @@ namespace WebUI {
         static bool        downloadAndInstallFirmware(const std::string& firmwareUrl);
         static bool        isNewerVersion(const std::string& latestVersion, const std::string& currentVersion);
         static std::string extractAssetDownloadURL(const std::string& jsonResponse, const std::string& assetName);
+        static HttpResponse sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix);
     };
 }
 

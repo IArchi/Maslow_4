@@ -33,6 +33,7 @@ namespace WebUI {
         static bool        isNewerVersion(const std::string& latestVersion, const std::string& currentVersion);
         static std::string extractAssetDownloadURL(const std::string& jsonResponse, const std::string& assetName);
         static HttpResponse sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix, int maxRedirects = 5);
+        static bool downloadToFile(WiFiClientSecure& client, FILE* file, size_t expectedSize, const std::string& logPrefix, size_t* actualSize = nullptr);
     };
 }
 

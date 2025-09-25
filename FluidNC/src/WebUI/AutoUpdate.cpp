@@ -21,7 +21,7 @@
 
 namespace WebUI {
 
-    static const int HTTPS_PORT = 443;
+    static const size_t DOWNLOAD_BUFFER_SIZE = 1024;
 
     std::string AutoUpdate::getLatestReleaseInfo() {
         WiFiClientSecure client;
@@ -299,6 +299,44 @@ namespace WebUI {
         return downloadUrl;
     }
 
+    // Helper function to download data from client to file with common logic
+    bool AutoUpdate::downloadToFile(WiFiClientSecure& client, FILE* file, size_t expectedSize, const std::string& logPrefix, size_t* actualSize) {
+        uint8_t buffer[DOWNLOAD_BUFFER_SIZE];
+        size_t totalBytes = 0;
+
+        while (client.connected() || client.available()) {
+            if (client.available()) {
+                size_t bytesRead = client.readBytes(buffer, sizeof(buffer));
+                if (bytesRead > 0) {
+                    if (fwrite(buffer, 1, bytesRead, file) != bytesRead) {
+                        log_error("AutoUpdate: Failed to write data for " << logPrefix);
+                        return false;
+                    }
+                    totalBytes += bytesRead;
+                }
+            }
+            delay(1);
+        }
+
+        if (actualSize) {
+            *actualSize = totalBytes;
+        }
+
+        // Validate size if expected size was provided
+        if (expectedSize > 0 && totalBytes != expectedSize) {
+            log_error("AutoUpdate: " << logPrefix << " size mismatch. Expected: " << expectedSize << ", Got: " << totalBytes);
+            return false;
+        }
+
+        if (totalBytes == 0) {
+            log_error("AutoUpdate: No data downloaded for " << logPrefix);
+            return false;
+        }
+
+        log_info("AutoUpdate: Successfully downloaded " << totalBytes << " bytes for " << logPrefix);
+        return true;
+    }
+
     bool AutoUpdate::checkForUpdate() {
         // Only check if not in AP mode
         if (WiFi.getMode() == WIFI_AP) {
@@ -432,39 +470,17 @@ namespace WebUI {
             return false;
         }
 
-        uint8_t buffer[1024];
-        size_t  totalBytes = 0;
-
-        while (client.connected() || client.available()) {
-            if (client.available()) {
-                size_t bytesRead = client.readBytes(buffer, sizeof(buffer));
-                if (bytesRead > 0) {
-                    if (fwrite(buffer, 1, bytesRead, file) != bytesRead) {
-                        log_error("AutoUpdate: Failed to write data to temporary file");
-                        fclose(file);
-                        client.stop();
-                        return false;
-                    }
-                    totalBytes += bytesRead;
-                }
-            }
-            delay(1);
-        }
-
+        size_t totalBytes;
+        bool downloadSuccess = downloadToFile(client, file, httpResp.contentLength > 0 ? httpResp.contentLength : 0, "WebUI download", &totalBytes);
+        
         fclose(file);
         client.stop();
 
+        if (!downloadSuccess) {
+            return false;
+        }
+
         log_info("AutoUpdate: Downloaded " << totalBytes << " bytes to " << tempPath.c_str());
-        
-        // Validate download size if Content-Length was provided
-        if (httpResp.contentLength > 0 && totalBytes != (size_t)httpResp.contentLength) {
-            log_error("AutoUpdate: Download size mismatch. Expected: " << httpResp.contentLength << ", Got: " << totalBytes);
-            return false;
-        }
-        
-        if (totalBytes == 0) {
-            return false;
-        }
 
         // Move temporary file to final location
         FluidPath finalPath(filename, localfsName, ec);
@@ -531,37 +547,13 @@ namespace WebUI {
             return false;
         }
 
-        uint8_t buffer[1024];
-        size_t bytesDownloaded = 0;
-
-        // Download firmware to SD card
-        while (client.connected() || client.available()) {
-            if (client.available()) {
-                size_t bytesRead = client.readBytes(buffer, sizeof(buffer));
-                if (bytesRead > 0) {
-                    if (fwrite(buffer, 1, bytesRead, file) != bytesRead) {
-                        log_error("AutoUpdate: Failed to write firmware data to SD card");
-                        fclose(file);
-                        client.stop();
-                        return false;
-                    }
-                    bytesDownloaded += bytesRead;
-                }
-            }
-            delay(1);
-        }
-
+        size_t bytesDownloaded;
+        bool downloadSuccess = downloadToFile(client, file, httpResp.contentLength, "firmware download", &bytesDownloaded);
+        
         fclose(file);
         client.stop();
 
-        // Validate download size
-        if (bytesDownloaded != (size_t)httpResp.contentLength) {
-            log_error("AutoUpdate: Incomplete firmware download (" << bytesDownloaded << "/" << httpResp.contentLength << " bytes)");
-            return false;
-        }
-
-        if (bytesDownloaded == 0) {
-            log_error("AutoUpdate: No firmware data downloaded");
+        if (!downloadSuccess) {
             return false;
         }
 
@@ -597,6 +589,7 @@ namespace WebUI {
         }
 
         // Install firmware from saved file
+        uint8_t buffer[DOWNLOAD_BUFFER_SIZE];
         size_t bytesInstalled = 0;
         while (bytesInstalled < bytesDownloaded) {
             size_t bytesRead = fread(buffer, 1, sizeof(buffer), firmwareFile);

@@ -5,7 +5,7 @@
 
 #ifdef ENABLE_WIFI
 
-#    include "WifiConfig.h"
+    #    include "WifiConfig.h"
 #    include "../Machine/MachineConfig.h"
 #    include "../Settings.h"
 #    include "../Config.h"
@@ -16,7 +16,6 @@
 
 #    include <WiFiClientSecure.h>
 #    include <Update.h>
-#    include "Driver/localfs.h"
 #    include <vector>
 #    include <string>
 
@@ -198,6 +197,65 @@ namespace WebUI {
         }
     }
 
+    // Helper function to extract download URL for a specific asset from JSON
+    std::string AutoUpdate::extractAssetDownloadURL(const std::string& jsonResponse, const std::string& assetName) {
+        std::string searchPattern = "\"name\":\"" + assetName + "\"";
+        size_t assetPos = jsonResponse.find(searchPattern);
+        if (assetPos == std::string::npos) {
+            log_error("AutoUpdate: " << assetName << " not found in assets");
+            return "";
+        }
+
+        log_info("AutoUpdate: Searching for " << assetName << " download URL...");
+        
+        // Search for the asset object containing this name
+        size_t assetStart = jsonResponse.rfind("{", assetPos);
+        if (assetStart == std::string::npos) {
+            log_error("AutoUpdate: Could not find start of " << assetName << " asset object");
+            return "";
+        }
+
+        // Find the matching closing brace by counting braces
+        size_t assetEnd = assetStart + 1;
+        int braceCount = 1;
+        while (assetEnd < jsonResponse.length() && braceCount > 0) {
+            if (jsonResponse[assetEnd] == '{') {
+                braceCount++;
+            } else if (jsonResponse[assetEnd] == '}') {
+                braceCount--;
+            }
+            if (braceCount > 0) assetEnd++;
+        }
+        
+        if (braceCount != 0) {
+            log_error("AutoUpdate: Could not find matching closing brace for " << assetName << " asset object");
+            return "";
+        }
+
+        std::string assetObj = jsonResponse.substr(assetStart, assetEnd - assetStart + 1);
+        log_info("AutoUpdate: Extracted asset object for " << assetName);
+        
+        size_t urlPos = assetObj.find("\"browser_download_url\":\"");
+        if (urlPos == std::string::npos) {
+            log_error("AutoUpdate: Could not find browser_download_url for " << assetName);
+            // Debug: log part of the asset object to see what's there
+            std::string debugObj = assetObj.length() > 200 ? assetObj.substr(0, 200) + "..." : assetObj;
+            log_info("AutoUpdate: Asset object preview: " << debugObj);
+            return "";
+        }
+        
+        size_t urlStart = urlPos + 24;  // length of "browser_download_url":"
+        size_t urlEnd   = assetObj.find("\"", urlStart);
+        if (urlEnd == std::string::npos) {
+            log_error("AutoUpdate: Could not find end quote for " << assetName << " URL");
+            return "";
+        }
+        
+        std::string downloadUrl = assetObj.substr(urlStart, urlEnd - urlStart);
+        log_info("AutoUpdate: Found " << assetName << " URL: " << downloadUrl);
+        return downloadUrl;
+    }
+
     bool AutoUpdate::checkForUpdate() {
         // Only check if not in AP mode
         if (WiFi.getMode() == WIFI_AP) {
@@ -276,101 +334,9 @@ namespace WebUI {
             }
         }
 
-        // Find firmware.bin URL - look for exact filename match
-        size_t firmwarePos = jsonResponse.find("\"name\":\"firmware.bin\"");
-        if (firmwarePos != std::string::npos) {
-            log_info("AutoUpdate: Searching for firmware.bin download URL...");
-            // Search for the asset object containing this name
-            size_t assetStart = jsonResponse.rfind("{", firmwarePos);
-            if (assetStart != std::string::npos) {
-                // Find the matching closing brace by counting braces
-                size_t assetEnd = assetStart + 1;
-                int braceCount = 1;
-                while (assetEnd < jsonResponse.length() && braceCount > 0) {
-                    if (jsonResponse[assetEnd] == '{') {
-                        braceCount++;
-                    } else if (jsonResponse[assetEnd] == '}') {
-                        braceCount--;
-                    }
-                    if (braceCount > 0) assetEnd++;
-                }
-                
-                if (braceCount == 0) {
-                    std::string assetObj = jsonResponse.substr(assetStart, assetEnd - assetStart + 1);
-                    log_info("AutoUpdate: Extracted asset object for firmware.bin");
-                    size_t urlPos = assetObj.find("\"browser_download_url\":\"");
-                    if (urlPos != std::string::npos) {
-                        size_t urlStart = urlPos + 24;  // length of "browser_download_url":"
-                        size_t urlEnd   = assetObj.find("\"", urlStart);
-                        if (urlEnd != std::string::npos) {
-                            firmwareUrl = assetObj.substr(urlStart, urlEnd - urlStart);
-                            log_info("AutoUpdate: Found firmware URL: " << firmwareUrl);
-                        } else {
-                            log_error("AutoUpdate: Could not find end quote for firmware URL");
-                        }
-                    } else {
-                        log_error("AutoUpdate: Could not find browser_download_url for firmware");
-                        // Debug: log part of the asset object to see what's there
-                        std::string debugObj = assetObj.length() > 200 ? assetObj.substr(0, 200) + "..." : assetObj;
-                        log_info("AutoUpdate: Asset object preview: " << debugObj);
-                    }
-                } else {
-                    log_error("AutoUpdate: Could not find matching closing brace for firmware asset object");
-                }
-            } else {
-                log_error("AutoUpdate: Could not find start of firmware asset object");
-            }
-        } else {
-            log_error("AutoUpdate: firmware.bin not found in assets");
-        }
-
-        // Find index.html.gz URL - look for exact filename match
-        size_t webUIPos = jsonResponse.find("\"name\":\"index.html.gz\"");
-        if (webUIPos != std::string::npos) {
-            log_info("AutoUpdate: Searching for index.html.gz download URL...");
-            // Search for the asset object containing this name
-            size_t assetStart = jsonResponse.rfind("{", webUIPos);
-            if (assetStart != std::string::npos) {
-                // Find the matching closing brace by counting braces
-                size_t assetEnd = assetStart + 1;
-                int braceCount = 1;
-                while (assetEnd < jsonResponse.length() && braceCount > 0) {
-                    if (jsonResponse[assetEnd] == '{') {
-                        braceCount++;
-                    } else if (jsonResponse[assetEnd] == '}') {
-                        braceCount--;
-                    }
-                    if (braceCount > 0) assetEnd++;
-                }
-                
-                if (braceCount == 0) {
-                    std::string assetObj = jsonResponse.substr(assetStart, assetEnd - assetStart + 1);
-                    log_info("AutoUpdate: Extracted asset object for index.html.gz");
-                    size_t urlPos = assetObj.find("\"browser_download_url\":\"");
-                    if (urlPos != std::string::npos) {
-                        size_t urlStart = urlPos + 24;  // length of "browser_download_url":"
-                        size_t urlEnd   = assetObj.find("\"", urlStart);
-                        if (urlEnd != std::string::npos) {
-                            webUIUrl = assetObj.substr(urlStart, urlEnd - urlStart);
-                            log_info("AutoUpdate: Found WebUI URL: " << webUIUrl);
-                        } else {
-                            log_error("AutoUpdate: Could not find end quote for WebUI URL");
-                        }
-                    } else {
-                        log_error("AutoUpdate: Could not find browser_download_url for WebUI");
-                        // Debug: log part of the asset object to see what's there
-                        std::string debugObj = assetObj.length() > 200 ? assetObj.substr(0, 200) + "..." : assetObj;
-                        log_info("AutoUpdate: Asset object preview: " << debugObj);
-                    }
-                } else {
-                    log_error("AutoUpdate: Could not find matching closing brace for WebUI asset object");
-                }
-            } else {
-                log_error("AutoUpdate: Could not find start of WebUI asset object");
-            }
-        } else {
-            log_error("AutoUpdate: index.html.gz not found in assets");
-        }
+        // Extract download URLs for required assets
+        firmwareUrl = extractAssetDownloadURL(jsonResponse, "firmware.bin");
+        webUIUrl = extractAssetDownloadURL(jsonResponse, "index.html.gz");
 
         if (firmwareUrl.empty() || webUIUrl.empty()) {
             log_error("AutoUpdate: Required files not found in release");
@@ -379,75 +345,6 @@ namespace WebUI {
 
         log_info("AutoUpdate: New version available. Starting download...");
         return downloadAndInstallUpdate(firmwareUrl, webUIUrl);
-    }
-
-    bool AutoUpdate::downloadFile(const std::string& url, const std::string& filename) {
-        WiFiClientSecure client;
-        client.setInsecure();
-
-        // Parse URL to get host and path
-        size_t      hostStart = url.find("://") + 3;
-        size_t      pathStart = url.find("/", hostStart);
-        std::string host      = url.substr(hostStart, pathStart - hostStart);
-        std::string path      = url.substr(pathStart);
-
-        if (!client.connect(host.c_str(), 443)) {
-            log_error("AutoUpdate: Failed to connect for download: " << host);
-            return false;
-        }
-
-        // Send HTTP request
-        client.print("GET ");
-        client.print(path.c_str());
-        client.print(" HTTP/1.1\r\n");
-        client.print("Host: ");
-        client.print(host.c_str());
-        client.print("\r\n");
-        client.print("User-Agent: FluidNC-AutoUpdate\r\n");
-        client.print("Connection: close\r\n\r\n");
-
-        // Wait for response and skip headers
-        bool headersPassed = false;
-        while (client.connected() && !headersPassed) {
-            String line = client.readStringUntil('\n');
-            if (line.length() <= 2) {
-                headersPassed = true;
-            }
-        }
-
-        if (!headersPassed) {
-            log_error("AutoUpdate: Failed to read download headers");
-            client.stop();
-            return false;
-        }
-
-        // Save file
-        FILE* file = fopen(filename.c_str(), "wb");
-        if (!file) {
-            log_error("AutoUpdate: Failed to create file: " << filename);
-            client.stop();
-            return false;
-        }
-
-        uint8_t buffer[1024];
-        size_t  totalBytes = 0;
-
-        while (client.connected() || client.available()) {
-            if (client.available()) {
-                size_t bytesRead = client.readBytes(buffer, sizeof(buffer));
-                if (bytesRead > 0) {
-                    fwrite(buffer, 1, bytesRead, file);
-                    totalBytes += bytesRead;
-                }
-            }
-            delay(1);
-        }
-
-        fclose(file);
-        client.stop();
-
-        log_info("AutoUpdate: Downloaded " << totalBytes << " bytes to " << filename);
-        return totalBytes > 0;
     }
 
     bool AutoUpdate::downloadFileToLocalFS(const std::string& url, const std::string& filename) {
@@ -768,44 +665,6 @@ namespace WebUI {
         }
 
         log_info("AutoUpdate: Firmware update completed successfully (" << bytesWritten << " bytes)");
-        return true;
-    }
-
-    bool AutoUpdate::installWebUI(const std::string& filename) {
-        // Simply copy the file to the data directory
-        std::string destPath = "/localfs/index.html.gz";
-
-        FILE* src = fopen(filename.c_str(), "rb");
-        if (!src) {
-            log_error("AutoUpdate: Failed to open source WebUI file: " << filename);
-            return false;
-        }
-
-        FILE* dest = fopen(destPath.c_str(), "wb");
-        if (!dest) {
-            log_error("AutoUpdate: Failed to create destination WebUI file: " << destPath);
-            fclose(src);
-            return false;
-        }
-
-        uint8_t buffer[1024];
-        size_t  bytesRead;
-        size_t  totalBytes = 0;
-
-        while ((bytesRead = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-            if (fwrite(buffer, 1, bytesRead, dest) != bytesRead) {
-                log_error("AutoUpdate: Failed to write WebUI data");
-                fclose(src);
-                fclose(dest);
-                return false;
-            }
-            totalBytes += bytesRead;
-        }
-
-        fclose(src);
-        fclose(dest);
-
-        log_info("AutoUpdate: WebUI update completed (" << totalBytes << " bytes)");
         return true;
     }
 

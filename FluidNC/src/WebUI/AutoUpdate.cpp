@@ -53,27 +53,79 @@ namespace WebUI {
 
         // Wait for response
         unsigned long timeout = millis() + 10000;  // 10 second timeout
-        while (client.available() == 0) {
-            if (millis() > timeout) {
-                log_error("AutoUpdate: Timeout waiting for response");
-                client.stop();
-                return "";
-            }
-            delay(100);
+        while (!client.available() && millis() < timeout) {
+            delay(10);
         }
 
-        // Read response
-        std::string response;
-        bool        headersPassed = false;
+        if (!client.available()) {
+            log_error("AutoUpdate: API request timeout");
+            client.stop();
+            return "";
+        }
 
-        while (client.available()) {
-            String line = client.readStringUntil('\n');
-            if (!headersPassed) {
-                if (line.length() <= 2) {  // Empty line indicates end of headers
+        // Parse HTTP response headers
+        bool headersPassed = false;
+        int  httpStatus    = 0;
+        std::string redirectLocation;
+        std::string response;
+        
+        while (client.connected() && !headersPassed) {
+            if (client.available()) {
+                String line = client.readStringUntil('\n');
+                line.trim();
+                
+                // Parse HTTP status line
+                if (line.startsWith("HTTP/")) {
+                    int statusStart = line.indexOf(' ') + 1;
+                    int statusEnd   = line.indexOf(' ', statusStart);
+                    if (statusStart > 0 && statusEnd > statusStart) {
+                        httpStatus = line.substring(statusStart, statusEnd).toInt();
+                        log_info("AutoUpdate: API HTTP Status: " << httpStatus);
+                    }
+                }
+                
+                // Parse Location header for redirects
+                if (line.startsWith("Location:")) {
+                    redirectLocation = line.substring(9).c_str();
+                    redirectLocation.erase(0, redirectLocation.find_first_not_of(" \t\r\n"));
+                    log_info("AutoUpdate: API redirect location: " << redirectLocation);
+                }
+                
+                if (line.length() == 0) {  // Empty line means end of headers
                     headersPassed = true;
                 }
-                continue;
             }
+            delay(1);
+        }
+
+        if (!headersPassed) {
+            log_error("AutoUpdate: Failed to read API response headers");
+            client.stop();
+            return "";
+        }
+        
+        // Handle redirects (301, 302, 303, 307, 308)
+        if (httpStatus >= 301 && httpStatus <= 308 && !redirectLocation.empty()) {
+            log_info("AutoUpdate: Following API redirect to: " << redirectLocation);
+            client.stop();
+            
+            // Update the URL and make recursive call
+            std::string originalURL = config->_maslowUpdateURL;
+            config->_maslowUpdateURL = redirectLocation;
+            std::string result = getLatestReleaseInfo();
+            config->_maslowUpdateURL = originalURL; // Restore original URL
+            return result;
+        }
+        
+        if (httpStatus != 200) {
+            log_error("AutoUpdate: API HTTP error status: " << httpStatus);
+            client.stop();
+            return "";
+        }
+
+        // Read response body
+        while (client.available()) {
+            String line = client.readStringUntil('\n');
             response += line.c_str();
         }
 

@@ -251,11 +251,10 @@ bool IRAM_ATTR Stepper::pulse_func() {
     // Check probing state.
     if (probeState == ProbeState::Active && config->_probe->tripped()) {
         probeState = ProbeState::Off;
-        auto axes  = config->_axes;
-        for (int axis = 0; axis < n_axis; axis++) {
-            auto m            = axes->_axis[axis]->_motors[0];
-            probe_steps[axis] = m ? m->_steps : 0;
-        }
+        // Capture current motor steps for all axes
+        // Note: With custom axis mapping (like Maslow), we need to get motor steps
+        // and let the kinematics system handle the proper axis-to-motor translation
+        copyAxes(probe_steps, get_motor_steps());
         protocol_send_event_from_ISR(&motionCancelEvent);
     }
 

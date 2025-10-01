@@ -109,6 +109,10 @@ namespace Machine {
         handler.item(M + "_Scale_Y", Maslow.scaleY, .8, 1.2);
         handler.item(M + "_debugEnabled", Maslow.debugEnabled);
 
+        // Auto-update configuration
+        handler.item(M + "AutoUpdate", _maslowAutoUpdate);
+        handler.item((M + "UpdateURL").c_str(), _maslowUpdateURL);
+
         // Material thickness parameters - temporary storage for machine-level config
         handler.item(M + "_spoilboardThickness", _tempSpoilboardThickness, 0.0, 50.0);
         handler.item(M + "_workThickness", _tempWorkThickness, 0.0, 50.0);

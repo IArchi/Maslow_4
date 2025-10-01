@@ -12,6 +12,8 @@ Maslow_Extend_Dist: 2600.000000
 Maslow_Scale_X: 1.000000
 Maslow_Scale_Y: 1.000000
 Maslow_debugEnabled: false
+MaslowAutoUpdate: false
+MaslowUpdateURL: https://api.github.com/repos/BarbourSmith/FluidNC/releases/latest
 stepping: 
   engine: Timed
   idle_ms: 240
@@ -55,7 +57,6 @@ kinematics:
     beltEndExtension: 30.000000
     armLength: 123.400002
     maxSegmentLength: 5.000000
-    fixedZ: false
 
 axes: 
   shared_stepper_disable_pin: NO_PIN

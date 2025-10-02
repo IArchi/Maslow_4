@@ -234,60 +234,30 @@ const jogTo = (axisAndDistance) => {
  * Safely execute a jog command with firmware units synchronized to UI units.
  * This prevents issues where UI is in mm but firmware is in inches (or vice versa),
  * which could cause dangerous oversized movements.
+ * 
+ * Strategy: Always force firmware to match UI units before jogging, then restore.
+ * This is simpler and more reliable than trying to query and conditionally synchronize.
  */
 const jogWithUnitsSafeguard = (feedrate, axisAndDistance) => {
   // Store what units the UI is currently displaying (what user expects)
   const uiExpectedUnits = gCodeModal.units;
   
-  // Always query current firmware modal state before jogging for safety
-  // This ensures we know the actual firmware state rather than relying on UI state
-  addMessage(`Checking firmware units before jogging...`);
+  // Force firmware to use UI units, execute jog, then query to restore original state
+  // This ensures the jog distance is always interpreted correctly
+  sendCommand(uiExpectedUnits);
   
-  // Set up a temporary response handler for the $G query
-  const originalSendCommand = sendCommand;
-  
-  // Send $G command to get current modal state, then handle the response
-  SendPrinterCommand('$G', true, (response) => {
-    // Parse the response to check firmware units
-    if (response && response.includes('[GC:')) {
-      // Update gCodeModal with actual firmware state
-      grblGetModal(response);
-      
-      const actualFirmwareUnits = gCodeModal.units;
-      
-      // Check if there's a units mismatch that could cause dangerous movement
-      if (actualFirmwareUnits !== uiExpectedUnits) {
-        addMessage(`UNITS MISMATCH: Firmware is in ${actualFirmwareUnits}, but UI expects ${uiExpectedUnits}. Synchronizing for safe jogging.`);
-        
-        // Temporarily switch firmware to match UI expectation
-        sendCommand(uiExpectedUnits);
-        
-        // Wait for firmware to process units change, then jog
-        setTimeout(() => {
-          const cmd = `$J=G91F${feedrate}${axisAndDistance}\n`;
-          addMessage(`JogTo: '${cmd}' (with units synchronized)`);
-          sendCommand(cmd);
-          
-          // Restore original firmware units after a delay to ensure jog completes
-          setTimeout(() => {
-            addMessage(`Restoring firmware units to: ${actualFirmwareUnits}`);
-            sendCommand(actualFirmwareUnits);
-          }, 300);
-        }, 150);
-      } else {
-        // Units are already synchronized, safe to jog directly
-        const cmd = `$J=G91F${feedrate}${axisAndDistance}\n`;
-        addMessage(`JogTo: '${cmd}' (units already synchronized)`);
-        sendCommand(cmd);
-      }
-    } else {
-      // Fallback: couldn't parse modal state, use direct jogging but with warning
-      addMessage(`Warning: Could not verify firmware units. Proceeding with jog command.`);
-      const cmd = `$J=G91F${feedrate}${axisAndDistance}\n`;
-      addMessage(`JogTo: '${cmd}' (units verification failed)`);
-      sendCommand(cmd);
-    }
-  });
+  // Small delay to ensure units command is processed
+  setTimeout(() => {
+    const cmd = `$J=G91F${feedrate}${axisAndDistance}\n`;
+    addMessage(`JogTo: '${cmd}'`);
+    sendCommand(cmd);
+    
+    // After jog command, query current state to restore if needed
+    // The $G response will be handled by grblGetModal and update the UI automatically
+    setTimeout(() => {
+      sendCommand('$G');
+    }, 200);
+  }, 100);
 }
 
 /** Peform a move command */

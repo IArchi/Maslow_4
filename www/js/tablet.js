@@ -248,9 +248,10 @@ const jogWithUnitsSafeguard = (feedrate, axisAndDistance) => {
   
   // Small delay to ensure units command is processed
   setTimeout(() => {
-    const cmd = `$J=G91F${feedrate}${axisAndDistance}\n`;
-    addMessage(`JogTo: '${cmd}'`);
-    sendCommand(cmd);
+    const cmd = `$J=G91F${feedrate}${axisAndDistance}`;
+    const unitsLabel = uiExpectedUnits === 'G20' ? 'inch' : 'mm';
+    addMessage(`JogTo: ${cmd} (${unitsLabel})`);
+    sendCommand(cmd + '\n');
     
     // After jog command, query current state to restore if needed
     // The $G response will be handled by grblGetModal and update the UI automatically
@@ -532,7 +533,13 @@ function scaleUnits(target) {
   const currentValue = Number(distanceElement.innerText);
 
   if (!Number.isNaN(currentValue)) {
-    distanceElement.innerText = gCodeModal.units == 'G20' ? currentValue / 25.4 : currentValue * 25.4;
+    // When converting to inches, round to 3 decimal places for display
+    if (gCodeModal.units == 'G20') {
+      distanceElement.innerText = (currentValue / 25.4).toFixed(3);
+    } else {
+      // When converting to mm, round to 2 decimal places for display
+      distanceElement.innerText = (currentValue * 25.4).toFixed(2);
+    }
   } else {
     console.error('Invalid number in disM element');
   }

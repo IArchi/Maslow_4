@@ -786,25 +786,40 @@ var bboxHandlers = {
         pc = projection(center);
         pe = projection(end);
 
-	// Coordinates relative to the center of the arc
+	// Coordinates relative to the center of the arc (PROJECTED coordinates for display)
 	var sx = ps.x - pc.x;
 	var sy = ps.y - pc.y;
 	var ex = pe.x - pc.x;
 	var ey = pe.y - pc.y;
 
         var radius = Math.hypot(sx, sy);
+        
+        // Also calculate in WORLD coordinates for job bounding box
+        var world_sx = start.x - center.x;
+        var world_sy = start.y - center.y;
+        var world_ex = end.x - center.x;
+        var world_ey = end.y - center.y;
+        var world_radius = Math.hypot(world_sx, world_sy);
 
 	// Axis crossings - plus and minus x and y
 	var px = false;
 	var py = false;
 	var mx = false;
 	var my = false;
+	
+	// World coordinate axis crossings for job bounding box
+	var world_px = false;
+	var world_py = false;
+	var world_mx = false;
+	var world_my = false;
 
 	// There are ways to express this decision tree in fewer lines
 	// of code by converting to alternate representations like angles,
 	// but this way is probably the most computationally efficient.
 	// It avoids any use of transcendental functions.  Every path
 	// through this decision tree is either 4 or 5 simple comparisons.
+	
+	// Calculate axis crossings for PROJECTED coordinates (for display)
 	if (ey >= 0) {              // End in upper half plane
 	    if (ex > 0) {             // End in quadrant 0 - X+ Y+
 		if (sy >= 0) {          // Start in upper half plane
@@ -878,6 +893,83 @@ var bboxHandlers = {
 	var maxY = py ? pc.y + radius : Math.max(ps.y, pe.y);
 	var minX = mx ? pc.x - radius : Math.min(ps.x, pe.x);
 	var minY = my ? pc.y - radius : Math.min(ps.y, pe.y);
+	
+	// Calculate axis crossings for WORLD coordinates (for job bounding box)
+	if (world_ey >= 0) {              // End in upper half plane
+	    if (world_ex > 0) {             // End in quadrant 0 - X+ Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			if (world_sx <= world_ex) {     // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    } else {              // Start in quadrant 1 - X- Y+
+			world_mx = world_my = world_px = true;
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			world_px = true;
+		    } else {              // Start in quadrant 2 - X- Y-
+			world_my = world_px = true;
+		    }
+		}
+	    } else {                  // End in quadrant 1 - X- Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			world_py = true;
+		    } else {              // Start in quadrant 1 - X- Y+
+			if (world_sx <= world_ex) {     // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			world_px = world_py = true;
+		    } else {              // Start in quadrant 2 - X- Y-
+			world_my = world_px = world_py = true;
+		    }
+		}
+	    }
+	} else {                    // world_ey < 0 - end in lower half plane
+	    if (world_ex > 0) {             // End in quadrant 3 - X+ Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			world_py = world_mx = world_my = true;
+		    } else {              // Start in quadrant 1 - X- Y+
+			world_mx = world_my = true;
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			if (world_sx >= world_ex) {      // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    } else {              // Start in quadrant 2 - X- Y-
+			world_my = true;
+		    }
+		}
+	    } else {                  // End in quadrant 2 - X- Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			world_py = world_mx = true;
+		    } else {              // Start in quadrant 1 - X- Y+
+			world_mx = true;
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			world_px = world_py = world_mx = true;
+		    } else {              // Start in quadrant 2 - X- Y-
+			if (world_sx >= world_ex) {      // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    }
+		}
+	    }
+	}
+	
+	// Now calculate world coordinate bounding box for job bounds
+	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
+	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
+	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
+	var world_minY = world_my ? center.y - world_radius : Math.min(start.y, end.y);
 
 	var minZ = Math.min(start.z, end.z);
 	var maxZ = Math.max(start.z, end.z);
@@ -900,11 +992,11 @@ var bboxHandlers = {
         bboxIsSet = true;
         
         // Update job bounding box in world coordinates for arc
-        jobBbox.min.x = Math.min(jobBbox.min.x, minX);
-        jobBbox.min.y = Math.min(jobBbox.min.y, minY);
+        jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
+        jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
         jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
-        jobBbox.max.x = Math.max(jobBbox.max.x, maxX);
-        jobBbox.max.y = Math.max(jobBbox.max.y, maxY);
+        jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
+        jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
         jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
         jobBboxIsSet = true;
     }

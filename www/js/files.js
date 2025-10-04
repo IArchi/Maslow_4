@@ -444,6 +444,9 @@ const files_list_success = (response_text) => {
 	// Restore ping monitoring after upload completes
 	restorePingAfterUpload();
 	
+	// Log upload completion
+	Monitor_output_Update("[Upload] Upload completed successfully\n");
+	
 	displayBlock("files_navigation_buttons");
 	let error = false;
 	let response;
@@ -524,6 +527,9 @@ function files_list_failed(error_code, response) {
 function files_directSD_upload_failed(error_code, response) {
 	// Restore ping monitoring after upload fails
 	restorePingAfterUpload();
+	
+	// Log upload failure
+	Monitor_output_Update(`[Upload] Upload failed: ${error_code}\n`);
 	
 	if (esp_error_code !== 0) {
 		alertEspError();
@@ -707,6 +713,14 @@ function files_start_upload() {
 
 	const formData = BuildFileUploadFormData(files_currentPath(), files, FileUploadNotice);
 
+	// Reset progress logging
+	FilesUploadProgressDisplay.lastLoggedPercent = -1;
+	
+	// Log upload start
+	const fileName = files[0].name;
+	const fileSize = (files[0].size / 1024 / 1024).toFixed(2);
+	Monitor_output_Update(`[Upload] Starting upload of ${fileName} (${fileSize} MB)\n`);
+
 	// Disable ping monitoring during upload
 	disablePingForUpload();
 
@@ -724,7 +738,15 @@ function FilesUploadProgressDisplay(oEvent) {
 		const percentComplete = (oEvent.loaded / oEvent.total) * 100;
 		setValue("files_prg", percentComplete);
 		setHTML("files_percent_upload", percentComplete.toFixed(0));
+		
+		// Log progress to serial messages at 10% intervals
+		const percent = Math.floor(percentComplete);
+		if (percent % 10 === 0 && percent !== FilesUploadProgressDisplay.lastLoggedPercent) {
+			FilesUploadProgressDisplay.lastLoggedPercent = percent;
+			Monitor_output_Update(`[Upload] ${percent}% (${(oEvent.loaded / 1024 / 1024).toFixed(2)} MB / ${(oEvent.total / 1024 / 1024).toFixed(2)} MB)\n`);
+		}
 	} else {
 		// Impossible because size is unknown
 	}
 }
+FilesUploadProgressDisplay.lastLoggedPercent = -1;

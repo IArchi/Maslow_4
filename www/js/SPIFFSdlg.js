@@ -305,10 +305,18 @@ function SPIFFSUploadProgressDisplay(oEvent) {
 		const percentComplete = (oEvent.loaded / oEvent.total) * 100;
 		setValue("SPIFFS_prg", percentComplete);
 		setHTML("uploadSPIFFSmsg", `${translate_text_item("Uploading")} ${SPIFFS_currentfile} ${percentComplete.toFixed(0)}%`);
+		
+		// Log progress to serial messages at 10% intervals
+		const percent = Math.floor(percentComplete);
+		if (percent % 10 === 0 && percent !== SPIFFSUploadProgressDisplay.lastLoggedPercent) {
+			SPIFFSUploadProgressDisplay.lastLoggedPercent = percent;
+			Monitor_output_Update(`[SPIFFS Upload] ${percent}% (${(oEvent.loaded / 1024 / 1024).toFixed(2)} MB / ${(oEvent.total / 1024 / 1024).toFixed(2)} MB)\n`);
+		}
 	} else {
 		// Impossible because size is unknown
 	}
 }
+SPIFFSUploadProgressDisplay.lastLoggedPercent = -1;
 
 function SPIFFS_UploadFile() {
 	if (CheckForHttpCommLock()) {
@@ -321,6 +329,14 @@ function SPIFFS_UploadFile() {
 		fileList.push(file.name);
 	}
 	const formData = BuildFileUploadFormData(SPIFFS_currentpath, files);
+
+	// Reset progress logging
+	SPIFFSUploadProgressDisplay.lastLoggedPercent = -1;
+	
+	// Log upload start
+	const fileName = fileList.join(", ");
+	const totalSize = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+	Monitor_output_Update(`[SPIFFS Upload] Starting upload of ${fileName} (${(totalSize / 1024 / 1024).toFixed(2)} MB)\n`);
 
 	// Disable ping monitoring during SPIFFS upload
 	disablePingForUpload();
@@ -337,6 +353,9 @@ function SPIFFS_UploadFile() {
 function SPIFFSUploadsuccess(response) {
 	// Restore ping monitoring after SPIFFS upload completes
 	restorePingAfterUpload();
+	
+	// Log upload completion
+	Monitor_output_Update("[SPIFFS Upload] Upload completed successfully\n");
 	
 	setValue("SPIFFS_select", "");
 	setHTML("SPIFFS_file_name", translate_text_item("No file chosen"));
@@ -359,6 +378,9 @@ function SPIFFSUploadsuccess(response) {
 function SPIFFSUploadfailed(error_code, response) {
 	// Restore ping monitoring after SPIFFS upload fails
 	restorePingAfterUpload();
+	
+	// Log upload failure
+	Monitor_output_Update(`[SPIFFS Upload] Upload failed: ${error_code}\n`);
 	
 	displayBlock("SPIFFS_select_form");
 	displayNone("SPIFFS_prg");

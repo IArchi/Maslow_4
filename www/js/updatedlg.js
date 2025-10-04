@@ -66,10 +66,18 @@ function UpdateProgressDisplay(oEvent) {
 			"updatemsg",
 			`${translate_text_item("Uploading")} ${current_update_filename} ${percentComplete.toFixed(0)}%`,
 		);
+		
+		// Log progress to serial messages at 10% intervals
+		const percent = Math.floor(percentComplete);
+		if (percent % 10 === 0 && percent !== UpdateProgressDisplay.lastLoggedPercent) {
+			UpdateProgressDisplay.lastLoggedPercent = percent;
+			Monitor_output_Update(`[Firmware Upload] ${percent}% (${(oEvent.loaded / 1024 / 1024).toFixed(2)} MB / ${(oEvent.total / 1024 / 1024).toFixed(2)} MB)\n`);
+		}
 	} else {
 		// Impossible because size is unknown
 	}
 }
+UpdateProgressDisplay.lastLoggedPercent = -1;
 
 function UploadUpdatefile() {
 	confirmdlg(translate_text_item("Please confirm"), translate_text_item("Update Firmware ?"), StartUploadUpdatefile);
@@ -90,6 +98,14 @@ function StartUploadUpdatefile(response) {
 	}
 	const formData = BuildFileUploadFormData("/", files);
 
+	// Reset progress logging
+	UpdateProgressDisplay.lastLoggedPercent = -1;
+	
+	// Log upload start
+	const fileName = files.length === 1 ? files[0].name : fileList.join(", ");
+	const fileSize = files.length === 1 ? (files[0].size / 1024 / 1024).toFixed(2) : "multiple files";
+	Monitor_output_Update(`[Firmware Upload] Starting upload of ${fileName} (${fileSize} MB)\n`);
+
 	// Disable ping monitoring during firmware upload
 	disablePingForUpload();
 
@@ -108,6 +124,9 @@ function StartUploadUpdatefile(response) {
 function updatesuccess(response) {
 	// Restore ping monitoring after firmware upload completes
 	restorePingAfterUpload();
+	
+	// Log upload completion
+	Monitor_output_Update("[Firmware Upload] Upload completed successfully, restarting...\n");
 	
 	setHTML("updatemsg", translate_text_item("Restarting, please wait...."));
 	setHTML("fw_file_name", "");
@@ -135,6 +154,9 @@ function updatesuccess(response) {
 function updatefailed(error_code, response) {
 	// Restore ping monitoring after firmware upload fails
 	restorePingAfterUpload();
+	
+	// Log upload failure
+	Monitor_output_Update(`[Firmware Upload] Upload failed: ${error_code}\n`);
 	
 	displayBlock("fw_select_form");
 	displayNone("prgfw");

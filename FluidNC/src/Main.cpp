@@ -167,6 +167,10 @@ void setup() {
     if (!WebUI::wifi_config.begin()) {
         WebUI::bt_config.begin();
     }
+    
+    // Send the init message to the startup log before deregistering it
+    // This ensures the welcome message is captured in $SS output
+    report_init_message(startupLog);
     allChannels.deregistration(&startupLog);
 }
 

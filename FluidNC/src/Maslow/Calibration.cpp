@@ -117,8 +117,8 @@ bool Calibration::requestStateChange(int newState) {
             } else {
                 break;
             }
-        case TAKING_SLACK:  //We can enter taking slack from extended only
-            if (currentState == EXTENDEDOUT) {
+        case TAKING_SLACK:  //We can enter taking slack from extended or ready to cut
+            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT) {
                 currentState = TAKING_SLACK;
 
                 //Reset the axis targets at the beginning of taking slack

@@ -20,6 +20,7 @@ public:
     void   setTarget(double newTarget);
     double getTarget();
     double getPosition();
+    void   setPosition(double position);  // Set encoder position from saved value
     double getCurrent();
     double getPositionError();
     void   stop();

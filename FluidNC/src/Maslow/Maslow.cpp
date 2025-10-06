@@ -618,6 +618,8 @@ void Maslow_::loadBeltPositions() {
         // Set motor steps directly for TL belt (A axis = motor 0)
         set_motor_steps(0, mpos_to_steps(tlFi.f, 0));
         axisTL.setTarget(tlFi.f);
+        // Set encoder cumulative position to match saved belt length
+        axisTL.setPosition(tlFi.f);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading TL belt position from NVS!");
     }
@@ -633,6 +635,8 @@ void Maslow_::loadBeltPositions() {
         // Set motor steps directly for TR belt (B axis = motor 1)
         set_motor_steps(1, mpos_to_steps(trFi.f, 1));
         axisTR.setTarget(trFi.f);
+        // Set encoder cumulative position to match saved belt length
+        axisTR.setPosition(trFi.f);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading TR belt position from NVS!");
     }
@@ -648,6 +652,8 @@ void Maslow_::loadBeltPositions() {
         // Set motor steps directly for BL belt (C axis = motor 2)
         set_motor_steps(2, mpos_to_steps(blFi.f, 2));
         axisBL.setTarget(blFi.f);
+        // Set encoder cumulative position to match saved belt length
+        axisBL.setPosition(blFi.f);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading BL belt position from NVS!");
     }
@@ -663,6 +669,8 @@ void Maslow_::loadBeltPositions() {
         // Set motor steps directly for BR belt (D axis = motor 3)
         set_motor_steps(3, mpos_to_steps(brFi.f, 3));
         axisBR.setTarget(brFi.f);
+        // Set encoder cumulative position to match saved belt length
+        axisBR.setPosition(brFi.f);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading BR belt position from NVS!");
     }

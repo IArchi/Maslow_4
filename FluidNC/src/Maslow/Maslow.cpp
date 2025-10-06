@@ -506,6 +506,12 @@ void Maslow_::saveBeltPositions() {
     float trPos = axisTR.getPosition();
     float blPos = axisBL.getPosition();
     float brPos = axisBR.getPosition();
+    
+    // Get current raw encoder angles for validation on restore
+    uint16_t tlAngle = axisTL.getRawEncoderAngle();
+    uint16_t trAngle = axisTR.getRawEncoderAngle();
+    uint16_t blAngle = axisBL.getRawEncoderAngle();
+    uint16_t brAngle = axisBR.getRawEncoderAngle();
 
     // Save TL belt position
     int32_t currentTLPos;
@@ -518,6 +524,8 @@ void Maslow_::saveBeltPositions() {
             log_info("Error " + std::string(esp_err_to_name(ret)) + " writing TL belt position to NVS!\n");
         }
     }
+    // Save TL raw encoder angle
+    nvs_set_i32(nvsHandle, "tlAngle", tlAngle);
 
     // Save TR belt position
     int32_t currentTRPos;
@@ -530,6 +538,8 @@ void Maslow_::saveBeltPositions() {
             log_info("Error " + std::string(esp_err_to_name(ret)) + " writing TR belt position to NVS!\n");
         }
     }
+    // Save TR raw encoder angle
+    nvs_set_i32(nvsHandle, "trAngle", trAngle);
 
     // Save BL belt position
     int32_t currentBLPos;
@@ -542,6 +552,8 @@ void Maslow_::saveBeltPositions() {
             log_info("Error " + std::string(esp_err_to_name(ret)) + " writing BL belt position to NVS!\n");
         }
     }
+    // Save BL raw encoder angle
+    nvs_set_i32(nvsHandle, "blAngle", blAngle);
 
     // Save BR belt position
     int32_t currentBRPos;
@@ -554,6 +566,8 @@ void Maslow_::saveBeltPositions() {
             log_info("Error " + std::string(esp_err_to_name(ret)) + " writing BR belt position to NVS!\n");
         }
     }
+    // Save BR raw encoder angle
+    nvs_set_i32(nvsHandle, "brAngle", brAngle);
 
     // Mark the data as valid
     ret = nvs_set_i32(nvsHandle, "beltValid", 1);
@@ -615,9 +629,37 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 tlFi;
         tlFi.i = tlValue;
         tlPos  = tlFi.f;
+        
+        // Load saved encoder angle and compare with current
+        int32_t savedTLAngle;
+        ret = nvs_get_i32(nvsHandle, "tlAngle", &savedTLAngle);
+        if (ret == ESP_OK) {
+            uint16_t currentTLAngle = axisTL.getRawEncoderAngle();
+            int32_t angleDiff = currentTLAngle - savedTLAngle;
+            
+            // Handle wrap-around: if difference is > 2048, it wrapped the other direction
+            if (angleDiff > 2048) angleDiff -= 4096;
+            if (angleDiff < -2048) angleDiff += 4096;
+            
+            // If angle difference is within 1/4 turn (1024 counts), adjust belt position for small movement
+            if (abs(angleDiff) < 1024) {
+                // Convert angle difference to belt length change
+                // Using mmPerRevolution = 43.975
+                float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
+                tlPos += movementMM;
+                log_info("TL encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
+            } else {
+                log_info("TL encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
+                nvs_close(nvsHandle);
+                return;
+            }
+        }
+        
         // Set motor steps directly for TL belt (A axis = motor 0)
-        set_motor_steps(0, mpos_to_steps(tlFi.f, 0));
-        axisTL.setTarget(tlFi.f);
+        set_motor_steps(0, mpos_to_steps(tlPos, 0));
+        axisTL.setTarget(tlPos);
+        // Initialize encoder cumulative position to match adjusted belt length
+        axisTL.setPosition(tlPos);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading TL belt position from NVS!");
     }
@@ -630,9 +672,33 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 trFi;
         trFi.i = trValue;
         trPos  = trFi.f;
+        
+        // Load saved encoder angle and compare with current
+        int32_t savedTRAngle;
+        ret = nvs_get_i32(nvsHandle, "trAngle", &savedTRAngle);
+        if (ret == ESP_OK) {
+            uint16_t currentTRAngle = axisTR.getRawEncoderAngle();
+            int32_t angleDiff = currentTRAngle - savedTRAngle;
+            
+            // Handle wrap-around
+            if (angleDiff > 2048) angleDiff -= 4096;
+            if (angleDiff < -2048) angleDiff += 4096;
+            
+            if (abs(angleDiff) < 1024) {
+                float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
+                trPos += movementMM;
+                log_info("TR encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
+            } else {
+                log_info("TR encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
+                nvs_close(nvsHandle);
+                return;
+            }
+        }
+        
         // Set motor steps directly for TR belt (B axis = motor 1)
-        set_motor_steps(1, mpos_to_steps(trFi.f, 1));
-        axisTR.setTarget(trFi.f);
+        set_motor_steps(1, mpos_to_steps(trPos, 1));
+        axisTR.setTarget(trPos);
+        axisTR.setPosition(trPos);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading TR belt position from NVS!");
     }
@@ -645,9 +711,33 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 blFi;
         blFi.i = blValue;
         blPos  = blFi.f;
+        
+        // Load saved encoder angle and compare with current
+        int32_t savedBLAngle;
+        ret = nvs_get_i32(nvsHandle, "blAngle", &savedBLAngle);
+        if (ret == ESP_OK) {
+            uint16_t currentBLAngle = axisBL.getRawEncoderAngle();
+            int32_t angleDiff = currentBLAngle - savedBLAngle;
+            
+            // Handle wrap-around
+            if (angleDiff > 2048) angleDiff -= 4096;
+            if (angleDiff < -2048) angleDiff += 4096;
+            
+            if (abs(angleDiff) < 1024) {
+                float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
+                blPos += movementMM;
+                log_info("BL encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
+            } else {
+                log_info("BL encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
+                nvs_close(nvsHandle);
+                return;
+            }
+        }
+        
         // Set motor steps directly for BL belt (C axis = motor 2)
-        set_motor_steps(2, mpos_to_steps(blFi.f, 2));
-        axisBL.setTarget(blFi.f);
+        set_motor_steps(2, mpos_to_steps(blPos, 2));
+        axisBL.setTarget(blPos);
+        axisBL.setPosition(blPos);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading BL belt position from NVS!");
     }
@@ -660,9 +750,33 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 brFi;
         brFi.i = brValue;
         brPos  = brFi.f;
+        
+        // Load saved encoder angle and compare with current
+        int32_t savedBRAngle;
+        ret = nvs_get_i32(nvsHandle, "brAngle", &savedBRAngle);
+        if (ret == ESP_OK) {
+            uint16_t currentBRAngle = axisBR.getRawEncoderAngle();
+            int32_t angleDiff = currentBRAngle - savedBRAngle;
+            
+            // Handle wrap-around
+            if (angleDiff > 2048) angleDiff -= 4096;
+            if (angleDiff < -2048) angleDiff += 4096;
+            
+            if (abs(angleDiff) < 1024) {
+                float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
+                brPos += movementMM;
+                log_info("BR encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
+            } else {
+                log_info("BR encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
+                nvs_close(nvsHandle);
+                return;
+            }
+        }
+        
         // Set motor steps directly for BR belt (D axis = motor 3)
-        set_motor_steps(3, mpos_to_steps(brFi.f, 3));
-        axisBR.setTarget(brFi.f);
+        set_motor_steps(3, mpos_to_steps(brPos, 3));
+        axisBR.setTarget(brPos);
+        axisBR.setPosition(brPos);
     } else if (ret != ESP_ERR_NVS_NOT_FOUND) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading BR belt position from NVS!");
     }

@@ -372,3 +372,9 @@ void MotorUnit::setPosition(double position) {
     // Update our cached value
     mostRecentCumulativeEncoderReading = encoderCounts;
 }
+
+//Gets the current raw encoder angle (0-4095)
+uint16_t MotorUnit::getRawEncoderAngle() {
+    Maslow.I2CMux.setPort(_encoderAddress);
+    return encoder.readAngle();
+}

@@ -76,8 +76,6 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == RETRACTING) {
                 currentState = RETRACTED;
                 sys.set_state(State::Idle);
-                Maslow.saveBeltLengths();
-                Maslow.saveMachineState();
                 success = true;
                 break;
             } else {
@@ -106,7 +104,6 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
-                // Belt positions NOT saved here - belts may have slack in EXTENDEDOUT state
                 success = true;
                 break;
             } else {
@@ -239,8 +236,6 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == CALIBRATION_IN_PROGRESS || currentState == CALIBRATION_COMPUTING || currentState == TAKING_SLACK) {
                 currentState = READY_TO_CUT;
                 sys.set_state(State::Idle);
-                Maslow.saveBeltLengths();
-                Maslow.saveMachineState();
                 success = true;
                 break;
             } else {
@@ -1542,7 +1537,6 @@ void Calibration::resetCalibrationState() {
     waypoint               = 0;
     pointCount             = 0;
     recomputeCountIndex    = 0;
-    recomputeCount         = 0;  // Reset recompute count to ensure consistent grid generation
     calibrationInProgress  = false;
     calibrationDataWaiting = -1;
 

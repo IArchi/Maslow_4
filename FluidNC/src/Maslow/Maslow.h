@@ -128,11 +128,10 @@ public:
     /** Sets the 'bottom' Z position, this is a 'stop' beyond which travel cannot continue */
     void setZStop();
 
-    //Save and load belt lengths and machine state
-    void saveBeltLengths();
-    bool loadBeltLengths();
-    void saveMachineState();
-    void loadMachineState();
+    //Save and load belt positions
+    void saveBeltPositions();
+    void loadBeltPositions();
+    void markBeltPositionsStale();
 
     void stopMotors();
 

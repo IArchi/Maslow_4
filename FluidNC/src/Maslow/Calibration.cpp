@@ -45,6 +45,14 @@ void Calibration::printCurrentState() {
     log_info("Current state: " << currentState);
 }
 
+// Set extended state variables (used when restoring from NVS)
+void Calibration::setExtendedState(bool tl, bool tr, bool bl, bool br) {
+    extendedTL = tl;
+    extendedTR = tr;
+    extendedBL = bl;
+    extendedBR = br;
+}
+
 //Request a state change to a new state. Returns true on success and false on failure (although return value is never used atm)
 bool Calibration::requestStateChange(int newState) {
     log_info("Requesting state change from " << stateNames[currentState].name << " to " << stateNames[newState].name);

@@ -684,22 +684,15 @@ void Maslow_::loadBeltPositions() {
     calibration.currentState = newState;
     log_info("Belt position load: Set currentState directly to " << (newState == READY_TO_CUT ? "READY_TO_CUT" : "RETRACTED"));
     
-    // Set the extended* state variables to match the restored state
+    // Set the extended* state variables in the Calibration class to match the restored state
     // When belts are extended (READY_TO_CUT), mark all belts as extended
     // When belts are retracted (RETRACTED), mark all belts as not extended
-    // Note: Using Maslow class public members, not Calibration private members
     if (newState == READY_TO_CUT) {
-        extendedTL = true;
-        extendedTR = true;
-        extendedBL = true;
-        extendedBR = true;
-        log_debug("Set extended* variables to true (belts are extended)");
+        calibration.setExtendedState(true, true, true, true);
+        log_debug("Set Calibration extended* variables to true (belts are extended)");
     } else {
-        extendedTL = false;
-        extendedTR = false;
-        extendedBL = false;
-        extendedBR = false;
-        log_debug("Set extended* variables to false (belts are retracted)");
+        calibration.setExtendedState(false, false, false, false);
+        log_debug("Set Calibration extended* variables to false (belts are retracted)");
     }
     
     // Disable alarm if present

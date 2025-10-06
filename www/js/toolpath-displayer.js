@@ -300,21 +300,67 @@ var tpUnits = 'G21';
 var tpBbox = {
     min: {
         x: Infinity,
-        y: Infinity
+        y: Infinity,
+        z: Infinity
     },
     max: {
         x: -Infinity,
-        y: -Infinity
+        y: -Infinity,
+        z: -Infinity
     }
 };
+
+// Separate tracking for just the job/gcode bounding box (excluding machine bounds)
+var jobBbox = {
+    min: {
+        x: Infinity,
+        y: Infinity,
+        z: Infinity
+    },
+    max: {
+        x: -Infinity,
+        y: -Infinity,
+        z: -Infinity
+    }
+};
+
 var bboxIsSet = false;
+var jobBboxIsSet = false;
 
 var resetBbox = function() {
     tpBbox.min.x = Infinity;
     tpBbox.min.y = Infinity;
+    tpBbox.min.z = Infinity;
     tpBbox.max.x = -Infinity;
     tpBbox.max.y = -Infinity;
+    tpBbox.max.z = -Infinity;
     bboxIsSet = false;
+    
+    // Also reset job bounding box
+    jobBbox.min.x = Infinity;
+    jobBbox.min.y = Infinity;
+    jobBbox.min.z = Infinity;
+    jobBbox.max.x = -Infinity;
+    jobBbox.max.y = -Infinity;
+    jobBbox.max.z = -Infinity;
+    jobBboxIsSet = false;
+}
+
+// Helper functions for job bounding box
+var jobBboxExists = function() {
+    return jobBboxIsSet && 
+           isFinite(jobBbox.min.x) && isFinite(jobBbox.min.y) && isFinite(jobBbox.min.z) &&
+           isFinite(jobBbox.max.x) && isFinite(jobBbox.max.y) && isFinite(jobBbox.max.z);
+}
+
+var getJobBoundingBox = function() {
+    if (!jobBboxExists()) {
+        return null;
+    }
+    return {
+        min: { x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.min.z },
+        max: { x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.max.z }
+    };
 }
 
 // Project the 3D toolpath onto the 2D Canvas
@@ -392,6 +438,38 @@ var drawOrigin = function(radius) {
     tp.moveTo(0,-radius*1.5);
     tp.lineTo(0, radius*1.5);
     tp.stroke();
+}
+
+var drawJobBoundingBox = function() {
+    if (!bboxIsSet || !jobBboxExists()) {
+        return;
+    }
+    
+    // Get the actual job bounding box in world coordinates
+    var jobBbox = getJobBoundingBox();
+    if (!jobBbox) {
+        return;
+    }
+    
+    // Project the corners of the job bounding box
+    const p0 = projection({x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.min.z});
+    const p1 = projection({x: jobBbox.max.x, y: jobBbox.min.y, z: jobBbox.min.z});
+    const p2 = projection({x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.min.z});
+    const p3 = projection({x: jobBbox.min.x, y: jobBbox.max.y, z: jobBbox.min.z});
+    
+    // Draw the bounding box rectangle
+    tp.beginPath();
+    tp.strokeStyle = 'blue';
+    tp.lineWidth = 2.0 / scaler;
+    tp.moveTo(p0.x, p0.y);
+    tp.lineTo(p1.x, p1.y);
+    tp.lineTo(p2.x, p2.y);
+    tp.lineTo(p3.x, p3.y);
+    tp.lineTo(p0.x, p0.y);
+    tp.stroke();
+    
+    // Restore line width
+    tp.lineWidth = 0.5 / scaler;
 }
 
 var drawMachineBounds = function() {
@@ -669,11 +747,25 @@ var bboxHandlers = {
         ps = projection(start);
         pe = projection(end);
 
+        // Update overall bounding box for display (includes all moves for proper canvas scaling)
         tpBbox.min.x = Math.min(tpBbox.min.x, ps.x, pe.x);
         tpBbox.min.y = Math.min(tpBbox.min.y, ps.y, pe.y);
+        tpBbox.min.z = Math.min(tpBbox.min.z, start.z, end.z);
         tpBbox.max.x = Math.max(tpBbox.max.x, ps.x, pe.x);
         tpBbox.max.y = Math.max(tpBbox.max.y, ps.y, pe.y);
+        tpBbox.max.z = Math.max(tpBbox.max.z, start.z, end.z);
         bboxIsSet = true;
+        
+        // Update job bounding box in world coordinates - exclude G0 rapid moves
+        if (modal.motion !== 'G0') {
+            jobBbox.min.x = Math.min(jobBbox.min.x, start.x, end.x);
+            jobBbox.min.y = Math.min(jobBbox.min.y, start.y, end.y);
+            jobBbox.min.z = Math.min(jobBbox.min.z, start.z, end.z);
+            jobBbox.max.x = Math.max(jobBbox.max.x, start.x, end.x);
+            jobBbox.max.y = Math.max(jobBbox.max.y, start.y, end.y);
+            jobBbox.max.z = Math.max(jobBbox.max.z, start.z, end.z);
+            jobBboxIsSet = true;
+        }
     },
     addArcCurve: function(modal, start, end, center, extraRotations) {
         // To determine the precise bounding box of a circular arc we
@@ -694,25 +786,40 @@ var bboxHandlers = {
         pc = projection(center);
         pe = projection(end);
 
-	// Coordinates relative to the center of the arc
+	// Coordinates relative to the center of the arc (PROJECTED coordinates for display)
 	var sx = ps.x - pc.x;
 	var sy = ps.y - pc.y;
 	var ex = pe.x - pc.x;
 	var ey = pe.y - pc.y;
 
         var radius = Math.hypot(sx, sy);
+        
+        // Also calculate in WORLD coordinates for job bounding box
+        var world_sx = start.x - center.x;
+        var world_sy = start.y - center.y;
+        var world_ex = end.x - center.x;
+        var world_ey = end.y - center.y;
+        var world_radius = Math.hypot(world_sx, world_sy);
 
 	// Axis crossings - plus and minus x and y
 	var px = false;
 	var py = false;
 	var mx = false;
 	var my = false;
+	
+	// World coordinate axis crossings for job bounding box
+	var world_px = false;
+	var world_py = false;
+	var world_mx = false;
+	var world_my = false;
 
 	// There are ways to express this decision tree in fewer lines
 	// of code by converting to alternate representations like angles,
 	// but this way is probably the most computationally efficient.
 	// It avoids any use of transcendental functions.  Every path
 	// through this decision tree is either 4 or 5 simple comparisons.
+	
+	// Calculate axis crossings for PROJECTED coordinates (for display)
 	if (ey >= 0) {              // End in upper half plane
 	    if (ex > 0) {             // End in quadrant 0 - X+ Y+
 		if (sy >= 0) {          // Start in upper half plane
@@ -786,6 +893,83 @@ var bboxHandlers = {
 	var maxY = py ? pc.y + radius : Math.max(ps.y, pe.y);
 	var minX = mx ? pc.x - radius : Math.min(ps.x, pe.x);
 	var minY = my ? pc.y - radius : Math.min(ps.y, pe.y);
+	
+	// Calculate axis crossings for WORLD coordinates (for job bounding box)
+	if (world_ey >= 0) {              // End in upper half plane
+	    if (world_ex > 0) {             // End in quadrant 0 - X+ Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			if (world_sx <= world_ex) {     // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    } else {              // Start in quadrant 1 - X- Y+
+			world_mx = world_my = world_px = true;
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			world_px = true;
+		    } else {              // Start in quadrant 2 - X- Y-
+			world_my = world_px = true;
+		    }
+		}
+	    } else {                  // End in quadrant 1 - X- Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			world_py = true;
+		    } else {              // Start in quadrant 1 - X- Y+
+			if (world_sx <= world_ex) {     // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			world_px = world_py = true;
+		    } else {              // Start in quadrant 2 - X- Y-
+			world_my = world_px = world_py = true;
+		    }
+		}
+	    }
+	} else {                    // world_ey < 0 - end in lower half plane
+	    if (world_ex > 0) {             // End in quadrant 3 - X+ Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			world_py = world_mx = world_my = true;
+		    } else {              // Start in quadrant 1 - X- Y+
+			world_mx = world_my = true;
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			if (world_sx >= world_ex) {      // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    } else {              // Start in quadrant 2 - X- Y-
+			world_my = true;
+		    }
+		}
+	    } else {                  // End in quadrant 2 - X- Y+
+		if (world_sy >= 0) {          // Start in upper half plane
+		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
+			world_py = world_mx = true;
+		    } else {              // Start in quadrant 1 - X- Y+
+			world_mx = true;
+		    }
+		} else {                // Start in lower half plane
+		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
+			world_px = world_py = world_mx = true;
+		    } else {              // Start in quadrant 2 - X- Y-
+			if (world_sx >= world_ex) {      // wraparound
+			    world_px = world_py = world_mx = world_my = true;
+			}
+		    }
+		}
+	    }
+	}
+	
+	// Now calculate world coordinate bounding box for job bounds
+	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
+	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
+	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
+	var world_minY = world_my ? center.y - world_radius : Math.min(start.y, end.y);
 
 	var minZ = Math.min(start.z, end.z);
 	var maxZ = Math.max(start.z, end.z);
@@ -801,9 +985,20 @@ var bboxHandlers = {
 
 	tpBbox.min.x = Math.min(tpBbox.min.x, p0.x, p1.x, p2.x, p3.x, p4.x, p5.x, p6.x, p7.x);
 	tpBbox.min.y = Math.min(tpBbox.min.y, p0.y, p1.y, p2.y, p3.y, p4.y, p5.y, p6.y, p7.y);
+	tpBbox.min.z = Math.min(tpBbox.min.z, minZ);
 	tpBbox.max.x = Math.max(tpBbox.max.x, p0.x, p1.x, p2.x, p3.x, p4.x, p5.x, p6.x, p7.x);
 	tpBbox.max.y = Math.max(tpBbox.max.y, p0.y, p1.y, p2.y, p3.y, p4.y, p5.y, p6.y, p7.y);
+	tpBbox.max.z = Math.max(tpBbox.max.z, maxZ);
         bboxIsSet = true;
+        
+        // Update job bounding box in world coordinates for arc
+        jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
+        jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
+        jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
+        jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
+        jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
+        jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
+        jobBboxIsSet = true;
     }
 };
 var initialMoves = true;
@@ -944,6 +1139,9 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
 
     drawTool(initialPosition);
 
+    // Draw job bounding box if available
+    drawJobBoundingBox();
+
     if(drawBounds){
         drawMachineBounds(); //Actually draws the bounding box
     }
@@ -997,6 +1195,70 @@ canvas.addEventListener("mouseup", updateGcodeViewerAngle);
 var refreshGcode = function() {
     const gcode = getValue("tablettab_gcode");
     tpDisplayer().showToolpath(gcode, gCodeModal, arrayToXYZ(WPOS));
+    updateJobBoundsDisplay();
+}
+
+// Function to update the job bounds display
+var updateJobBoundsDisplay = function() {
+    const boundsInfo = document.getElementById("job-bounds-info");
+    const boundsText = document.getElementById("job-bounds-text");
+    const traceButton = document.getElementById("tablettab_trace_boundary");
+    
+    if (!boundsInfo || !boundsText || !traceButton) {
+        return;
+    }
+    
+    if (jobBboxExists()) {
+        const bbox = getJobBoundingBox();
+        const width = (bbox.max.x - bbox.min.x).toFixed(1);
+        const height = (bbox.max.y - bbox.min.y).toFixed(1);
+        const zRange = (bbox.max.z - bbox.min.z).toFixed(1);
+        
+        boundsText.innerHTML = `Size: ${width} × ${height} mm<br>Z: ${bbox.min.z.toFixed(1)} to ${bbox.max.z.toFixed(1)} mm (${zRange}mm range)`;
+        boundsInfo.style.display = "block";
+        traceButton.style.display = "block";
+    } else {
+        boundsText.innerHTML = "No file loaded";
+        boundsInfo.style.display = "none";
+        traceButton.style.display = "none";
+    }
+}
+
+// Function to trace the job boundary
+var traceBoundary = function() {
+    if (!jobBboxExists()) {
+        alert("No job loaded or no movement commands found in GCode");
+        return;
+    }
+    
+    const bbox = getJobBoundingBox();
+    const currentPos = arrayToXYZ(WPOS);
+    
+    // Create the boundary tracing commands
+    const commands = [
+        `G90`, // Absolute positioning
+        `G0 X${bbox.min.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`, // Move to bottom-left corner
+        `G0 X${bbox.max.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`, // Move to bottom-right corner
+        `G0 X${bbox.max.x.toFixed(3)} Y${bbox.max.y.toFixed(3)}`, // Move to top-right corner
+        `G0 X${bbox.min.x.toFixed(3)} Y${bbox.max.y.toFixed(3)}`, // Move to top-left corner
+        `G0 X${bbox.min.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`, // Back to bottom-left corner
+        `G0 X${currentPos.x.toFixed(3)} Y${currentPos.y.toFixed(3)}` // Return to original position
+    ];
+    
+    // Execute each command with a delay
+    let commandIndex = 0;
+    const executeNextCommand = function() {
+        if (commandIndex < commands.length) {
+            SendPrinterCommand(commands[commandIndex]);
+            commandIndex++;
+            setTimeout(executeNextCommand, 1000); // 1 second delay between commands
+        }
+    };
+    
+    // Confirm before starting
+    if (confirm(`Trace boundary? This will move the machine around the job perimeter.\n\nBounds: ${bbox.min.x.toFixed(1)},${bbox.min.y.toFixed(1)} to ${bbox.max.x.toFixed(1)},${bbox.max.y.toFixed(1)}\n\nZ-axis will not move.`)) {
+        executeNextCommand();
+    }
 }
 
 // document.getElementById("small-toolpath").addEventListener("mouseup", updateGcodeViewerAngle); 

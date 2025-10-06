@@ -514,13 +514,13 @@ void Maslow_::saveBeltLengths() {
     nvs_close(nvsHandle);
 }
 
-//This function loads belt lengths from non-volatile storage
-void Maslow_::loadBeltLengths() {
+//This function loads belt lengths from non-volatile storage and returns true if loaded successfully
+bool Maslow_::loadBeltLengths() {
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
     if (ret != ESP_OK) {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " opening NVS handle!\n");
-        return;
+        return false;
     }
 
     union DoubleInt32 {
@@ -560,6 +560,24 @@ void Maslow_::loadBeltLengths() {
 
                     gc_sync_position();
                     plan_sync_position();
+
+                    nvs_close(nvsHandle);
+
+                    // Determine appropriate state based on belt lengths
+                    bool beltsAreExtended =
+                        (fabs(tlLength.d) > 10.0 || fabs(trLength.d) > 10.0 || fabs(blLength.d) > 10.0 || fabs(brLength.d) > 10.0);
+
+                    if (beltsAreExtended) {
+                        // Belts are extended, set to READY_TO_CUT state to allow operation
+                        calibration.currentState = READY_TO_CUT;
+                        log_info("Machine state: belts extended, setting state to READY_TO_CUT");
+                    } else {
+                        // Belts are retracted, set to RETRACTED state
+                        calibration.currentState = RETRACTED;
+                        log_info("Machine state: belts retracted, setting state to RETRACTED");
+                    }
+
+                    return true;
                 } else {
                     log_info("No saved belt lengths found in NVS (BR)");
                 }
@@ -574,6 +592,7 @@ void Maslow_::loadBeltLengths() {
     }
 
     nvs_close(nvsHandle);
+    return false;
 }
 
 //This function saves the current machine state to non-volatile storage
@@ -603,41 +622,10 @@ void Maslow_::saveMachineState() {
 }
 
 //This function loads the machine state from non-volatile storage
+//Note: This is currently handled by loadBeltLengths() which sets the state based on belt positions
 void Maslow_::loadMachineState() {
-    nvs_handle_t nvsHandle;
-    esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
-    if (ret != ESP_OK) {
-        log_info("Error " + std::string(esp_err_to_name(ret)) + " opening NVS handle!\n");
-        return;
-    }
-
-    // Load the saved state
-    int32_t savedState;
-    ret = nvs_get_i32(nvsHandle, "machState", &savedState);
-    if (ret == ESP_OK) {
-        // Check if belt lengths are non-zero to determine if we should restore state
-        // Get current belt positions
-        double tlPos = axisTL.getPosition();
-        double trPos = axisTR.getPosition();
-        double blPos = axisBL.getPosition();
-        double brPos = axisBR.getPosition();
-
-        bool beltsAreExtended = (fabs(tlPos) > 10.0 || fabs(trPos) > 10.0 || fabs(blPos) > 10.0 || fabs(brPos) > 10.0);
-
-        if (beltsAreExtended) {
-            // Belts are extended, restore to READY_TO_CUT state to allow operation
-            calibration.currentState = READY_TO_CUT;
-            log_info("Machine state restored: belts extended, setting state to READY_TO_CUT");
-        } else {
-            // Belts are retracted, set to RETRACTED state
-            calibration.currentState = RETRACTED;
-            log_info("Machine state restored: belts retracted, setting state to RETRACTED");
-        }
-    } else {
-        log_info("No saved machine state found in NVS");
-    }
-
-    nvs_close(nvsHandle);
+    // State is now determined automatically in loadBeltLengths() based on actual belt positions
+    // This function is kept for future use if we need to restore additional state information
 }
 
 //------------------------------------------------------

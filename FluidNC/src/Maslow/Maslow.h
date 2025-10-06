@@ -130,7 +130,7 @@ public:
 
     //Save and load belt lengths and machine state
     void saveBeltLengths();
-    void loadBeltLengths();
+    bool loadBeltLengths();
     void saveMachineState();
     void loadMachineState();
 

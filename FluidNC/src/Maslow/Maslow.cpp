@@ -136,8 +136,12 @@ void Maslow_::update() {
     //Save the z-axis position if the prevous state was jog or cycle and the current state is idle
     if ((prevState == State::Jog || prevState == State::Cycle) && sys.state() == State::Idle) {
         saveZPos();
-        saveBeltLengths();
-        saveMachineState();
+        // Only save belt lengths when in READY_TO_CUT or RETRACTED states
+        // These are the only states where belts have no slack and encoder positions are reliable
+        if (calibration.currentState == READY_TO_CUT || calibration.currentState == RETRACTED) {
+            saveBeltLengths();
+            saveMachineState();
+        }
     }
 
     blinkIPAddress();

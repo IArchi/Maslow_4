@@ -106,8 +106,7 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
-                Maslow.saveBeltLengths();
-                Maslow.saveMachineState();
+                // Belt positions NOT saved here - belts may have slack in EXTENDEDOUT state
                 success = true;
                 break;
             } else {

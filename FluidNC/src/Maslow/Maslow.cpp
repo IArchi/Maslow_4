@@ -9,6 +9,7 @@
 #include "../System.h"
 #include "../FileStream.h"
 #include "../Kinematics/MaslowKinematics.h"
+#include <cmath>
 
 // Maslow specific defines
 #define VERSION_NUMBER "1.12"
@@ -88,7 +89,9 @@ void Maslow_::begin(void (*sys_rt)()) {
 
     lastCallToUpdate = millis();
 
-    loadZPos();  //Loads the z-axis position from EEPROM
+    loadZPos();          //Loads the z-axis position from EEPROM
+    loadBeltLengths();   //Loads the belt lengths from NVS
+    loadMachineState();  //Loads the machine state from NVS
 
     stopMotors();
 
@@ -133,6 +136,8 @@ void Maslow_::update() {
     //Save the z-axis position if the prevous state was jog or cycle and the current state is idle
     if ((prevState == State::Jog || prevState == State::Cycle) && sys.state() == State::Idle) {
         saveZPos();
+        saveBeltLengths();
+        saveMachineState();
     }
 
     blinkIPAddress();
@@ -453,6 +458,186 @@ void Maslow_::setZStop() {
 
     gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
     plan_sync_position();
+}
+
+//------------
+// Belt Length Functions
+//------------
+
+//This function saves the current belt lengths to non-volatile storage
+void Maslow_::saveBeltLengths() {
+    nvs_handle_t nvsHandle;
+    esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
+    if (ret != ESP_OK) {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " opening NVS handle!\n");
+        return;
+    }
+
+    // Convert belt lengths (double) to int32_t for storage
+    union DoubleInt32 {
+        double  d;
+        int32_t i[2];  // Store as 2 int32_t values (64 bits total)
+    };
+
+    // Save TL belt length
+    DoubleInt32 tlLength;
+    tlLength.d = axisTL.getPosition();
+    nvs_set_i32(nvsHandle, "tlLen0", tlLength.i[0]);
+    nvs_set_i32(nvsHandle, "tlLen1", tlLength.i[1]);
+
+    // Save TR belt length
+    DoubleInt32 trLength;
+    trLength.d = axisTR.getPosition();
+    nvs_set_i32(nvsHandle, "trLen0", trLength.i[0]);
+    nvs_set_i32(nvsHandle, "trLen1", trLength.i[1]);
+
+    // Save BL belt length
+    DoubleInt32 blLength;
+    blLength.d = axisBL.getPosition();
+    nvs_set_i32(nvsHandle, "blLen0", blLength.i[0]);
+    nvs_set_i32(nvsHandle, "blLen1", blLength.i[1]);
+
+    // Save BR belt length
+    DoubleInt32 brLength;
+    brLength.d = axisBR.getPosition();
+    nvs_set_i32(nvsHandle, "brLen0", brLength.i[0]);
+    nvs_set_i32(nvsHandle, "brLen1", brLength.i[1]);
+
+    // Commit written values to non-volatile storage
+    ret = nvs_commit(nvsHandle);
+    if (ret != ESP_OK) {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " committing belt lengths to NVS!\n");
+    } else {
+        log_info("Belt lengths saved: TL=" << tlLength.d << " TR=" << trLength.d << " BL=" << blLength.d << " BR=" << brLength.d);
+    }
+
+    nvs_close(nvsHandle);
+}
+
+//This function loads belt lengths from non-volatile storage
+void Maslow_::loadBeltLengths() {
+    nvs_handle_t nvsHandle;
+    esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
+    if (ret != ESP_OK) {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " opening NVS handle!\n");
+        return;
+    }
+
+    union DoubleInt32 {
+        double  d;
+        int32_t i[2];
+    };
+
+    // Load TL belt length
+    DoubleInt32 tlLength;
+    if (nvs_get_i32(nvsHandle, "tlLen0", &tlLength.i[0]) == ESP_OK && nvs_get_i32(nvsHandle, "tlLen1", &tlLength.i[1]) == ESP_OK) {
+        // Load TR belt length
+        DoubleInt32 trLength;
+        if (nvs_get_i32(nvsHandle, "trLen0", &trLength.i[0]) == ESP_OK && nvs_get_i32(nvsHandle, "trLen1", &trLength.i[1]) == ESP_OK) {
+            // Load BL belt length
+            DoubleInt32 blLength;
+            if (nvs_get_i32(nvsHandle, "blLen0", &blLength.i[0]) == ESP_OK && nvs_get_i32(nvsHandle, "blLen1", &blLength.i[1]) == ESP_OK) {
+                // Load BR belt length
+                DoubleInt32 brLength;
+                if (nvs_get_i32(nvsHandle, "brLen0", &brLength.i[0]) == ESP_OK &&
+                    nvs_get_i32(nvsHandle, "brLen1", &brLength.i[1]) == ESP_OK) {
+                    log_info("Belt lengths loaded: TL=" << tlLength.d << " TR=" << trLength.d << " BL=" << blLength.d
+                                                        << " BR=" << brLength.d);
+
+                    // Restore belt lengths to motor positions
+                    // Note: We cannot directly set encoder positions, but we can set the motor step positions
+                    // which will be used by the kinematics system
+                    set_motor_steps(0, mpos_to_steps(tlLength.d, 0));  // A axis = TL belt
+                    set_motor_steps(1, mpos_to_steps(trLength.d, 1));  // B axis = TR belt
+                    set_motor_steps(2, mpos_to_steps(blLength.d, 2));  // C axis = BL belt
+                    set_motor_steps(3, mpos_to_steps(brLength.d, 3));  // D axis = BR belt
+
+                    // Set targets to match the loaded positions
+                    axisTL.setTarget(tlLength.d);
+                    axisTR.setTarget(trLength.d);
+                    axisBL.setTarget(blLength.d);
+                    axisBR.setTarget(brLength.d);
+
+                    gc_sync_position();
+                    plan_sync_position();
+                } else {
+                    log_info("No saved belt lengths found in NVS (BR)");
+                }
+            } else {
+                log_info("No saved belt lengths found in NVS (BL)");
+            }
+        } else {
+            log_info("No saved belt lengths found in NVS (TR)");
+        }
+    } else {
+        log_info("No saved belt lengths found in NVS (TL)");
+    }
+
+    nvs_close(nvsHandle);
+}
+
+//This function saves the current machine state to non-volatile storage
+void Maslow_::saveMachineState() {
+    nvs_handle_t nvsHandle;
+    esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
+    if (ret != ESP_OK) {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " opening NVS handle!\n");
+        return;
+    }
+
+    // Save the current calibration state
+    int32_t state = calibration.currentState;
+    ret           = nvs_set_i32(nvsHandle, "machState", state);
+    if (ret != ESP_OK) {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " writing machine state to NVS!\n");
+    } else {
+        ret = nvs_commit(nvsHandle);
+        if (ret != ESP_OK) {
+            log_info("Error " + std::string(esp_err_to_name(ret)) + " committing machine state to NVS!\n");
+        } else {
+            log_info("Machine state saved: " << state);
+        }
+    }
+
+    nvs_close(nvsHandle);
+}
+
+//This function loads the machine state from non-volatile storage
+void Maslow_::loadMachineState() {
+    nvs_handle_t nvsHandle;
+    esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
+    if (ret != ESP_OK) {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " opening NVS handle!\n");
+        return;
+    }
+
+    // Load the saved state
+    int32_t savedState;
+    ret = nvs_get_i32(nvsHandle, "machState", &savedState);
+    if (ret == ESP_OK) {
+        // Check if belt lengths are non-zero to determine if we should restore state
+        // Get current belt positions
+        double tlPos = axisTL.getPosition();
+        double trPos = axisTR.getPosition();
+        double blPos = axisBL.getPosition();
+        double brPos = axisBR.getPosition();
+
+        bool beltsAreExtended = (fabs(tlPos) > 10.0 || fabs(trPos) > 10.0 || fabs(blPos) > 10.0 || fabs(brPos) > 10.0);
+
+        if (beltsAreExtended) {
+            // Belts are extended, restore to READY_TO_CUT state to allow operation
+            calibration.currentState = READY_TO_CUT;
+            log_info("Machine state restored: belts extended, setting state to READY_TO_CUT");
+        } else {
+            // Belts are retracted, set to RETRACTED state
+            calibration.currentState = RETRACTED;
+            log_info("Machine state restored: belts retracted, setting state to RETRACTED");
+        }
+    } else {
+        log_info("No saved machine state found in NVS");
+    }
+
+    nvs_close(nvsHandle);
 }
 
 //------------------------------------------------------

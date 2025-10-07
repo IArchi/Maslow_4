@@ -1,4 +1,4 @@
-// import - conErr, stdErrMsg, id, displayBlock, displayNone, setValue, setHTML, closeModal, setactiveModal, showModal, alertdlg, confirmdlg, SendFileHttp, SendGetHttp, translate_text_item
+// import - conErr, stdErrMsg, id, displayBlock, displayNone, setValue, setHTML, closeModal, setactiveModal, showModal, alertdlg, confirmdlg, SendFileHttp, SendGetHttp, translate_text_item, Monitor_output_Update
 
 let update_ongoing = false;
 let current_update_filename = "";

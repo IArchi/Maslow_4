@@ -1,4 +1,4 @@
-// import - get_icon_svg, displayBlock, displayInline, displayNone, id, stdErrMsg, setHTML, alertdlg, confirmdlg, inputdlg, SendPrinterCommand, tryAutoReport, SendFileHttp, SendGetHttp, translate_text_item
+// import - get_icon_svg, displayBlock, displayInline, displayNone, id, stdErrMsg, setHTML, alertdlg, confirmdlg, inputdlg, SendPrinterCommand, tryAutoReport, SendFileHttp, SendGetHttp, translate_text_item, Monitor_output_Update
 
 let files_current_path = "/";
 /** get/set the current path used for files */
@@ -270,11 +270,17 @@ function files_delete_file(index) {
 	const fFile = files_file_list[index];
 	files_error_status = `Delete ${fFile.name}`;
 
+	// Log deletion start
+	Monitor_output_Update(`[Delete] Deleting ${fFile.isdir ? 'directory' : 'file'}: ${fFile.name}\n`);
+	
+	// Disable ping monitoring during delete (can take long for large files)
+	disablePingForUpload();
+
 	displayBlock("files_nav_loader");
 
 	const action = fFile.isdir ? "deletedir" : "delete";
 	const cmd = buildHttpFileCmd({ action: action, filename: fFile.sdname });
-	SendGetHttp(cmd, files_list_success, files_list_failed);
+	SendGetHttp(cmd, files_delete_success, files_delete_failed);
 }
 
 const files_is_clickable = (index) => files_file_list[index].isdir ? true : direct_sd;
@@ -441,11 +447,10 @@ const populateTabletFileSelector = (files, path) => {
 };
 
 const files_list_success = (response_text) => {
-	// Restore ping monitoring after upload completes
-	restorePingAfterUpload();
-	
-	// Log upload completion
-	Monitor_output_Update("[Upload] Upload completed successfully\n");
+	// Note: Ping restore is NOT done here because this callback is used for multiple operations
+	// Upload completion calls this via files_upload_success which handles ping restore
+	// Delete completion calls this via files_delete_success which handles ping restore
+	// Regular list refreshes don't need ping restore
 	
 	displayBlock("files_navigation_buttons");
 	let error = false;
@@ -523,6 +528,28 @@ function files_list_failed(error_code, response) {
 	}
 	files_build_display_filelist(false);
 }
+
+const files_delete_success = (response_text) => {
+	// Restore ping monitoring after delete completes
+	restorePingAfterUpload();
+	
+	// Log deletion completion
+	Monitor_output_Update("[Delete] Deletion completed successfully\n");
+	
+	// Reuse the list success handler
+	files_list_success(response_text);
+};
+
+const files_delete_failed = (error_code, response) => {
+	// Restore ping monitoring after delete fails
+	restorePingAfterUpload();
+	
+	// Log deletion failure
+	Monitor_output_Update(`[Delete] Deletion failed: ${error_code}\n`);
+	
+	// Reuse the list failed handler
+	files_list_failed(error_code, response);
+};
 
 function files_directSD_upload_failed(error_code, response) {
 	// Restore ping monitoring after upload fails
@@ -727,11 +754,22 @@ function files_start_upload() {
 	displayBlock("files_uploading_msg");
 	displayNone("files_navigation_buttons");
 	if (direct_sd) {
-		SendFileHttp(httpCmd.fileUpload, formData, FilesUploadProgressDisplay, files_list_success, files_directSD_upload_failed);
+		SendFileHttp(httpCmd.fileUpload, formData, FilesUploadProgressDisplay, files_upload_success, files_directSD_upload_failed);
 		//console.log("send file");
 	}
 	setValue("files_input_file", "");
 }
+
+const files_upload_success = (response_text) => {
+	// Restore ping monitoring after upload completes
+	restorePingAfterUpload();
+	
+	// Log upload completion
+	Monitor_output_Update("[Upload] Upload completed successfully\n");
+	
+	// Reuse the list success handler
+	files_list_success(response_text);
+};
 
 function FilesUploadProgressDisplay(oEvent) {
 	if (oEvent.lengthComputable) {

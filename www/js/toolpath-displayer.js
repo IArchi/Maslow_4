@@ -644,6 +644,8 @@ var yOffset = 0;
 var scaler = 1;
 var xToPixel = function(x) { return scaler * x + xOffset; }
 var yToPixel = function(y) { return -scaler * y + yOffset; }
+var pixelToX = function(px) { return (px - xOffset) / scaler; }
+var pixelToY = function(py) { return (py - yOffset) / -scaler; }
 
 var clearCanvas = function() {
     // Reset the transform and clear the canvas
@@ -1191,7 +1193,46 @@ const updateGcodeViewerAngle = () => {
 	tpDisplayer().cycleCameraAngle(gcode, gCodeModal, arrayToXYZ(WPOS));
 };
 
-canvas.addEventListener("mouseup", updateGcodeViewerAngle); 
+canvas.addEventListener("mouseup", updateGcodeViewerAngle);
+
+// Context menu handler for right-click "move here" functionality
+canvas.addEventListener("contextmenu", function(event) {
+    // Only show context menu for top-down views (cameraAngle 2, 3, or 4)
+    if (cameraAngle < 2) {
+        return; // Allow default context menu for non-top-down views
+    }
+    
+    event.preventDefault(); // Prevent default browser context menu
+    
+    // Get canvas bounding rectangle to calculate relative position
+    const rect = canvas.getBoundingClientRect();
+    
+    // Calculate click position in canvas coordinates (accounting for device pixel ratio)
+    const canvasX = (event.clientX - rect.left) * scale;
+    const canvasY = (event.clientY - rect.top) * scale;
+    
+    // Convert canvas pixel coordinates to world coordinates
+    // For top view, we need to account for the projection
+    const projectedX = pixelToX(canvasX);
+    const projectedY = pixelToY(canvasY);
+    
+    // For top view (topView function sets xx=1, xy=0, yx=0, yy=1, xz=0, yz=0)
+    // The projection is simple: projX = worldX, projY = worldY
+    // So we can directly use the projected coordinates as world coordinates
+    const worldX = projectedX;
+    const worldY = projectedY;
+    
+    // Validate that coordinates are finite
+    if (!isFinite(worldX) || !isFinite(worldY)) {
+        return;
+    }
+    
+    // Show confirmation and move if user accepts
+    const moveConfirm = confirm(`Move to X: ${worldX.toFixed(2)}, Y: ${worldY.toFixed(2)}?`);
+    if (moveConfirm && typeof move === 'function') {
+        move({ X: worldX, Y: worldY });
+    }
+}); 
 var refreshGcode = function() {
     const gcode = getValue("tablettab_gcode");
     tpDisplayer().showToolpath(gcode, gCodeModal, arrayToXYZ(WPOS));

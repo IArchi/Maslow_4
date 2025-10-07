@@ -11,14 +11,17 @@
 class StartupLog : public Channel {
 private:
     std::string _messages;
+    bool        _active;
 
 public:
-    StartupLog(const char* name) : Channel(name) {}
+    StartupLog(const char* name) : Channel(name), _active(true) {}
     virtual ~StartupLog();
 
     size_t      write(uint8_t data) override;
     std::string messages();
     void        dump(Channel& channel);
+    void        stop();  // Stop capturing new logs
+    bool        isActive() const { return _active; }
 };
 
 extern StartupLog startupLog;

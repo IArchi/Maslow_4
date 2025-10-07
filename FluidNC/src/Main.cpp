@@ -167,7 +167,13 @@ void setup() {
     if (!WebUI::wifi_config.begin()) {
         WebUI::bt_config.begin();
     }
-    allChannels.deregistration(&startupLog);
+
+    // Send the init message to the startup log before entering main loop
+    // This ensures the welcome message is captured in $SS output
+    report_init_message(startupLog);
+
+    // Keep startupLog registered to capture logs until first websocket connection
+    // It will be deregistered automatically when the first websocket connects
 }
 
 static void reset_variables() {

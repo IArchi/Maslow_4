@@ -3,7 +3,9 @@
 #include "Protocol.h"  // send_line()
 
 size_t StartupLog::write(uint8_t data) {
-    _messages += (char)data;
+    if (_active) {
+        _messages += (char)data;
+    }
     return 1;
 }
 std::string StartupLog::messages() {
@@ -14,6 +16,10 @@ void StartupLog::dump(Channel& out) {
     for (std::string line; std::getline(iss, line);) {
         log_to(out, line);
     }
+}
+
+void StartupLog::stop() {
+    _active = false;
 }
 
 StartupLog::~StartupLog() {}

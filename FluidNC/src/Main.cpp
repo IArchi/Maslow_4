@@ -168,10 +168,12 @@ void setup() {
         WebUI::bt_config.begin();
     }
 
-    // Send the init message to the startup log before deregistering it
+    // Send the init message to the startup log before entering main loop
     // This ensures the welcome message is captured in $SS output
     report_init_message(startupLog);
-    allChannels.deregistration(&startupLog);
+
+    // Keep startupLog registered to capture logs until first websocket connection
+    // It will be deregistered automatically when the first websocket connects
 }
 
 static void reset_variables() {

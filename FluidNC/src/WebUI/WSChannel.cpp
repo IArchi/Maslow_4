@@ -8,7 +8,8 @@
 #    include <WebSocketsServer.h>
 #    include <WiFi.h>
 
-#    include "../Serial.h"  // is_realtime_command
+#    include "../Serial.h"      // is_realtime_command
+#    include "../StartupLog.h"  // startupLog
 
 namespace WebUI {
     class WSChannels;
@@ -231,6 +232,13 @@ namespace WebUI {
                     _lastWSChannel = wsChannel;
                     allChannels.registration(wsChannel);
                     _wsChannels[num] = wsChannel;
+
+                    // On first websocket connection, stop capturing to startup log
+                    // This ensures all logs from startup until first connection are captured
+                    if (startupLog.isActive()) {
+                        startupLog.stop();
+                        allChannels.deregistration(&startupLog);
+                    }
 
                     if (uri == "/") {
                         std::string s("CURRENT_ID:");

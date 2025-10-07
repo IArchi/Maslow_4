@@ -13,7 +13,6 @@
 #include "../MotionControl.h"
 #include <cmath>
 #include <algorithm>
-#include <string>
 #include "../Maslow/Maslow.h"
 
 /*
@@ -563,11 +562,11 @@ namespace Kinematics {
             leftSideLength < MIN_SIDE_LENGTH || leftSideLength > MAX_SIDE_LENGTH) {
             // Frame dimensions are out of bounds - this is a critical error that cannot be auto-corrected
             // Operating with incorrect anchor points could damage the machine
-            std::string errorMsg = "Frame side lengths are outside valid range (500-5000mm). Top=" +
-                                   std::to_string(topSideLength) + "mm, Right=" + std::to_string(rightSideLength) +
-                                   "mm, Bottom=" + std::to_string(bottomSideLength) + "mm, Left=" +
-                                   std::to_string(leftSideLength) + "mm. Calibration cannot proceed with these dimensions.";
-            Assert(false, errorMsg.c_str());
+            log_error("Frame side lengths are outside valid range (500-5000mm). "
+                      << "Top=" << topSideLength << "mm, Right=" << rightSideLength << "mm, "
+                      << "Bottom=" << bottomSideLength << "mm, Left=" << leftSideLength << "mm. "
+                      << "Calibration cannot proceed with these dimensions.");
+            Assert(false, "Frame dimensions out of bounds");
         }
 
         // Sanity check for reasonable coordinate values (not negative for most coordinates, not excessively large)

@@ -92,17 +92,30 @@ function concatApp() {
 var execSync = require('child_process').execSync
 
 function replaceVersion() {
-  return gulp
-    .src('dist/index.html')
-    .pipe(
-      replace(/replaceVERSION/g, function (match, p1) {
-        var buildNumber = execSync('git rev-parse --short HEAD')
-          .toString()
-          .replace(/\r?\n|\r/g, '')
-        return 'github.com/MitchBradley/ESP3D-WEBUI@' + buildNumber
-      })
-    )
-    .pipe(gulp.dest('dist'))
+  var version = execSync('git describe --tags --always --dirty')
+    .toString()
+    .replace(/\r?\n|\r/g, '')
+  
+  // Check if version contains a dash (indicating non-release version)
+  if (version.includes('-')) {
+    console.log('WARNING: Version "' + version + '" contains a dash - this should not be a release version')
+  }
+  
+  return merge(
+    gulp
+      .src('dist/index.html')
+      .pipe(
+        replace(/replaceVERSION/g, 'github.com/BarbourSmith/ESP3D-WEBUI@' + version)
+      )
+      .pipe(gulp.dest('dist')),
+    
+    gulp
+      .src('dist/js/app.js')
+      .pipe(
+        replace(/replaceVERSION/g, version)
+      )
+      .pipe(gulp.dest('dist/js'))
+  )
 }
 
 function replaceSVG() {

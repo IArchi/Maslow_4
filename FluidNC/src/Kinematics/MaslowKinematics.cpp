@@ -566,7 +566,10 @@ namespace Kinematics {
                       << "Top=" << topSideLength << "mm, Right=" << rightSideLength << "mm, "
                       << "Bottom=" << bottomSideLength << "mm, Left=" << leftSideLength << "mm. "
                       << "Calibration cannot proceed with these dimensions.");
-            Assert(false, "Frame dimensions out of bounds");
+            String errorMsg = "Frame dimensions out of bounds. Top=" + String(topSideLength, 1) + "mm, Right=" + 
+                              String(rightSideLength, 1) + "mm, Bottom=" + String(bottomSideLength, 1) + "mm, Left=" + 
+                              String(leftSideLength, 1) + "mm";
+            Maslow.eStop(errorMsg);
         }
 
         // Sanity check for reasonable coordinate values (not negative for most coordinates, not excessively large)

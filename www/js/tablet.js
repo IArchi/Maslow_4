@@ -928,13 +928,31 @@ function tabletLoadGCodeFile(path, size) {
     tpDisplayer().clear();
   } else {
     gCodeDisplayable = true;
+    
+    // Log loading start
+    Monitor_output_Update(`[Preview] Loading GCode file: ${path}\n`);
+    
+    // Disable ping monitoring during GCode loading and preview rendering
+    disablePingForUpload();
+    
     // Use sequential loading for files larger than 10KB for better user experience
     if (size > 10000) {
       tabletLoadGCodeFileSequentially(path);
     } else {
       fetch(encodeURIComponent(`SD${gCodeFilename}`))
         .then((response) => response.text())
-        .then((gcode) => showGCode(gcode));
+        .then((gcode) => {
+          showGCode(gcode);
+          // Restore ping monitoring after preview completes
+          restorePingAfterUpload();
+          Monitor_output_Update("[Preview] GCode preview loaded successfully\n");
+        })
+        .catch((error) => {
+          // Restore ping monitoring on error
+          restorePingAfterUpload();
+          Monitor_output_Update(`[Preview] Failed to load GCode: ${error.message}\n`);
+          console.error('Error loading GCode file:', error);
+        });
     }
   }
 }
@@ -1014,9 +1032,17 @@ async function tabletLoadGCodeFileSequentially(path) {
       updateJobBoundsDisplay();
     }
     
+    // Restore ping monitoring after preview completes
+    restorePingAfterUpload();
+    Monitor_output_Update("[Preview] GCode preview loaded successfully\n");
+    
   } catch (error) {
     console.error('Error loading GCode file:', error);
     showGCode(`Error loading GCode file: ${error.message}`);
+    
+    // Restore ping monitoring on error
+    restorePingAfterUpload();
+    Monitor_output_Update(`[Preview] Failed to load GCode: ${error.message}\n`);
   }
 }
 

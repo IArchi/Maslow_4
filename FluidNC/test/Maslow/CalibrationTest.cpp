@@ -246,14 +246,16 @@ Test(MaslowKinematicsSideLengthValidationInvalid, CalibrationTest) {
                                        78.0f  // brX, brY, brZ
     );
 
-    // Run validation to trigger corrections
-    kinematics.validate();
+    // Run validation - should throw an exception instead of auto-correcting
+    bool exceptionThrown = false;
+    try {
+        kinematics.validate();
+    } catch (const AssertionFailed& ex) {
+        exceptionThrown = true;
+    }
 
-    // Verify that coordinates were corrected to defaults (which have valid side lengths)
-    Assert(kinematics.getTlX() == -30.0f, "tlX should be corrected to default value");
-    Assert(kinematics.getTlY() == 2100.0f, "tlY should be corrected to default value");
-    Assert(kinematics.getTrX() == 2950.0f, "trX should be corrected to default value");
-    Assert(kinematics.getBrX() == 3000.0f, "brX should be corrected to default value");
+    // Verify that an exception was thrown
+    Assert(exceptionThrown, "Validation should throw an exception for frame dimensions that are too small");
 }
 
 // Test side length validation with side lengths that are too large
@@ -278,14 +280,16 @@ Test(MaslowKinematicsSideLengthValidationTooLarge, CalibrationTest) {
                                        78.0f  // brX, brY, brZ
     );
 
-    // Run validation to trigger corrections
-    kinematics.validate();
+    // Run validation - should throw an exception instead of auto-correcting
+    bool exceptionThrown = false;
+    try {
+        kinematics.validate();
+    } catch (const AssertionFailed& ex) {
+        exceptionThrown = true;
+    }
 
-    // Verify that coordinates were corrected to defaults (which have valid side lengths)
-    Assert(kinematics.getTlX() == -30.0f, "tlX should be corrected to default value");
-    Assert(kinematics.getTlY() == 2100.0f, "tlY should be corrected to default value");
-    Assert(kinematics.getTrX() == 2950.0f, "trX should be corrected to default value");
-    Assert(kinematics.getBrX() == 3000.0f, "brX should be corrected to default value");
+    // Verify that an exception was thrown
+    Assert(exceptionThrown, "Validation should throw an exception for frame dimensions that are too large");
 }
 
 // Test the new general square finding algorithm (coordinate solving approach)

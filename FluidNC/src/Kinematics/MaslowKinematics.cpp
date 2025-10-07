@@ -13,6 +13,7 @@
 #include "../MotionControl.h"
 #include <cmath>
 #include <algorithm>
+#include <string>
 #include "../Maslow/Maslow.h"
 
 /*
@@ -560,19 +561,13 @@ namespace Kinematics {
         if (topSideLength < MIN_SIDE_LENGTH || topSideLength > MAX_SIDE_LENGTH || rightSideLength < MIN_SIDE_LENGTH ||
             rightSideLength > MAX_SIDE_LENGTH || bottomSideLength < MIN_SIDE_LENGTH || bottomSideLength > MAX_SIDE_LENGTH ||
             leftSideLength < MIN_SIDE_LENGTH || leftSideLength > MAX_SIDE_LENGTH) {
-            log_warn("Frame side lengths are outside valid range (500-5000mm). "
-                     << "Top=" << topSideLength << "mm, Right=" << rightSideLength << "mm, " << "Bottom=" << bottomSideLength
-                     << "mm, Left=" << leftSideLength << "mm. " << "Correcting to reasonable defaults.");
-
-            _tlX                 = DEFAULT_TLX;
-            _tlY                 = DEFAULT_TLY;
-            _trX                 = DEFAULT_TRX;
-            _trY                 = DEFAULT_TRY;
-            _blX                 = DEFAULT_BLX;
-            _blY                 = DEFAULT_BLY;
-            _brX                 = DEFAULT_BRX;
-            _brY                 = DEFAULT_BRY;
-            coordinatesCorrected = true;
+            // Frame dimensions are out of bounds - this is a critical error that cannot be auto-corrected
+            // Operating with incorrect anchor points could damage the machine
+            std::string errorMsg = "Frame side lengths are outside valid range (500-5000mm). Top=" +
+                                   std::to_string(topSideLength) + "mm, Right=" + std::to_string(rightSideLength) +
+                                   "mm, Bottom=" + std::to_string(bottomSideLength) + "mm, Left=" +
+                                   std::to_string(leftSideLength) + "mm. Calibration cannot proceed with these dimensions.";
+            Assert(false, errorMsg.c_str());
         }
 
         // Sanity check for reasonable coordinate values (not negative for most coordinates, not excessively large)

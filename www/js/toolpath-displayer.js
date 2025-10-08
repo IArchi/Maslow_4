@@ -14,7 +14,7 @@ tp.lineWidth = 0.1;
 tp.lineCap = 'round';
 tp.strokeStyle = 'black';
 
-var cameraAngle = 0;
+var cameraAngle = 2; // Default to top-down view
 
 // Default fallback values (will be replaced by actual configuration values)
 var tlX = -8.339;
@@ -1193,9 +1193,26 @@ const updateGcodeViewerAngle = () => {
 	tpDisplayer().cycleCameraAngle(gcode, gCodeModal, arrayToXYZ(WPOS));
 };
 
-canvas.addEventListener("mouseup", updateGcodeViewerAngle);
+// Left-click switches view angle
+canvas.addEventListener("mouseup", function(event) {
+    // Only switch view on left-click
+    if (event.button === 0) {
+        updateGcodeViewerAngle();
+    }
+});
 
-// Context menu handler for right-click "move here" functionality
+// Create custom context menu element
+var contextMenu = document.createElement('div');
+contextMenu.id = 'canvas-context-menu';
+contextMenu.style.cssText = 'position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 8px rgba(0,0,0,0.2); padding: 8px 12px; font-size: 14px; cursor: pointer; z-index: 10000; display: none; border-radius: 4px;';
+document.body.appendChild(contextMenu);
+
+// Hide context menu when clicking elsewhere
+document.addEventListener('click', function() {
+    contextMenu.style.display = 'none';
+});
+
+// Right-click handler for "move here" functionality
 canvas.addEventListener("contextmenu", function(event) {
     // Only show context menu for top-down views (cameraAngle 2, 3, or 4)
     if (cameraAngle < 2) {
@@ -1212,13 +1229,10 @@ canvas.addEventListener("contextmenu", function(event) {
     const canvasY = (event.clientY - rect.top) * scale;
     
     // Convert canvas pixel coordinates to world coordinates
-    // For top view, we need to account for the projection
     const projectedX = pixelToX(canvasX);
     const projectedY = pixelToY(canvasY);
     
-    // For top view (topView function sets xx=1, xy=0, yx=0, yy=1, xz=0, yz=0)
-    // The projection is simple: projX = worldX, projY = worldY
-    // So we can directly use the projected coordinates as world coordinates
+    // For top view, coordinates are direct
     const worldX = projectedX;
     const worldY = projectedY;
     
@@ -1227,11 +1241,20 @@ canvas.addEventListener("contextmenu", function(event) {
         return;
     }
     
-    // Show confirmation and move if user accepts
-    const moveConfirm = confirm(`Move to X: ${worldX.toFixed(2)}, Y: ${worldY.toFixed(2)}?`);
-    if (moveConfirm && typeof move === 'function') {
-        move({ X: worldX, Y: worldY });
-    }
+    // Show custom context menu
+    contextMenu.textContent = `Move to: X${worldX.toFixed(2)}, Y${worldY.toFixed(2)}`;
+    contextMenu.style.left = event.clientX + 'px';
+    contextMenu.style.top = event.clientY + 'px';
+    contextMenu.style.display = 'block';
+    
+    // Handle click on context menu
+    contextMenu.onclick = function(e) {
+        e.stopPropagation();
+        contextMenu.style.display = 'none';
+        if (typeof move === 'function') {
+            move({ X: worldX, Y: worldY });
+        }
+    };
 }); 
 var refreshGcode = function() {
     const gcode = getValue("tablettab_gcode");

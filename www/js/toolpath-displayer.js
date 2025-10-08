@@ -1219,24 +1219,61 @@ canvas.addEventListener("contextmenu", function(event) {
         return; // Allow default context menu for non-top-down views
     }
     
+    // Check if we have a bounding box set
+    if (!bboxIsSet) {
+        return; // No GCode loaded
+    }
+    
     event.preventDefault(); // Prevent default browser context menu
     
     // Get canvas bounding rectangle to calculate relative position
     const rect = canvas.getBoundingClientRect();
     
-    // Calculate click position in canvas coordinates (accounting for device pixel ratio)
-    const canvasX = (event.clientX - rect.left) * scale;
-    const canvasY = (event.clientY - rect.top) * scale;
+    // Calculate click position in canvas coordinates
+    // Canvas may be scaled/stretched to fit the display, so we need to convert properly
+    const canvasX = (event.clientX - rect.left) * (canvas.width / rect.width);
+    const canvasY = (event.clientY - rect.top) * (canvas.height / rect.height);
     
-    // Convert canvas pixel coordinates to world coordinates
-    const projectedX = pixelToX(canvasX);
-    const projectedY = pixelToY(canvasY);
+    // Use job bounding box if available, otherwise use display bounding box
+    // For top view, try to get jobBbox first (world coordinates), fall back to tpBbox
+    let worldBox;
+    if (jobBboxExists()) {
+        worldBox = getJobBoundingBox();
+    } else if (bboxIsSet && cameraAngle >= 2 && cameraAngle <= 4) {
+        // For top view, tpBbox contains world coordinates since projection is identity
+        // But it may include machine bounds, so we need to be careful
+        // For now, use tpBbox as a fallback
+        worldBox = {
+            min: { x: tpBbox.min.x, y: tpBbox.min.y, z: tpBbox.min.z },
+            max: { x: tpBbox.max.x, y: tpBbox.max.y, z: tpBbox.max.z }
+        };
+    }
     
-    // For top view, coordinates are direct
-    const worldX = projectedX;
-    const worldY = projectedY;
+    if (!worldBox) {
+        return;
+    }
     
-    // Validate that coordinates are finite
+    // For top view, we need to map canvas pixels to world coordinates
+    // Get the projected job bounding box (what's actually displayed)
+    const boxP0 = projection({x: worldBox.min.x, y: worldBox.min.y, z: 0});
+    const boxP1 = projection({x: worldBox.max.x, y: worldBox.max.y, z: 0});
+    
+    // Calculate the pixel coordinates of the bounding box corners
+    const boxPixelMinX = xToPixel(boxP0.x);
+    const boxPixelMinY = yToPixel(boxP1.y); // Note: Y is inverted
+    const boxPixelMaxX = xToPixel(boxP1.x);
+    const boxPixelMaxY = yToPixel(boxP0.y);
+    
+    // Calculate the relative position within the bounding box (0 to 1)
+    const relX = (canvasX - boxPixelMinX) / (boxPixelMaxX - boxPixelMinX);
+    const relY = (canvasY - boxPixelMinY) / (boxPixelMaxY - boxPixelMinY);
+    
+    // Map to world coordinates
+    // Note: Y is inverted in canvas (top = max, bottom = min), so invert relY
+    const worldX = worldBox.min.x + relX * (worldBox.max.x - worldBox.min.x);
+    const worldY = worldBox.max.y - relY * (worldBox.max.y - worldBox.min.y);
+    
+    // Validate that coordinates are finite and within reasonable bounds
     if (!isFinite(worldX) || !isFinite(worldY)) {
         return;
     }

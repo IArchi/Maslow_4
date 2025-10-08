@@ -13,44 +13,96 @@ if gitFail:
     tag = "v3.0.x"
     rev = " (noGit)"
 else:
+    # Use git describe --tags --always to get the version
+    # This will return:
+    # - The tag name if current commit is tagged
+    # - tag-count-hash if current commit is not tagged but there are tags
+    # - Just the commit hash if there are no tags at all
     try:
-        tag = (
-            subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], stderr=subprocess.DEVNULL)
+        describe_output = (
+            subprocess.check_output(["git", "describe", "--tags", "--always"], stderr=subprocess.DEVNULL)
             .strip()
             .decode("utf-8")
         )
+        
+        # Check if the current commit is exactly tagged
+        try:
+            subprocess.check_call(["git", "describe", "--tags", "--exact-match"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # Current commit is tagged - use the tag as-is
+            tag = describe_output
+            rev = ''
+        except:
+            # Current commit is not tagged
+            # Check if describe_output contains a tag (format: tag-count-hash)
+            if '-' in describe_output and not describe_output.startswith('v'):
+                # No tags found, just a commit hash
+                tag = "v3.0.x"
+                revision = describe_output
+            elif '-' in describe_output:
+                # Format is tag-count-hash, use it as the tag
+                tag = describe_output
+            else:
+                # Just a commit hash, no tags in history
+                tag = "v3.0.x"
+                revision = describe_output
+            
+            # Add branch and dirty status
+            branchname = (
+                subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+                .strip()
+                .decode("utf-8")
+            )
+            modified = (
+                subprocess.check_output(["git", "status", "-uno", "-s"])
+                .strip()
+                .decode("utf-8")
+            )
+            if modified:
+                dirty = "-dirty"
+            else:
+                dirty = ""
+            
+            rev = " (%s%s)" % (branchname, dirty)
     except:
+        # Fallback if git describe fails
         tag = "v3.0.x"
+        try:
+            branchname = (
+                subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+                .strip()
+                .decode("utf-8")
+            )
+            revision = (
+                subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+                .strip()
+                .decode("utf-8")
+            )
+            modified = (
+                subprocess.check_output(["git", "status", "-uno", "-s"])
+                .strip()
+                .decode("utf-8")
+            )
+            if modified:
+                dirty = "-dirty"
+            else:
+                dirty = ""
 
-    # Check to see if the head commit exactly matches a tag.
-    # If so, the revision is "release", otherwise it is BRANCH-COMMIT
-    try:
-        subprocess.check_call(["git", "describe", "--tags", "--exact"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        rev = ''
-    except:
-        branchname = (
-            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-            .strip()
-            .decode("utf-8")
-        )
-        revision = (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .strip()
-            .decode("utf-8")
-        )
-        modified = (
-            subprocess.check_output(["git", "status", "-uno", "-s"])
-            .strip()
-            .decode("utf-8")
-        )
-        if modified:
-            dirty = "-dirty"
-        else:
-            dirty = ""
+            rev = " (%s-%s%s)" % (branchname, revision, dirty)
+        except:
+            rev = " (unknown)"
 
-        rev = " (%s-%s%s)" % (branchname, revision, dirty)
-
-grbl_version = tag.replace('v','').rpartition('.')[0]
+# Extract grbl_version (major.minor) from tag
+# For tags like v3.3.3 -> 3.3
+# For tags like v1.12 -> 1.12
+# For tags like v1.12-58-g109ff1ec -> 1.12
+tag_without_v = tag.replace('v', '')
+tag_base = tag_without_v.split('-')[0]  # Remove -count-hash if present
+version_parts = tag_base.split('.')
+if len(version_parts) >= 2:
+    grbl_version = f"{version_parts[0]}.{version_parts[1]}"
+else:
+    grbl_version = version_parts[0]
+    
 git_info = '%s%s' % (tag, rev)
 
 provisional = "FluidNC/src/version.cxx"

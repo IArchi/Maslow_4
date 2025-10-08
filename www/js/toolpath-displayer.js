@@ -14,7 +14,7 @@ tp.lineWidth = 0.1;
 tp.lineCap = 'round';
 tp.strokeStyle = 'black';
 
-var cameraAngle = 0;
+var cameraAngle = 2; // Default to top-down view
 
 // Default fallback values (will be replaced by actual configuration values)
 var tlX = -8.339;
@@ -644,6 +644,8 @@ var yOffset = 0;
 var scaler = 1;
 var xToPixel = function(x) { return scaler * x + xOffset; }
 var yToPixel = function(y) { return -scaler * y + yOffset; }
+var pixelToX = function(px) { return (px - xOffset) / scaler; }
+var pixelToY = function(py) { return (py - yOffset) / -scaler; }
 
 var clearCanvas = function() {
     // Reset the transform and clear the canvas
@@ -1191,7 +1193,106 @@ const updateGcodeViewerAngle = () => {
 	tpDisplayer().cycleCameraAngle(gcode, gCodeModal, arrayToXYZ(WPOS));
 };
 
-canvas.addEventListener("mouseup", updateGcodeViewerAngle); 
+// Left-click switches view angle
+canvas.addEventListener("mouseup", function(event) {
+    // Only switch view on left-click
+    if (event.button === 0) {
+        updateGcodeViewerAngle();
+    }
+});
+
+// Create custom context menu element
+var contextMenu = document.createElement('div');
+contextMenu.id = 'canvas-context-menu';
+contextMenu.style.cssText = 'position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 8px rgba(0,0,0,0.2); padding: 8px 12px; font-size: 14px; cursor: pointer; z-index: 10000; display: none; border-radius: 4px;';
+document.body.appendChild(contextMenu);
+
+// Hide context menu when clicking elsewhere
+document.addEventListener('click', function() {
+    contextMenu.style.display = 'none';
+});
+
+// Right-click handler for "move here" functionality
+canvas.addEventListener("contextmenu", function(event) {
+    // Only show context menu for top-down views (cameraAngle 2, 3, or 4)
+    if (cameraAngle < 2) {
+        return; // Allow default context menu for non-top-down views
+    }
+    
+    // Check if we have a bounding box set
+    if (!bboxIsSet) {
+        return; // No GCode loaded
+    }
+    
+    event.preventDefault(); // Prevent default browser context menu
+    
+    // Get canvas bounding rectangle to calculate relative position
+    const rect = canvas.getBoundingClientRect();
+    
+    // Calculate click position in canvas coordinates
+    // Canvas may be scaled/stretched to fit the display, so we need to convert properly
+    const canvasX = (event.clientX - rect.left) * (canvas.width / rect.width);
+    const canvasY = (event.clientY - rect.top) * (canvas.height / rect.height);
+    
+    // Use job bounding box if available, otherwise use display bounding box
+    // For top view, try to get jobBbox first (world coordinates), fall back to tpBbox
+    let worldBox;
+    if (jobBboxExists()) {
+        worldBox = getJobBoundingBox();
+    } else if (bboxIsSet && cameraAngle >= 2 && cameraAngle <= 4) {
+        // For top view, tpBbox contains world coordinates since projection is identity
+        // But it may include machine bounds, so we need to be careful
+        // For now, use tpBbox as a fallback
+        worldBox = {
+            min: { x: tpBbox.min.x, y: tpBbox.min.y, z: tpBbox.min.z },
+            max: { x: tpBbox.max.x, y: tpBbox.max.y, z: tpBbox.max.z }
+        };
+    }
+    
+    if (!worldBox) {
+        return;
+    }
+    
+    // For top view, we need to map canvas pixels to world coordinates
+    // Get the projected job bounding box (what's actually displayed)
+    const boxP0 = projection({x: worldBox.min.x, y: worldBox.min.y, z: 0});
+    const boxP1 = projection({x: worldBox.max.x, y: worldBox.max.y, z: 0});
+    
+    // Calculate the pixel coordinates of the bounding box corners
+    const boxPixelMinX = xToPixel(boxP0.x);
+    const boxPixelMinY = yToPixel(boxP1.y); // Note: Y is inverted
+    const boxPixelMaxX = xToPixel(boxP1.x);
+    const boxPixelMaxY = yToPixel(boxP0.y);
+    
+    // Calculate the relative position within the bounding box (0 to 1)
+    const relX = (canvasX - boxPixelMinX) / (boxPixelMaxX - boxPixelMinX);
+    const relY = (canvasY - boxPixelMinY) / (boxPixelMaxY - boxPixelMinY);
+    
+    // Map to world coordinates
+    // Note: Y is inverted in canvas (top = max, bottom = min), so invert relY
+    const worldX = worldBox.min.x + relX * (worldBox.max.x - worldBox.min.x);
+    const worldY = worldBox.max.y - relY * (worldBox.max.y - worldBox.min.y);
+    
+    // Validate that coordinates are finite and within reasonable bounds
+    if (!isFinite(worldX) || !isFinite(worldY)) {
+        return;
+    }
+    
+    // Show custom context menu
+    contextMenu.textContent = `Move to: X${worldX.toFixed(2)}, Y${worldY.toFixed(2)}`;
+    contextMenu.style.left = event.clientX + 'px';
+    contextMenu.style.top = event.clientY + 'px';
+    contextMenu.style.display = 'block';
+    
+    // Handle click on context menu
+    contextMenu.onclick = function(e) {
+        e.stopPropagation();
+        contextMenu.style.display = 'none';
+        if (typeof move === 'function') {
+            move({ X: worldX, Y: worldY });
+        }
+    };
+}); 
 var refreshGcode = function() {
     const gcode = getValue("tablettab_gcode");
     tpDisplayer().showToolpath(gcode, gCodeModal, arrayToXYZ(WPOS));

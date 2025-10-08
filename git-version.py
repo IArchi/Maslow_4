@@ -28,41 +28,53 @@ else:
         # Check if the current commit is exactly tagged
         try:
             subprocess.check_call(["git", "describe", "--tags", "--exact-match"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            # Current commit is tagged - use the tag as-is
+            # Current commit is tagged - use the tag as-is with no extra info
             tag = describe_output
             rev = ''
         except:
             # Current commit is not tagged
             # Check if describe_output contains a tag (format: tag-count-hash)
-            if '-' in describe_output and not describe_output.startswith('v'):
-                # No tags found, just a commit hash
-                tag = "v3.0.x"
-                revision = describe_output
-            elif '-' in describe_output:
-                # Format is tag-count-hash, use it as the tag
+            if '-' in describe_output and describe_output.startswith('v'):
+                # Format is tag-count-hash, use it as-is (already has all info we need)
                 tag = describe_output
+                rev = ''
+            elif '-' in describe_output and not describe_output.startswith('v'):
+                # Looks like tag-count-hash but doesn't start with 'v', likely just a hash
+                # Fall back to v3.0.x with branch info
+                tag = "v3.0.x"
+                branchname = (
+                    subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+                    .strip()
+                    .decode("utf-8")
+                )
+                modified = (
+                    subprocess.check_output(["git", "status", "-uno", "-s"])
+                    .strip()
+                    .decode("utf-8")
+                )
+                if modified:
+                    dirty = "-dirty"
+                else:
+                    dirty = ""
+                rev = " (%s-%s%s)" % (branchname, describe_output[:7], dirty)
             else:
                 # Just a commit hash, no tags in history
                 tag = "v3.0.x"
-                revision = describe_output
-            
-            # Add branch and dirty status
-            branchname = (
-                subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-                .strip()
-                .decode("utf-8")
-            )
-            modified = (
-                subprocess.check_output(["git", "status", "-uno", "-s"])
-                .strip()
-                .decode("utf-8")
-            )
-            if modified:
-                dirty = "-dirty"
-            else:
-                dirty = ""
-            
-            rev = " (%s%s)" % (branchname, dirty)
+                branchname = (
+                    subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+                    .strip()
+                    .decode("utf-8")
+                )
+                modified = (
+                    subprocess.check_output(["git", "status", "-uno", "-s"])
+                    .strip()
+                    .decode("utf-8")
+                )
+                if modified:
+                    dirty = "-dirty"
+                else:
+                    dirty = ""
+                rev = " (%s-%s%s)" % (branchname, describe_output[:7], dirty)
     except:
         # Fallback if git describe fails
         tag = "v3.0.x"

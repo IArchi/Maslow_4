@@ -14,6 +14,7 @@
 extern const char* VERSION_NUMBER;
 
 // Maslow specific defines
+#define TLEncoderLine 2
 #define TREncoderLine 1
 #define BLEncoderLine 3
 #define BREncoderLine 0

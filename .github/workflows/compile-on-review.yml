@@ -38,10 +38,15 @@ jobs:
       with:
         # For issue_comment events, checkout the PR head commit instead of the default branch
         ref: ${{ github.event_name == 'issue_comment' && steps.pr.outputs.head_sha || github.sha }}
-        fetch-depth: 0  # Fetch all history including tags for proper version reporting
+        fetch-depth: 0  # Fetch all history for proper version reporting
+        fetch-tags: true  # Explicitly fetch all tags
       
-    - name: Fetch tags
-      run: git fetch --tags --force
+    - name: Verify tags are available
+      run: |
+        echo "Available tags:"
+        git tag -l | tail -10
+        echo "Git describe output:"
+        git describe --tags --always
       
     - name: Setup Node.js
       uses: actions/setup-node@v4

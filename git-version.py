@@ -53,7 +53,18 @@ else:
 
         rev = " (%s-%s%s)" % (branchname, revision, dirty)
 
-grbl_version = tag.replace('v','').rpartition('.')[0]
+# Extract grbl_version (major.minor) from tag
+# For tag-count-hash format like v1.12-58-gabcd, extract just v1.12 first
+tag_base = tag.split('-')[0] if '-' in tag else tag
+tag_no_v = tag_base.replace('v', '')
+parts = tag_no_v.split('.')
+if len(parts) >= 2:
+    grbl_version = f'{parts[0]}.{parts[1]}'
+elif len(parts) == 1:
+    grbl_version = parts[0]
+else:
+    grbl_version = '3.0'
+
 git_info = '%s%s' % (tag, rev)
 
 # Generate VERSION_NUMBER using git describe --tags --always --dirty for Maslow-specific version

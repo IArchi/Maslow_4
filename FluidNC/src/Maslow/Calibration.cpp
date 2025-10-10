@@ -1295,6 +1295,28 @@ bool Calibration::generate_calibration_grid() {
     float xSpacing = calibration_grid_width_mm_X / (calibrationGridSize - 1);
     float ySpacing = calibration_grid_height_mm_Y / (calibrationGridSize - 1);
 
+
+    //If either dimension is set to zero we automatically compute it as half the frame size
+    if(calibration_grid_height_mm_Y == 0 || calibration_grid_width_mm_X == 0) {
+
+
+
+        float frameWidth = getKinematics()->getTrX() - getKinematics()->getTlX();
+        float frameHeight = getKinematics()->getTlY() - getKinematics()->getBlY();
+
+        log_info("Frame dimensions from kinematics: TR_X" << getKinematics()->getTrX() << " TL_X: " << getKinematics()->getTlX() << " TL_Y: " << getKinematics()->getTlY() << " BL_Y: " << getKinematics()->getBlY());
+ 
+        log_info("Frame size: " << frameWidth << " x " << frameHeight << " mm");
+
+        float gridWidth = frameWidth * 0.4;
+        float gridHeight = frameHeight * 0.4;
+
+        log_info("Computed grid size: " << gridWidth << " x " << gridHeight << " mm");
+
+        xSpacing = gridWidth / (calibrationGridSize - 1);
+        ySpacing = gridHeight / (calibrationGridSize - 1);
+    }
+
     int numberOfCycles = 0;
 
     switch (calibrationGridSize) {

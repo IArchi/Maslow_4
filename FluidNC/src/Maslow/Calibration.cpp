@@ -172,6 +172,13 @@ bool Calibration::requestStateChange(int newState) {
                         return false;
                     }
                 }
+                //We have just finished the first six points and have updated anchor locations so it's time to generate the grid again 
+                //if the user has selected for it to be generated automatically
+                if(waypoint == 6 && calibration_grid_width_mm_X == 0 && calibration_grid_height_mm_Y == 0){ 
+                    if (!generate_calibration_grid()) {  //Fail out if the grid cannot be generated
+                        return false;
+                    }
+                }
                 Maslow.stop();
 
                 //Save the z-axis 'stop' position

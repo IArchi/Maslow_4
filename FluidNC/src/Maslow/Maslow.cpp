@@ -89,10 +89,14 @@ void Maslow_::begin(void (*sys_rt)()) {
 
     lastCallToUpdate = millis();
 
-    // Always load positions from NVS when begin() is called
-    // This ensures positions are restored after both power-on and soft resets
-    loadZPos();           //Loads the z-axis position from EEPROM
-    loadBeltPositions();  //Loads the belt positions from EEPROM
+    // Only load positions from NVS on the first call to begin() (initial power-on)
+    // Subsequent calls (e.g., after soft reset) should not reload stale NVS data
+    static bool positionsLoaded = false;
+    if (!positionsLoaded) {
+        loadZPos();           //Loads the z-axis position from EEPROM
+        loadBeltPositions();  //Loads the belt positions from EEPROM
+        positionsLoaded = true;
+    }
 
     stopMotors();
 

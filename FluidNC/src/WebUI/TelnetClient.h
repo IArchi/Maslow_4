@@ -25,6 +25,29 @@ namespace WebUI {
 
         int _state = 0;
 
+        // Telnet protocol constants
+        static const uint8_t IAC  = 0xFF;  // Interpret As Command
+        static const uint8_t WILL = 0xFB;
+        static const uint8_t WONT = 0xFC;
+        static const uint8_t DO   = 0xFD;
+        static const uint8_t DONT = 0xFE;
+        static const uint8_t SB   = 0xFA;  // Subnegotiation Begin
+        static const uint8_t SE   = 0xF0;  // Subnegotiation End
+
+        // Grace period to ignore realtime commands during telnet negotiation (milliseconds)
+        static const uint32_t NEGOTIATION_GRACE_PERIOD_MS = 2000;
+
+        uint32_t _connectionTime = 0;
+        
+        enum TelnetState {
+            TELNET_NORMAL,
+            TELNET_IAC_RECEIVED,
+            TELNET_NEGOTIATION,
+            TELNET_SUBNEGOTIATION
+        };
+        
+        TelnetState _telnetState = TELNET_NORMAL;
+
     public:
         TelnetClient(WiFiClient* wifiClient);
 
@@ -36,6 +59,9 @@ namespace WebUI {
         int    available() override;
         void   flush() override {}
         void   flushRx() override;
+        
+        // Override realtimeOkay to block realtime commands during negotiation
+        bool realtimeOkay(char c) override;
 
         void closeOnDisconnect();
 

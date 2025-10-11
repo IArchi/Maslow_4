@@ -84,6 +84,8 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == RETRACTING) {
                 currentState = RETRACTED;
                 sys.set_state(State::Idle);
+                // Explicitly save belt positions now that belts are retracted and tight
+                Maslow.saveBeltPositions();
                 success = true;
                 break;
             } else {
@@ -244,6 +246,8 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == CALIBRATION_IN_PROGRESS || currentState == CALIBRATION_COMPUTING || currentState == TAKING_SLACK) {
                 currentState = READY_TO_CUT;
                 sys.set_state(State::Idle);
+                // Explicitly save belt positions now that calibration/take-slack is complete and belts are tight
+                Maslow.saveBeltPositions();
                 success = true;
                 break;
             } else {

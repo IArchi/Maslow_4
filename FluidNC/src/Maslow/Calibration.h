@@ -123,8 +123,6 @@ private:
     bool extendedTR   = false;
     bool extendedBL   = false;
     bool extendedBR   = false;
-    bool extendingALL = false;  //This is replaced by the state machine. Delete
-    bool complyALL    = false;
 
     //Variables used by take slack
     bool takeSlack = false;

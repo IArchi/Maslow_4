@@ -1314,7 +1314,7 @@ bool Calibration::generate_calibration_grid() {
         log_info("Computed grid size: " << gridWidth << " x " << gridHeight << " mm");
 
         xSpacing = gridWidth / (calibrationGridSize - 1);
-        ySpacing = gridHeight / (calibrationGridSize - 1);
+        ySpacing = gridHeight / (calibrationGridSize - 1); 
     }
 
     int numberOfCycles = 0;

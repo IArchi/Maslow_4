@@ -274,6 +274,79 @@ function build_dlg_preferences_list() {
         console.log("Use default filters");
         id('preferences_filters').value = String(default_preferenceslist[0].f_filters);
     }
+
+    //config filename - fetch yaml files and populate dropdown
+    fetchYamlFiles();
+}
+
+/** Fetch YAML files from filesystem and populate the config filename dropdown */
+function fetchYamlFiles() {
+    const cmd = buildHttpFilesCmd({ action: 'list', path: '/' });
+    SendGetHttp(cmd, populateConfigFilenameDropdown, handleYamlFilesFetchError);
+}
+
+/** Populate config filename dropdown with YAML files from the response */
+function populateConfigFilenameDropdown(response) {
+    try {
+        const data = JSON.parse(response);
+        const dropdown = id('preferences_config_filename');
+        
+        if (!dropdown) {
+            console.error('Config filename dropdown not found');
+            return;
+        }
+
+        // Clear existing options
+        dropdown.innerHTML = '';
+
+        // Filter for .yaml files
+        const yamlFiles = data.files.filter(file => 
+            file.name.toLowerCase().endsWith('.yaml') && file.size !== '-1'
+        );
+
+        // Add yaml files to dropdown
+        yamlFiles.forEach(file => {
+            const option = document.createElement('option');
+            option.value = file.name;
+            option.textContent = file.name;
+            dropdown.appendChild(option);
+        });
+
+        // If no yaml files found, add default option
+        if (yamlFiles.length === 0) {
+            const option = document.createElement('option');
+            option.value = 'maslow.yaml';
+            option.textContent = 'maslow.yaml';
+            dropdown.appendChild(option);
+        }
+
+        // Set the selected value from preferences
+        const savedFilename = GetPrefOrDefault("config_filename");
+        if (savedFilename) {
+            dropdown.value = savedFilename;
+        }
+    } catch (error) {
+        console.error('Error parsing yaml files response:', error);
+        handleYamlFilesFetchError(0, response);
+    }
+}
+
+/** Handle error when fetching YAML files */
+function handleYamlFilesFetchError(errorCode, response) {
+    console.warn('Failed to fetch yaml files, using default');
+    const dropdown = id('preferences_config_filename');
+    if (dropdown) {
+        // Set default option if fetch failed
+        dropdown.innerHTML = '<option value="maslow.yaml">maslow.yaml</option>';
+        const savedFilename = GetPrefOrDefault("config_filename");
+        if (savedFilename && savedFilename !== 'maslow.yaml') {
+            const option = document.createElement('option');
+            option.value = savedFilename;
+            option.textContent = savedFilename;
+            dropdown.appendChild(option);
+            dropdown.value = savedFilename;
+        }
+    }
 }
 
 function closePreferencesDialog() {
@@ -364,6 +437,7 @@ const getPreferencesForSave = () => {
     saveprefs.push(`"has_TFT_SD":"${getChecked('has_tft_sd')}"`);
     saveprefs.push(`"has_TFT_USB":"${getChecked('has_tft_usb')}"`);
     saveprefs.push(`"f_filters":"${getValue('preferences_filters') || ""}"`);
+    saveprefs.push(`"config_filename":"${getValue('preferences_config_filename') || "maslow.yaml"}"`);
 
     saveprefs.push(`"enable_commands_panel":"${getChecked('show_commands_panel')}"`);
     saveprefs.push(`"enable_autoscroll":"${getChecked('preferences_autoscroll')}"`);

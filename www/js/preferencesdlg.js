@@ -553,9 +553,22 @@ function updateFluidNCConfigFilename(newFilename, callback) {
 }
 
 function handleConfigFilenameUpdateSuccess(response, callback) {
-    console.log("FluidNC Config/Filename updated successfully, refreshing settings");
-    // Reload settings from the new config file
-    refreshSettingsWithCallback(callback);
+    console.log("FluidNC Config/Filename updated successfully, saving settings to flash");
+    
+    // Send $SS command to save settings to flash so they persist after reset
+    const saveCmd = buildHttpCommandCmd(httpCmdType.plain, "$SS");
+    SendGetHttp(saveCmd, 
+        function(saveResponse) {
+            console.log("Settings saved to flash, refreshing settings");
+            // Reload settings from the new config file
+            refreshSettingsWithCallback(callback);
+        },
+        function(error_code, response) {
+            console.error(`Failed to save settings to flash: ${error_code}`, response);
+            // Still try to refresh settings even if save failed
+            refreshSettingsWithCallback(callback);
+        }
+    );
 }
 
 function handleConfigFilenameUpdateFail(error_code, response, callback) {

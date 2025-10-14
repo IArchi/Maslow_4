@@ -34,18 +34,46 @@ function initpreferences() {
 
 /** Handle Save and Restart button click from preferences */
 function handleRestartFluidNC() {
-    // First save preferences, then restart FluidNC
-    // Use the external save preference mode which doesn't show progress UI
-    SavePreferences(true);
+    if (CheckForHttpCommLock()) {
+        return;
+    }
     
-    // Wait a moment for preferences to save, then restart
-    setTimeout(function() {
-        if (typeof restart_esp === 'function') {
-            restart_esp();
-        } else {
-            console.error('restart_esp function not found');
+    // First, get and validate preferences (same as regular Save button)
+    const newPrefsList = getPreferencesForSave();
+    if (newPrefsList.length === 0) {
+        return;
+    }
+    
+    // Update preferences list
+    preferenceslist = newPrefsList;
+    
+    // Save preferences with a callback to restart after save completes
+    const file = BuildFormDataFiles(preferences_file_name, [JSON.stringify(preferenceslist, null, " ")], { type: 'application/json' });
+    var formData = new FormData();
+    formData.append('path', '/');
+    formData.append('myfile[]', file, preferences_file_name);
+    
+    console.log("Saving preferences before restart");
+    
+    // Save with custom success handler that restarts FluidNC
+    SendFileHttp(httpCmd.files, formData, 
+        null, // no progress display
+        function(response) { // success callback
+            console.info("Preferences saved successfully, restarting FluidNC");
+            // Give a moment for the save to be written, then restart
+            setTimeout(function() {
+                if (typeof restart_esp === 'function') {
+                    restart_esp();
+                } else {
+                    console.error('restart_esp function not found');
+                }
+            }, 200);
+        },
+        function(error_code, response) { // error callback
+            console.error("Failed to save preferences before restart:", error_code, response);
+            alertdlg(translate_text_item("Error"), translate_text_item("Save preferences failed!"));
         }
-    }, 500);
+    );
 }
 
 const savingPreferences = (dispatchEvent) => {SavePreferences(false)};

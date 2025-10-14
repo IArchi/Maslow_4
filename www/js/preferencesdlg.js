@@ -1,5 +1,6 @@
 //Preferences dialog
 var language_save = language;
+var config_filename_save = "";
 
 var preferences_file_name = 'preferences.json';
 
@@ -199,6 +200,7 @@ function showpreferencesdlg() {
     const modal = setactiveModal('preferencesdlg.html');
     if (modal == null) return;
     language_save = language;
+    config_filename_save = GetPrefOrDefault("config_filename");
     build_dlg_preferences_list();
     displayNone('preferencesdlg_upload_msg');
     showModal();
@@ -495,9 +497,48 @@ function preferencesdlgUploadProgressDisplay(oEvent) {
 function preferencesUploadsuccess(response) {
     console.info("Preferences successfully saved");
     displayNone('preferencesdlg_upload_msg');
+    
+    // Check if config filename changed
+    const newConfigFilename = preferenceslist[0].config_filename;
+    if (newConfigFilename && newConfigFilename !== config_filename_save) {
+        console.log(`Config filename changed from '${config_filename_save}' to '${newConfigFilename}'`);
+        // Update FluidNC's Config/Filename setting and reload settings
+        updateFluidNCConfigFilename(newConfigFilename);
+    }
+    
     applypreferenceslist();
     init_grbl_panel();
     closeModal('ok');
+}
+
+/** Update FluidNC's Config/Filename setting and reload configuration */
+function updateFluidNCConfigFilename(newFilename) {
+    // Send ESP401 command to update Config/Filename setting in FluidNC
+    // The P parameter is the setting position for Config/Filename
+    // We need to find the Config/Filename setting in scl array
+    const configFilenameSetting = scl.find(s => s.label === "Config/Filename");
+    
+    if (configFilenameSetting) {
+        const cmd = buildHttpCommandCmd(httpCmdType.plain, `[ESP401]P=${configFilenameSetting.pos} T=${configFilenameSetting.type} V=${newFilename}`);
+        console.log(`Updating FluidNC Config/Filename to: ${newFilename}`);
+        SendGetHttp(cmd, handleConfigFilenameUpdateSuccess, handleConfigFilenameUpdateFail);
+    } else {
+        console.warn("Config/Filename setting not found in settings list, refreshing settings anyway");
+        // If we can't find the setting, just refresh to load from the new file
+        refreshSettings(false);
+    }
+}
+
+function handleConfigFilenameUpdateSuccess(response) {
+    console.log("FluidNC Config/Filename updated successfully, refreshing settings");
+    // Reload settings from the new config file
+    refreshSettings(false);
+}
+
+function handleConfigFilenameUpdateFail(error_code, response) {
+    console.error(`Failed to update FluidNC Config/Filename: ${error_code}`, response);
+    // Still try to refresh settings
+    refreshSettings(false);
 }
 
 function preferencesUploadfailed(error_code, response) {

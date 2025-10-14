@@ -32,14 +32,20 @@ function initpreferences() {
     }
 }
 
-/** Handle Restart FluidNC button click from preferences */
+/** Handle Save and Restart button click from preferences */
 function handleRestartFluidNC() {
-    // Call the restart function from settings.js
-    if (typeof restart_esp === 'function') {
-        restart_esp();
-    } else {
-        console.error('restart_esp function not found');
-    }
+    // First save preferences, then restart FluidNC
+    // Use the external save preference mode which doesn't show progress UI
+    SavePreferences(true);
+    
+    // Wait a moment for preferences to save, then restart
+    setTimeout(function() {
+        if (typeof restart_esp === 'function') {
+            restart_esp();
+        } else {
+            console.error('restart_esp function not found');
+        }
+    }, 500);
 }
 
 const savingPreferences = (dispatchEvent) => {SavePreferences(false)};

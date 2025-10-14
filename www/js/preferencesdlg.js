@@ -14,6 +14,12 @@ function initpreferences() {
     id("preferencesDlgClose").addEventListener("click", closePreferencesDialog);
     id("preferencesDlgCancel").addEventListener("click", closePreferencesDialog);
     id("preferencesDlgSave").addEventListener("click", savingPreferences);
+    
+    // Add event listener for Restart FluidNC button
+    const restartBtn = id("restart_fluidnc_btn");
+    if (restartBtn) {
+        restartBtn.addEventListener("click", handleRestartFluidNC);
+    }
 
     const checkBoxes = Array.from(document.getElementsByTagName("input")).filter((inpElem) => inpElem.type === "checkbox" && inpElem.disabled !== true);
     for (const checkBox of checkBoxes) {
@@ -23,6 +29,16 @@ function initpreferences() {
         } else {
             id(chkId).addEventListener("click", toggleCheckBox);
         }
+    }
+}
+
+/** Handle Restart FluidNC button click from preferences */
+function handleRestartFluidNC() {
+    // Call the restart function from settings.js
+    if (typeof restart_esp === 'function') {
+        restart_esp();
+    } else {
+        console.error('restart_esp function not found');
     }
 }
 

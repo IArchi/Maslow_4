@@ -14,12 +14,6 @@ function initpreferences() {
     id("preferencesDlgClose").addEventListener("click", closePreferencesDialog);
     id("preferencesDlgCancel").addEventListener("click", closePreferencesDialog);
     id("preferencesDlgSave").addEventListener("click", savingPreferences);
-    
-    // Add event listener for Restart FluidNC button
-    const restartBtn = id("restart_fluidnc_btn");
-    if (restartBtn) {
-        restartBtn.addEventListener("click", handleRestartFluidNC);
-    }
 
     const checkBoxes = Array.from(document.getElementsByTagName("input")).filter((inpElem) => inpElem.type === "checkbox" && inpElem.disabled !== true);
     for (const checkBox of checkBoxes) {
@@ -30,50 +24,6 @@ function initpreferences() {
             id(chkId).addEventListener("click", toggleCheckBox);
         }
     }
-}
-
-/** Handle Save and Restart button click from preferences */
-function handleRestartFluidNC() {
-    if (CheckForHttpCommLock()) {
-        return;
-    }
-    
-    // First, get and validate preferences (same as regular Save button)
-    const newPrefsList = getPreferencesForSave();
-    if (newPrefsList.length === 0) {
-        return;
-    }
-    
-    // Update preferences list
-    preferenceslist = newPrefsList;
-    
-    // Save preferences with a callback to restart after save completes
-    const file = BuildFormDataFiles(preferences_file_name, [JSON.stringify(preferenceslist, null, " ")], { type: 'application/json' });
-    var formData = new FormData();
-    formData.append('path', '/');
-    formData.append('myfile[]', file, preferences_file_name);
-    
-    console.log("Saving preferences before restart");
-    
-    // Save with custom success handler that restarts FluidNC
-    SendFileHttp(httpCmd.files, formData, 
-        null, // no progress display
-        function(response) { // success callback
-            console.info("Preferences saved successfully, restarting FluidNC");
-            // Give a moment for the save to be written, then restart
-            setTimeout(function() {
-                if (typeof restart_esp === 'function') {
-                    restart_esp();
-                } else {
-                    console.error('restart_esp function not found');
-                }
-            }, 200);
-        },
-        function(error_code, response) { // error callback
-            console.error("Failed to save preferences before restart:", error_code, response);
-            alertdlg(translate_text_item("Error"), translate_text_item("Save preferences failed!"));
-        }
-    );
 }
 
 const savingPreferences = (dispatchEvent) => {SavePreferences(false)};
@@ -596,9 +546,13 @@ function updateFluidNCConfigFilename(newFilename, callback) {
             function(error_code, response) { handleConfigFilenameUpdateFail(error_code, response, callback); }
         );
     } else {
-        console.warn("Config/Filename setting not found in settings list, refreshing settings anyway");
-        // If we can't find the setting, just refresh to load from the new file
-        refreshSettingsWithCallback(callback);
+        console.warn("Config/Filename setting not found in settings list");
+        displayNone('preferencesdlg_upload_msg');
+        alertdlg(translate_text_item("Error"), translate_text_item("Config/Filename setting not found. Cannot change config file."));
+        // Close the modal
+        applypreferenceslist();
+        init_grbl_panel();
+        closeModal('ok');
     }
 }
 
@@ -609,80 +563,50 @@ function handleConfigFilenameUpdateSuccess(response, callback) {
     const saveCmd = buildHttpCommandCmd(httpCmdType.plain, "$SS");
     SendGetHttp(saveCmd, 
         function(saveResponse) {
-            console.log("Settings saved to flash, refreshing settings");
-            // Reload settings from the new config file
-            refreshSettingsWithCallback(callback);
+            console.log("Settings saved to flash");
+            // Config filename has been saved, but FluidNC needs to restart to load the new file
+            // Show a message to the user with option to restart
+            displayNone('preferencesdlg_upload_msg');
+            
+            const newFilename = preferenceslist[0].config_filename;
+            confirmdlg(
+                translate_text_item("Config File Changed"),
+                `Configuration file changed to ${newFilename}. FluidNC must be restarted to load settings from the new file. Restart now?`,
+                function(answer) {
+                    if (answer) {
+                        // User chose to restart
+                        if (typeof restart_esp === 'function') {
+                            restart_esp();
+                        }
+                    } else {
+                        // User chose not to restart now
+                        applypreferenceslist();
+                        init_grbl_panel();
+                        closeModal('ok');
+                    }
+                }
+            );
         },
         function(error_code, response) {
             console.error(`Failed to save settings to flash: ${error_code}`, response);
-            // Still try to refresh settings even if save failed
-            refreshSettingsWithCallback(callback);
+            displayNone('preferencesdlg_upload_msg');
+            alertdlg(translate_text_item("Error"), translate_text_item("Failed to save config filename setting"));
+            // Still close the modal
+            applypreferenceslist();
+            init_grbl_panel();
+            closeModal('ok');
         }
     );
 }
 
 function handleConfigFilenameUpdateFail(error_code, response, callback) {
     console.error(`Failed to update FluidNC Config/Filename: ${error_code}`, response);
-    // Still try to refresh settings
-    refreshSettingsWithCallback(callback);
-}
-
-/** Refresh settings and call callback after completion */
-function refreshSettingsWithCallback(callback) {
-    if (CheckForHttpCommLock()) {
-        // If locked, wait a bit and try again
-        setTimeout(function() { refreshSettingsWithCallback(callback); }, 500);
-        return;
-    }
-    
-    do_not_build_settings = false;
-    
-    displayBlock("settings_loader");
-    displayNone("settings_list_content");
-    displayNone("settings_status");
-    displayNone("settings_refresh_btn");
-    
-    // Clear all of the elements in the array
-    scl.length = 0;
-    const cmd = buildHttpCommandCmd(httpCmdType.plain, "[ESP400]");
-    
-    // Wrap the success handler to call our callback
-    SendGetHttp(cmd, 
-        function(response) {
-            // Process settings response
-            displayNone("settings_loader");
-            displayBlock("settings_refresh_btn");
-            if (!process_settings_answer(response)) {
-                conErr(406, 'Wrong data');
-                console.log(response);
-                displayNone("settings_loader");
-                displayBlock('settings_status');
-                displayBlock('settings_refresh_btn');
-                setHTML("settings_status", 'Failed to load settings');
-            } else {
-                displayNone("settings_status");
-                displayBlock("settings_list_content");
-            }
-            
-            // Call the callback after settings are processed
-            if (typeof callback === 'function') {
-                // Give UI a moment to update
-                setTimeout(callback, 500);
-            }
-        },
-        function(error_code, response) {
-            // On error, still call callback
-            conErr(error_code, response);
-            displayNone("settings_loader");
-            displayBlock('settings_status');
-            displayBlock('settings_refresh_btn');
-            setHTML("settings_status", 'Failed to load settings');
-            
-            if (typeof callback === 'function') {
-                setTimeout(callback, 500);
-            }
-        }
-    );
+    displayNone('preferencesdlg_upload_msg');
+    alertdlg(translate_text_item("Error"), translate_text_item("Failed to update config filename setting in FluidNC"));
+    // Close the modal
+    applypreferenceslist();
+    init_grbl_panel();
+    closeModal('ok');
 }
 
 function preferencesUploadfailed(error_code, response) {

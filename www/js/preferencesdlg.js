@@ -502,17 +502,37 @@ function preferencesUploadsuccess(response) {
     const newConfigFilename = preferenceslist[0].config_filename;
     if (newConfigFilename && newConfigFilename !== config_filename_save) {
         console.log(`Config filename changed from '${config_filename_save}' to '${newConfigFilename}'`);
+        // Show message that settings are being reloaded
+        setHTML('preferencesdlg_upload_percent', '');
+        const msgElem = id('preferencesdlg_upload_msg');
+        if (msgElem) {
+            // Get the "Saving" text element and replace it with "Switching configuration file..."
+            const savingText = msgElem.querySelector('span[translate]');
+            if (savingText) {
+                savingText.textContent = 'Switching configuration file...';
+            }
+        }
+        displayBlock('preferencesdlg_upload_msg');
+        
         // Update FluidNC's Config/Filename setting and reload settings
-        updateFluidNCConfigFilename(newConfigFilename);
+        // Pass callback to close modal after settings are reloaded
+        updateFluidNCConfigFilename(newConfigFilename, function() {
+            // Settings have been reloaded, now close the modal
+            displayNone('preferencesdlg_upload_msg');
+            applypreferenceslist();
+            init_grbl_panel();
+            closeModal('ok');
+        });
+    } else {
+        // No config change, proceed normally
+        applypreferenceslist();
+        init_grbl_panel();
+        closeModal('ok');
     }
-    
-    applypreferenceslist();
-    init_grbl_panel();
-    closeModal('ok');
 }
 
 /** Update FluidNC's Config/Filename setting and reload configuration */
-function updateFluidNCConfigFilename(newFilename) {
+function updateFluidNCConfigFilename(newFilename, callback) {
     // Send ESP401 command to update Config/Filename setting in FluidNC
     // The P parameter is the setting position for Config/Filename
     // We need to find the Config/Filename setting in scl array
@@ -521,24 +541,85 @@ function updateFluidNCConfigFilename(newFilename) {
     if (configFilenameSetting) {
         const cmd = buildHttpCommandCmd(httpCmdType.plain, `[ESP401]P=${configFilenameSetting.pos} T=${configFilenameSetting.type} V=${newFilename}`);
         console.log(`Updating FluidNC Config/Filename to: ${newFilename}`);
-        SendGetHttp(cmd, handleConfigFilenameUpdateSuccess, handleConfigFilenameUpdateFail);
+        SendGetHttp(cmd, 
+            function(response) { handleConfigFilenameUpdateSuccess(response, callback); }, 
+            function(error_code, response) { handleConfigFilenameUpdateFail(error_code, response, callback); }
+        );
     } else {
         console.warn("Config/Filename setting not found in settings list, refreshing settings anyway");
         // If we can't find the setting, just refresh to load from the new file
-        refreshSettings(false);
+        refreshSettingsWithCallback(callback);
     }
 }
 
-function handleConfigFilenameUpdateSuccess(response) {
+function handleConfigFilenameUpdateSuccess(response, callback) {
     console.log("FluidNC Config/Filename updated successfully, refreshing settings");
     // Reload settings from the new config file
-    refreshSettings(false);
+    refreshSettingsWithCallback(callback);
 }
 
-function handleConfigFilenameUpdateFail(error_code, response) {
+function handleConfigFilenameUpdateFail(error_code, response, callback) {
     console.error(`Failed to update FluidNC Config/Filename: ${error_code}`, response);
     // Still try to refresh settings
-    refreshSettings(false);
+    refreshSettingsWithCallback(callback);
+}
+
+/** Refresh settings and call callback after completion */
+function refreshSettingsWithCallback(callback) {
+    if (CheckForHttpCommLock()) {
+        // If locked, wait a bit and try again
+        setTimeout(function() { refreshSettingsWithCallback(callback); }, 500);
+        return;
+    }
+    
+    do_not_build_settings = false;
+    
+    displayBlock("settings_loader");
+    displayNone("settings_list_content");
+    displayNone("settings_status");
+    displayNone("settings_refresh_btn");
+    
+    // Clear all of the elements in the array
+    scl.length = 0;
+    const cmd = buildHttpCommandCmd(httpCmdType.plain, "[ESP400]");
+    
+    // Wrap the success handler to call our callback
+    SendGetHttp(cmd, 
+        function(response) {
+            // Process settings response
+            displayNone("settings_loader");
+            displayBlock("settings_refresh_btn");
+            if (!process_settings_answer(response)) {
+                conErr(406, 'Wrong data');
+                console.log(response);
+                displayNone("settings_loader");
+                displayBlock('settings_status');
+                displayBlock('settings_refresh_btn');
+                setHTML("settings_status", 'Failed to load settings');
+            } else {
+                displayNone("settings_status");
+                displayBlock("settings_list_content");
+            }
+            
+            // Call the callback after settings are processed
+            if (typeof callback === 'function') {
+                // Give UI a moment to update
+                setTimeout(callback, 500);
+            }
+        },
+        function(error_code, response) {
+            // On error, still call callback
+            conErr(error_code, response);
+            displayNone("settings_loader");
+            displayBlock('settings_status');
+            displayBlock('settings_refresh_btn');
+            setHTML("settings_status", 'Failed to load settings');
+            
+            if (typeof callback === 'function') {
+                setTimeout(callback, 500);
+            }
+        }
+    );
 }
 
 function preferencesUploadfailed(error_code, response) {

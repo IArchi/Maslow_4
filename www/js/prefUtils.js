@@ -76,8 +76,13 @@ const Preferences_build_list = (response_text) => {
 
 /** Determine if the preferences have been modified */
 const PreferencesModified = () => {
-    if (!preferenceslist[0].length) {
+    if (!preferenceslist[0] || !preferenceslist[0].length) {
         // Nothing got loaded, so nothing could have been modified
+        return false;
+    }
+
+    if (!default_preferenceslist || !default_preferenceslist[0]) {
+        // Default preferences not loaded, cannot compare
         return false;
     }
 

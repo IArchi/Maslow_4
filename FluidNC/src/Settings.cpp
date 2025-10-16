@@ -403,6 +403,7 @@ Error UserCommand::action(char* value, WebUI::AuthenticationLevel auth_level, Ch
 Coordinates* coords[CoordIndex::End];
 
 bool Coordinates::load() {
+    // len is set to buffer size as input, and will be set to actual data size as output
     size_t len = sizeof(_currentValue);
     switch (nvs_get_blob(Setting::_handle, _name, _currentValue, &len)) {
         case ESP_OK:

@@ -86,7 +86,7 @@ if not gitFail:
 
     # Check if version contains "-" to trigger warning for non-tagged versions
     if "-" in VERSION_NUMBER and VERSION_NUMBER != FALLBACK_VERSION:
-        compile_warning = '#warning "You are not compiling a tagged version, this should not be a release"'
+        compile_warning = '#warning "' + VERSION_NUMBER + ' is not a tagged version, this should not be a release"'
 
 provisional = "FluidNC/src/version.cxx"
 final = "FluidNC/src/version.cpp"

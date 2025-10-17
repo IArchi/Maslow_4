@@ -358,6 +358,8 @@ void MotorUnit::reset() {
 void MotorUnit::zero() {
     Maslow.I2CMux.setPort(_encoderAddress);
     encoder.resetCumulativePosition();
+    // Update our cached value to match the reset position
+    mostRecentCumulativeEncoderReading = 0;
 }
 
 //sets the encoder position to a specific value (for restoring from NVS)

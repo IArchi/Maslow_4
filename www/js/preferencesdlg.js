@@ -44,6 +44,12 @@ function ontogglePing(forcevalue) {
 
 /** Apply the preferences we have to the dialog */
 function applypreferenceslist() {
+    // Ensure preferences list is loaded before applying
+    if (!preferenceslist || !preferenceslist[0]) {
+        console.warn("Preferences list not loaded yet, using defaults");
+        preferenceslist = default_preferenceslist;
+    }
+    
     //Assign each control state
     translate_text(preferenceslist[0].language);
     build_HTML_setting_list(current_setting_filter);

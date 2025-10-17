@@ -1615,6 +1615,17 @@ bool Calibration::checkOverides() {
     return false;
 }
 
+void Calibration::clearMotorOverrides() {
+    TLIOveride = false;
+    TRIOveride = false;
+    BLIOveride = false;
+    BRIOveride = false;
+    TLOOveride = false;
+    TROOveride = false;
+    BLOOveride = false;
+    BROOveride = false;
+}
+
 void Calibration::setSafety(bool state) {
     safetyOn = state;
 }

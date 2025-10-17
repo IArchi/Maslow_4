@@ -41,6 +41,7 @@ public:
     void BRO();
     void handleMotorOverides();
     bool checkOverides();
+    void clearMotorOverrides();
 
     bool generate_calibration_grid();
     //void   printCalibrationGrid();

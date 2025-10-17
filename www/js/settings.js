@@ -331,7 +331,7 @@ const build_HTML_setting_list = (filter) => {
   }
   // set calibration values if exists
   const calRes = calibrationResults;
-  if (Object.keys(calRes).length) {
+  if (calRes && typeof calRes === 'object' && Object.keys(calRes).length) {
     document.querySelector("#setting__kinematics_MaslowKinematics_brX_0").value = calRes.br.x;
     document.querySelector("#setting__kinematics_MaslowKinematics_brY_0").value = calRes.br.y;
     document.querySelector("#setting__kinematics_MaslowKinematics_tlX_0").value = calRes.tl.x;

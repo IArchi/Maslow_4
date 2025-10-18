@@ -117,11 +117,12 @@ static const char* StateName[] = {
     "Sleep",       // 8
     "ConfigAlarm", // 9
 };
+static constexpr size_t StateNameCount = sizeof(StateName) / sizeof(StateName[0]);
 
 const char* stateName(State state) {
-    auto index = static_cast<uint8_t>(state);
-    if (index < sizeof(StateName) / sizeof(StateName[0])) {
-        return StateName[index];
+    auto stateIndex = static_cast<uint8_t>(state);
+    if (stateIndex < StateNameCount) {
+        return StateName[stateIndex];
     }
     return "Unknown";
 }

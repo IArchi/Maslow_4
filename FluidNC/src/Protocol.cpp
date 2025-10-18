@@ -38,11 +38,12 @@ static const char* AlarmNames[] = {
     "Control Pin Initially On",  // 11
     "Ambiguous Switch",          // 12
 };
+static constexpr size_t AlarmNamesCount = sizeof(AlarmNames) / sizeof(AlarmNames[0]);
 
 const char* alarmString(ExecAlarm alarm) {
-    auto index = static_cast<uint8_t>(alarm);
-    if (index < sizeof(AlarmNames) / sizeof(AlarmNames[0])) {
-        return AlarmNames[index];
+    auto alarmIndex = static_cast<uint8_t>(alarm);
+    if (alarmIndex < AlarmNamesCount) {
+        return AlarmNames[alarmIndex];
     }
     return "Unknown";
 }

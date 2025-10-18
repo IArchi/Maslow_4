@@ -232,6 +232,8 @@ void Maslow_::update() {
         else if (sys.state() == State::Homing) {
             calibration.home();
         } else {  //This is confusing to understand. This is an else if so this is only run if we are not in jog, cycle, or homing
+            // Clear any motor override flags to ensure motors stop
+            calibration.clearMotorOverrides();
             Maslow.stopMotors();
         }
 

@@ -94,7 +94,11 @@ bool Uart::flushTxTimed(TickType_t ticks) {
 }
 
 void Uart::config_message(const char* prefix, const char* usage) {
-    log_info(prefix << usage << " Tx:" << _txd_pin.name() << " Rx:" << _rxd_pin.name() << " RTS:" << _rts_pin.name() << " Baud:" << _baud);
+    char* buffer = getLogBuffer();
+    snprintf(buffer, 1400, "%s%s Tx:%s Rx:%s RTS:%s Baud:%d",
+            prefix, usage, _txd_pin.name().c_str(), _rxd_pin.name().c_str(), _rts_pin.name().c_str(), _baud);
+    log_info(buffer);
+    releaseLogBuffer();
 }
 
 int Uart::rx_buffer_available(void) {

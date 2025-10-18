@@ -72,8 +72,12 @@ namespace MotorDrivers {
     }
 
     void Solenoid::config_message() {
-        log_info("    " << name() << " Pin: " << _output_pin.name() << " Off: " << _off_percent << " Hold: " << _hold_percent << " Pull:"
-                        << _pull_percent << " Duration:" << _pull_ms << " pwm hz:" << _pwm->frequency() << " period:" << _pwm->frequency());
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "    %s Pin: %s Off: %d Hold: %d Pull: %d Duration: %d pwm hz: %d period: %d",
+                name(), _output_pin.name().c_str(), _off_percent, _hold_percent, _pull_percent, _pull_ms,
+                _pwm->frequency(), _pwm->frequency());
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     void Solenoid::set_location() {

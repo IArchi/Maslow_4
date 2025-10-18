@@ -78,7 +78,11 @@ namespace MotorDrivers {
     }
 
     void Dynamixel2::config_message() {
-        log_info("    " << name() << " UART" << _uart_num << " id:" << _id << " Count(" << _countMin << "," << _countMax << ")");
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "    %s UART%d id:%d Count(%d,%d)",
+                name(), _uart_num, _id, _countMin, _countMax);
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     bool Dynamixel2::test() {

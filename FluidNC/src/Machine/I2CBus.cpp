@@ -29,7 +29,11 @@ namespace Machine {
         auto sdaPin = _sda.getNative(Pin::Capabilities::Native | Pin::Capabilities::Input | Pin::Capabilities::Output);
         auto sclPin = _scl.getNative(Pin::Capabilities::Native | Pin::Capabilities::Input | Pin::Capabilities::Output);
 
-        log_info("I2C SDA: " << _sda.name() << ", SCL: " << _scl.name() << ", Freq: " << _frequency << ", Bus #: " << _busNumber);
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "I2C SDA: %s, SCL: %s, Freq: %d, Bus #: %d",
+                _sda.name().c_str(), _scl.name().c_str(), _frequency, _busNumber);
+        log_info(buffer);
+        releaseLogBuffer();
 
         _error = i2c_master_init(_busNumber, sdaPin, sclPin, _frequency);
         if (_error) {

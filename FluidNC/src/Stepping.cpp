@@ -17,8 +17,11 @@ namespace Machine {
                              EnumItem(Stepping::TIMED) };
 
     void Stepping::init() {
-        log_info("Stepping:" << stepTypes[_engine].name << " Pulse:" << _pulseUsecs << "us Dsbl Delay:" << _disableDelayUsecs
-                             << "us Dir Delay:" << _directionDelayUsecs << "us Idle Delay:" << _idleMsecs << "ms");
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "Stepping:%s Pulse:%dus Dsbl Delay:%dus Dir Delay:%dus Idle Delay:%dms",
+                stepTypes[_engine].name, _pulseUsecs, _disableDelayUsecs, _directionDelayUsecs, _idleMsecs);
+        log_info(buffer);
+        releaseLogBuffer();
 
         // Prepare stepping interrupt callbacks.  The one that is actually
         // used is determined by timerStart() and timerStop()

@@ -1157,21 +1157,26 @@ void Maslow_::log_telem_hdr_csv() {
                        << "lastCallToPID," << "lastMiss," << "lastCallToUpdate," << "extendCallTimer," << "complyCallTimer");
 }
 
-void Maslow_::log_telem_pt_csv(TelemetryData data) { log_data(
-    std::to_string(data.timestamp) + "," + std::to_string(data.tlCurrent) + "," + std::to_string(data.trCurrent) + "," +
-    std::to_string(data.blCurrent) + "," + std::to_string(data.brCurrent) + "," + std::to_string(data.tlPower) + "," +
-    std::to_string(data.trPower) + "," + std::to_string(data.blPower) + "," + std::to_string(data.brPower) + "," +
-    std::to_string(data.tlSpeed) + "," + std::to_string(data.trSpeed) + "," + std::to_string(data.blSpeed) + "," +
-    std::to_string(data.brSpeed) + "," + std::to_string(data.tlPos) + "," + std::to_string(data.trPos) + "," + std::to_string(data.blPos) +
-    "," + std::to_string(data.brPos) + "," + std::to_string(data.extendedTL) + "," + std::to_string(data.extendedTR) + "," +
-    std::to_string(data.extendedBL) + "," + std::to_string(data.extendedBR) + "," + std::to_string(data.extendingALL) + "," +
-    std::to_string(data.complyALL) + "," + std::to_string(data.takeSlack) + "," + std::to_string(data.safetyOn) + "," +
-    std::to_string(data.targetX) + "," + std::to_string(data.targetY) + "," + std::to_string(data.targetZ) + "," + std::to_string(data.x) +
-    "," + std::to_string(data.y) + "," + std::to_string(data.test) + "," + std::to_string(data.pointCount) + "," +
-    std::to_string(data.waypoint) + "," + std::to_string(data.calibrationGridSize) + "," + std::to_string(data.holdTimer) + "," +
-    std::to_string(data.holding) + "," + std::to_string(data.holdTime) + "," + std::to_string(data.centerX) + "," +
-    std::to_string(data.centerY) + "," + std::to_string(data.lastCallToPID) + "," + std::to_string(data.lastMiss) + "," +
-    std::to_string(data.lastCallToUpdate) + "," + std::to_string(data.extendCallTimer) + "," + std::to_string(data.complyCallTimer)) }
+void Maslow_::log_telem_pt_csv(TelemetryData data) { 
+    // Use stack-allocated buffer with snprintf to avoid heap allocations from std::to_string
+    char buffer[512];
+    snprintf(buffer, sizeof(buffer),
+        "%lu,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%d,%d,%d,%d,%d,%d,%d,%d,%g,%g,%g,%g,%g,%d,%d,%d,%d,%lu,%d,%lu,%g,%g,%lu,%lu,%lu,%lu,%lu",
+        data.timestamp,
+        data.tlCurrent, data.trCurrent, data.blCurrent, data.brCurrent,
+        data.tlPower, data.trPower, data.blPower, data.brPower,
+        data.tlSpeed, data.trSpeed, data.blSpeed, data.brSpeed,
+        data.tlPos, data.trPos, data.blPos, data.brPos,
+        data.extendedTL, data.extendedTR, data.extendedBL, data.extendedBR,
+        data.extendingALL, data.complyALL, data.takeSlack, data.safetyOn,
+        data.targetX, data.targetY, data.targetZ, data.x, data.y,
+        data.test, data.pointCount, data.waypoint, data.calibrationGridSize,
+        data.holdTimer, data.holding, data.holdTime,
+        data.centerX, data.centerY,
+        data.lastCallToPID, data.lastMiss, data.lastCallToUpdate,
+        data.extendCallTimer, data.complyCallTimer);
+    log_data(buffer);
+}
 
 TelemetryData Maslow_::get_telemetry_data() {
     TelemetryData data;

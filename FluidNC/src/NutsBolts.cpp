@@ -9,8 +9,6 @@
 #include <cstring>
 #include <cstdint>
 #include <cmath>
-#include <sstream>
-#include <iomanip>
 
 const int MAX_INT_DIGITS = 8;  // Maximum number of digits in int32 (and float)
 
@@ -222,44 +220,42 @@ const char* to_hex(uint32_t n) {
 }
 
 std::string formatBytes(uint64_t bytes) {
+    char buffer[32];
     if (bytes < 1024) {
-        return std::to_string((uint16_t)bytes) + " B";
+        snprintf(buffer, sizeof(buffer), "%u B", (uint16_t)bytes);
+        return buffer;
     }
-    float b = bytes;
-    b /= 1024;
+    float b = bytes / 1024.0f;
     if (b < 1024) {
-        std::ostringstream msg;
-        msg << std::fixed << std::setprecision(2) << b << " KB";
-        return msg.str();
-    }
-    b /= 1024;
-    if (b < 1024) {
-        std::ostringstream msg;
-        msg << std::fixed << std::setprecision(2) << b << " MB";
-        return msg.str();
+        snprintf(buffer, sizeof(buffer), "%.2f KB", b);
+        return buffer;
     }
     b /= 1024;
     if (b < 1024) {
-        std::ostringstream msg;
-        msg << std::fixed << std::setprecision(2) << b << " GB";
-        return msg.str();
+        snprintf(buffer, sizeof(buffer), "%.2f MB", b);
+        return buffer;
+    }
+    b /= 1024;
+    if (b < 1024) {
+        snprintf(buffer, sizeof(buffer), "%.2f GB", b);
+        return buffer;
     }
     b /= 1024;
     if (b > 99999) {
         b = 99999;
     }
-    std::ostringstream msg;
-    msg << std::fixed << std::setprecision(2) << b << " TB";
-    return msg.str();
+    snprintf(buffer, sizeof(buffer), "%.2f TB", b);
+    return buffer;
 }
 
 std::string IP_string(uint32_t ipaddr) {
-    std::string retval;
-    retval += std::to_string(uint8_t((ipaddr >> 00) & 0xff)) + ".";
-    retval += std::to_string(uint8_t((ipaddr >> 8) & 0xff)) + ".";
-    retval += std::to_string(uint8_t((ipaddr >> 16) & 0xff)) + ".";
-    retval += std::to_string(uint8_t((ipaddr >> 24) & 0xff));
-    return retval;
+    char buffer[16];
+    snprintf(buffer, sizeof(buffer), "%u.%u.%u.%u",
+        uint8_t((ipaddr >> 0) & 0xff),
+        uint8_t((ipaddr >> 8) & 0xff),
+        uint8_t((ipaddr >> 16) & 0xff),
+        uint8_t((ipaddr >> 24) & 0xff));
+    return buffer;
 }
 
 void replace_string_in_place(std::string& subject, const std::string& search, const std::string& replace) {

@@ -467,10 +467,8 @@ static Error restore_settings(const char* value, WebUI::AuthenticationLevel auth
 }
 
 static Error showState(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
-    const char* name;
     const State state = sys.state();
-    auto        it    = StateName.find(state);
-    name              = it == StateName.end() ? "<invalid>" : it->second;
+    const char* name  = stateName(state);
 
     log_to(out, "State ", int(state) << " (" << name << ")");
     return Error::Ok;

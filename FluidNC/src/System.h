@@ -16,7 +16,7 @@
 #include <map>
 #include <vector>
 
-extern std::map<State, const char*> StateName;
+const char* stateName(State state);
 
 // Step segment generator state flags.
 struct StepControl {

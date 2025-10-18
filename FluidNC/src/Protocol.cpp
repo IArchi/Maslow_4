@@ -22,21 +22,30 @@
 
 volatile ExecAlarm rtAlarm;  // Global realtime executor bitflag variable for setting various alarms.
 
-std::map<ExecAlarm, const char*> AlarmNames = {
-    { ExecAlarm::None, "None" },
-    { ExecAlarm::HardLimit, "Hard Limit" },
-    { ExecAlarm::SoftLimit, "Soft Limit" },
-    { ExecAlarm::AbortCycle, "Abort Cycle" },
-    { ExecAlarm::ProbeFailInitial, "Probe Fail Initial" },
-    { ExecAlarm::ProbeFailContact, "Probe Fail Contact" },
-    { ExecAlarm::HomingFailReset, "Homing Fail Reset" },
-    { ExecAlarm::HomingFailDoor, "Homing Fail Door" },
-    { ExecAlarm::HomingFailPulloff, "Homing Fail Pulloff" },
-    { ExecAlarm::HomingFailApproach, "Homing Fail Approach" },
-    { ExecAlarm::SpindleControl, "Spindle Control" },
-    { ExecAlarm::ControlPin, "Control Pin Initially On" },
-    { ExecAlarm::HomingAmbiguousSwitch, "Ambiguous Switch" },
+// Using array instead of std::map for better memory efficiency
+static const char* AlarmNames[] = {
+    "None",                      // 0
+    "Hard Limit",                // 1
+    "Soft Limit",                // 2
+    "Abort Cycle",               // 3
+    "Probe Fail Initial",        // 4
+    "Probe Fail Contact",        // 5
+    "Homing Fail Reset",         // 6
+    "Homing Fail Door",          // 7
+    "Homing Fail Pulloff",       // 8
+    "Homing Fail Approach",      // 9
+    "Spindle Control",           // 10
+    "Control Pin Initially On",  // 11
+    "Ambiguous Switch",          // 12
 };
+
+const char* alarmString(ExecAlarm alarm) {
+    auto index = static_cast<uint8_t>(alarm);
+    if (index < sizeof(AlarmNames) / sizeof(AlarmNames[0])) {
+        return AlarmNames[index];
+    }
+    return "Unknown";
+}
 
 volatile bool rtReset;
 

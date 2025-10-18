@@ -494,11 +494,6 @@ static Error doJog(const char* value, WebUI::AuthenticationLevel auth_level, Cha
     return gc_execute_line(jogLine);
 }
 
-static const char* alarmString(ExecAlarm alarmNumber) {
-    auto it = AlarmNames.find(alarmNumber);
-    return it == AlarmNames.end() ? NULL : it->second;
-}
-
 static Error listAlarms(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
     if (sys.state() == State::ConfigAlarm) {
         log_to(out, "Configuration alarm is active. Check the boot messages for 'ERR'.");
@@ -513,7 +508,7 @@ static Error listAlarms(const char* value, WebUI::AuthenticationLevel auth_level
             return Error::InvalidValue;
         }
         const char* alarmName = alarmString(static_cast<ExecAlarm>(alarmNumber));
-        if (alarmName) {
+        if (alarmName && strcmp(alarmName, "Unknown") != 0) {
             log_to(out, "", alarmNumber << ": " << alarmName);
             return Error::Ok;
         } else {
@@ -522,8 +517,9 @@ static Error listAlarms(const char* value, WebUI::AuthenticationLevel auth_level
         }
     }
 
-    for (auto it = AlarmNames.begin(); it != AlarmNames.end(); it++) {
-        log_to(out, "", static_cast<int>(it->first) << ": " << it->second);
+    // List all alarms from 0 to 12
+    for (int i = 0; i <= 12; i++) {
+        log_to(out, "", i << ": " << alarmString(static_cast<ExecAlarm>(i)));
     }
     return Error::Ok;
 }

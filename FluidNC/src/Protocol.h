@@ -68,8 +68,7 @@ enum class ExecAlarm : uint8_t {
 
 extern volatile ExecAlarm rtAlarm;  // Global realtime executor variable for setting various alarms.
 
-#include <map>
-extern std::map<ExecAlarm, const char*> AlarmNames;
+const char* alarmString(ExecAlarm alarm);
 
 #include "Event.h"
 enum AccessoryOverride {

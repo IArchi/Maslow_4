@@ -13,3 +13,5 @@ This pull request is ready to test. In particular please test:
 [ ] Anchor point locating process starting from a fresh maslow.yaml file
 [ ] Jogging in X, Y, and Z
 [ ] Running a gcode file
+
+Additional Notes:

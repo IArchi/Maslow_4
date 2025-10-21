@@ -705,16 +705,35 @@ async function findMaxFitness(measurements) {
   messagesBox.textContent += `Initial guess fitness: ${initialFitness.toFixed(7)}\n`;
   messagesBox.scrollTop = messagesBox.scrollHeight;
 
+  // Calculate frame dimensions from initial guess
+  const frameWidth = initialGuess.tr.x - initialGuess.tl.x;
+  const frameHeight = initialGuess.tl.y - initialGuess.bl.y;
+  const aspectRatio = frameWidth / frameHeight;
+  
+  // Check if frame is square or near-square (aspect ratio between 0.9 and 1.11)
+  // This covers ratios like 10:9 to 10:11, which are "close to square"
+  const isNearlySquare = aspectRatio >= 0.9 && aspectRatio <= 1.11;
+  
+  messagesBox.textContent += `Frame dimensions: ${frameWidth.toFixed(1)}mm x ${frameHeight.toFixed(1)}mm (aspect ratio: ${aspectRatio.toFixed(2)}:1)\n`;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+
   var startingGuess;
 
-  // Only use rectangular optimization if initial fitness is less than 0.1 (poor guess)
-  if (initialFitness < 0.1) {
-    messagesBox.textContent += "Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.\n";
+  // Use rectangular optimization if:
+  // 1. Initial fitness is poor (< 0.1), OR
+  // 2. Frame is square or nearly square (likely a default guess)
+  if (initialFitness < 0.1 || isNearlySquare) {
+    if (initialFitness < 0.1) {
+      messagesBox.textContent += "Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.\n";
+    }
+    if (isNearlySquare) {
+      messagesBox.textContent += "Frame is nearly square (aspect ratio " + aspectRatio.toFixed(2) + ":1), running rectangular optimization to find better dimensions.\n";
+    }
     messagesBox.scrollTop = messagesBox.scrollHeight;
     // Find the best rectangular starting configuration
     startingGuess = await findBestRectangularStart(measurements);
   } else {
-    messagesBox.textContent += "Initial fitness >= 0.1 (already good), skipping rectangular optimization and using initial guess directly.\n";
+    messagesBox.textContent += "Initial fitness >= 0.1 and frame is not square, skipping rectangular optimization and using initial guess directly.\n";
     messagesBox.scrollTop = messagesBox.scrollHeight;
     startingGuess = initialGuess;
   }

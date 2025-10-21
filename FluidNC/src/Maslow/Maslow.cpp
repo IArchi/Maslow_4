@@ -510,7 +510,7 @@ void Maslow_::saveBeltPositions() {
     float trPos = axisTR.getPosition();
     float blPos = axisBL.getPosition();
     float brPos = axisBR.getPosition();
-    
+
     // Get current raw encoder angles for validation on restore
     uint16_t tlAngle = axisTL.getRawEncoderAngle();
     uint16_t trAngle = axisTR.getRawEncoderAngle();
@@ -633,18 +633,20 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 tlFi;
         tlFi.i = tlValue;
         tlPos  = tlFi.f;
-        
+
         // Load saved encoder angle and compare with current
         int32_t savedTLAngle;
         ret = nvs_get_i32(nvsHandle, "tlAngle", &savedTLAngle);
         if (ret == ESP_OK) {
             uint16_t currentTLAngle = axisTL.getRawEncoderAngle();
-            int32_t angleDiff = currentTLAngle - savedTLAngle;
-            
+            int32_t  angleDiff      = currentTLAngle - savedTLAngle;
+
             // Handle wrap-around: if difference is > 2048, it wrapped the other direction
-            if (angleDiff > 2048) angleDiff -= 4096;
-            if (angleDiff < -2048) angleDiff += 4096;
-            
+            if (angleDiff > 2048)
+                angleDiff -= 4096;
+            if (angleDiff < -2048)
+                angleDiff += 4096;
+
             // If angle difference is within 1/4 turn (1024 counts), adjust belt position for small movement
             if (abs(angleDiff) < 1024) {
                 // Convert angle difference to belt length change
@@ -658,7 +660,7 @@ void Maslow_::loadBeltPositions() {
                 return;
             }
         }
-        
+
         // Set motor steps directly for TL belt (A axis = motor 0)
         set_motor_steps(0, mpos_to_steps(tlPos, 0));
         axisTL.setTarget(tlPos);
@@ -676,18 +678,20 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 trFi;
         trFi.i = trValue;
         trPos  = trFi.f;
-        
+
         // Load saved encoder angle and compare with current
         int32_t savedTRAngle;
         ret = nvs_get_i32(nvsHandle, "trAngle", &savedTRAngle);
         if (ret == ESP_OK) {
             uint16_t currentTRAngle = axisTR.getRawEncoderAngle();
-            int32_t angleDiff = currentTRAngle - savedTRAngle;
-            
+            int32_t  angleDiff      = currentTRAngle - savedTRAngle;
+
             // Handle wrap-around
-            if (angleDiff > 2048) angleDiff -= 4096;
-            if (angleDiff < -2048) angleDiff += 4096;
-            
+            if (angleDiff > 2048)
+                angleDiff -= 4096;
+            if (angleDiff < -2048)
+                angleDiff += 4096;
+
             if (abs(angleDiff) < 1024) {
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 trPos += movementMM;
@@ -698,7 +702,7 @@ void Maslow_::loadBeltPositions() {
                 return;
             }
         }
-        
+
         // Set motor steps directly for TR belt (B axis = motor 1)
         set_motor_steps(1, mpos_to_steps(trPos, 1));
         axisTR.setTarget(trPos);
@@ -715,18 +719,20 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 blFi;
         blFi.i = blValue;
         blPos  = blFi.f;
-        
+
         // Load saved encoder angle and compare with current
         int32_t savedBLAngle;
         ret = nvs_get_i32(nvsHandle, "blAngle", &savedBLAngle);
         if (ret == ESP_OK) {
             uint16_t currentBLAngle = axisBL.getRawEncoderAngle();
-            int32_t angleDiff = currentBLAngle - savedBLAngle;
-            
+            int32_t  angleDiff      = currentBLAngle - savedBLAngle;
+
             // Handle wrap-around
-            if (angleDiff > 2048) angleDiff -= 4096;
-            if (angleDiff < -2048) angleDiff += 4096;
-            
+            if (angleDiff > 2048)
+                angleDiff -= 4096;
+            if (angleDiff < -2048)
+                angleDiff += 4096;
+
             if (abs(angleDiff) < 1024) {
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 blPos += movementMM;
@@ -737,7 +743,7 @@ void Maslow_::loadBeltPositions() {
                 return;
             }
         }
-        
+
         // Set motor steps directly for BL belt (C axis = motor 2)
         set_motor_steps(2, mpos_to_steps(blPos, 2));
         axisBL.setTarget(blPos);
@@ -754,18 +760,20 @@ void Maslow_::loadBeltPositions() {
         FloatInt32 brFi;
         brFi.i = brValue;
         brPos  = brFi.f;
-        
+
         // Load saved encoder angle and compare with current
         int32_t savedBRAngle;
         ret = nvs_get_i32(nvsHandle, "brAngle", &savedBRAngle);
         if (ret == ESP_OK) {
             uint16_t currentBRAngle = axisBR.getRawEncoderAngle();
-            int32_t angleDiff = currentBRAngle - savedBRAngle;
-            
+            int32_t  angleDiff      = currentBRAngle - savedBRAngle;
+
             // Handle wrap-around
-            if (angleDiff > 2048) angleDiff -= 4096;
-            if (angleDiff < -2048) angleDiff += 4096;
-            
+            if (angleDiff > 2048)
+                angleDiff -= 4096;
+            if (angleDiff < -2048)
+                angleDiff += 4096;
+
             if (abs(angleDiff) < 1024) {
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 brPos += movementMM;
@@ -776,7 +784,7 @@ void Maslow_::loadBeltPositions() {
                 return;
             }
         }
-        
+
         // Set motor steps directly for BR belt (D axis = motor 3)
         set_motor_steps(3, mpos_to_steps(brPos, 3));
         axisBR.setTarget(brPos);
@@ -792,37 +800,39 @@ void Maslow_::loadBeltPositions() {
     plan_sync_position();
 
     // Determine the state based on belt lengths
-    // If all belt lengths are near zero (within threshold), go to RETRACTED state, otherwise READY_TO_CUT
+    // If all belt lengths are near zero (within threshold), go to RETRACTED state, otherwise EXTENDEDOUT
+    // Loading into EXTENDEDOUT requires the user to press "Apply Tension" to enter READY_TO_CUT state,
+    // which allows the machine to measure its frame and verify everything is as expected
     // Use threshold of 0.5mm to account for encoder drift and small movements during save/restore
     const float retractedThreshold = 0.5;  // mm
-    bool allNearZero = (fabs(tlPos) < retractedThreshold && fabs(trPos) < retractedThreshold && 
-                        fabs(blPos) < retractedThreshold && fabs(brPos) < retractedThreshold);
-    int  newState = allNearZero ? RETRACTED : READY_TO_CUT;
+    bool        allNearZero = (fabs(tlPos) < retractedThreshold && fabs(trPos) < retractedThreshold && fabs(blPos) < retractedThreshold &&
+                        fabs(brPos) < retractedThreshold);
+    int         newState    = allNearZero ? RETRACTED : EXTENDEDOUT;
 
     // Set the state directly (bypass requestStateChange validation)
     // This is appropriate when restoring a known-good saved state at boot time
-    // requestStateChange() would reject READY_TO_CUT from UNKNOWN state
+    // requestStateChange() would reject EXTENDEDOUT from UNKNOWN state
     calibration.currentState = newState;
-    log_info("Belt position load: Set currentState directly to " << (newState == READY_TO_CUT ? "READY_TO_CUT" : "RETRACTED"));
-    
+    log_info("Belt position load: Set currentState directly to " << (newState == EXTENDEDOUT ? "EXTENDEDOUT" : "RETRACTED"));
+
     // Set the extended* state variables in the Calibration class to match the restored state
-    // When belts are extended (READY_TO_CUT), mark all belts as extended
+    // When belts are extended (EXTENDEDOUT), mark all belts as extended
     // When belts are retracted (RETRACTED), mark all belts as not extended
-    if (newState == READY_TO_CUT) {
+    if (newState == EXTENDEDOUT) {
         calibration.setExtendedState(true, true, true, true);
         log_debug("Set Calibration extended* variables to true (belts are extended)");
     } else {
         calibration.setExtendedState(false, false, false, false);
         log_debug("Set Calibration extended* variables to false (belts are retracted)");
     }
-    
+
     // Disable alarm if present
     if (sys.state() == State::Alarm) {
         sys.set_state(State::Idle);
     }
 
     log_debug("Belt positions after encoder adjustment: TL=" << tlPos << " TR=" << trPos << " BL=" << blPos << " BR=" << brPos
-                                                    << " newState=" << newState);
+                                                             << " newState=" << newState);
 }
 
 //This function marks the belt positions in NVS as stale/invalid

@@ -332,9 +332,10 @@ function computeFurthestFromCenterOfMass(lines, lastGuess) {
  * Computes the fitness of a guess for a set of measurements by comparing the guess to magnetically attracted lines.
  * @param {Array} measurements - An array of measurements to compare the guess to.
  * @param {Object} lastGuess - The last guess made by the algorithm.
+ * @param {boolean} skipThetaUpdates - If true, skips updating the guess based on center of mass (for initial fitness evaluation).
  * @returns {Object} - An object containing the fitness of the guess and the lines used to calculate the fitness.
  */
-function computeLinesFitness(measurements, lastGuess) {
+function computeLinesFitness(measurements, lastGuess, skipThetaUpdates = false) {
   var fitnesses = []
   var allLines = []
 
@@ -351,7 +352,9 @@ function computeLinesFitness(measurements, lastGuess) {
   // console.log(fitnesses)
 
   //Here is where we need to do the calculation of which corner is the worst and which direction to move it
-  lastGuess = computeFurthestFromCenterOfMass(allLines, lastGuess)
+  if (!skipThetaUpdates) {
+    lastGuess = computeFurthestFromCenterOfMass(allLines, lastGuess)
+  }
   lastGuess.fitness = fitness
 
   return lastGuess
@@ -512,7 +515,179 @@ function scaleMeasurementsBasedOnTension(measurements, guess) {
 }
 
 
-function findMaxFitness(measurements) {
+/**
+ * Finds the best rectangular starting configuration by testing different width and height combinations.
+ * Uses ternary search to efficiently find optimal dimensions.
+ * @param {Array} measurements - An array of measurements to test against.
+ * @returns {Object} - The best rectangular guess found.
+ */
+async function findBestRectangularStart(measurements) {
+  const messagesBox = document.getElementById('messages');
+  messagesBox.textContent += "Searching for best rectangular starting configuration...\n";
+  messagesBox.textContent += "Phase 1: Finding optimal radius along diagonal using ternary search...\n";
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+
+  // Deep copy measurements to avoid mutation during search
+  const measurementsCopy = JSON.parse(JSON.stringify(measurements));
+
+  // PHASE 1: Use ternary search to find optimal diagonal size efficiently
+  let diagonalBestFitness = Infinity;
+  let diagonalBestSize = 0;
+  let phase1TestCount = 0;
+
+  // Helper function to evaluate fitness at a given diagonal size
+  async function evaluateDiagonalSize(size) {
+    const testMeasurements = JSON.parse(JSON.stringify(measurementsCopy));
+    const guess = {
+      tl: { x: 0, y: size },
+      tr: { x: size, y: size },
+      bl: { x: 0, y: 0 },
+      br: { x: size, y: 0 },
+      fitness: 0
+    };
+
+    const result = computeLinesFitness(testMeasurements, guess, true);
+    phase1TestCount++;
+
+    return { fitness: result.fitness, size: size };
+  }
+
+  // Ternary search for optimal diagonal size (100 to 5000mm range)
+  let leftSize = 100;
+  let rightSize = 5000;
+  const precision = 2; // Stop when range is less than 2mm
+
+  while (rightSize - leftSize > precision) {
+    const leftThird = leftSize + (rightSize - leftSize) / 3;
+    const rightThird = rightSize - (rightSize - leftSize) / 3;
+
+    const leftResult = await evaluateDiagonalSize(Math.round(leftThird));
+    const rightResult = await evaluateDiagonalSize(Math.round(rightThird));
+
+    if (leftResult.fitness < diagonalBestFitness) {
+      diagonalBestFitness = leftResult.fitness;
+      diagonalBestSize = leftResult.size;
+    }
+    if (rightResult.fitness < diagonalBestFitness) {
+      diagonalBestFitness = rightResult.fitness;
+      diagonalBestSize = rightResult.size;
+    }
+
+    // Allow UI to update
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    if (leftResult.fitness < rightResult.fitness) {
+      rightSize = rightThird;
+    } else {
+      leftSize = leftThird;
+    }
+  }
+
+  // Evaluate the final center point
+  const finalDiagonalSize = Math.round((leftSize + rightSize) / 2);
+  const finalDiagonalResult = await evaluateDiagonalSize(finalDiagonalSize);
+  if (finalDiagonalResult.fitness < diagonalBestFitness) {
+    diagonalBestFitness = finalDiagonalResult.fitness;
+    diagonalBestSize = finalDiagonalResult.size;
+  }
+
+  messagesBox.textContent += `Phase 1 complete: Optimal radius found at ${diagonalBestSize}mm using ${phase1TestCount} evaluations\n`;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+
+  // Calculate optimal radius (distance from origin to diagonal point)
+  const optimalRadius = Math.sqrt(diagonalBestSize * diagonalBestSize + diagonalBestSize * diagonalBestSize);
+
+  messagesBox.textContent += `Phase 2: Finding best aspect ratio on arc at ${optimalRadius.toFixed(0)}mm radius...\n`;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+
+  // PHASE 2: Use ternary search to efficiently find the maximum on the arc
+  let bestGuess = null;
+  let bestFitness = Infinity;
+  let testedCount = 0;
+
+  // Sample angles from 0° to 90° (first quadrant only)
+  // We limit to angles where aspect ratio <= 3:1
+  const minAngle = Math.atan(1 / 3); // ~18.43° in radians (aspect ratio 3:1, wide)
+  const maxAngle = Math.PI / 2 - minAngle; // ~71.57° in radians (aspect ratio 1:3, tall)
+
+  // Convert arc spacing (1mm) to angle precision for ternary search termination
+  const arcSpacing = 1;
+  const anglePrecision = (2 * arcSpacing) / optimalRadius;
+
+  // Helper function to evaluate fitness at a given angle
+  async function evaluateFitnessAtAngle(angleRad) {
+    const width = optimalRadius * Math.cos(angleRad);
+    const height = optimalRadius * Math.sin(angleRad);
+
+    // Skip invalid dimensions
+    if (width <= 0 || height <= 0) return { fitness: Infinity, result: null };
+
+    const testMeasurements = JSON.parse(JSON.stringify(measurementsCopy));
+    const guess = {
+      tl: { x: 0, y: height },
+      tr: { x: width, y: height },
+      bl: { x: 0, y: 0 },
+      br: { x: width, y: 0 },
+      fitness: 0
+    };
+
+    const result = computeLinesFitness(testMeasurements, guess, true);
+    testedCount++;
+
+    return { fitness: result.fitness, result: result, angle: angleRad };
+  }
+
+  // Ternary search to find the angle with maximum fitness (minimum rawFitness)
+  let left = minAngle;
+  let right = maxAngle;
+
+  while (right - left > anglePrecision) {
+    // Divide the range into three parts
+    const leftThird = left + (right - left) / 3;
+    const rightThird = right - (right - left) / 3;
+
+    // Evaluate fitness at the two interior points
+    const leftResult = await evaluateFitnessAtAngle(leftThird);
+    const rightResult = await evaluateFitnessAtAngle(rightThird);
+
+    // Update best guess if we found a better fitness
+    if (leftResult.fitness < bestFitness) {
+      bestFitness = leftResult.fitness;
+      bestGuess = JSON.parse(JSON.stringify(leftResult.result));
+    }
+    if (rightResult.fitness < bestFitness) {
+      bestFitness = rightResult.fitness;
+      bestGuess = JSON.parse(JSON.stringify(rightResult.result));
+    }
+
+    // Allow UI to update
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // Narrow the search range based on which point has better fitness
+    if (leftResult.fitness < rightResult.fitness) {
+      right = rightThird;
+    } else {
+      left = leftThird;
+    }
+  }
+
+  // Evaluate the final center point for completeness
+  const finalAngle = (left + right) / 2;
+  const finalResult = await evaluateFitnessAtAngle(finalAngle);
+  if (finalResult.fitness < bestFitness) {
+    bestFitness = finalResult.fitness;
+    bestGuess = JSON.parse(JSON.stringify(finalResult.result));
+  }
+
+  messagesBox.textContent += `Search complete! Tested ${testedCount} points using ternary search.\n`;
+  messagesBox.textContent += `Best rectangular start: Width: ${bestGuess.tr.x.toFixed(1)}mm, Height: ${bestGuess.tr.y.toFixed(1)}mm, Fitness: ${(1 / bestGuess.fitness).toFixed(4)}\n`;
+  messagesBox.textContent += "Starting optimization...\n";
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+
+  return bestGuess;
+}
+
+async function findMaxFitness(measurements) {
   sendCalibrationEvent({
     initialGuess
   }, true);
@@ -520,13 +695,36 @@ function findMaxFitness(measurements) {
   //Project the measurements into the XY plane...this is now done on the firmware side
   //measurements = projectMeasurements(measurements);
 
-  let currentGuess = JSON.parse(JSON.stringify(initialGuess));
+  const messagesBox = document.getElementById('messages');
+
+  // Evaluate the fitness of the initial guess
+  const initialGuessCopy = JSON.parse(JSON.stringify(initialGuess));
+  const evaluatedGuess = computeLinesFitness(measurements, initialGuessCopy, true);
+  const initialFitness = 1 / evaluatedGuess.fitness;
+
+  messagesBox.textContent += `Initial guess fitness: ${initialFitness.toFixed(7)}\n`;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+
+  var startingGuess;
+
+  // Only use rectangular optimization if initial fitness is less than 0.1 (poor guess)
+  if (initialFitness < 0.1) {
+    messagesBox.textContent += "Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.\n";
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    // Find the best rectangular starting configuration
+    startingGuess = await findBestRectangularStart(measurements);
+  } else {
+    messagesBox.textContent += "Initial fitness >= 0.1 (already good), skipping rectangular optimization and using initial guess directly.\n";
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    startingGuess = initialGuess;
+  }
+
+  let currentGuess = JSON.parse(JSON.stringify(startingGuess));
   let stagnantCounter = 0;
   let totalCounter = 0;
-  let bestGuess = JSON.parse(JSON.stringify(initialGuess));
+  let bestGuess = JSON.parse(JSON.stringify(startingGuess));
 
   function iterate() {
-    const messagesBox = document.getElementById('messages');
     if (stagnantCounter < 1000 && totalCounter < 200000) {
 
       currentGuess = computeLinesFitness(measurements, currentGuess);

@@ -22,7 +22,7 @@ sharedPath = 'install_scripts'
 
 def buildEmbeddedPage():
     print('Building embedded web page')
-    return subprocess.run(["python", "build.py"], cwd="embedded").returncode
+    return subprocess.run(["python3", "build.py"], cwd="embedded").returncode
 
 def buildEnv(pioEnv, verbose=False, extraArgs=None):
     cmd = [platformio,'run', '--disable-auto-clean', '-e', pioEnv]
@@ -33,7 +33,7 @@ def buildEnv(pioEnv, verbose=False, extraArgs=None):
     if verbose:
         app = subprocess.Popen(cmd, env=environ)
     else:
-        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in app.stdout:
             line = line.decode('utf8')
             if "Took" in line or 'Uploading' in line or ("error" in line.lower() and "Compiling" not in line):
@@ -50,7 +50,7 @@ def buildFs(pioEnv, verbose=verbose, extraArgs=None):
     if verbose:
         app = subprocess.Popen(cmd, env=environ)
     else:
-        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in app.stdout:
             line = line.decode('utf8')
             if "Took" in line or 'Uploading' in line or ("error" in line.lower() and "Compiling" not in line):

@@ -22,7 +22,7 @@ sharedPath = 'install_scripts'
 
 def buildEmbeddedPage():
     print('Building embedded web page')
-    return subprocess.run(["python", "build.py"], cwd="embedded").returncode
+    return subprocess.run(["python3", "build.py"], cwd="embedded").returncode
 
 def buildEnv(pioEnv, verbose=False, extraArgs=None):
     cmd = [platformio,'run', '--disable-auto-clean', '-e', pioEnv]

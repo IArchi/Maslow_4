@@ -12,10 +12,10 @@ verbose = '-v' in sys.argv
 
 environ = dict(os.environ)
 
-platformio = r"/Users/barsmith/.platformio/penv/bin/platformio" #"/Users/barsmith/.platformio/penv/bin/platformio"
+platformio = "platformio"
 version = "1.12"
-os.chdir(os.path.dirname(os.path.realpath(r"/Users/barsmith/Documents/GitHub/FluidNC/.pio"))) #"/Users/barsmith/Documents/GitHub/FluidNC/.pio"
-#change path to the project folder (the folder with platformio.ini)
+# Change to the directory containing this script (the project root)
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 tag = "maslow4-"+version
 sharedPath = 'install_scripts'
 
@@ -33,7 +33,7 @@ def buildEnv(pioEnv, verbose=False, extraArgs=None):
     if verbose:
         app = subprocess.Popen(cmd, env=environ)
     else:
-        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in app.stdout:
             line = line.decode('utf8')
             if "Took" in line or 'Uploading' in line or ("error" in line.lower() and "Compiling" not in line):
@@ -50,7 +50,7 @@ def buildFs(pioEnv, verbose=verbose, extraArgs=None):
     if verbose:
         app = subprocess.Popen(cmd, env=environ)
     else:
-        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        app = subprocess.Popen(cmd, env=environ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in app.stdout:
             line = line.decode('utf8')
             if "Took" in line or 'Uploading' in line or ("error" in line.lower() and "Compiling" not in line):

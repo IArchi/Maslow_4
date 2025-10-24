@@ -79,7 +79,7 @@ jobs:
         
     - name: Build firmware
       run: |
-        pio run -e wifi_s3
+        pio run -e wifi_s3 | tee build_output.log
         
     - name: Prepare firmware artifact folder
       run: |
@@ -115,6 +115,46 @@ jobs:
           const fileSizeInBytes = stats.size;
           const fileSizeInMB = (fileSizeInBytes / (1024*1024)).toFixed(2);
           
+          // Extract version number from version.cpp
+          let versionNumber = 'unknown';
+          try {
+            const versionContent = fs.readFileSync('FluidNC/src/version.cpp', 'utf8');
+            const versionMatch = versionContent.match(/const char\* VERSION_NUMBER = "(.+?)";/);
+            if (versionMatch) {
+              versionNumber = versionMatch[1];
+            }
+          } catch (e) {
+            console.log('Could not read version.cpp:', e.message);
+          }
+          
+          // Parse build output for memory usage
+          let flashUsed = 'N/A';
+          let flashPercent = 'N/A';
+          let ramUsed = 'N/A';
+          let ramPercent = 'N/A';
+          
+          try {
+            const buildLog = fs.readFileSync('build_output.log', 'utf8');
+            
+            // Look for lines like:
+            // RAM:   [====      ]  42.3% (used 138524 bytes from 327680 bytes)
+            // Flash: [========  ]  78.5% (used 2421973 bytes from 3080192 bytes)
+            const ramMatch = buildLog.match(/RAM:\s+\[.*?\]\s+([\d.]+)%\s+\(used\s+([\d]+)\s+bytes\s+from\s+([\d]+)\s+bytes\)/);
+            const flashMatch = buildLog.match(/Flash:\s+\[.*?\]\s+([\d.]+)%\s+\(used\s+([\d]+)\s+bytes\s+from\s+([\d]+)\s+bytes\)/);
+            
+            if (ramMatch) {
+              ramPercent = ramMatch[1];
+              ramUsed = (parseInt(ramMatch[2]) / 1024).toFixed(1) + ' KB';
+            }
+            
+            if (flashMatch) {
+              flashPercent = flashMatch[1];
+              flashUsed = (parseInt(flashMatch[2]) / (1024*1024)).toFixed(2) + ' MB';
+            }
+          } catch (e) {
+            console.log('Could not parse build output:', e.message);
+          }
+          
           // Get PR number and commit SHA from the issue comment event
           const prNumber = context.issue.number;
           // Get the PR details to get the latest commit SHA
@@ -133,8 +173,11 @@ jobs:
           
           **Build Details:**
           - Commit: \`${commitSha}\`
+          - Version: \`${versionNumber}\`
           - Environment: \`wifi_s3\`
           - Firmware size: ${fileSizeInMB} MB
+          - Flash usage: ${flashUsed} (${flashPercent}%)
+          - RAM usage: ${ramUsed} (${ramPercent}%)
           - Build time: ~2 minutes
           
           **Download:**

@@ -141,19 +141,13 @@ public:
     String axis_id_to_label(int axis_id);
     void   safety_control();
     bool   axis_homed[4] = { false, false, false, false };
-    bool   retractingTL  = false;
-    bool   retractingTR  = false;
-    bool   retractingBL  = false;
-    bool   retractingBR  = false;
 
     bool extendedTL = false;
     bool extendedTR = false;
     bool extendedBL = false;
     bool extendedBR = false;
 
-    bool extendingALL = false;
-    bool complyALL    = false;
-    bool takeSlack    = false;
+    bool takeSlack = false;
 
     bool safetyOn = true;
 

@@ -71,8 +71,6 @@ bool Calibration::requestStateChange(int newState) {
             retractingTR = true;
             retractingBL = true;
             retractingBR = true;
-            complyALL    = false;
-            extendingALL = false;
             Maslow.axisTL.reset();
             Maslow.axisTR.reset();
             Maslow.axisBL.reset();
@@ -95,7 +93,6 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == RETRACTED || currentState == EXTENDEDOUT) {
                 currentState = EXTENDING;
                 Maslow.stop();
-                extendingALL = true;  //This should be replaced by state variables
                 sys.set_state(State::Homing);
 
                 extendedTL = false;
@@ -131,8 +128,6 @@ bool Calibration::requestStateChange(int newState) {
                 retractingTR = false;
                 retractingBL = false;
                 retractingBR = false;
-                extendingALL = false;
-                complyALL    = false;
 
                 Maslow.axisTL.reset();
                 Maslow.axisTR.reset();
@@ -270,8 +265,6 @@ bool Calibration::requestStateChange(int newState) {
                 retractingTR    = false;
                 retractingBL    = false;
                 retractingBR    = false;
-                extendingALL    = false;
-                complyALL       = true;
                 Maslow.axisTL.reset();  //This just resets the thresholds for pull tight
                 Maslow.axisTR.reset();
                 Maslow.axisBL.reset();
@@ -358,7 +351,6 @@ void Calibration::home() {
                 if (!extendedBR)
                     extendedBR = Maslow.axisBR.extend(extendDist);
                 if (extendedTL && extendedTR && extendedBL && extendedBR) {
-                    extendingALL = false;
                     log_info("All belts extended to " << extendDist << "mm");
                     requestStateChange(EXTENDEDOUT);
                 }
@@ -387,7 +379,6 @@ void Calibration::home() {
                 Maslow.axisTR.stop();
                 Maslow.axisBL.stop();
                 Maslow.axisBR.stop();
-                complyALL = false;
                 sys.set_state(State::Idle);
 
                 // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
@@ -407,8 +398,8 @@ void Calibration::home() {
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (!retractingTL && !retractingBL && !retractingBR && !retractingTR && !extendingALL && !complyALL && !calibrationInProgress &&
-        !takeSlack && !checkOverides()) {
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
+        !calibrationInProgress && !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }
 }
@@ -1523,8 +1514,6 @@ void Calibration::comply() {
     retractingTR    = false;
     retractingBL    = false;
     retractingBR    = false;
-    extendingALL    = false;
-    complyALL       = true;
     Maslow.axisTL.reset();  //This just resets the thresholds for pull tight
     Maslow.axisTR.reset();
     Maslow.axisBL.reset();

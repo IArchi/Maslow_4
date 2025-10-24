@@ -242,7 +242,10 @@ void Maslow_::update() {
             digitalWrite(coolingFanPin, HIGH);  //keep the cooling fan on
         }
         //If we are doing calibration turn the cooling fan on
-        else if (calibration.calibrationInProgress || extendingALL || retractingTL || retractingTR || retractingBL || retractingBR) {
+        else if (calibration.calibrationInProgress || 
+                 calibration.getCurrentState() == EXTENDING || 
+                 calibration.getCurrentState() == RETRACTING ||
+                 calibration.getCurrentState() == RELEASE_TENSION) {
             digitalWrite(coolingFanPin, HIGH);  //keep the cooling fan on
         } else {
             digitalWrite(coolingFanPin, LOW);  //Turn the cooling fan off
@@ -989,12 +992,6 @@ void Maslow_::reset_all_axis() {
 // Stop all motors and reset all state variables
 void Maslow_::stop() {
     stopMotors();
-    retractingTL                      = false;
-    retractingTR                      = false;
-    retractingBL                      = false;
-    retractingBR                      = false;
-    extendingALL                      = false;
-    complyALL                         = false;
     calibration.calibrationInProgress = false;
     test                              = false;
     takeSlack                         = false;
@@ -1215,8 +1212,8 @@ TelemetryData Maslow_::get_telemetry_data() {
     data.extendedTR   = extendedTR;
     data.extendedBL   = extendedBL;
     data.extendedBR   = extendedBR;
-    data.extendingALL = extendingALL;
-    data.complyALL    = complyALL;
+    data.extendingALL = (calibration.getCurrentState() == EXTENDING);
+    data.complyALL    = (calibration.getCurrentState() == RELEASE_TENSION);
     data.takeSlack    = takeSlack;
     data.safetyOn     = safetyOn;
     data.targetX      = targetX;

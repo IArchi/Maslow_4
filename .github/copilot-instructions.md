@@ -43,12 +43,30 @@ This project is a fork from the original FluidNC project specifically for Maslow
 - **Avoid formatting-only changes**: Do not include whitespace or formatting changes in files unrelated to your functional changes
 - **Surgical modifications**: Make the smallest possible changes to achieve the desired functionality
 - **Review diff before committing**: Always check `git diff` to ensure only intended changes are included
+- **Remove trailing whitespace**: Always remove trailing whitespace from modified lines before committing
+- **Clean up dead code**: Remove any unused code, variables, or functions that your changes make obsolete
 
 ### Code Formatting Guidelines
 - **Format selectively**: Only run clang-format on files you have functionally modified
 - **Avoid global formatting**: Do NOT run formatting tools across the entire repository
 - **IDE auto-format**: Configure IDE to only format files being actively edited
 - **Pre-commit review**: Check that formatting changes are limited to functionally modified files
+
+### Code Quality Checks (REQUIRED for every commit)
+- **Trailing whitespace removal**: Before every commit, check all modified files for trailing whitespace and remove it
+  - Use `git diff --check` to identify trailing whitespace issues
+  - Remove trailing spaces from the end of lines in all modified files
+  - Ensure no trailing whitespace is introduced in new code
+- **Dead code detection**: After making changes, analyze the modified files to identify and remove dead/unreachable code
+  - Check for unused variables, functions, or classes introduced or left behind by your changes
+  - Verify that all code paths are reachable
+  - Remove commented-out code blocks unless they serve as important documentation
+  - Remove unused imports and includes that become unnecessary after your changes
+  - Use compiler warnings to identify unused code (e.g., `-Wunused-variable`, `-Wunused-function`)
+- **Pre-commit validation**: Before using `report_progress`, always:
+  1. Run `git diff --check` to detect trailing whitespace
+  2. Review the diff for any unreachable or dead code introduced by your changes
+  3. Fix any issues before committing
 
 ## Testing and Validation
 
@@ -76,7 +94,9 @@ This project is a fork from the original FluidNC project specifically for Maslow
 2. **Filesystem test**: `pio run -e wifi_s3 -t buildfs` (must succeed)
 3. **Web UI test**: `cd embedded && python3 build.py` (if web changes made)
 4. **Format test**: Run clang-format ONLY on C++ files you functionally modified (not entire codebase)
-5. **Clean build test**: `pio run -e wifi_s3 -t clean && pio run -e wifi_s3` (final verification)
+5. **Trailing whitespace check**: Run `git diff --check` to detect and fix trailing whitespace
+6. **Dead code review**: Review changes for unreachable code, unused variables/functions, and remove them
+7. **Clean build test**: `pio run -e wifi_s3 -t clean && pio run -e wifi_s3` (final verification)
 
 ### Hardware Testing Requirements  
 - **Upload test**: Flash firmware to ESP32 using `pio run -e wifi_s3 -t upload`

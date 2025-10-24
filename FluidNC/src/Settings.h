@@ -207,7 +207,12 @@ private:
     const char* _name;
 
 public:
-    Coordinates(const char* name) : _name(name) {}
+    Coordinates(const char* name) : _name(name) {
+        // Initialize all coordinates to 0.0 to avoid NAN values
+        for (int i = 0; i < MAX_N_AXIS; i++) {
+            _currentValue[i] = 0.0f;
+        }
+    }
 
     const char* getName() { return _name; }
     bool        load();

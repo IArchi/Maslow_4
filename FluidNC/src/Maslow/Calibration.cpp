@@ -1316,16 +1316,18 @@ bool Calibration::generate_calibration_grid() {
 
         // Automatically select the grid spacing (3x3, 5x5, 7x7, or 9x9) such that
         // the smallest grid is used which will not leave more than 260mm between each point
-        const float maxSpacing       = 260.0;  // Maximum allowed spacing in mm
-        int         selectedGridSize = 9;      // Start with the largest grid size
+        const int availableGridSizes[] = { 3, 5, 7, 9 };
+        const int numGridSizes         = sizeof(availableGridSizes) / sizeof(availableGridSizes[0]);
+        int       selectedGridSize     = availableGridSizes[numGridSizes - 1];  // Default to largest grid size
 
         // Try each grid size from smallest to largest
-        for (int trySize : { 3, 5, 7, 9 }) {
+        for (int i = 0; i < numGridSizes; i++) {
+            int   trySize       = availableGridSizes[i];
             float tryXSpacing   = gridWidth / (trySize - 1);
             float tryYSpacing   = gridHeight / (trySize - 1);
             float maxTrySpacing = max(tryXSpacing, tryYSpacing);
 
-            if (maxTrySpacing <= maxSpacing) {
+            if (maxTrySpacing <= calibrationMaxSpacingMm) {
                 selectedGridSize = trySize;
                 break;  // Found the smallest grid that satisfies the constraint
             }

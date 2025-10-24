@@ -1309,7 +1309,7 @@ bool Calibration::generate_calibration_grid() {
 
         log_info("Frame size: " << frameWidth << " x " << frameHeight << " mm");
 
-        float gridWidth  = frameWidth * 0.3;
+        float gridWidth  = frameWidth * 0.5;
         float gridHeight = frameHeight * 0.2;
 
         log_info("Computed grid size: " << gridWidth << " x " << gridHeight << " mm");

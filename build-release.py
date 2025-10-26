@@ -23,8 +23,8 @@ try:
     )
     # Remove 'v' prefix if present (e.g., "v1.13" -> "1.13")
     version = git_tag.lstrip('v')
-except subprocess.CalledProcessError:
-    # Fallback to a default version if git command fails (no tags, not a git repo, etc.)
+except (subprocess.CalledProcessError, FileNotFoundError):
+    # Fallback to a default version if git command fails (no tags, not a git repo, git not installed, etc.)
     version = "unknown"
     print("Warning: Could not determine version from git tags, using 'unknown'")
 

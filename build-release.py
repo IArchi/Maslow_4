@@ -17,14 +17,14 @@ platformio = r"/Users/barsmith/.platformio/penv/bin/platformio" #"/Users/barsmit
 # Extract version from git tag
 try:
     git_tag = (
-        subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"])
+        subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], stderr=subprocess.DEVNULL)
         .strip()
         .decode("utf-8")
     )
     # Remove 'v' prefix if present (e.g., "v1.13" -> "1.13")
     version = git_tag.lstrip('v')
-except:
-    # Fallback to a default version if git command fails
+except subprocess.CalledProcessError:
+    # Fallback to a default version if git command fails (no tags, not a git repo, etc.)
     version = "unknown"
     print("Warning: Could not determine version from git tags, using 'unknown'")
 

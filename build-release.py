@@ -13,7 +13,21 @@ verbose = '-v' in sys.argv
 environ = dict(os.environ)
 
 platformio = r"/Users/barsmith/.platformio/penv/bin/platformio" #"/Users/barsmith/.platformio/penv/bin/platformio"
-version = "1.12"
+
+# Extract version from git tag
+try:
+    git_tag = (
+        subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], stderr=subprocess.DEVNULL)
+        .strip()
+        .decode("utf-8")
+    )
+    # Remove 'v' prefix if present (e.g., "v1.13" -> "1.13")
+    version = git_tag.lstrip('v')
+except (subprocess.CalledProcessError, FileNotFoundError):
+    # Fallback to a default version if git command fails (no tags, not a git repo, git not installed, etc.)
+    version = "unknown"
+    print("Warning: Could not determine version from git tags, using 'unknown'")
+
 os.chdir(os.path.dirname(os.path.realpath(r"/Users/barsmith/Documents/GitHub/FluidNC/.pio"))) #"/Users/barsmith/Documents/GitHub/FluidNC/.pio"
 #change path to the project folder (the folder with platformio.ini)
 tag = "maslow4-"+version
@@ -58,13 +72,6 @@ def buildFs(pioEnv, verbose=verbose, extraArgs=None):
     app.wait()
     print()
     return app.returncode
-
-# tag = (
-#     subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"])
-#     .strip()
-#     .decode("utf-8")
-# )
-
 
 
 def copyToZip(zipObj, platform, fileName, destPath, mode=0o100755):

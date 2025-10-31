@@ -73,7 +73,7 @@ public:
     int  getCurrentState();
     void printCurrentState();
     bool requestStateChange(int newState);
-    
+
     // Set extended state variables (used when restoring from NVS)
     void setExtendedState(bool tl, bool tr, bool bl, bool br);
 
@@ -101,9 +101,10 @@ public:
     int   calibrationCurrentThreshold    = 1300;
     float acceptableCalibrationThreshold = 0.5;
     int   calibrationGridSize            = 9;
-    float calibration_grid_width_mm_X    = 2000;  // mm offset from the edge of the frame
-    float calibration_grid_height_mm_Y   = 1000;  // mm offset from the edge of the frame
-    bool  calibrationInProgress;                  //Used to turn off regular movements during calibration
+    float calibration_grid_width_mm_X    = 2000;   // mm offset from the edge of the frame
+    float calibration_grid_height_mm_Y   = 1000;   // mm offset from the edge of the frame
+    float calibrationMaxSpacingMm        = 260.0;  // Maximum allowed spacing between calibration points when auto-selecting grid size
+    bool  calibrationInProgress;                   //Used to turn off regular movements during calibration
 
     //State machine variables
     int currentState = UNKNOWN;

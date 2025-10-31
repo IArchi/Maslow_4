@@ -836,7 +836,6 @@ void Maslow_::loadBeltPositions() {
     if (sys.state() == State::Alarm) {
         sys.set_state(State::Idle);
     }
-
     char* buffer2 = getLogBuffer();
     snprintf(buffer2, 1400, "Belt positions after encoder adjustment: TL=%g TR=%g BL=%g BR=%g newState=%d",
             tlPos, trPos, blPos, brPos, newState);

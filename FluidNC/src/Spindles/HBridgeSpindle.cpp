@@ -103,10 +103,12 @@ namespace Spindles {
 
     // prints the startup message of the spindle config
     void HBridge::config_message() {
-        log_info(name() << " Spindle Ena:" << _enable_pin.name() << " Out CW:" << _output_cw_pin.name()
-                        << " Out CCW:" << _output_ccw_pin.name() << " Freq:" << _pwm_cw->frequency() << "Hz Period:" << _pwm_cw->period()
-
-        );
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "%s Spindle Ena:%s Out CW:%s Out CCW:%s Freq:%dHz Period:%d",
+                name(), _enable_pin.name().c_str(), _output_cw_pin.name().c_str(), _output_ccw_pin.name().c_str(),
+                _pwm_cw->frequency(), _pwm_cw->period());
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     void IRAM_ATTR HBridge::set_output(uint32_t duty) {

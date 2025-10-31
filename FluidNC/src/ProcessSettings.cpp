@@ -467,10 +467,8 @@ static Error restore_settings(const char* value, WebUI::AuthenticationLevel auth
 }
 
 static Error showState(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
-    const char* name;
     const State state = sys.state();
-    auto        it    = StateName.find(state);
-    name              = it == StateName.end() ? "<invalid>" : it->second;
+    const char* name  = stateName(state);
 
     log_to(out, "State ", int(state) << " (" << name << ")");
     return Error::Ok;
@@ -494,11 +492,6 @@ static Error doJog(const char* value, WebUI::AuthenticationLevel auth_level, Cha
     return gc_execute_line(jogLine);
 }
 
-static const char* alarmString(ExecAlarm alarmNumber) {
-    auto it = AlarmNames.find(alarmNumber);
-    return it == AlarmNames.end() ? NULL : it->second;
-}
-
 static Error listAlarms(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
     if (sys.state() == State::ConfigAlarm) {
         log_to(out, "Configuration alarm is active. Check the boot messages for 'ERR'.");
@@ -513,7 +506,7 @@ static Error listAlarms(const char* value, WebUI::AuthenticationLevel auth_level
             return Error::InvalidValue;
         }
         const char* alarmName = alarmString(static_cast<ExecAlarm>(alarmNumber));
-        if (alarmName) {
+        if (alarmName && strcmp(alarmName, "Unknown") != 0) {
             log_to(out, "", alarmNumber << ": " << alarmName);
             return Error::Ok;
         } else {
@@ -522,8 +515,9 @@ static Error listAlarms(const char* value, WebUI::AuthenticationLevel auth_level
         }
     }
 
-    for (auto it = AlarmNames.begin(); it != AlarmNames.end(); it++) {
-        log_to(out, "", static_cast<int>(it->first) << ": " << it->second);
+    // List all alarms from 0 to 12
+    for (int i = 0; i <= 12; i++) {
+        log_to(out, "", i << ": " << alarmString(static_cast<ExecAlarm>(i)));
     }
     return Error::Ok;
 }

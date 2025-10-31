@@ -51,8 +51,11 @@ namespace MotorDrivers {
     }
 
     void RcServo::config_message() {
-        log_info("    " << name() << " Pin:" << _output_pin.name() << " Pulse Len(" << _min_pulse_us << "," << _max_pulse_us
-                        << " period:" << _pwm->period() << ")");
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "    %s Pin:%s Pulse Len(%d,%d period:%d)",
+                name(), _output_pin.name().c_str(), _min_pulse_us, _max_pulse_us, _pwm->period());
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     void RcServo::_write_pwm(uint32_t duty) {

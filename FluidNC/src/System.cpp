@@ -104,18 +104,28 @@ float* get_wco() {
     return wco;
 }
 
-std::map<State, const char*> StateName = {
-    { State::Idle, "Idle" },
-    { State::Alarm, "Alarm" },
-    { State::CheckMode, "CheckMode" },
-    { State::Homing, "Homing" },
-    { State::Cycle, "Cycle" },
-    { State::Hold, "Hold" },
-    { State::Jog, "Jog" },
-    { State::SafetyDoor, "SafetyDoor" },
-    { State::Sleep, "Sleep" },
-    { State::ConfigAlarm, "ConfigAlarm" },
+// Using array instead of std::map for better memory efficiency
+static const char* StateName[] = {
+    "Idle",        // 0
+    "Alarm",       // 1
+    "CheckMode",   // 2
+    "Homing",      // 3
+    "Cycle",       // 4
+    "Hold",        // 5
+    "Jog",         // 6
+    "SafetyDoor",  // 7
+    "Sleep",       // 8
+    "ConfigAlarm", // 9
 };
+static constexpr size_t StateNameCount = sizeof(StateName) / sizeof(StateName[0]);
+
+const char* stateName(State state) {
+    auto stateIndex = static_cast<uint8_t>(state);
+    if (stateIndex < StateNameCount) {
+        return StateName[stateIndex];
+    }
+    return "Unknown";
+}
 
 bool inMotionState() {
     return sys.state() == State::Cycle || sys.state() == State::Homing || sys.state() == State::Jog;

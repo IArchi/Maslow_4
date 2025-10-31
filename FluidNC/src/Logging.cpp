@@ -5,9 +5,35 @@
 #include "Protocol.h"
 #include "Serial.h"
 #include "SettingsDefinitions.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 bool atMsgLevel(MsgLevel level) {
     return message_level == nullptr || message_level->get() >= level;
+}
+
+// Shared buffer for log formatting with mutex protection
+// Using 1400 bytes as suggested to handle the largest log messages
+static char logBuffer[1400];
+static SemaphoreHandle_t logBufferMutex = nullptr;
+
+// Initialize mutex on first use
+static void ensureLogBufferMutex() {
+    if (logBufferMutex == nullptr) {
+        logBufferMutex = xSemaphoreCreateMutex();
+    }
+}
+
+// Get the shared log buffer (thread-safe)
+char* getLogBuffer() {
+    ensureLogBufferMutex();
+    xSemaphoreTake(logBufferMutex, portMAX_DELAY);
+    return logBuffer;
+}
+
+// Release the shared log buffer
+void releaseLogBuffer() {
+    xSemaphoreGive(logBufferMutex);
 }
 
 LogStream::LogStream(Print& channel, const char* name) : _channel(channel) {

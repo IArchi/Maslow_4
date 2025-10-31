@@ -118,7 +118,10 @@ T mapConstrain(T x, T in_min, T in_max, T out_min, T out_max) {
 template <typename T>
 bool constrain_with_message(T& value, T min, T max, const char* name = "") {
     if (value < min || value > max) {
-        log_warn(name << " value " << value << " constrained to range (" << min << "," << max << ")");
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "%s value %g constrained to range (%g,%g)", name, (double)value, (double)min, (double)max);
+        log_warn(buffer);
+        releaseLogBuffer();
         value = myConstrain(value, min, max);
         return false;
     }

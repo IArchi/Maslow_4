@@ -45,6 +45,10 @@ private:
 
 extern bool atMsgLevel(MsgLevel level);
 
+// Shared buffer for efficient log formatting
+char* getLogBuffer();
+void releaseLogBuffer();
+
 // clang-format off
 
 // Note: these '{'..'}' scopes are here for a reason: the destructor should flush.

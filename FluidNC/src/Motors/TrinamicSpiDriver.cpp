@@ -39,8 +39,12 @@ namespace MotorDrivers {
     This is the startup message showing the basic definition
     */
     void TrinamicSpiDriver::config_message() {
-        log_info("    " << name() << " Step:" << _step_pin.name() << " Dir:" << _dir_pin.name() << " CS:" << _cs_pin.name()
-                        << " Disable:" << _disable_pin.name() << " Index:" << _spi_index << " R:" << _r_sense);
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "    %s Step:%s Dir:%s CS:%s Disable:%s Index:%d R:%g",
+                name(), _step_pin.name().c_str(), _dir_pin.name().c_str(), _cs_pin.name().c_str(),
+                _disable_pin.name().c_str(), _spi_index, _r_sense);
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     uint8_t TrinamicSpiDriver::toffValue() {

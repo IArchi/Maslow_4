@@ -15,8 +15,12 @@ namespace MotorDrivers {
     }
 
     void UnipolarMotor::config_message() {
-        log_info("    " << name() << " Ph0:" << _pin_phase0.name() << " Ph1:" << _pin_phase1.name() << " Ph2:" << _pin_phase2.name()
-                        << " Ph3:" << _pin_phase3.name());
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "    %s Ph0:%s Ph1:%s Ph2:%s Ph3:%s",
+                name(), _pin_phase0.name().c_str(), _pin_phase1.name().c_str(), 
+                _pin_phase2.name().c_str(), _pin_phase3.name().c_str());
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     void IRAM_ATTR UnipolarMotor::set_disable(bool disable) {

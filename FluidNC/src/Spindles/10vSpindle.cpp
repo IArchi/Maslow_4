@@ -54,9 +54,12 @@ namespace Spindles {
 
     // prints the startup message of the spindle config
     void _10v::config_message() {
-        log_info(name() << " Spindle Ena:" << _enable_pin.name() << " Out:" << _output_pin.name() << " Dir:" << _direction_pin.name()
-                        << " Fwd:" << _forward_pin.name() << " Rev:" << _reverse_pin.name() << " Freq:" << _pwm->frequency()
-                        << "Hz Period:" << _pwm->period());
+        char* buffer = getLogBuffer();
+        snprintf(buffer, 1400, "%s Spindle Ena:%s Out:%s Dir:%s Fwd:%s Rev:%s Freq:%dHz Period:%d",
+                name(), _enable_pin.name().c_str(), _output_pin.name().c_str(), _direction_pin.name().c_str(),
+                _forward_pin.name().c_str(), _reverse_pin.name().c_str(), _pwm->frequency(), _pwm->period());
+        log_info(buffer);
+        releaseLogBuffer();
     }
 
     // This appears identical to the code in PWMSpindle.cpp but

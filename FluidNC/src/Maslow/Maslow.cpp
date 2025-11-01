@@ -799,6 +799,18 @@ void Maslow_::loadBeltPositions() {
         log_info("Error " + std::string(esp_err_to_name(ret)) + " reading BR belt position from NVS!");
     }
 
+    // Load orientation from NVS if available
+    int32_t orientationValue;
+    ret = nvs_get_i32(nvsHandle, "orientation", &orientationValue);
+    if (ret == ESP_OK) {
+        calibration.orientation = (bool)orientationValue;
+        log_info("Loaded orientation from NVS: " << (calibration.orientation == VERTICAL ? "VERTICAL" : "HORIZONTAL"));
+    } else if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        log_info("No saved orientation in NVS - will be auto-detected on next belt extension");
+    } else {
+        log_info("Error " + std::string(esp_err_to_name(ret)) + " reading orientation from NVS");
+    }
+
     nvs_close(nvsHandle);
 
     // Sync position with G-code parser and planner

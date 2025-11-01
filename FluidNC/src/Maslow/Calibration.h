@@ -9,12 +9,13 @@
 #define RETRACTING 1
 #define RETRACTED 2
 #define EXTENDING 3
-#define EXTENDEDOUT 4  //Extended is a reserved word
-#define TAKING_SLACK 5
-#define CALIBRATION_IN_PROGRESS 6
-#define READY_TO_CUT 7
-#define RELEASE_TENSION 8
-#define CALIBRATION_COMPUTING 9
+#define DETECTING_ORIENTATION 4
+#define EXTENDEDOUT 5  //Extended is a reserved word
+#define TAKING_SLACK 6
+#define CALIBRATION_IN_PROGRESS 7
+#define READY_TO_CUT 8
+#define RELEASE_TENSION 9
+#define CALIBRATION_COMPUTING 10
 
 class Calibration {
 public:
@@ -64,6 +65,7 @@ public:
     void resetCalibrationState();
 
     void comply();
+    bool detectOrientation();
 
     void hold(unsigned long time);
 
@@ -98,13 +100,15 @@ public:
 
     //Variables used by calibration
     bool  orientation;
-    int   calibrationCurrentThreshold    = 1300;
-    float acceptableCalibrationThreshold = 0.5;
-    int   calibrationGridSize            = 9;
-    float calibration_grid_width_mm_X    = 2000;   // mm offset from the edge of the frame
-    float calibration_grid_height_mm_Y   = 1000;   // mm offset from the edge of the frame
-    float calibrationMaxSpacingMm        = 260.0;  // Maximum allowed spacing between calibration points when auto-selecting grid size
-    bool  calibrationInProgress;                   //Used to turn off regular movements during calibration
+    int   orientationDetectionTestDuration = 300;    // Duration in ms to run orientation detection test
+    float orientationDetectionThreshold    = 50.0;   // Minimum extension in mm to detect vertical orientation
+    int   calibrationCurrentThreshold      = 1300;
+    float acceptableCalibrationThreshold   = 0.5;
+    int   calibrationGridSize              = 9;
+    float calibration_grid_width_mm_X      = 2000;   // mm offset from the edge of the frame
+    float calibration_grid_height_mm_Y     = 1000;   // mm offset from the edge of the frame
+    float calibrationMaxSpacingMm          = 260.0;  // Maximum allowed spacing between calibration points when auto-selecting grid size
+    bool  calibrationInProgress;                     //Used to turn off regular movements during calibration
 
     //State machine variables
     int currentState = UNKNOWN;
@@ -150,6 +154,12 @@ private:
     unsigned long extendCallTimer  = millis();
     unsigned long complyCallTimer  = millis();
 
+    //Variables used for orientation detection
+    unsigned long orientationDetectTimer   = 0;
+    double        tlStartPosition          = 0;
+    double        trStartPosition          = 0;
+    bool          orientationDetectionDone = false;
+
     //Used to overide and drive motors directly...dangerous
     bool          TLIOveride   = false;
     bool          TRIOveride   = false;
@@ -169,10 +179,11 @@ private:
         int         state;
         const char* name;
     };
-    StateName stateNames[11] = { { UNKNOWN, "Unknown" },
+    StateName stateNames[12] = { { UNKNOWN, "Unknown" },
                                  { RETRACTING, "Retracting Belts" },
                                  { RETRACTED, "Belts Retracted" },
                                  { EXTENDING, "Extending Belts" },
+                                 { DETECTING_ORIENTATION, "Detecting Orientation" },
                                  { EXTENDEDOUT, "Belts Extended" },
                                  { TAKING_SLACK, "Taking Slack" },
                                  { CALIBRATION_IN_PROGRESS, "Calibrating" },

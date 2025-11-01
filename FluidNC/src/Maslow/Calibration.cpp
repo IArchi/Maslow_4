@@ -107,8 +107,21 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot extend the belts until they have been retracted");
                 break;
             }
-        case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack or release tension
-            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
+        case DETECTING_ORIENTATION:  //We can enter orientation detection from extending
+            if (currentState == EXTENDING) {
+                currentState               = DETECTING_ORIENTATION;
+                orientationDetectTimer     = millis();
+                orientationDetectionDone   = false;
+                sys.set_state(State::Homing);
+                success = true;
+                break;
+            } else {
+                log_info("Cannot detect orientation from state " << stateNames[currentState].name);
+                break;
+            }
+        case EXTENDEDOUT:  //We can enter extended from extending, detecting orientation, or in the event of a failure from taking slack or release tension
+            if (currentState == EXTENDING || currentState == DETECTING_ORIENTATION || currentState == TAKING_SLACK ||
+                currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
                 success = true;
@@ -352,8 +365,13 @@ void Calibration::home() {
                     extendedBR = Maslow.axisBR.extend(extendDist);
                 if (extendedTL && extendedTR && extendedBL && extendedBR) {
                     log_info("All belts extended to " << extendDist << "mm");
-                    requestStateChange(EXTENDEDOUT);
+                    requestStateChange(DETECTING_ORIENTATION);
                 }
+            }
+            break;
+        case DETECTING_ORIENTATION:
+            if (detectOrientation()) {
+                requestStateChange(EXTENDEDOUT);
             }
             break;
         case TAKING_SLACK:
@@ -1781,4 +1799,112 @@ void Calibration::handleMotorOverides() {
             Maslow.axisBL.stop();
         }
     }
+}
+
+/*
+ * Detects the orientation (horizontal vs vertical) of the machine
+ * by extending TL and TR motors and measuring belt extension.
+ * Returns true when detection is complete.
+ */
+bool Calibration::detectOrientation() {
+    unsigned long elapsedTime = millis() - orientationDetectTimer;
+
+    // Phase 1: Record starting positions (once at beginning)
+    if (!orientationDetectionDone && elapsedTime < 50) {
+        tlStartPosition = Maslow.axisTL.getPosition();
+        trStartPosition = Maslow.axisTR.getPosition();
+        log_info("Starting orientation detection. TL start: " << tlStartPosition << " TR start: " << trStartPosition);
+        return false;
+    }
+
+    // Phase 2: Run TL and TR motors in extend direction for configured duration
+    // BL and BR motors are kept stopped (not powered)
+    if (!orientationDetectionDone && elapsedTime >= 50 && elapsedTime < (50 + orientationDetectionTestDuration)) {
+        // Make TL and TR comply (allow belt to extend with minimal resistance)
+        Maslow.axisTL.comply();
+        Maslow.axisTR.comply();
+        // Ensure BL and BR are stopped
+        Maslow.axisBL.stop();
+        Maslow.axisBR.stop();
+        return false;
+    }
+
+    // Phase 3: Measure extension and return to starting positions
+    if (!orientationDetectionDone && elapsedTime >= (50 + orientationDetectionTestDuration)) {
+        double tlCurrentPosition = Maslow.axisTL.getPosition();
+        double trCurrentPosition = Maslow.axisTR.getPosition();
+
+        double tlExtension = tlCurrentPosition - tlStartPosition;
+        double trExtension = trCurrentPosition - trStartPosition;
+        double avgExtension = (tlExtension + trExtension) / 2.0;
+
+        log_info("Orientation detection results:");
+        log_info("  TL extension: " << tlExtension << " mm");
+        log_info("  TR extension: " << trExtension << " mm");
+        log_info("  Average extension: " << avgExtension << " mm");
+
+        // Determine orientation based on extension amount
+        bool detectedOrientation = HORIZONTAL;
+        if (avgExtension > orientationDetectionThreshold) {
+            detectedOrientation = VERTICAL;
+            log_info("Detected VERTICAL orientation (extension > " << orientationDetectionThreshold << " mm)");
+        } else {
+            detectedOrientation = HORIZONTAL;
+            log_info("Detected HORIZONTAL orientation (extension <= " << orientationDetectionThreshold << " mm)");
+        }
+
+        // Save orientation to NVS
+        nvs_handle_t nvsHandle;
+        esp_err_t ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
+        if (ret == ESP_OK) {
+            int32_t currentOrientation;
+            ret = nvs_get_i32(nvsHandle, "orientation", &currentOrientation);
+            if (ret == ESP_ERR_NVS_NOT_FOUND || currentOrientation != (int32_t)detectedOrientation) {
+                ret = nvs_set_i32(nvsHandle, "orientation", (int32_t)detectedOrientation);
+                if (ret == ESP_OK) {
+                    ret = nvs_commit(nvsHandle);
+                    if (ret == ESP_OK) {
+                        log_info("Orientation saved to NVS: " << (detectedOrientation == VERTICAL ? "VERTICAL" : "HORIZONTAL"));
+                    } else {
+                        log_error("Failed to commit orientation to NVS: " << esp_err_to_name(ret));
+                    }
+                } else {
+                    log_error("Failed to write orientation to NVS: " << esp_err_to_name(ret));
+                }
+            }
+            nvs_close(nvsHandle);
+        } else {
+            log_error("Failed to open NVS for orientation: " << esp_err_to_name(ret));
+        }
+
+        // Update the calibration object's orientation
+        orientation = detectedOrientation;
+
+        // Set targets to return to starting positions
+        Maslow.axisTL.setTarget(tlStartPosition);
+        Maslow.axisTR.setTarget(trStartPosition);
+
+        orientationDetectionDone = true;
+        return false;
+    }
+
+    // Phase 4: Return to starting positions
+    if (orientationDetectionDone) {
+        // Use PID to return to starting positions
+        Maslow.axisTL.recomputePID();
+        Maslow.axisTR.recomputePID();
+
+        double tlCurrentPosition = Maslow.axisTL.getPosition();
+        double trCurrentPosition = Maslow.axisTR.getPosition();
+
+        // Check if we've returned to starting positions (within 5mm tolerance)
+        if (abs(tlCurrentPosition - tlStartPosition) < 5.0 && abs(trCurrentPosition - trStartPosition) < 5.0) {
+            log_info("Orientation detection complete. Returned to starting positions.");
+            Maslow.axisTL.stop();
+            Maslow.axisTR.stop();
+            return true;
+        }
+    }
+
+    return false;
 }

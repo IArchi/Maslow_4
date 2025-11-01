@@ -109,9 +109,9 @@ bool Calibration::requestStateChange(int newState) {
             }
         case DETECTING_ORIENTATION:  //We can enter orientation detection from extending
             if (currentState == EXTENDING) {
-                currentState               = DETECTING_ORIENTATION;
-                orientationDetectTimer     = millis();
-                orientationDetectionDone   = false;
+                currentState             = DETECTING_ORIENTATION;
+                orientationDetectTimer   = millis();
+                orientationDetectionDone = false;
                 sys.set_state(State::Homing);
                 success = true;
                 break;
@@ -416,8 +416,8 @@ void Calibration::home() {
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
-        !calibrationInProgress && !takeSlack && !checkOverides()) {
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && !calibrationInProgress &&
+        !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }
 }
@@ -1808,7 +1808,7 @@ void Calibration::handleMotorOverides() {
  */
 bool Calibration::detectOrientation() {
     const unsigned long STARTUP_DELAY_MS = 50;  // Delay before starting test to ensure stable starting position
-    unsigned long elapsedTime = millis() - orientationDetectTimer;
+    unsigned long       elapsedTime      = millis() - orientationDetectTimer;
 
     // Phase 1: Record starting positions (once at beginning)
     if (!orientationDetectionDone && elapsedTime < STARTUP_DELAY_MS) {
@@ -1835,8 +1835,8 @@ bool Calibration::detectOrientation() {
         double tlCurrentPosition = Maslow.axisTL.getPosition();
         double trCurrentPosition = Maslow.axisTR.getPosition();
 
-        double tlExtension = tlCurrentPosition - tlStartPosition;
-        double trExtension = trCurrentPosition - trStartPosition;
+        double tlExtension  = tlCurrentPosition - tlStartPosition;
+        double trExtension  = trCurrentPosition - trStartPosition;
         double avgExtension = (tlExtension + trExtension) / 2.0;
 
         log_info("Orientation detection results:");
@@ -1856,7 +1856,7 @@ bool Calibration::detectOrientation() {
 
         // Save orientation to NVS
         nvs_handle_t nvsHandle;
-        esp_err_t ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
+        esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
         if (ret == ESP_OK) {
             int32_t savedOrientation;
             ret = nvs_get_i32(nvsHandle, "orientation", &savedOrientation);

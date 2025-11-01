@@ -100,15 +100,16 @@ public:
 
     //Variables used by calibration
     bool  orientation;
-    int   orientationDetectionTestDuration = 300;    // Duration in ms to run orientation detection test
-    float orientationDetectionThreshold    = 50.0;   // Minimum extension in mm to detect vertical orientation (typical vertical extension is 100-200mm, horizontal is 0-20mm)
-    int   calibrationCurrentThreshold      = 1300;
-    float acceptableCalibrationThreshold   = 0.5;
-    int   calibrationGridSize              = 9;
-    float calibration_grid_width_mm_X      = 2000;   // mm offset from the edge of the frame
-    float calibration_grid_height_mm_Y     = 1000;   // mm offset from the edge of the frame
-    float calibrationMaxSpacingMm          = 260.0;  // Maximum allowed spacing between calibration points when auto-selecting grid size
-    bool  calibrationInProgress;                     //Used to turn off regular movements during calibration
+    int   orientationDetectionTestDuration = 300;  // Duration in ms to run orientation detection test
+    float orientationDetectionThreshold =
+        50.0;  // Minimum extension in mm to detect vertical orientation (typical vertical extension is 100-200mm, horizontal is 0-20mm)
+    int   calibrationCurrentThreshold    = 1300;
+    float acceptableCalibrationThreshold = 0.5;
+    int   calibrationGridSize            = 9;
+    float calibration_grid_width_mm_X    = 2000;   // mm offset from the edge of the frame
+    float calibration_grid_height_mm_Y   = 1000;   // mm offset from the edge of the frame
+    float calibrationMaxSpacingMm        = 260.0;  // Maximum allowed spacing between calibration points when auto-selecting grid size
+    bool  calibrationInProgress;                   //Used to turn off regular movements during calibration
 
     //State machine variables
     int currentState = UNKNOWN;
@@ -125,10 +126,10 @@ private:
     int previousState = UNKNOWN;
 
     //Variables used by extending
-    bool extendedTL   = false;
-    bool extendedTR   = false;
-    bool extendedBL   = false;
-    bool extendedBR   = false;
+    bool extendedTL = false;
+    bool extendedTR = false;
+    bool extendedBL = false;
+    bool extendedBR = false;
 
     //Variables used by take slack
     bool takeSlack = false;

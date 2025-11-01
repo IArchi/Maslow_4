@@ -242,10 +242,8 @@ void Maslow_::update() {
             digitalWrite(coolingFanPin, HIGH);  //keep the cooling fan on
         }
         //If we are doing calibration turn the cooling fan on
-        else if (calibration.calibrationInProgress || 
-                 calibration.getCurrentState() == EXTENDING || 
-                 calibration.getCurrentState() == RETRACTING ||
-                 calibration.getCurrentState() == RELEASE_TENSION) {
+        else if (calibration.calibrationInProgress || calibration.getCurrentState() == EXTENDING ||
+                 calibration.getCurrentState() == RETRACTING || calibration.getCurrentState() == RELEASE_TENSION) {
             digitalWrite(coolingFanPin, HIGH);  //keep the cooling fan on
         } else {
             digitalWrite(coolingFanPin, LOW);  //Turn the cooling fan off
@@ -592,8 +590,7 @@ void Maslow_::saveBeltPositions() {
 
     // Log the save operation
     char* buffer = getLogBuffer();
-    snprintf(buffer, 1400, "Belt positions saved to NVS: TL=%g TR=%g BL=%g BR=%g state=%d",
-            tlPos, trPos, blPos, brPos, currentState);
+    snprintf(buffer, 1400, "Belt positions saved to NVS: TL=%g TR=%g BL=%g BR=%g state=%d", tlPos, trPos, blPos, brPos, currentState);
     log_debug(buffer);
     releaseLogBuffer();
 }
@@ -849,8 +846,8 @@ void Maslow_::loadBeltPositions() {
         sys.set_state(State::Idle);
     }
     char* buffer2 = getLogBuffer();
-    snprintf(buffer2, 1400, "Belt positions after encoder adjustment: TL=%g TR=%g BL=%g BR=%g newState=%d",
-            tlPos, trPos, blPos, brPos, newState);
+    snprintf(
+        buffer2, 1400, "Belt positions after encoder adjustment: TL=%g TR=%g BL=%g BR=%g newState=%d", tlPos, trPos, blPos, brPos, newState);
     log_debug(buffer2);
     releaseLogBuffer();
 }
@@ -1138,16 +1135,21 @@ void Maslow_::safety_control() {
 // Prints out state
 void Maslow_::getInfo() {
     char* buffer = getLogBuffer();
-    snprintf(buffer, 1400,
-        "MINFO: { \"homed\": %s, \"calibrationInProgress\": %s, \"tl\": %g, \"tr\": %g, \"br\": %g, \"bl\": %g, "
-        "\"etl\": %g, \"etr\": %g, \"ebr\": %g, \"ebl\": %g, \"extended\": %s }",
-        calibration.all_axis_homed() ? "true" : "false",
-        calibration.calibrationInProgress ? "true" : "false",
-        axisTL.getPosition(), axisTR.getPosition(),
-        axisBR.getPosition(), axisBL.getPosition(),
-        axisTL.getPositionError(), axisTR.getPositionError(),
-        axisBR.getPositionError(), axisBL.getPositionError(),
-        calibration.allAxisExtended() ? "true" : "false");
+    snprintf(buffer,
+             1400,
+             "MINFO: { \"homed\": %s, \"calibrationInProgress\": %s, \"tl\": %g, \"tr\": %g, \"br\": %g, \"bl\": %g, "
+             "\"etl\": %g, \"etr\": %g, \"ebr\": %g, \"ebl\": %g, \"extended\": %s }",
+             calibration.all_axis_homed() ? "true" : "false",
+             calibration.calibrationInProgress ? "true" : "false",
+             axisTL.getPosition(),
+             axisTR.getPosition(),
+             axisBR.getPosition(),
+             axisBL.getPosition(),
+             axisTL.getPositionError(),
+             axisTR.getPositionError(),
+             axisBR.getPositionError(),
+             axisBL.getPositionError(),
+             calibration.allAxisExtended() ? "true" : "false");
     log_data(buffer);
     releaseLogBuffer();
 }
@@ -1187,24 +1189,57 @@ void Maslow_::log_telem_hdr_csv() {
                        << "lastCallToPID," << "lastMiss," << "lastCallToUpdate," << "extendCallTimer," << "complyCallTimer");
 }
 
-void Maslow_::log_telem_pt_csv(TelemetryData data) { 
+void Maslow_::log_telem_pt_csv(TelemetryData data) {
     // Use stack-allocated buffer with snprintf to avoid heap allocations from std::to_string
     char buffer[512];
-    snprintf(buffer, sizeof(buffer),
-        "%lu,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%d,%d,%d,%d,%d,%d,%d,%d,%g,%g,%g,%g,%g,%d,%d,%d,%d,%lu,%d,%lu,%g,%g,%lu,%lu,%lu,%lu,%lu",
-        data.timestamp,
-        data.tlCurrent, data.trCurrent, data.blCurrent, data.brCurrent,
-        data.tlPower, data.trPower, data.blPower, data.brPower,
-        data.tlSpeed, data.trSpeed, data.blSpeed, data.brSpeed,
-        data.tlPos, data.trPos, data.blPos, data.brPos,
-        data.extendedTL, data.extendedTR, data.extendedBL, data.extendedBR,
-        data.extendingALL, data.complyALL, data.takeSlack, data.safetyOn,
-        data.targetX, data.targetY, data.targetZ, data.x, data.y,
-        data.test, data.pointCount, data.waypoint, data.calibrationGridSize,
-        data.holdTimer, data.holding, data.holdTime,
-        data.centerX, data.centerY,
-        data.lastCallToPID, data.lastMiss, data.lastCallToUpdate,
-        data.extendCallTimer, data.complyCallTimer);
+    snprintf(buffer,
+             sizeof(buffer),
+             "%lu,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%d,%d,%d,%d,%d,%d,%d,%d,%g,%g,%g,%g,%g,%d,%d,%d,%d,%lu,%d,%lu,%g,%g,%lu,%"
+             "lu,%lu,%lu,%lu",
+             data.timestamp,
+             data.tlCurrent,
+             data.trCurrent,
+             data.blCurrent,
+             data.brCurrent,
+             data.tlPower,
+             data.trPower,
+             data.blPower,
+             data.brPower,
+             data.tlSpeed,
+             data.trSpeed,
+             data.blSpeed,
+             data.brSpeed,
+             data.tlPos,
+             data.trPos,
+             data.blPos,
+             data.brPos,
+             data.extendedTL,
+             data.extendedTR,
+             data.extendedBL,
+             data.extendedBR,
+             data.extendingALL,
+             data.complyALL,
+             data.takeSlack,
+             data.safetyOn,
+             data.targetX,
+             data.targetY,
+             data.targetZ,
+             data.x,
+             data.y,
+             data.test,
+             data.pointCount,
+             data.waypoint,
+             data.calibrationGridSize,
+             data.holdTimer,
+             data.holding,
+             data.holdTime,
+             data.centerX,
+             data.centerY,
+             data.lastCallToPID,
+             data.lastMiss,
+             data.lastCallToUpdate,
+             data.extendCallTimer,
+             data.complyCallTimer);
     log_data(buffer);
 }
 

@@ -1803,24 +1803,25 @@ void Calibration::handleMotorOverides() {
 
 /*
  * Detects the orientation (horizontal vs vertical) of the machine
- * by extending TL and TR motors and measuring belt extension.
+ * by measuring TL and TR belt extension under gravity.
  * Returns true when detection is complete.
  */
 bool Calibration::detectOrientation() {
+    const unsigned long STARTUP_DELAY_MS = 50;  // Delay before starting test to ensure stable starting position
     unsigned long elapsedTime = millis() - orientationDetectTimer;
 
     // Phase 1: Record starting positions (once at beginning)
-    if (!orientationDetectionDone && elapsedTime < 50) {
+    if (!orientationDetectionDone && elapsedTime < STARTUP_DELAY_MS) {
         tlStartPosition = Maslow.axisTL.getPosition();
         trStartPosition = Maslow.axisTR.getPosition();
         log_info("Starting orientation detection. TL start: " << tlStartPosition << " TR start: " << trStartPosition);
         return false;
     }
 
-    // Phase 2: Run TL and TR motors in extend direction for configured duration
+    // Phase 2: Make TL and TR comply to allow belt extension under gravity for configured duration
     // BL and BR motors are kept stopped (not powered)
-    if (!orientationDetectionDone && elapsedTime >= 50 && elapsedTime < (50 + orientationDetectionTestDuration)) {
-        // Make TL and TR comply (allow belt to extend with minimal resistance)
+    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
+        // Make TL and TR comply (allow belt extension with minimal resistance under gravity)
         Maslow.axisTL.comply();
         Maslow.axisTR.comply();
         // Ensure BL and BR are stopped
@@ -1830,7 +1831,7 @@ bool Calibration::detectOrientation() {
     }
 
     // Phase 3: Measure extension and return to starting positions
-    if (!orientationDetectionDone && elapsedTime >= (50 + orientationDetectionTestDuration)) {
+    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
         double tlCurrentPosition = Maslow.axisTL.getPosition();
         double trCurrentPosition = Maslow.axisTR.getPosition();
 
@@ -1857,9 +1858,9 @@ bool Calibration::detectOrientation() {
         nvs_handle_t nvsHandle;
         esp_err_t ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
         if (ret == ESP_OK) {
-            int32_t currentOrientation;
-            ret = nvs_get_i32(nvsHandle, "orientation", &currentOrientation);
-            if (ret == ESP_ERR_NVS_NOT_FOUND || currentOrientation != (int32_t)detectedOrientation) {
+            int32_t savedOrientation;
+            ret = nvs_get_i32(nvsHandle, "orientation", &savedOrientation);
+            if (ret == ESP_ERR_NVS_NOT_FOUND || savedOrientation != (int32_t)detectedOrientation) {
                 ret = nvs_set_i32(nvsHandle, "orientation", (int32_t)detectedOrientation);
                 if (ret == ESP_OK) {
                     ret = nvs_commit(nvsHandle);
@@ -1898,7 +1899,7 @@ bool Calibration::detectOrientation() {
         double trCurrentPosition = Maslow.axisTR.getPosition();
 
         // Check if we've returned to starting positions (within 5mm tolerance)
-        if (abs(tlCurrentPosition - tlStartPosition) < 5.0 && abs(trCurrentPosition - trStartPosition) < 5.0) {
+        if (fabs(tlCurrentPosition - tlStartPosition) < 5.0 && fabs(trCurrentPosition - trStartPosition) < 5.0) {
             log_info("Orientation detection complete. Returned to starting positions.");
             Maslow.axisTL.stop();
             Maslow.axisTR.stop();

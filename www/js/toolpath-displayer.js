@@ -1166,33 +1166,35 @@ var bboxHandlers = {
         jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
         jobBboxIsSet = true;
         
-        // Collect arc points for envelope calculation
-        // Sample points along the arc
-        var deltaX1 = start.x - center.x;
-        var deltaY1 = start.y - center.y;
-        var radius = Math.hypot(deltaX1, deltaY1);
-        var deltaX2 = end.x - center.x;
-        var deltaY2 = end.y - center.y;
-        var theta1 = Math.atan2(deltaY1, deltaX1);
-        var theta2 = Math.atan2(deltaY2, deltaX2);
-        var cw = modal.motion == "G2";
+        // Collect arc points for envelope calculation - exclude G0 rapid moves
+        if (modal.motion !== 'G0') {
+            // Sample points along the arc
+            var deltaX1 = start.x - center.x;
+            var deltaY1 = start.y - center.y;
+            var radius = Math.hypot(deltaX1, deltaY1);
+            var deltaX2 = end.x - center.x;
+            var deltaY2 = end.y - center.y;
+            var theta1 = Math.atan2(deltaY1, deltaX1);
+            var theta2 = Math.atan2(deltaY2, deltaX2);
+            var cw = modal.motion === "G2";
         
         if (!cw && theta2 < theta1) {
             theta2 += Math.PI * 2;
         } else if (cw && theta2 > theta1) {
             theta2 -= Math.PI * 2;
         }
-        
-        // Sample arc with enough points to capture its shape
-        var deltaTheta = theta2 - theta1;
-        var numSamples = Math.max(5, Math.ceil(Math.abs(deltaTheta) / (Math.PI / 8))); // At least 5 samples
-        var dt = deltaTheta / numSamples;
-        
-        for (var i = 0; i <= numSamples; i++) {
-            var theta = theta1 + i * dt;
-            var px = center.x + radius * Math.cos(theta);
-            var py = center.y + radius * Math.sin(theta);
-            jobToolpathPoints.push({x: px, y: py});
+            
+            // Sample arc with enough points to capture its shape
+            var deltaTheta = theta2 - theta1;
+            var numSamples = Math.max(5, Math.ceil(Math.abs(deltaTheta) / (Math.PI / 8))); // At least 5 samples
+            var dt = deltaTheta / numSamples;
+            
+            for (var i = 0; i <= numSamples; i++) {
+                var theta = theta1 + i * dt;
+                var px = center.x + radius * Math.cos(theta);
+                var py = center.y + radius * Math.sin(theta);
+                jobToolpathPoints.push({x: px, y: py});
+            }
         }
     }
 };
@@ -1557,7 +1559,7 @@ var traceBoundary = function() {
     
     // Execute each command with a delay
     var commandIndex = 0;
-    const executeNextCommand = function() {
+    var executeNextCommand = function() {
         if (commandIndex < commands.length) {
             SendPrinterCommand(commands[commandIndex]);
             commandIndex++;

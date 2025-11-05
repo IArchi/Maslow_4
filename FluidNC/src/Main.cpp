@@ -53,6 +53,9 @@ void setup() {
 
         protocol_init();
 
+        // Load settings from non-volatile storage
+        settings_init();  // requires config
+
         log_info("FluidNC " << git_info);
         log_info("Compiled with ESP32 SDK:" << esp_get_idf_version());
 
@@ -62,12 +65,7 @@ void setup() {
             log_info("Local filesystem type is " << localfsName);
         }
 
-        // Load configuration before loading settings so that runtime settings
-        // can access the configuration tree (e.g., kinematics parameters)
         bool configOkay = config->load();
-
-        // Load settings from non-volatile storage
-        settings_init();  // requires config
 
         make_user_commands();
 

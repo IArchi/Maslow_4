@@ -233,12 +233,31 @@ namespace Machine {
                                  "        toff_disable: 0\n        toff_stealthchop: 5\n        toff_coolstep: 3\n"
                                  "        run_mode: StealthChop\n        homing_mode: StealthChop\n        use_enable: true\n";
 
+    const std::string dcKinematics = "kinematics:\n"
+                                     "  MaslowKinematics:\n"
+                                     "    tlX: -27.6\n"
+                                     "    tlY: 2064.9\n"
+                                     "    tlZ: 100.0\n"
+                                     "    trX: 2924.3\n"
+                                     "    trY: 2066.5\n"
+                                     "    trZ: 56.0\n"
+                                     "    blX: 0.0\n"
+                                     "    blY: 0.0\n"
+                                     "    blZ: 34.0\n"
+                                     "    brX: 2953.2\n"
+                                     "    brY: 0.0\n"
+                                     "    brZ: 78.0\n"
+                                     "    beltEndExtension: 30.0\n"
+                                     "    armLength: 123.4\n"
+                                     "    maxSegmentLength: 5.0\n"
+                                     "    fixedZ: false\n";
+
     const std::string defaultConfig =
         dcBoard +
         // Maslow M4 default items
-        dcM4Vert + dcM4CalibrationGrid + dcM4Anchors + dcM4ZAxis + dcM4CurrentThreshold + dcM4Thickness +
+        dcM4Vert + dcM4CalibrationGrid + dcM4CurrentThreshold + dcM4Thickness +
         // Default sections
-        dcSpi + dcSDCard + dcStepping + dcUart1 +
+        dcSpi + dcSDCard + dcStepping + dcUart1 + dcKinematics +
         "axes:\n"
         "  x:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 2438.4\n    homing:\n      cycle: -1\n"
         "    motor0:\n      dc_servo:\n"

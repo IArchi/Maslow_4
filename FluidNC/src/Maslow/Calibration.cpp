@@ -107,18 +107,6 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot extend the belts until they have been retracted");
                 break;
             }
-        case DETECTING_ORIENTATION:  //We can enter orientation detection when starting calibration from extended out or ready to cut
-            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
-                currentState             = DETECTING_ORIENTATION;
-                orientationDetectTimer   = millis();
-                orientationDetectionDone = false;
-                sys.set_state(State::Homing);
-                success = true;
-                break;
-            } else {
-                log_info("Cannot detect orientation from state " << stateNames[currentState].name);
-                break;
-            }
         case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack or release tension
             if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
@@ -158,16 +146,8 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot take slack until the belts have been extended");
                 break;
             }
-        case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, DETECTING_ORIENTATION, or CALIBRATION_COMPUTING
-            // If starting fresh calibration (waypoint 0) and not coming from orientation detection, detect orientation first
-            if (waypoint == 0 && currentState != DETECTING_ORIENTATION &&
-                (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING)) {
-                log_info("Starting orientation detection before calibration");
-                return requestStateChange(DETECTING_ORIENTATION);
-            }
-
-            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING ||
-                currentState == DETECTING_ORIENTATION) {
+        case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
+            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration
@@ -182,8 +162,9 @@ bool Calibration::requestStateChange(int newState) {
                 //If we are at the first point we need to generate the grid before we can start
                 if (waypoint == 0) {
                     // Initialize calibration loop state for fresh start
-                    calibrationDirection  = UP;
-                    measurementInProgress = true;
+                    calibrationDirection     = UP;
+                    measurementInProgress    = true;
+                    orientationDetectionDone = false;  // Reset orientation detection flag for new calibration
 
                     if (!generate_calibration_grid()) {  //Fail out if the grid cannot be generated
                         return false;
@@ -376,11 +357,6 @@ void Calibration::home() {
                 }
             }
             break;
-        case DETECTING_ORIENTATION:
-            if (detectOrientation()) {
-                requestStateChange(CALIBRATION_IN_PROGRESS);
-            }
-            break;
         case TAKING_SLACK:
             if (takeSlackFunc()) {  //Returns true. Requests correct state transition within function
                 takeSlack = false;
@@ -443,6 +419,16 @@ void Calibration::calibration_loop() {
         log_info("Calibration complete");
         return;
     }
+
+    // Run orientation detection at the start of calibration (waypoint == 0)
+    if (waypoint == 0 && !orientationDetectionDone) {
+        if (detectOrientation()) {
+            orientationDetectionDone = true;
+            log_info("Orientation detection complete, continuing with calibration");
+        }
+        return;  // Exit early while detection is in progress
+    }
+
     //Taking measurment once we've reached the point
     if (measurementInProgress) {
         if (take_measurement_avg_with_check(waypoint, calibrationDirection)) {  //Takes a measurement and returns true if it's done
@@ -1617,6 +1603,9 @@ void Calibration::resetCalibrationState() {
     // Reset calibration loop state variables
     calibrationDirection  = UP;    // Default direction
     measurementInProgress = true;  // Start by taking a measurement
+
+    // Reset orientation detection flag so it runs on next calibration
+    orientationDetectionDone = false;
 
     // Deallocate memory if allocated
     deallocateCalibrationMemory();

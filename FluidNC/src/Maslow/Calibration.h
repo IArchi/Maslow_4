@@ -9,13 +9,12 @@
 #define RETRACTING 1
 #define RETRACTED 2
 #define EXTENDING 3
-#define DETECTING_ORIENTATION 4
-#define EXTENDEDOUT 5  //Extended is a reserved word
-#define TAKING_SLACK 6
-#define CALIBRATION_IN_PROGRESS 7
-#define READY_TO_CUT 8
-#define RELEASE_TENSION 9
-#define CALIBRATION_COMPUTING 10
+#define EXTENDEDOUT 4  //Extended is a reserved word
+#define TAKING_SLACK 5
+#define CALIBRATION_IN_PROGRESS 6
+#define READY_TO_CUT 7
+#define RELEASE_TENSION 8
+#define CALIBRATION_COMPUTING 9
 
 class Calibration {
 public:
@@ -180,11 +179,10 @@ private:
         int         state;
         const char* name;
     };
-    StateName stateNames[12] = { { UNKNOWN, "Unknown" },
+    StateName stateNames[11] = { { UNKNOWN, "Unknown" },
                                  { RETRACTING, "Retracting Belts" },
                                  { RETRACTED, "Belts Retracted" },
                                  { EXTENDING, "Extending Belts" },
-                                 { DETECTING_ORIENTATION, "Detecting Orientation" },
                                  { EXTENDEDOUT, "Belts Extended" },
                                  { TAKING_SLACK, "Taking Slack" },
                                  { CALIBRATION_IN_PROGRESS, "Calibrating" },

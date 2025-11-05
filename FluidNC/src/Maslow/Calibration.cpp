@@ -107,8 +107,8 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot extend the belts until they have been retracted");
                 break;
             }
-        case DETECTING_ORIENTATION:  //We can enter orientation detection from extending
-            if (currentState == EXTENDING) {
+        case DETECTING_ORIENTATION:  //We can enter orientation detection when starting calibration from extended out or ready to cut
+            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
                 currentState             = DETECTING_ORIENTATION;
                 orientationDetectTimer   = millis();
                 orientationDetectionDone = false;
@@ -119,9 +119,8 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot detect orientation from state " << stateNames[currentState].name);
                 break;
             }
-        case EXTENDEDOUT:  //We can enter extended from extending, detecting orientation, or in the event of a failure from taking slack or release tension
-            if (currentState == EXTENDING || currentState == DETECTING_ORIENTATION || currentState == TAKING_SLACK ||
-                currentState == RELEASE_TENSION) {
+        case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack or release tension
+            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
                 success = true;
@@ -159,8 +158,16 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot take slack until the belts have been extended");
                 break;
             }
-        case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
-            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
+        case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, DETECTING_ORIENTATION, or CALIBRATION_COMPUTING
+            // If starting fresh calibration (waypoint 0) and not coming from orientation detection, detect orientation first
+            if (waypoint == 0 && currentState != DETECTING_ORIENTATION &&
+                (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING)) {
+                log_info("Starting orientation detection before calibration");
+                return requestStateChange(DETECTING_ORIENTATION);
+            }
+
+            if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING ||
+                currentState == DETECTING_ORIENTATION) {
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration
@@ -365,13 +372,13 @@ void Calibration::home() {
                     extendedBR = Maslow.axisBR.extend(extendDist);
                 if (extendedTL && extendedTR && extendedBL && extendedBR) {
                     log_info("All belts extended to " << extendDist << "mm");
-                    requestStateChange(DETECTING_ORIENTATION);
+                    requestStateChange(EXTENDEDOUT);
                 }
             }
             break;
         case DETECTING_ORIENTATION:
             if (detectOrientation()) {
-                requestStateChange(EXTENDEDOUT);
+                requestStateChange(CALIBRATION_IN_PROGRESS);
             }
             break;
         case TAKING_SLACK:

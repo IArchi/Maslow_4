@@ -1825,24 +1825,14 @@ bool Calibration::detectOrientation() {
         return false;
     }
 
-    // Phase 2a: Decompress belts to release tension (first 40ms)
-    // This gives the belt some slack so gravity can pull it
-    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + 40)) {
-        Maslow.axisTL.decompressBelt();
-        Maslow.axisTR.decompressBelt();
-        // Ensure BL and BR are stopped
-        Maslow.axisBL.stop();
-        Maslow.axisBR.stop();
-        return false;
-    }
-
-    // Phase 2b: Make TL and TR comply to allow belt extension under gravity for configured duration
+    // Phase 2: Actively drive TL and TR motors outward for configured duration
     // BL and BR motors are kept stopped (not powered)
-    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + 40) &&
-        elapsedTime < (STARTUP_DELAY_MS + 40 + orientationDetectionTestDuration)) {
-        // Make TL and TR comply (allow belt extension with minimal resistance under gravity)
-        Maslow.axisTL.comply();
-        Maslow.axisTR.comply();
+    // In vertical orientation, gravity assists and belts extend significantly
+    // In horizontal orientation, belts extend minimally despite motor drive
+    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
+        // Actively drive TL and TR motors at full speed in extend direction
+        Maslow.axisTL.fullOut();
+        Maslow.axisTR.fullOut();
         // Ensure BL and BR are stopped
         Maslow.axisBL.stop();
         Maslow.axisBR.stop();
@@ -1850,7 +1840,7 @@ bool Calibration::detectOrientation() {
     }
 
     // Phase 3: Measure extension and return to starting positions
-    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + 40 + orientationDetectionTestDuration)) {
+    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
         double tlCurrentPosition = Maslow.axisTL.getPosition();
         double trCurrentPosition = Maslow.axisTR.getPosition();
 

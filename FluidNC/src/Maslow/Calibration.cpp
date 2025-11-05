@@ -165,6 +165,7 @@ bool Calibration::requestStateChange(int newState) {
                     calibrationDirection     = UP;
                     measurementInProgress    = true;
                     orientationDetectionDone = false;  // Reset orientation detection flag for new calibration
+                    orientationDetectTimer   = 0;      // Reset timer so detection starts fresh
 
                     if (!generate_calibration_grid()) {  //Fail out if the grid cannot be generated
                         return false;
@@ -1604,8 +1605,9 @@ void Calibration::resetCalibrationState() {
     calibrationDirection  = UP;    // Default direction
     measurementInProgress = true;  // Start by taking a measurement
 
-    // Reset orientation detection flag so it runs on next calibration
+    // Reset orientation detection variables so it runs on next calibration
     orientationDetectionDone = false;
+    orientationDetectTimer   = 0;
 
     // Deallocate memory if allocated
     deallocateCalibrationMemory();
@@ -1804,7 +1806,13 @@ void Calibration::handleMotorOverides() {
  */
 bool Calibration::detectOrientation() {
     const unsigned long STARTUP_DELAY_MS = 50;  // Delay before starting test to ensure stable starting position
-    unsigned long       elapsedTime      = millis() - orientationDetectTimer;
+
+    // Initialize timer on first call
+    if (orientationDetectTimer == 0) {
+        orientationDetectTimer = millis();
+    }
+
+    unsigned long elapsedTime = millis() - orientationDetectTimer;
 
     // Phase 1: Record starting positions (once at beginning)
     if (!orientationDetectionDone && elapsedTime < STARTUP_DELAY_MS) {

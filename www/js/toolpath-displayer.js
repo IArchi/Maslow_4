@@ -324,6 +324,10 @@ var jobBbox = {
     }
 };
 
+// Storage for toolpath points to compute convex hull
+var jobToolpathPoints = [];
+var jobEnvelopePoints = []; // Simplified convex hull points (up to 100)
+
 var bboxIsSet = false;
 var jobBboxIsSet = false;
 
@@ -344,6 +348,10 @@ var resetBbox = function() {
     jobBbox.max.y = -Infinity;
     jobBbox.max.z = -Infinity;
     jobBboxIsSet = false;
+    
+    // Reset toolpath points
+    jobToolpathPoints = [];
+    jobEnvelopePoints = [];
 }
 
 // Helper functions for job bounding box
@@ -361,6 +369,135 @@ var getJobBoundingBox = function() {
         min: { x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.min.z },
         max: { x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.max.z }
     };
+}
+
+// Convex Hull algorithm (Andrew's monotone chain)
+var computeConvexHull = function(points) {
+    if (points.length < 3) {
+        return points;
+    }
+    
+    // Sort points lexicographically (first by x, then by y)
+    var sorted = points.slice().sort(function(a, b) {
+        return a.x !== b.x ? a.x - b.x : a.y - b.y;
+    });
+    
+    // Build lower hull
+    var lower = [];
+    for (var i = 0; i < sorted.length; i++) {
+        while (lower.length >= 2 && 
+               crossProduct(lower[lower.length - 2], lower[lower.length - 1], sorted[i]) <= 0) {
+            lower.pop();
+        }
+        lower.push(sorted[i]);
+    }
+    
+    // Build upper hull
+    var upper = [];
+    for (var i = sorted.length - 1; i >= 0; i--) {
+        while (upper.length >= 2 && 
+               crossProduct(upper[upper.length - 2], upper[upper.length - 1], sorted[i]) <= 0) {
+            upper.pop();
+        }
+        upper.push(sorted[i]);
+    }
+    
+    // Remove last point of each half because it's repeated
+    lower.pop();
+    upper.pop();
+    
+    return lower.concat(upper);
+}
+
+// Cross product for convex hull
+var crossProduct = function(o, a, b) {
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+// Douglas-Peucker algorithm for simplifying polylines
+var simplifyPolyline = function(points, maxPoints) {
+    if (points.length <= maxPoints) {
+        return points;
+    }
+    
+    // Use iterative approach to reduce points to maxPoints
+    var epsilon = 0.1; // Start with small tolerance
+    var simplified = points;
+    
+    // Increase epsilon until we have <= maxPoints
+    while (simplified.length > maxPoints && epsilon < 1000) {
+        simplified = douglasPeucker(points, epsilon);
+        epsilon *= 1.5;
+    }
+    
+    return simplified;
+}
+
+// Douglas-Peucker recursive algorithm
+var douglasPeucker = function(points, epsilon) {
+    if (points.length < 3) {
+        return points;
+    }
+    
+    // Find the point with maximum distance
+    var dmax = 0;
+    var index = 0;
+    var end = points.length - 1;
+    
+    for (var i = 1; i < end; i++) {
+        var d = perpendicularDistance(points[i], points[0], points[end]);
+        if (d > dmax) {
+            index = i;
+            dmax = d;
+        }
+    }
+    
+    // If max distance is greater than epsilon, recursively simplify
+    var result = [];
+    if (dmax > epsilon) {
+        var recResults1 = douglasPeucker(points.slice(0, index + 1), epsilon);
+        var recResults2 = douglasPeucker(points.slice(index), epsilon);
+        
+        // Concatenate results
+        result = recResults1.slice(0, -1).concat(recResults2);
+    } else {
+        result = [points[0], points[end]];
+    }
+    
+    return result;
+}
+
+// Calculate perpendicular distance from point to line
+var perpendicularDistance = function(point, lineStart, lineEnd) {
+    var dx = lineEnd.x - lineStart.x;
+    var dy = lineEnd.y - lineStart.y;
+    
+    var mag = Math.sqrt(dx * dx + dy * dy);
+    if (mag === 0) {
+        return Math.sqrt((point.x - lineStart.x) * (point.x - lineStart.x) + 
+                        (point.y - lineStart.y) * (point.y - lineStart.y));
+    }
+    
+    var u = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (mag * mag);
+    
+    var ix = lineStart.x + u * dx;
+    var iy = lineStart.y + u * dy;
+    
+    return Math.sqrt((point.x - ix) * (point.x - ix) + (point.y - iy) * (point.y - iy));
+}
+
+// Compute the job envelope from collected toolpath points
+var computeJobEnvelope = function() {
+    if (jobToolpathPoints.length < 3) {
+        jobEnvelopePoints = [];
+        return;
+    }
+    
+    // Compute convex hull
+    var hull = computeConvexHull(jobToolpathPoints);
+    
+    // Simplify to at most 100 points
+    jobEnvelopePoints = simplifyPolyline(hull, 100);
 }
 
 // Project the 3D toolpath onto the 2D Canvas
@@ -445,28 +582,51 @@ var drawJobBoundingBox = function() {
         return;
     }
     
-    // Get the actual job bounding box in world coordinates
-    var jobBbox = getJobBoundingBox();
-    if (!jobBbox) {
+    // Get the job bounding box
+    var bbox = getJobBoundingBox();
+    if (!bbox) {
         return;
     }
     
-    // Project the corners of the job bounding box
-    const p0 = projection({x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.min.z});
-    const p1 = projection({x: jobBbox.max.x, y: jobBbox.min.y, z: jobBbox.min.z});
-    const p2 = projection({x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.min.z});
-    const p3 = projection({x: jobBbox.min.x, y: jobBbox.max.y, z: jobBbox.min.z});
-    
-    // Draw the bounding box rectangle
-    tp.beginPath();
-    tp.strokeStyle = 'blue';
-    tp.lineWidth = 2.0 / scaler;
-    tp.moveTo(p0.x, p0.y);
-    tp.lineTo(p1.x, p1.y);
-    tp.lineTo(p2.x, p2.y);
-    tp.lineTo(p3.x, p3.y);
-    tp.lineTo(p0.x, p0.y);
-    tp.stroke();
+    // Use envelope points if available (shaped boundary), otherwise fall back to rectangle
+    if (jobEnvelopePoints.length > 0) {
+        // Draw the shaped envelope
+        tp.beginPath();
+        tp.strokeStyle = 'blue';
+        tp.lineWidth = 2.0 / scaler;
+        
+        // Project and draw the first point
+        var firstPoint = projection({x: jobEnvelopePoints[0].x, y: jobEnvelopePoints[0].y, z: bbox.min.z});
+        tp.moveTo(firstPoint.x, firstPoint.y);
+        
+        // Draw lines to all other envelope points
+        for (var i = 1; i < jobEnvelopePoints.length; i++) {
+            var p = projection({x: jobEnvelopePoints[i].x, y: jobEnvelopePoints[i].y, z: bbox.min.z});
+            tp.lineTo(p.x, p.y);
+        }
+        
+        // Close the path
+        tp.lineTo(firstPoint.x, firstPoint.y);
+        tp.stroke();
+    } else {
+        // Fallback to simple rectangle
+        // Project the corners of the job bounding box
+        const p0 = projection({x: bbox.min.x, y: bbox.min.y, z: bbox.min.z});
+        const p1 = projection({x: bbox.max.x, y: bbox.min.y, z: bbox.min.z});
+        const p2 = projection({x: bbox.max.x, y: bbox.max.y, z: bbox.min.z});
+        const p3 = projection({x: bbox.min.x, y: bbox.max.y, z: bbox.min.z});
+        
+        // Draw the bounding box rectangle
+        tp.beginPath();
+        tp.strokeStyle = 'blue';
+        tp.lineWidth = 2.0 / scaler;
+        tp.moveTo(p0.x, p0.y);
+        tp.lineTo(p1.x, p1.y);
+        tp.lineTo(p2.x, p2.y);
+        tp.lineTo(p3.x, p3.y);
+        tp.lineTo(p0.x, p0.y);
+        tp.stroke();
+    }
     
     // Restore line width
     tp.lineWidth = 0.5 / scaler;
@@ -767,6 +927,10 @@ var bboxHandlers = {
             jobBbox.max.y = Math.max(jobBbox.max.y, start.y, end.y);
             jobBbox.max.z = Math.max(jobBbox.max.z, start.z, end.z);
             jobBboxIsSet = true;
+            
+            // Collect points for envelope calculation
+            jobToolpathPoints.push({x: start.x, y: start.y});
+            jobToolpathPoints.push({x: end.x, y: end.y});
         }
     },
     addArcCurve: function(modal, start, end, center, extraRotations) {
@@ -1001,6 +1165,37 @@ var bboxHandlers = {
         jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
         jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
         jobBboxIsSet = true;
+        
+        // Collect arc points for envelope calculation - exclude G0 rapid moves
+        if (modal.motion !== 'G0') {
+            // Sample points along the arc
+            var deltaX1 = start.x - center.x;
+            var deltaY1 = start.y - center.y;
+            var radius = Math.hypot(deltaX1, deltaY1);
+            var deltaX2 = end.x - center.x;
+            var deltaY2 = end.y - center.y;
+            var theta1 = Math.atan2(deltaY1, deltaX1);
+            var theta2 = Math.atan2(deltaY2, deltaX2);
+            var cw = modal.motion === "G2";
+        
+        if (!cw && theta2 < theta1) {
+            theta2 += Math.PI * 2;
+        } else if (cw && theta2 > theta1) {
+            theta2 -= Math.PI * 2;
+        }
+            
+            // Sample arc with enough points to capture its shape
+            var deltaTheta = theta2 - theta1;
+            var numSamples = Math.max(5, Math.ceil(Math.abs(deltaTheta) / (Math.PI / 8))); // At least 5 samples
+            var dt = deltaTheta / numSamples;
+            
+            for (var i = 0; i <= numSamples; i++) {
+                var theta = theta1 + i * dt;
+                var px = center.x + radius * Math.cos(theta);
+                var py = center.y + radius * Math.sin(theta);
+                jobToolpathPoints.push({x: px, y: py});
+            }
+        }
     }
 };
 var initialMoves = true;
@@ -1130,6 +1325,10 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
 
     var gcodeLines = gcode.split('\n');
     new Toolpath(bboxHandlers).loadFromLinesSync(gcodeLines);
+    
+    // Compute the envelope from collected toolpath points
+    computeJobEnvelope();
+    
     transformCanvas();
     if (!bboxIsSet) {
         return;
@@ -1336,19 +1535,31 @@ var traceBoundary = function() {
     const currentPos = arrayToXYZ(WPOS);
     
     // Create the boundary tracing commands
-    const commands = [
-        `G90`, // Absolute positioning
-        `G0 X${bbox.min.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`, // Move to bottom-left corner
-        `G0 X${bbox.max.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`, // Move to bottom-right corner
-        `G0 X${bbox.max.x.toFixed(3)} Y${bbox.max.y.toFixed(3)}`, // Move to top-right corner
-        `G0 X${bbox.min.x.toFixed(3)} Y${bbox.max.y.toFixed(3)}`, // Move to top-left corner
-        `G0 X${bbox.min.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`, // Back to bottom-left corner
-        `G0 X${currentPos.x.toFixed(3)} Y${currentPos.y.toFixed(3)}` // Return to original position
-    ];
+    var commands = [`G90`]; // Absolute positioning
+    
+    // Use envelope points if available (shaped boundary), otherwise fall back to rectangle
+    if (jobEnvelopePoints.length > 0) {
+        // Trace the shaped envelope
+        for (var i = 0; i < jobEnvelopePoints.length; i++) {
+            commands.push(`G0 X${jobEnvelopePoints[i].x.toFixed(3)} Y${jobEnvelopePoints[i].y.toFixed(3)}`);
+        }
+        // Return to first point to close the shape
+        commands.push(`G0 X${jobEnvelopePoints[0].x.toFixed(3)} Y${jobEnvelopePoints[0].y.toFixed(3)}`);
+    } else {
+        // Fallback to simple rectangle
+        commands.push(`G0 X${bbox.min.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`); // Move to bottom-left corner
+        commands.push(`G0 X${bbox.max.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`); // Move to bottom-right corner
+        commands.push(`G0 X${bbox.max.x.toFixed(3)} Y${bbox.max.y.toFixed(3)}`); // Move to top-right corner
+        commands.push(`G0 X${bbox.min.x.toFixed(3)} Y${bbox.max.y.toFixed(3)}`); // Move to top-left corner
+        commands.push(`G0 X${bbox.min.x.toFixed(3)} Y${bbox.min.y.toFixed(3)}`); // Back to bottom-left corner
+    }
+    
+    // Return to original position
+    commands.push(`G0 X${currentPos.x.toFixed(3)} Y${currentPos.y.toFixed(3)}`);
     
     // Execute each command with a delay
-    let commandIndex = 0;
-    const executeNextCommand = function() {
+    var commandIndex = 0;
+    var executeNextCommand = function() {
         if (commandIndex < commands.length) {
             SendPrinterCommand(commands[commandIndex]);
             commandIndex++;
@@ -1357,7 +1568,8 @@ var traceBoundary = function() {
     };
     
     // Confirm before starting
-    if (confirm(`Trace boundary? This will move the machine around the job perimeter.\n\nBounds: ${bbox.min.x.toFixed(1)},${bbox.min.y.toFixed(1)} to ${bbox.max.x.toFixed(1)},${bbox.max.y.toFixed(1)}\n\nZ-axis will not move.`)) {
+    var pointCount = jobEnvelopePoints.length > 0 ? jobEnvelopePoints.length : 4;
+    if (confirm(`Trace boundary? This will move the machine around the job perimeter using ${pointCount} points.\n\nBounds: ${bbox.min.x.toFixed(1)},${bbox.min.y.toFixed(1)} to ${bbox.max.x.toFixed(1)},${bbox.max.y.toFixed(1)}\n\nZ-axis will not move.`)) {
         executeNextCommand();
     }
 }

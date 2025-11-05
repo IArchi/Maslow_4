@@ -614,6 +614,19 @@ namespace Kinematics {
     // Configuration registration
     namespace {
         KinematicsFactory::InstanceBuilder<MaslowKinematics> registration("MaslowKinematics");
+
+        // Dummy variable to force initialization of registration before main()
+        // The initializer references registration to prevent optimization
+        volatile bool forceInit = (static_cast<void>(&registration), true);
+    }
+
+    // Force registration of MaslowKinematics factory at static initialization time.
+    // This function must be called before configuration parsing to ensure the factory
+    // is registered and available when the config file is parsed.
+    void forceMaslowKinematicsRegistration() {
+        // Touch the dummy variable to ensure this translation unit is linked
+        // and the static initializer runs
+        (void)&forceInit;
     }
 
     // Global accessor function to get the current MaslowKinematics instance

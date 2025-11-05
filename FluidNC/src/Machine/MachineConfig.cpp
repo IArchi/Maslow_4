@@ -301,6 +301,10 @@ namespace Machine {
     }
 
     bool MachineConfig::load_yaml(StringRange* input) {
+        // Force registration of MaslowKinematics factory before parsing
+        // to prevent static initialization order issues
+        ::Kinematics::forceMaslowKinematicsRegistration();
+
         bool successful = false;
         try {
             Configuration::Parser        parser(input->begin(), input->end());

@@ -1816,15 +1816,30 @@ bool Calibration::detectOrientation() {
 
     // Phase 1: Record starting positions (once at beginning)
     if (!orientationDetectionDone && elapsedTime < STARTUP_DELAY_MS) {
-        tlStartPosition = Maslow.axisTL.getPosition();
-        trStartPosition = Maslow.axisTR.getPosition();
-        log_info("Starting orientation detection. TL start: " << tlStartPosition << " TR start: " << trStartPosition);
+        // Only record and log on first cycle (elapsedTime will be very small)
+        if (elapsedTime < 10) {  // First few milliseconds only
+            tlStartPosition = Maslow.axisTL.getPosition();
+            trStartPosition = Maslow.axisTR.getPosition();
+            log_info("Starting orientation detection. TL start: " << tlStartPosition << " TR start: " << trStartPosition);
+        }
         return false;
     }
 
-    // Phase 2: Make TL and TR comply to allow belt extension under gravity for configured duration
+    // Phase 2a: Decompress belts to release tension (first 40ms)
+    // This gives the belt some slack so gravity can pull it
+    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + 40)) {
+        Maslow.axisTL.decompressBelt();
+        Maslow.axisTR.decompressBelt();
+        // Ensure BL and BR are stopped
+        Maslow.axisBL.stop();
+        Maslow.axisBR.stop();
+        return false;
+    }
+
+    // Phase 2b: Make TL and TR comply to allow belt extension under gravity for configured duration
     // BL and BR motors are kept stopped (not powered)
-    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
+    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + 40) &&
+        elapsedTime < (STARTUP_DELAY_MS + 40 + orientationDetectionTestDuration)) {
         // Make TL and TR comply (allow belt extension with minimal resistance under gravity)
         Maslow.axisTL.comply();
         Maslow.axisTR.comply();
@@ -1835,7 +1850,7 @@ bool Calibration::detectOrientation() {
     }
 
     // Phase 3: Measure extension and return to starting positions
-    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
+    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + 40 + orientationDetectionTestDuration)) {
         double tlCurrentPosition = Maslow.axisTL.getPosition();
         double trCurrentPosition = Maslow.axisTR.getPosition();
 

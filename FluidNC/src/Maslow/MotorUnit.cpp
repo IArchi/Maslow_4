@@ -122,7 +122,7 @@ bool MotorUnit::updateEncoderPosition() {
 
     if (encoder.isConnected()) {                                               //this func has 50ms timeout (or worse?, hard to tell)
         mostRecentCumulativeEncoderReading = encoder.getCumulativePosition();  //This updates and returns the encoder value
-        
+
         // Check for I2C communication errors using new AS5600 error handling
         int error = encoder.lastError();
         if (error != 0) {  // AS5600_OK = 0
@@ -333,6 +333,12 @@ void MotorUnit::decompressBelt() {
     _commandPWM = decompressSpeed;
 }
 
+//Drives the motor outward at a specified PWM speed
+void MotorUnit::driveOut(int speed) {
+    motor.forward(speed);
+    _commandPWM = speed;
+}
+
 //Runs the motor at full speed out
 void MotorUnit::fullOut() {
     motor.fullOut();
@@ -367,10 +373,10 @@ void MotorUnit::setPosition(double position) {
     // Convert position in mm to encoder counts
     // Formula: encoderCounts = -(position_mm * 4096.0) / _mmPerRevolution
     int32_t encoderCounts = (int32_t)(-(position * 4096.0) / _mmPerRevolution);
-    
+
     Maslow.I2CMux.setPort(_encoderAddress);
     encoder.resetCumulativePosition(encoderCounts);
-    
+
     // Update our cached value
     mostRecentCumulativeEncoderReading = encoderCounts;
 }

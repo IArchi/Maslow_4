@@ -1806,8 +1806,9 @@ void Calibration::handleMotorOverides() {
  */
 bool Calibration::detectOrientation() {
     const unsigned long STARTUP_DELAY_MS                = 50;    // Delay before starting test to ensure stable starting position
-    const unsigned long ORIENTATION_DETECT_DURATION_MS  = 1000;  // Duration in ms to run orientation detection test
+    const unsigned long ORIENTATION_DETECT_DURATION_MS  = 1500;  // Duration in ms to run orientation detection test (1.5 seconds)
     const float         ORIENTATION_DETECT_THRESHOLD_MM = 50.0;  // Minimum extension in mm to detect vertical orientation
+    const int           ORIENTATION_DETECT_SPEED        = 716;   // PWM speed for motors (70% of max 1023)
 
     // Initialize timer on first call
     if (orientationDetectTimer == 0) {
@@ -1826,14 +1827,14 @@ bool Calibration::detectOrientation() {
         return false;
     }
 
-    // Phase 2: Actively drive TL and TR motors outward for 1 second
+    // Phase 2: Actively drive TL and TR motors outward at 70% speed for 1.5 seconds
     // BL and BR motors are kept stopped (not powered)
     // In vertical orientation, gravity assists and belts extend significantly
     // In horizontal orientation, belts extend minimally despite motor drive
     if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + ORIENTATION_DETECT_DURATION_MS)) {
-        // Actively drive TL and TR motors at full speed in extend direction
-        Maslow.axisTL.fullOut();
-        Maslow.axisTR.fullOut();
+        // Drive TL and TR motors at 70% speed in extend direction
+        Maslow.axisTL.driveOut(ORIENTATION_DETECT_SPEED);
+        Maslow.axisTR.driveOut(ORIENTATION_DETECT_SPEED);
         // Ensure BL and BR are stopped
         Maslow.axisBL.stop();
         Maslow.axisBR.stop();

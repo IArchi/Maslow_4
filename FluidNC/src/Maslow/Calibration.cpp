@@ -1863,32 +1863,11 @@ bool Calibration::detectOrientation() {
             log_info("Detected HORIZONTAL orientation (extension <= " << orientationDetectionThreshold << " mm)");
         }
 
-        // Save orientation to NVS
-        nvs_handle_t nvsHandle;
-        esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
-        if (ret == ESP_OK) {
-            int32_t savedOrientation;
-            ret = nvs_get_i32(nvsHandle, "orientation", &savedOrientation);
-            if (ret == ESP_ERR_NVS_NOT_FOUND || savedOrientation != (int32_t)detectedOrientation) {
-                ret = nvs_set_i32(nvsHandle, "orientation", (int32_t)detectedOrientation);
-                if (ret == ESP_OK) {
-                    ret = nvs_commit(nvsHandle);
-                    if (ret == ESP_OK) {
-                        log_info("Orientation saved to NVS: " << (detectedOrientation == VERTICAL ? "VERTICAL" : "HORIZONTAL"));
-                    } else {
-                        log_error("Failed to commit orientation to NVS: " << esp_err_to_name(ret));
-                    }
-                } else {
-                    log_error("Failed to write orientation to NVS: " << esp_err_to_name(ret));
-                }
-            }
-            nvs_close(nvsHandle);
-        } else {
-            log_error("Failed to open NVS for orientation: " << esp_err_to_name(ret));
-        }
-
         // Update the calibration object's orientation
+        // This will be reflected in the Maslow_vertical configuration parameter
         orientation = detectedOrientation;
+        log_info("Orientation set to: " << (orientation == VERTICAL ? "VERTICAL" : "HORIZONTAL")
+                                        << " (Maslow_vertical=" << (orientation ? "true" : "false") << ")");
 
         // Set targets to return to starting positions
         Maslow.axisTL.setTarget(tlStartPosition);

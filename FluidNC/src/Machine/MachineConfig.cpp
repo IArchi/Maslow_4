@@ -271,23 +271,6 @@ namespace Machine {
         // builtin config.  This helps prevent reset loops on bad config files.
         esp_reset_reason_t reason = esp_reset_reason();
 
-        // Log the reset reason for debugging
-        const char* resetReasonStr = "UNKNOWN";
-        switch (reason) {
-            case ESP_RST_UNKNOWN:    resetReasonStr = "UNKNOWN"; break;
-            case ESP_RST_POWERON:    resetReasonStr = "POWERON"; break;
-            case ESP_RST_EXT:        resetReasonStr = "EXTERNAL"; break;
-            case ESP_RST_SW:         resetReasonStr = "SOFTWARE"; break;
-            case ESP_RST_PANIC:      resetReasonStr = "PANIC"; break;
-            case ESP_RST_INT_WDT:    resetReasonStr = "INTERRUPT_WDT"; break;
-            case ESP_RST_TASK_WDT:   resetReasonStr = "TASK_WDT"; break;
-            case ESP_RST_WDT:        resetReasonStr = "WATCHDOG"; break;
-            case ESP_RST_DEEPSLEEP:  resetReasonStr = "DEEPSLEEP"; break;
-            case ESP_RST_BROWNOUT:   resetReasonStr = "BROWNOUT"; break;
-            case ESP_RST_SDIO:       resetReasonStr = "SDIO"; break;
-        }
-        log_info("Reset reason: " << resetReasonStr);
-
         // TEST: Uncomment the following to mock an ESP panic reset
         //reason = ESP_RST_PANIC;
         if (reason == ESP_RST_PANIC) {

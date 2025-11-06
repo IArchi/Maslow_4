@@ -125,16 +125,13 @@ namespace Kinematics {
 
         // Flag to prevent recursion during segmentation
         bool _isSegmenting = false;
-
+        
         // Flag to determine if arms move with Z changes
         bool _fixedZ = false;  // When true, belt lengths ignore current Z position (use only fixed anchor Z values)
 
         // Initialize center coordinates
         void calculateCenter();
     };
-
-    // Force registration of MaslowKinematics factory to prevent static initialization order issues
-    void forceMaslowKinematicsRegistration();
 
     // Global accessor function to get the current MaslowKinematics instance
     MaslowKinematics* getMaslowKinematics();

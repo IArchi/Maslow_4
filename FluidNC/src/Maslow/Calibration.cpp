@@ -1805,7 +1805,9 @@ void Calibration::handleMotorOverides() {
  * Returns true when detection is complete.
  */
 bool Calibration::detectOrientation() {
-    const unsigned long STARTUP_DELAY_MS = 50;  // Delay before starting test to ensure stable starting position
+    const unsigned long STARTUP_DELAY_MS                = 50;    // Delay before starting test to ensure stable starting position
+    const unsigned long ORIENTATION_DETECT_DURATION_MS  = 1000;  // Duration in ms to run orientation detection test
+    const float         ORIENTATION_DETECT_THRESHOLD_MM = 50.0;  // Minimum extension in mm to detect vertical orientation
 
     // Initialize timer on first call
     if (orientationDetectTimer == 0) {
@@ -1825,11 +1827,11 @@ bool Calibration::detectOrientation() {
         return false;
     }
 
-    // Phase 2: Actively drive TL and TR motors outward for configured duration
+    // Phase 2: Actively drive TL and TR motors outward for 1 second
     // BL and BR motors are kept stopped (not powered)
     // In vertical orientation, gravity assists and belts extend significantly
     // In horizontal orientation, belts extend minimally despite motor drive
-    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
+    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + ORIENTATION_DETECT_DURATION_MS)) {
         // Actively drive TL and TR motors at full speed in extend direction
         Maslow.axisTL.fullOut();
         Maslow.axisTR.fullOut();
@@ -1840,7 +1842,7 @@ bool Calibration::detectOrientation() {
     }
 
     // Phase 3: Measure extension and return to starting positions
-    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + orientationDetectionTestDuration)) {
+    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + ORIENTATION_DETECT_DURATION_MS)) {
         double tlCurrentPosition = Maslow.axisTL.getPosition();
         double trCurrentPosition = Maslow.axisTR.getPosition();
 
@@ -1855,12 +1857,12 @@ bool Calibration::detectOrientation() {
 
         // Determine orientation based on extension amount
         bool detectedOrientation = HORIZONTAL;
-        if (avgExtension > orientationDetectionThreshold) {
+        if (avgExtension > ORIENTATION_DETECT_THRESHOLD_MM) {
             detectedOrientation = VERTICAL;
-            log_info("Detected VERTICAL orientation (extension > " << orientationDetectionThreshold << " mm)");
+            log_info("Detected VERTICAL orientation (extension > " << ORIENTATION_DETECT_THRESHOLD_MM << " mm)");
         } else {
             detectedOrientation = HORIZONTAL;
-            log_info("Detected HORIZONTAL orientation (extension <= " << orientationDetectionThreshold << " mm)");
+            log_info("Detected HORIZONTAL orientation (extension <= " << ORIENTATION_DETECT_THRESHOLD_MM << " mm)");
         }
 
         // Update the calibration object's orientation

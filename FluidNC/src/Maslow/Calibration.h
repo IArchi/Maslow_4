@@ -99,9 +99,6 @@ public:
 
     //Variables used by calibration
     bool  orientation;
-    int   orientationDetectionTestDuration = 1000;  // Duration in ms to run orientation detection test
-    float orientationDetectionThreshold =
-        50.0;  // Minimum extension in mm to detect vertical orientation (typical vertical extension is 100-200mm, horizontal is 0-20mm)
     int   calibrationCurrentThreshold    = 1300;
     float acceptableCalibrationThreshold = 0.5;
     int   calibrationGridSize            = 9;

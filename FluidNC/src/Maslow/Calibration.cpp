@@ -1807,7 +1807,7 @@ void Calibration::handleMotorOverides() {
 bool Calibration::detectOrientation() {
     const unsigned long STARTUP_DELAY_MS                = 50;    // Delay before starting test to ensure stable starting position
     const unsigned long ORIENTATION_DETECT_DURATION_MS  = 1500;  // Duration in ms to run orientation detection test (1.5 seconds)
-    const float         ORIENTATION_DETECT_THRESHOLD_MM = 50.0;  // Minimum extension in mm to detect vertical orientation
+    const float         ORIENTATION_DETECT_THRESHOLD_MM = 35.0;  // Minimum extension in mm to detect vertical orientation
     const int           ORIENTATION_DETECT_SPEED        = 716;   // PWM speed for motors (70% of max 1023)
 
     // Initialize timer on first call

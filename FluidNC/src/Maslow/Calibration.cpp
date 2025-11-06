@@ -1822,7 +1822,6 @@ bool Calibration::detectOrientation() {
         if (elapsedTime < 10) {  // First few milliseconds only
             tlStartPosition = Maslow.axisTL.getPosition();
             trStartPosition = Maslow.axisTR.getPosition();
-            log_info("Starting orientation detection. TL start: " << tlStartPosition << " TR start: " << trStartPosition);
         }
         return false;
     }

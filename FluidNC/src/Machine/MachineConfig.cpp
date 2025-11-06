@@ -299,7 +299,7 @@ namespace Machine {
         // and prevented users from using their valid config files.
         // If the config file is actually causing crashes, the user will need to fix it manually.
         if (reason == ESP_RST_PANIC) {
-            log_warn("Previous boot ended in panic - attempting to load config anyway");
+            log_warn("Previous boot ended in panic - attempting to load config anyway. If crashes continue, check your config file.");
         }
         configOkay = load_file(config_filename->get());
 

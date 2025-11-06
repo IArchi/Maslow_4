@@ -273,12 +273,13 @@ namespace Machine {
 
         // TEST: Uncomment the following to mock an ESP panic reset
         //reason = ESP_RST_PANIC;
+
+        // Always try to load the user config file, even after a panic.
+        // The default config is now fixed and will be used as fallback if needed.
         if (reason == ESP_RST_PANIC) {
-            log_error("Skipping configuration file due to panic");
-            configOkay = false;
-        } else {
-            configOkay = load_file(config_filename->get());
+            log_warn("Previous boot ended in panic - attempting to load config anyway");
         }
+        configOkay = load_file(config_filename->get());
 
         if (!configOkay) {
             log_info("Using default configuration");

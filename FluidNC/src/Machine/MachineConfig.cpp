@@ -260,7 +260,6 @@ namespace Machine {
         dcSpi + dcSDCard + dcStepping + dcUart1 + dcKinematics +
         "axes:\n"
         "  x:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 2438.4\n    homing:\n      cycle: -1\n"
-        "    motor0:\n      dc_servo:\n"
         "  y:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 1219.2\n    homing:\n      cycle: -1\n"
         "  z:\n    max_rate_mm_per_min: 400\n    acceleration_mm_per_sec2: 10\n    max_travel_mm: 100\n    steps_per_mm: 100\n    "
         "homing:\n      cycle: -1\n"

@@ -25,7 +25,6 @@
 
 #    include "WebUI/WifiConfig.h"
 #    include "Driver/localfs.h"
-#    include "NutsBolts.h"
 
 extern void make_user_commands();
 
@@ -64,9 +63,6 @@ void setup() {
             log_error("Cannot mount a local filesystem");
         } else {
             log_info("Local filesystem type is " << localfsName);
-            // Small delay to allow filesystem to stabilize after mount,
-            // especially important on cold boot/power cycle
-            delay_ms(100);
         }
 
         bool configOkay = config->load();

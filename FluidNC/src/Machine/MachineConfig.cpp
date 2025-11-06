@@ -259,10 +259,8 @@ namespace Machine {
         // Default sections
         dcSpi + dcSDCard + dcStepping + dcUart1 + dcKinematics +
         "axes:\n"
-        "  x:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 2438.4\n    homing:\n      cycle: -1\n"
-        "  y:\n    max_rate_mm_per_min: 2000\n    acceleration_mm_per_sec2: 25\n    max_travel_mm: 1219.2\n    homing:\n      cycle: -1\n"
-        "  z:\n    max_rate_mm_per_min: 400\n    acceleration_mm_per_sec2: 10\n    max_travel_mm: 100\n    steps_per_mm: 100\n    "
-        "homing:\n      cycle: -1\n"
+        "  z:\n    max_rate_mm_per_min: 400\n    acceleration_mm_per_sec2: 10\n    max_travel_mm: 100\n    steps_per_mm: 100\n"
+        "    homing:\n      cycle: -1\n"
         "    motor0:\n      tmc_2209:\n        addr: 0\n        direction_pin: gpio.16\n        step_pin: gpio.15\n" +
         dcZMotor + "    motor1:\n      tmc_2209:\n        addr: 1\n        direction_pin: gpio.38\n        step_pin: gpio.46\n" + dcZMotor;
 

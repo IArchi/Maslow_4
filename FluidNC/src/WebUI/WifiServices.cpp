@@ -37,6 +37,10 @@ namespace WebUI {
 namespace WebUI {
     WiFiServices wifi_services;
 
+    // Static member initialization
+    bool          WiFiServices::_updateCheckPending = false;
+    unsigned long WiFiServices::_updateCheckTime    = 0;
+
     WiFiServices::WiFiServices() {}
     WiFiServices::~WiFiServices() {
         end();
@@ -105,18 +109,20 @@ namespace WebUI {
 
         //be sure we are not is mixed mode in setup
         WiFi.scanNetworks(true);
-        
-        // Check for auto-update if configured and not in AP mode
+
+        // Schedule auto-update check to run later if configured and not in AP mode
+        // Deferring the check prevents memory allocation issues immediately after OTA updates
         if (WiFi.getMode() == WIFI_STA) {
-            // Run auto-update check in background to avoid blocking startup
-            // Small delay to ensure WiFi is fully connected
-            delay(2000);
-            AutoUpdate::checkForUpdate();
+            _updateCheckPending = true;
+            _updateCheckTime    = millis() + 30000;  // Check 30 seconds after boot
         }
-        
+
         return no_error;
     }
     void WiFiServices::end() {
+        // Cancel any pending update check
+        _updateCheckPending = false;
+
         notificationsService.end();
         telnetServer.end();
         webServer.end();
@@ -138,6 +144,13 @@ namespace WebUI {
                 WiFi.enableSTA(false);
             }
         }
+
+        // Perform deferred auto-update check if scheduled
+        if (_updateCheckPending && millis() >= _updateCheckTime) {
+            _updateCheckPending = false;
+            AutoUpdate::checkForUpdate();
+        }
+
         ArduinoOTA.handle();
         webServer.handle();
         telnetServer.handle();

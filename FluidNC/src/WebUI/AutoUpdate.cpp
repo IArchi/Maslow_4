@@ -5,7 +5,7 @@
 
 #ifdef ENABLE_WIFI
 
-    #    include "WifiConfig.h"
+#    include "WifiConfig.h"
 #    include "../Machine/MachineConfig.h"
 #    include "../Settings.h"
 #    include "../Config.h"
@@ -21,89 +21,194 @@
 
 namespace WebUI {
 
-    static const size_t DOWNLOAD_BUFFER_SIZE = 1024;
+    static const size_t DOWNLOAD_BUFFER_SIZE  = 1024;
+    static const size_t MAX_API_RESPONSE_SIZE = 100000;  // Maximum expected size for GitHub API response
 
-    std::string AutoUpdate::getLatestReleaseInfo() {
-        WiFiClientSecure client;
-        client.setInsecure();  // For simplicity, disable certificate verification
-
-        // Get the configurable update URL
-        std::string updateURL = config->_maslowUpdateURL;
-        
-        // Send HTTP request, parse headers, and handle redirects automatically
-        HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, updateURL, "Accept: application/vnd.github.v3+json\r\n", "API");
-        
-        if (!httpResp.headersParsed) {
-            return "";
-        }
-        
-        if (httpResp.httpStatus != 200) {
-            log_error("AutoUpdate: API HTTP error status: " << httpResp.httpStatus);
-            client.stop();
-            return "";
+    // Helper function to extract a quoted string value after a key in a JSON buffer
+    // Returns true if found, false otherwise
+    // startPos: position to start searching from
+    static bool extractJsonString(const std::string& buffer, const std::string& key, std::string& value, size_t startPos = 0) {
+        std::string searchPattern = "\"" + key + "\":\"";
+        size_t      pos           = buffer.find(searchPattern, startPos);
+        if (pos == std::string::npos) {
+            return false;
         }
 
-        // Read response body
-        std::string response;
-        while (client.available()) {
-            String line = client.readStringUntil('\n');
-            response += line.c_str();
+        size_t valueStart = pos + searchPattern.length();
+        size_t valueEnd   = buffer.find("\"", valueStart);
+        if (valueEnd == std::string::npos) {
+            return false;
         }
 
-        client.stop();
-        return response;
+        // Simple handling of escaped quotes - look for next unescaped quote
+        while (valueEnd > valueStart && buffer[valueEnd - 1] == '\\') {
+            valueEnd = buffer.find("\"", valueEnd + 1);
+            if (valueEnd == std::string::npos) {
+                return false;
+            }
+        }
+
+        value = buffer.substr(valueStart, valueEnd - valueStart);
+        return true;
+    }
+
+    // Parse GitHub release API response using streaming to minimize memory usage
+    // Only extracts the fields we need: tag_name and browser_download_url for specific assets
+    bool AutoUpdate::parseReleaseInfoStreaming(WiFiClientSecure* client, ReleaseInfo& info) {
+        // Use a sliding window buffer to search for JSON patterns
+        // This avoids loading the entire ~18KB response into memory
+        const size_t WINDOW_SIZE = 2048;  // Large enough to capture JSON fields
+        std::string  window;
+        window.reserve(WINDOW_SIZE);
+
+        bool   foundTagName         = false;
+        bool   foundFirmware        = false;
+        bool   foundWebUI           = false;
+        size_t firmwareAssetNamePos = std::string::npos;
+        size_t webUIAssetNamePos    = std::string::npos;
+
+        char buffer[512];
+
+        while (client->connected() || client->available()) {
+            if (client->available()) {
+                size_t bytesRead = client->readBytes(buffer, sizeof(buffer));
+                if (bytesRead > 0) {
+                    size_t oldWindowSize = window.length();
+
+                    // Append new data to window
+                    window.append(buffer, bytesRead);
+
+                    // Keep window size manageable by trimming old data
+                    size_t trimAmount = 0;
+                    if (window.length() > WINDOW_SIZE) {
+                        trimAmount = window.length() - WINDOW_SIZE;
+                        window.erase(0, trimAmount);
+
+                        // Adjust position markers after trimming
+                        if (firmwareAssetNamePos != std::string::npos) {
+                            if (firmwareAssetNamePos < trimAmount) {
+                                firmwareAssetNamePos = std::string::npos;
+                            } else {
+                                firmwareAssetNamePos -= trimAmount;
+                            }
+                        }
+                        if (webUIAssetNamePos != std::string::npos) {
+                            if (webUIAssetNamePos < trimAmount) {
+                                webUIAssetNamePos = std::string::npos;
+                            } else {
+                                webUIAssetNamePos -= trimAmount;
+                            }
+                        }
+                    }
+
+                    // Look for tag_name if not found yet
+                    if (!foundTagName && extractJsonString(window, "tag_name", info.tagName)) {
+                        foundTagName = true;
+                        log_info("AutoUpdate: Found tag_name: " << info.tagName);
+                    }
+
+                    // Look for firmware.bin asset name
+                    if (firmwareAssetNamePos == std::string::npos) {
+                        firmwareAssetNamePos = window.find("\"name\":\"firmware.bin\"");
+                        if (firmwareAssetNamePos != std::string::npos) {
+                            log_info("AutoUpdate: Found firmware.bin asset");
+                        }
+                    }
+                    // If we found the asset name, look for its download URL after that position
+                    if (firmwareAssetNamePos != std::string::npos && !foundFirmware) {
+                        if (extractJsonString(window, "browser_download_url", info.firmwareUrl, firmwareAssetNamePos)) {
+                            foundFirmware        = true;
+                            firmwareAssetNamePos = std::string::npos;  // Reset for next search
+                            log_info("AutoUpdate: Found firmware.bin URL");
+                        }
+                    }
+
+                    // Look for index.html.gz asset name
+                    if (webUIAssetNamePos == std::string::npos) {
+                        webUIAssetNamePos = window.find("\"name\":\"index.html.gz\"");
+                        if (webUIAssetNamePos != std::string::npos) {
+                            log_info("AutoUpdate: Found index.html.gz asset");
+                        }
+                    }
+                    // If we found the asset name, look for its download URL after that position
+                    if (webUIAssetNamePos != std::string::npos && !foundWebUI) {
+                        if (extractJsonString(window, "browser_download_url", info.webUIUrl, webUIAssetNamePos)) {
+                            foundWebUI        = true;
+                            webUIAssetNamePos = std::string::npos;  // Reset for next search
+                            log_info("AutoUpdate: Found index.html.gz URL");
+                        }
+                    }
+
+                    // Early exit if we found everything
+                    if (foundTagName && foundFirmware && foundWebUI) {
+                        log_info("AutoUpdate: Found all required information");
+                        break;
+                    }
+                }
+            } else {
+                delay(1);
+            }
+        }
+
+        return foundTagName && foundFirmware && foundWebUI;
     }
 
     // Helper function to parse version string and extract major.minor.patch components
     // Handles formats like "v1.12", "v1.12.3", "v1.12-2-abcdef"
     struct Version {
-        int major = 0;
-        int minor = 0; 
-        int patch = 0;
-        bool hasCommits = false; // true if version has commits after tag (e.g., v1.12-2-abcdef)
-        
+        int  major      = 0;
+        int  minor      = 0;
+        int  patch      = 0;
+        bool hasCommits = false;  // true if version has commits after tag (e.g., v1.12-2-abcdef)
+
         Version(const std::string& versionStr) {
             std::string v = versionStr;
             // Remove 'v' prefix if present
             if (!v.empty() && v[0] == 'v') {
                 v = v.substr(1);
             }
-            
+
             // Check if this is a git-annotated version (has commits after tag)
             size_t dashPos = v.find('-');
             if (dashPos != std::string::npos) {
                 // Extract just the version part before the dash
                 hasCommits = true;
-                v = v.substr(0, dashPos);
+                v          = v.substr(0, dashPos);
             }
-            
+
             // Parse major.minor.patch
             std::vector<std::string> parts;
-            size_t start = 0;
-            size_t pos = 0;
+            size_t                   start = 0;
+            size_t                   pos   = 0;
             while ((pos = v.find('.', start)) != std::string::npos) {
                 parts.push_back(v.substr(start, pos - start));
                 start = pos + 1;
             }
-            parts.push_back(v.substr(start)); // Add the last part
-            
-            if (parts.size() >= 1) major = std::stoi(parts[0]);
-            if (parts.size() >= 2) minor = std::stoi(parts[1]);  
-            if (parts.size() >= 3) patch = std::stoi(parts[2]);
+            parts.push_back(v.substr(start));  // Add the last part
+
+            if (parts.size() >= 1)
+                major = std::stoi(parts[0]);
+            if (parts.size() >= 2)
+                minor = std::stoi(parts[1]);
+            if (parts.size() >= 3)
+                patch = std::stoi(parts[2]);
         }
-        
+
         // Compare versions: return true if this version is newer than other
         bool isNewerThan(const Version& other) const {
-            if (major != other.major) return major > other.major;
-            if (minor != other.minor) return minor > other.minor;
-            if (patch != other.patch) return patch > other.patch;
-            
+            if (major != other.major)
+                return major > other.major;
+            if (minor != other.minor)
+                return minor > other.minor;
+            if (patch != other.patch)
+                return patch > other.patch;
+
             // If base versions are equal, consider git-annotated versions as "newer"
             // This handles cases like v1.12 (release) vs v1.12-2-abcdef (dev build after release)
             return hasCommits && !other.hasCommits;
         }
     };
-    
+
     // Check if latestVersion is newer than currentVersion
     bool AutoUpdate::isNewerVersion(const std::string& latestVersion, const std::string& currentVersion) {
         try {
@@ -118,17 +223,18 @@ namespace WebUI {
     }
 
     // Consolidated HTTP request, header parsing, and redirect handling function
-    HttpResponse AutoUpdate::sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix, int maxRedirects) {
+    HttpResponse AutoUpdate::sendHttpRequestAndParseHeaders(
+        WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix, int maxRedirects) {
         HttpResponse response;
         response.finalUrl = url;
-        
+
         // Handle redirects automatically up to maxRedirects times
         for (int redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
             // Parse URL to get host and path
-            size_t hostStart = response.finalUrl.find("://") + 3;
-            size_t pathStart = response.finalUrl.find("/", hostStart);
-            std::string host = response.finalUrl.substr(hostStart, pathStart - hostStart);
-            std::string path = response.finalUrl.substr(pathStart);
+            size_t      hostStart = response.finalUrl.find("://") + 3;
+            size_t      pathStart = response.finalUrl.find("/", hostStart);
+            std::string host      = response.finalUrl.substr(hostStart, pathStart - hostStart);
+            std::string path      = response.finalUrl.substr(pathStart);
 
             if (!client->connect(host.c_str(), 443)) {
                 log_error("AutoUpdate: Failed to connect to " << host << " for " << logPrefix);
@@ -163,18 +269,18 @@ namespace WebUI {
             }
 
             // Reset response data for each attempt
-            response.httpStatus = 0;
+            response.httpStatus    = 0;
             response.contentLength = -1;
             response.redirectLocation.clear();
-            
+
             // Parse HTTP response headers
             bool headersPassed = false;
-            
+
             while (client->connected() && !headersPassed) {
                 if (client->available()) {
                     String line = client->readStringUntil('\n');
                     line.trim();
-                    
+
                     // Parse HTTP status line
                     if (line.startsWith("HTTP/")) {
                         int statusStart = line.indexOf(' ') + 1;
@@ -184,20 +290,20 @@ namespace WebUI {
                             log_info("AutoUpdate: " << logPrefix << " HTTP Status: " << response.httpStatus);
                         }
                     }
-                    
+
                     // Parse Content-Length header
                     if (line.startsWith("Content-Length:")) {
                         response.contentLength = line.substring(15).toInt();
                         log_info("AutoUpdate: " << logPrefix << " Content-Length: " << response.contentLength);
                     }
-                    
+
                     // Parse Location header for redirects
                     if (line.startsWith("Location:")) {
                         response.redirectLocation = line.substring(9).c_str();
                         response.redirectLocation.erase(0, response.redirectLocation.find_first_not_of(" \t\r\n"));
                         log_info("AutoUpdate: " << logPrefix << " redirect location: " << response.redirectLocation);
                     }
-                    
+
                     if (line.length() == 0) {  // Empty line means end of headers
                         headersPassed = true;
                     }
@@ -220,89 +326,30 @@ namespace WebUI {
                     response.headersParsed = false;
                     return response;
                 }
-                
+
                 log_info("AutoUpdate: Following " << logPrefix << " redirect to: " << response.redirectLocation);
                 client->stop();
-                response.finalUrl = response.redirectLocation;
+                response.finalUrl      = response.redirectLocation;
                 response.wasRedirected = true;
-                
+
                 // Continue the loop to follow the redirect
                 continue;
             }
-            
+
             // If we get here, no redirect needed - we have our final response
             response.headersParsed = true;
             return response;
         }
-        
+
         // Should not reach here, but just in case
         response.headersParsed = false;
         return response;
     }
 
-    // Helper function to extract download URL for a specific asset from JSON
-    std::string AutoUpdate::extractAssetDownloadURL(const std::string& jsonResponse, const std::string& assetName) {
-        std::string searchPattern = "\"name\":\"" + assetName + "\"";
-        size_t assetPos = jsonResponse.find(searchPattern);
-        if (assetPos == std::string::npos) {
-            log_error("AutoUpdate: " << assetName << " not found in assets");
-            return "";
-        }
-
-        log_info("AutoUpdate: Searching for " << assetName << " download URL...");
-        
-        // Search for the asset object containing this name
-        size_t assetStart = jsonResponse.rfind("{", assetPos);
-        if (assetStart == std::string::npos) {
-            log_error("AutoUpdate: Could not find start of " << assetName << " asset object");
-            return "";
-        }
-
-        // Find the matching closing brace by counting braces
-        size_t assetEnd = assetStart + 1;
-        int braceCount = 1;
-        while (assetEnd < jsonResponse.length() && braceCount > 0) {
-            if (jsonResponse[assetEnd] == '{') {
-                braceCount++;
-            } else if (jsonResponse[assetEnd] == '}') {
-                braceCount--;
-            }
-            if (braceCount > 0) assetEnd++;
-        }
-        
-        if (braceCount != 0) {
-            log_error("AutoUpdate: Could not find matching closing brace for " << assetName << " asset object");
-            return "";
-        }
-
-        std::string assetObj = jsonResponse.substr(assetStart, assetEnd - assetStart + 1);
-        log_info("AutoUpdate: Extracted asset object for " << assetName);
-        
-        size_t urlPos = assetObj.find("\"browser_download_url\":\"");
-        if (urlPos == std::string::npos) {
-            log_error("AutoUpdate: Could not find browser_download_url for " << assetName);
-            // Debug: log part of the asset object to see what's there
-            std::string debugObj = assetObj.length() > 200 ? assetObj.substr(0, 200) + "..." : assetObj;
-            log_info("AutoUpdate: Asset object preview: " << debugObj);
-            return "";
-        }
-        
-        size_t urlStart = urlPos + 24;  // length of "browser_download_url":"
-        size_t urlEnd   = assetObj.find("\"", urlStart);
-        if (urlEnd == std::string::npos) {
-            log_error("AutoUpdate: Could not find end quote for " << assetName << " URL");
-            return "";
-        }
-        
-        std::string downloadUrl = assetObj.substr(urlStart, urlEnd - urlStart);
-        log_info("AutoUpdate: Found " << assetName << " URL: " << downloadUrl);
-        return downloadUrl;
-    }
-
     // Helper function to download data from client to file with common logic
     bool AutoUpdate::downloadToFile(WiFiClientSecure& client, FILE* file, size_t expectedSize, const std::string& logPrefix, size_t* actualSize) {
         uint8_t buffer[DOWNLOAD_BUFFER_SIZE];
-        size_t totalBytes = 0;
+        size_t  totalBytes = 0;
 
         while (client.connected() || client.available()) {
             if (client.available()) {
@@ -346,50 +393,57 @@ namespace WebUI {
 
         log_info("AutoUpdate: Checking for new release...");
 
-        std::string jsonResponse = getLatestReleaseInfo();
-        if (jsonResponse.empty()) {
-            log_error("AutoUpdate: Failed to get release information");
+        WiFiClientSecure client;
+        client.setInsecure();  // For simplicity, disable certificate verification
+
+        // Get the configurable update URL
+        std::string updateURL = config->_maslowUpdateURL;
+
+        // Send HTTP request, parse headers, and handle redirects automatically
+        HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, updateURL, "Accept: application/vnd.github.v3+json\r\n", "API");
+
+        if (!httpResp.headersParsed) {
             return false;
         }
 
-        // Simple JSON parsing for tag_name
-        size_t tagPos = jsonResponse.find("\"tag_name\":");
-        if (tagPos == std::string::npos) {
-            log_error("AutoUpdate: No tag_name found in release info");
+        if (httpResp.httpStatus != 200) {
+            log_error("AutoUpdate: API HTTP error status: " << httpResp.httpStatus);
+            client.stop();
             return false;
         }
 
-        // Find the value after "tag_name":
-        size_t startQuote = jsonResponse.find("\"", tagPos + 11);
-        if (startQuote == std::string::npos) {
-            log_error("AutoUpdate: Invalid tag_name format");
+        // Parse the response using streaming to minimize memory usage
+        ReleaseInfo releaseInfo;
+        if (!parseReleaseInfoStreaming(&client, releaseInfo)) {
+            log_error("AutoUpdate: Failed to parse release information");
+            client.stop();
             return false;
         }
 
-        size_t endQuote = jsonResponse.find("\"", startQuote + 1);
-        if (endQuote == std::string::npos) {
-            log_error("AutoUpdate: Invalid tag_name format");
+        client.stop();
+
+        if (!releaseInfo.isValid()) {
+            log_error("AutoUpdate: Incomplete release information");
             return false;
         }
 
-        std::string tagName = jsonResponse.substr(startQuote + 1, endQuote - startQuote - 1);
-        log_info("AutoUpdate: Latest release: " << tagName);
+        log_info("AutoUpdate: Latest release: " << releaseInfo.tagName);
 
         // Check if this is a newer version than current
         // Extract just the version tag from git_info (e.g., "v1.12 (HEAD-08ab30d2)" -> "v1.12")
         std::string currentVersion = git_info;
-        size_t spacePos = currentVersion.find(' ');
+        size_t      spacePos       = currentVersion.find(' ');
         if (spacePos != std::string::npos) {
             currentVersion = currentVersion.substr(0, spacePos);
         }
-        
+
         // Compare versions using semantic versioning logic
-        if (tagName.empty() || !isNewerVersion(tagName, currentVersion)) {
+        if (releaseInfo.tagName.empty() || !isNewerVersion(releaseInfo.tagName, currentVersion)) {
             log_info("AutoUpdate: Already running the latest version or newer (" << currentVersion << ")");
             return false;
         }
 
-        log_info("AutoUpdate: Current version: " << currentVersion << ", Latest: " << tagName);
+        log_info("AutoUpdate: Current version: " << currentVersion << ", Latest: " << releaseInfo.tagName);
 
         // Only proceed with download/install if auto-update is enabled
         if (!config->_maslowAutoUpdate) {
@@ -397,35 +451,8 @@ namespace WebUI {
             return false;
         }
 
-        // Look for firmware.bin and index.html.gz in assets
-        std::string firmwareUrl, webUIUrl;
-
-        // Debug: Log all available assets
-        size_t assetsPos = jsonResponse.find("\"assets\":");
-        if (assetsPos != std::string::npos) {
-            log_info("AutoUpdate: Searching for assets in release...");
-            size_t namePos = assetsPos;
-            while ((namePos = jsonResponse.find("\"name\":\"", namePos + 1)) != std::string::npos) {
-                size_t nameStart = namePos + 8; // length of "name":"
-                size_t nameEnd = jsonResponse.find("\"", nameStart);
-                if (nameEnd != std::string::npos) {
-                    std::string assetName = jsonResponse.substr(nameStart, nameEnd - nameStart);
-                    log_info("AutoUpdate: Found asset: " << assetName);
-                }
-            }
-        }
-
-        // Extract download URLs for required assets
-        firmwareUrl = extractAssetDownloadURL(jsonResponse, "firmware.bin");
-        webUIUrl = extractAssetDownloadURL(jsonResponse, "index.html.gz");
-
-        if (firmwareUrl.empty() || webUIUrl.empty()) {
-            log_error("AutoUpdate: Required files not found in release");
-            return false;
-        }
-
         log_info("AutoUpdate: New version available. Starting download...");
-        return downloadAndInstallUpdate(firmwareUrl, webUIUrl);
+        return downloadAndInstallUpdate(releaseInfo.firmwareUrl, releaseInfo.webUIUrl);
     }
 
     bool AutoUpdate::downloadFileToLocalFS(const std::string& url, const std::string& filename) {
@@ -437,10 +464,10 @@ namespace WebUI {
 
         // Use temporary filename during download
         std::string tempFilename = filename + ".tmp";
-        
+
         // Create FluidPath to handle proper filesystem mounting and path resolution for temp file
         std::error_code ec;
-        FluidPath tempPath(tempFilename, localfsName, ec);
+        FluidPath       tempPath(tempFilename, localfsName, ec);
         if (ec) {
             log_error("AutoUpdate: Failed to create temporary filesystem path: " << ec.message());
             return false;
@@ -451,11 +478,11 @@ namespace WebUI {
 
         // Send HTTP request, parse headers, and handle redirects automatically
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, url, "", "WebUI download");
-        
+
         if (!httpResp.headersParsed) {
             return false;
         }
-        
+
         if (httpResp.httpStatus != 200) {
             log_error("AutoUpdate: HTTP error status: " << httpResp.httpStatus);
             client.stop();
@@ -471,8 +498,9 @@ namespace WebUI {
         }
 
         size_t totalBytes;
-        bool downloadSuccess = downloadToFile(client, file, httpResp.contentLength > 0 ? httpResp.contentLength : 0, "WebUI download", &totalBytes);
-        
+        bool   downloadSuccess =
+            downloadToFile(client, file, httpResp.contentLength > 0 ? httpResp.contentLength : 0, "WebUI download", &totalBytes);
+
         fclose(file);
         client.stop();
 
@@ -488,7 +516,7 @@ namespace WebUI {
             log_error("AutoUpdate: Failed to create final filesystem path: " << ec.message());
             return false;
         }
-        
+
         if (rename(tempPath.c_str(), finalPath.c_str()) != 0) {
             log_error("AutoUpdate: Failed to rename temporary file to final location");
             return false;
@@ -504,11 +532,11 @@ namespace WebUI {
 
         // Send HTTP request, parse headers, and handle redirects automatically
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, firmwareUrl, "", "Firmware");
-        
+
         if (!httpResp.headersParsed) {
             return false;
         }
-        
+
         if (httpResp.httpStatus != 200) {
             log_error("AutoUpdate: Firmware HTTP error status: " << httpResp.httpStatus);
             client.stop();
@@ -521,7 +549,7 @@ namespace WebUI {
             return false;
         }
 
-        if (httpResp.contentLength < 100000) { // Firmware should be at least 100KB
+        if (httpResp.contentLength < 100000) {  // Firmware should be at least 100KB
             log_error("AutoUpdate: Firmware file too small (" << httpResp.contentLength << " bytes)");
             client.stop();
             return false;
@@ -530,9 +558,9 @@ namespace WebUI {
         log_info("AutoUpdate: Downloading firmware to SD card (" << httpResp.contentLength << " bytes)...");
 
         // Download firmware to SD card first
-        std::string firmwareFilename = "firmware.bin.tmp";
+        std::string     firmwareFilename = "firmware.bin.tmp";
         std::error_code ec;
-        FluidPath firmwareTempPath(firmwareFilename, sdName, ec);
+        FluidPath       firmwareTempPath(firmwareFilename, sdName, ec);
         if (ec) {
             log_error("AutoUpdate: Failed to create SD firmware path: " << ec.message());
             client.stop();
@@ -548,8 +576,8 @@ namespace WebUI {
         }
 
         size_t bytesDownloaded;
-        bool downloadSuccess = downloadToFile(client, file, httpResp.contentLength, "firmware download", &bytesDownloaded);
-        
+        bool   downloadSuccess = downloadToFile(client, file, httpResp.contentLength, "firmware download", &bytesDownloaded);
+
         fclose(file);
         client.stop();
 
@@ -561,7 +589,7 @@ namespace WebUI {
 
         // Now install firmware from the saved file
         log_info("AutoUpdate: Installing firmware from SD card...");
-        
+
         // Move temporary file to final location
         FluidPath firmwareFinalPath("firmware.bin", sdName, ec);
         if (ec) {
@@ -590,11 +618,11 @@ namespace WebUI {
 
         // Install firmware from saved file
         uint8_t buffer[DOWNLOAD_BUFFER_SIZE];
-        size_t bytesInstalled = 0;
+        size_t  bytesInstalled = 0;
         while (bytesInstalled < bytesDownloaded) {
             size_t bytesRead = fread(buffer, 1, sizeof(buffer), firmwareFile);
             if (bytesRead == 0) {
-                break; // End of file or error
+                break;  // End of file or error
             }
 
             if (Update.write(buffer, bytesRead) != bytesRead) {

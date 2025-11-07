@@ -13,12 +13,20 @@ class WiFiClientSecure;
 namespace WebUI {
     // HTTP response information structure
     struct HttpResponse {
-        int httpStatus = 0;
-        int contentLength = -1;
+        int         httpStatus    = 0;
+        int         contentLength = -1;
         std::string redirectLocation;
-        bool headersParsed = false;
-        bool wasRedirected = false;
+        bool        headersParsed = false;
+        bool        wasRedirected = false;
         std::string finalUrl;  // The final URL after following redirects
+    };
+
+    // Structure to hold parsed release information
+    struct ReleaseInfo {
+        std::string tagName;
+        std::string firmwareUrl;
+        std::string webUIUrl;
+        bool        isValid() const { return !tagName.empty() && !firmwareUrl.empty() && !webUIUrl.empty(); }
     };
 
     class AutoUpdate {
@@ -27,13 +35,17 @@ namespace WebUI {
         static bool downloadAndInstallUpdate(const std::string& firmwareUrl, const std::string& webUIUrl);
 
     private:
-        static std::string getLatestReleaseInfo();
-        static bool        downloadFileToLocalFS(const std::string& url, const std::string& filename);
-        static bool        downloadAndInstallFirmware(const std::string& firmwareUrl);
-        static bool        isNewerVersion(const std::string& latestVersion, const std::string& currentVersion);
-        static std::string extractAssetDownloadURL(const std::string& jsonResponse, const std::string& assetName);
-        static HttpResponse sendHttpRequestAndParseHeaders(WiFiClientSecure* client, const std::string& url, const std::string& extraHeaders, const std::string& logPrefix, int maxRedirects = 5);
-        static bool downloadToFile(WiFiClientSecure& client, FILE* file, size_t expectedSize, const std::string& logPrefix, size_t* actualSize = nullptr);
+        static bool         parseReleaseInfoStreaming(WiFiClientSecure* client, ReleaseInfo& info);
+        static bool         downloadFileToLocalFS(const std::string& url, const std::string& filename);
+        static bool         downloadAndInstallFirmware(const std::string& firmwareUrl);
+        static bool         isNewerVersion(const std::string& latestVersion, const std::string& currentVersion);
+        static HttpResponse sendHttpRequestAndParseHeaders(WiFiClientSecure*  client,
+                                                           const std::string& url,
+                                                           const std::string& extraHeaders,
+                                                           const std::string& logPrefix,
+                                                           int                maxRedirects = 5);
+        static bool         downloadToFile(
+                    WiFiClientSecure& client, FILE* file, size_t expectedSize, const std::string& logPrefix, size_t* actualSize = nullptr);
     };
 }
 

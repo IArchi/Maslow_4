@@ -1355,6 +1355,68 @@ ToolpathDisplayer.prototype.reDrawTool = function(modal, dpos) {
     if (toolSave != null) {
         tp.putImageData(toolSave, toolX, toolY);
         drawTool(dpos);
+    } else {
+        // If no toolSave exists (no GCode loaded), initialize canvas and draw tool position
+        this.showToolPosition(modal, dpos);
+    }
+}
+
+ToolpathDisplayer.prototype.showToolPosition = function(modal, position) {
+    // Update anchor points from current configuration
+    updateAnchorPointsFromConfig();
+    
+    // Set up camera view based on current angle
+    var drawBounds = false;
+    var drawBelts  = false;
+
+    switch (cameraAngle) {
+      case 0:
+        obliqueView();
+        break;
+      case 1:
+        obliqueView();
+        drawBounds = true;
+        break;
+      case 2:
+        topView();
+        break;
+      case 3:
+        topView();
+        drawBounds = true;
+        break;
+      case 4:
+        topView();
+        drawBounds = true;
+        drawBelts  = true;
+        break;
+      default:
+        obliqueView();
+    }
+
+    // Initialize bounding box with machine bounds
+    resetBbox();
+    
+    // Always draw machine bounds to establish a coordinate system
+    drawMachineBounds();
+    if(drawBelts){
+        drawMachineBelts();
+    }
+    
+    // Transform canvas to fit the bounds
+    transformCanvas();
+    
+    // Only draw if we have a valid bounding box
+    if (bboxIsSet) {
+        // Draw visible elements based on camera angle
+        if(drawBounds){
+            drawMachineBounds();
+        }
+        if(drawBelts){
+            drawMachineBelts();
+        }
+        
+        // Draw the tool at current position
+        drawTool(position);
     }
 }
 

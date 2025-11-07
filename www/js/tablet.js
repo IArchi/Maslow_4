@@ -684,9 +684,8 @@ function tabletGrblState(grbl, response) {
       scrollToLine(grbl.lineNumber);
     }
   }
-  if (gCodeDisplayable) {
-    tpDisplayer().reDrawTool(gCodeModal, arrayToXYZ(WPOS));
-  }
+  // Always update tool position, even without GCode loaded
+  tpDisplayer().reDrawTool(gCodeModal, arrayToXYZ(WPOS));
 
   const digits = gCodeModal.units === 'G20' ? 4 : 2;
 

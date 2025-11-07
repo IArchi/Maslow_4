@@ -1619,20 +1619,12 @@ var traceBoundary = function() {
     // Return to original position
     commands.push(`G0 X${currentPos.x.toFixed(3)} Y${currentPos.y.toFixed(3)}`);
     
-    // Execute each command with a delay
-    var commandIndex = 0;
-    var executeNextCommand = function() {
-        if (commandIndex < commands.length) {
-            SendPrinterCommand(commands[commandIndex]);
-            commandIndex++;
-            setTimeout(executeNextCommand, 1000); // 1 second delay between commands
-        }
-    };
-    
     // Confirm before starting
     var pointCount = jobEnvelopePoints.length > 0 ? jobEnvelopePoints.length : 4;
     if (confirm(`Trace boundary? This will move the machine around the job perimeter using ${pointCount} points.\n\nBounds: ${bbox.min.x.toFixed(1)},${bbox.min.y.toFixed(1)} to ${bbox.max.x.toFixed(1)},${bbox.max.y.toFixed(1)}\n\nZ-axis will not move.`)) {
-        executeNextCommand();
+        // Send all commands as a single G-code string for smooth, continuous execution
+        var gcode = commands.join('\n');
+        SendPrinterCommand(gcode);
     }
 }
 

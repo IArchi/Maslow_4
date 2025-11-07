@@ -21,7 +21,8 @@
 
 namespace WebUI {
 
-    static const size_t DOWNLOAD_BUFFER_SIZE = 1024;
+    static const size_t DOWNLOAD_BUFFER_SIZE  = 1024;
+    static const size_t MAX_API_RESPONSE_SIZE = 100000;  // Maximum expected size for GitHub API response
 
     std::string AutoUpdate::getLatestReleaseInfo() {
         WiFiClientSecure client;
@@ -48,11 +49,11 @@ namespace WebUI {
 
         // Pre-allocate the entire buffer if we know the size to avoid reallocations
         // This is critical after OTA updates when heap is fragmented
-        if (httpResp.contentLength > 0 && httpResp.contentLength < 100000) {
+        if (httpResp.contentLength > 0 && httpResp.contentLength < MAX_API_RESPONSE_SIZE) {
             try {
                 response.reserve(httpResp.contentLength);
             } catch (const std::exception& e) {
-                log_error("AutoUpdate: Failed to allocate memory for API response");
+                log_error("AutoUpdate: Failed to allocate memory for API response: " << e.what());
                 client.stop();
                 return "";
             }
@@ -69,7 +70,7 @@ namespace WebUI {
                     try {
                         response.append(buffer, bytesRead);
                     } catch (const std::exception& e) {
-                        log_error("AutoUpdate: Failed to append data to response buffer");
+                        log_error("AutoUpdate: Failed to append data to response buffer: " << e.what());
                         client.stop();
                         return "";
                     }

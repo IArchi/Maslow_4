@@ -33,6 +33,8 @@ namespace WebUI {
 #    include <ESPmDNS.h>
 #    include <ArduinoOTA.h>
 #    include "WebSettings.h"
+#    include "../System.h"  // For sys.state()
+#    include "../Types.h"   // For State enum
 
 namespace WebUI {
     WiFiServices wifi_services;
@@ -146,9 +148,14 @@ namespace WebUI {
         }
 
         // Perform deferred auto-update check if scheduled
+        // Only run when machine is idle or in alarm state to avoid memory pressure during active work
         if (_updateCheckPending && millis() >= _updateCheckTime) {
-            _updateCheckPending = false;
-            AutoUpdate::checkForUpdate();
+            State currentState = sys.state();
+            if (currentState == State::Idle || currentState == State::Alarm) {
+                _updateCheckPending = false;
+                AutoUpdate::checkForUpdate();
+            }
+            // If not in idle/alarm state, check will be deferred until next handle() call
         }
 
         ArduinoOTA.handle();

@@ -26,9 +26,10 @@ namespace WebUI {
 
     // Helper function to extract a quoted string value after a key in a JSON buffer
     // Returns true if found, false otherwise
-    static bool extractJsonString(const std::string& buffer, const std::string& key, std::string& value) {
+    // startPos: position to start searching from
+    static bool extractJsonString(const std::string& buffer, const std::string& key, std::string& value, size_t startPos = 0) {
         std::string searchPattern = "\"" + key + "\":\"";
-        size_t      pos           = buffer.find(searchPattern);
+        size_t      pos           = buffer.find(searchPattern, startPos);
         if (pos == std::string::npos) {
             return false;
         }
@@ -37,6 +38,14 @@ namespace WebUI {
         size_t valueEnd   = buffer.find("\"", valueStart);
         if (valueEnd == std::string::npos) {
             return false;
+        }
+
+        // Simple handling of escaped quotes - look for next unescaped quote
+        while (valueEnd > valueStart && buffer[valueEnd - 1] == '\\') {
+            valueEnd = buffer.find("\"", valueEnd + 1);
+            if (valueEnd == std::string::npos) {
+                return false;
+            }
         }
 
         value = buffer.substr(valueStart, valueEnd - valueStart);
@@ -52,11 +61,11 @@ namespace WebUI {
         std::string  window;
         window.reserve(WINDOW_SIZE);
 
-        bool foundTagName    = false;
-        bool foundFirmware   = false;
-        bool foundWebUI      = false;
-        bool inFirmwareAsset = false;
-        bool inWebUIAsset    = false;
+        bool   foundTagName         = false;
+        bool   foundFirmware        = false;
+        bool   foundWebUI           = false;
+        size_t firmwareAssetNamePos = std::string::npos;
+        size_t webUIAssetNamePos    = std::string::npos;
 
         char buffer[512];
 
@@ -64,12 +73,32 @@ namespace WebUI {
             if (client->available()) {
                 size_t bytesRead = client->readBytes(buffer, sizeof(buffer));
                 if (bytesRead > 0) {
+                    size_t oldWindowSize = window.length();
+
                     // Append new data to window
                     window.append(buffer, bytesRead);
 
                     // Keep window size manageable by trimming old data
+                    size_t trimAmount = 0;
                     if (window.length() > WINDOW_SIZE) {
-                        window.erase(0, window.length() - WINDOW_SIZE);
+                        trimAmount = window.length() - WINDOW_SIZE;
+                        window.erase(0, trimAmount);
+
+                        // Adjust position markers after trimming
+                        if (firmwareAssetNamePos != std::string::npos) {
+                            if (firmwareAssetNamePos < trimAmount) {
+                                firmwareAssetNamePos = std::string::npos;
+                            } else {
+                                firmwareAssetNamePos -= trimAmount;
+                            }
+                        }
+                        if (webUIAssetNamePos != std::string::npos) {
+                            if (webUIAssetNamePos < trimAmount) {
+                                webUIAssetNamePos = std::string::npos;
+                            } else {
+                                webUIAssetNamePos -= trimAmount;
+                            }
+                        }
                     }
 
                     // Look for tag_name if not found yet
@@ -78,26 +107,36 @@ namespace WebUI {
                         log_info("AutoUpdate: Found tag_name: " << info.tagName);
                     }
 
-                    // Look for firmware.bin asset
-                    if (!inFirmwareAsset && window.find("\"name\":\"firmware.bin\"") != std::string::npos) {
-                        inFirmwareAsset = true;
-                        log_info("AutoUpdate: Found firmware.bin asset");
+                    // Look for firmware.bin asset name
+                    if (firmwareAssetNamePos == std::string::npos) {
+                        firmwareAssetNamePos = window.find("\"name\":\"firmware.bin\"");
+                        if (firmwareAssetNamePos != std::string::npos) {
+                            log_info("AutoUpdate: Found firmware.bin asset");
+                        }
                     }
-                    if (inFirmwareAsset && !foundFirmware && extractJsonString(window, "browser_download_url", info.firmwareUrl)) {
-                        foundFirmware   = true;
-                        inFirmwareAsset = false;
-                        log_info("AutoUpdate: Found firmware.bin URL");
+                    // If we found the asset name, look for its download URL after that position
+                    if (firmwareAssetNamePos != std::string::npos && !foundFirmware) {
+                        if (extractJsonString(window, "browser_download_url", info.firmwareUrl, firmwareAssetNamePos)) {
+                            foundFirmware        = true;
+                            firmwareAssetNamePos = std::string::npos;  // Reset for next search
+                            log_info("AutoUpdate: Found firmware.bin URL");
+                        }
                     }
 
-                    // Look for index.html.gz asset
-                    if (!inWebUIAsset && window.find("\"name\":\"index.html.gz\"") != std::string::npos) {
-                        inWebUIAsset = true;
-                        log_info("AutoUpdate: Found index.html.gz asset");
+                    // Look for index.html.gz asset name
+                    if (webUIAssetNamePos == std::string::npos) {
+                        webUIAssetNamePos = window.find("\"name\":\"index.html.gz\"");
+                        if (webUIAssetNamePos != std::string::npos) {
+                            log_info("AutoUpdate: Found index.html.gz asset");
+                        }
                     }
-                    if (inWebUIAsset && !foundWebUI && extractJsonString(window, "browser_download_url", info.webUIUrl)) {
-                        foundWebUI   = true;
-                        inWebUIAsset = false;
-                        log_info("AutoUpdate: Found index.html.gz URL");
+                    // If we found the asset name, look for its download URL after that position
+                    if (webUIAssetNamePos != std::string::npos && !foundWebUI) {
+                        if (extractJsonString(window, "browser_download_url", info.webUIUrl, webUIAssetNamePos)) {
+                            foundWebUI        = true;
+                            webUIAssetNamePos = std::string::npos;  // Reset for next search
+                            log_info("AutoUpdate: Found index.html.gz URL");
+                        }
                     }
 
                     // Early exit if we found everything

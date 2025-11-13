@@ -398,8 +398,8 @@ void Calibration::home() {
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
-        !calibrationInProgress && !takeSlack && !checkOverides()) {
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && !calibrationInProgress &&
+        !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }
 }
@@ -1363,8 +1363,8 @@ bool Calibration::generate_calibration_grid() {
     int maxX = 1;
     int maxY = 1;
 
-    int currentX = 0;
-    int currentY = -1;
+    int currentX = 1;
+    int currentY = 0;
 
     recomputeCount = 1;
 

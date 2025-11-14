@@ -16,9 +16,9 @@ environ = dict(os.environ)
 # ============================================================================
 
 # Path to platformio executable
-# If platformio is in your PATH, you can use just "platformio"
-# Otherwise, specify the full path to the platformio executable
-PLATFORMIO_CMD = "platformio"
+# If pio is in your PATH, you can use just "pio"
+# Otherwise, specify the full path to the pio or platformio executable
+PLATFORMIO_CMD = "pio"
 
 # Path to PlatformIO home directory (where packages are installed)
 # Typically ~/.platformio on Linux/Mac or %USERPROFILE%\.platformio on Windows

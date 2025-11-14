@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Build FluidNC release bundles (.zip files) for each host platform
 
@@ -6,13 +6,32 @@ from shutil import copy
 from zipfile import ZipFile, ZipInfo
 import subprocess, os, sys, shutil
 import urllib.request
-import certifi
 
 verbose = '-v' in sys.argv
 
 environ = dict(os.environ)
 
-platformio = r"/Users/barsmith/.platformio/penv/bin/platformio" #"/Users/barsmith/.platformio/penv/bin/platformio"
+# ============================================================================
+# User-configurable variables - modify these paths as needed for your system
+# ============================================================================
+
+# Path to platformio executable
+# If platformio is in your PATH, you can use just "platformio"
+# Otherwise, specify the full path to the platformio executable
+PLATFORMIO_CMD = "platformio"
+
+# Path to PlatformIO home directory (where packages are installed)
+# Typically ~/.platformio on Linux/Mac or %USERPROFILE%\.platformio on Windows
+# Set to None to use default location: os.path.join(os.path.expanduser('~'), '.platformio')
+PLATFORMIO_HOME = None
+
+# ============================================================================
+# End of user-configurable variables
+# ============================================================================
+
+# Set platformio home directory
+if PLATFORMIO_HOME is None:
+    PLATFORMIO_HOME = os.path.join(os.path.expanduser('~'), '.platformio')
 
 # Extract version from git tag
 try:
@@ -28,8 +47,11 @@ except (subprocess.CalledProcessError, FileNotFoundError):
     version = "unknown"
     print("Warning: Could not determine version from git tags, using 'unknown'")
 
-os.chdir(os.path.dirname(os.path.realpath(r"/Users/barsmith/Documents/GitHub/FluidNC/.pio"))) #"/Users/barsmith/Documents/GitHub/FluidNC/.pio"
-#change path to the project folder (the folder with platformio.ini)
+# Change to the directory where this script is located (project root)
+script_dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(script_dir)
+
+# Change path to the project folder (the folder with platformio.ini)
 tag = "maslow4-"+version
 sharedPath = 'install_scripts'
 
@@ -39,7 +61,7 @@ def buildEmbeddedPage():
     return subprocess.run(["python3", "build.py"], cwd="embedded").returncode
 
 def buildEnv(pioEnv, verbose=False, extraArgs=None):
-    cmd = [platformio,'run', '--disable-auto-clean', '-e', pioEnv]
+    cmd = [PLATFORMIO_CMD,'run', '--disable-auto-clean', '-e', pioEnv]
     if extraArgs:
         cmd.append(extraArgs)
     displayName = pioEnv
@@ -57,7 +79,7 @@ def buildEnv(pioEnv, verbose=False, extraArgs=None):
     return app.returncode
 
 def buildFs(pioEnv, verbose=verbose, extraArgs=None):
-    cmd = [ platformio ,'run', '--disable-auto-clean', '-e', pioEnv, '-t', 'buildfs']
+    cmd = [ PLATFORMIO_CMD ,'run', '--disable-auto-clean', '-e', pioEnv, '-t', 'buildfs']
     if extraArgs:
         cmd.append(extraArgs)
     print('Building file system for ' + pioEnv)
@@ -130,7 +152,7 @@ for platform in ['win64', 'posix']:
 
         # Put boot_app binary in the archive
         bootapp = 'boot_app0.bin';
-        tools = os.path.join(os.path.expanduser('~'),'.platformio','packages','framework-arduinoespressif32','tools')
+        tools = os.path.join(PLATFORMIO_HOME,'packages','framework-arduinoespressif32','tools')
         zipObj.write(os.path.join(tools, "partitions", bootapp), os.path.join(zipDirName, 'common', bootapp))
         for secFuses in ['SecurityFusesOK.bin', 'SecurityFusesOK0.bin']:
             zipObj.write(os.path.join(sharedPath, 'common', secFuses), os.path.join(zipDirName, 'common', secFuses))
@@ -193,7 +215,7 @@ for platform in ['win64', 'posix']:
         # Download and unzip from ESP repo
         ZipFileName = EspDir + '.zip'
         if not os.path.isfile(ZipFileName):
-            with urllib.request.urlopen(EspRepo + ZipFileName, cafile=certifi.where()) as u:
+            with urllib.request.urlopen(EspRepo + ZipFileName) as u:
                 open(ZipFileName, 'wb').write(u.read())
 
         if withEsptoolBinary[platform]:

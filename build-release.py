@@ -33,6 +33,42 @@ PLATFORMIO_HOME = None
 if PLATFORMIO_HOME is None:
     PLATFORMIO_HOME = os.path.join(os.path.expanduser('~'), '.platformio')
 
+# Auto-detect platformio command if the configured one is not found
+def find_platformio_cmd():
+    """Try to find a working platformio command."""
+    # Try the configured command first
+    try:
+        result = subprocess.run([PLATFORMIO_CMD, '--version'],
+                              capture_output=True, timeout=5)
+        if result.returncode == 0:
+            return PLATFORMIO_CMD
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Try common alternatives
+    alternatives = [
+        'pio',
+        'platformio',
+        os.path.join(PLATFORMIO_HOME, 'penv', 'bin', 'platformio'),
+        os.path.join(PLATFORMIO_HOME, 'penv', 'Scripts', 'platformio.exe'),
+    ]
+
+    for cmd in alternatives:
+        try:
+            result = subprocess.run([cmd, '--version'],
+                                  capture_output=True, timeout=5)
+            if result.returncode == 0:
+                print(f"Auto-detected platformio command: {cmd}")
+                return cmd
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+
+    # If nothing works, return the configured command and let it fail with a clear error
+    return PLATFORMIO_CMD
+
+# Use the detected or configured command
+PLATFORMIO_CMD = find_platformio_cmd()
+
 # Extract version from git tag
 try:
     git_tag = (

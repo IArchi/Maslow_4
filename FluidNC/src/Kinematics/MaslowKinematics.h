@@ -43,7 +43,7 @@ namespace Kinematics {
         // Configuration handlers:
         void validate() override;
         void group(Configuration::HandlerBase& handler) override;
-        void afterParse() override {}
+        void afterParse() override;
 
         // Name of the configurable. Must match the name registered in the cpp file.
         const char* name() const override { return "MaslowKinematics"; }
@@ -125,7 +125,7 @@ namespace Kinematics {
 
         // Flag to prevent recursion during segmentation
         bool _isSegmenting = false;
-        
+
         // Flag to determine if arms move with Z changes
         bool _fixedZ = false;  // When true, belt lengths ignore current Z position (use only fixed anchor Z values)
 

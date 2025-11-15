@@ -917,7 +917,6 @@ void Maslow_::test_() {
 
 #ifdef ENABLE_WIFI
     // Check for firmware updates after all tests complete
-    log_info("Checking for firmware updates...");
     WebUI::AutoUpdate::checkForUpdate();
 #endif
 }

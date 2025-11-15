@@ -442,7 +442,7 @@ namespace Kinematics {
         // Recalculate center coordinates after configuration has been loaded
         // This is important when calibration results are saved and reloaded
         calculateCenter();
-        log_info("Center coordinates recalculated after configuration load: X=" << _centerX << " Y=" << _centerY);
+        log_debug("Center coordinates recalculated after configuration load: X=" << _centerX << " Y=" << _centerY);
     }
 
     // Setter methods for calibration system to update frame parameters

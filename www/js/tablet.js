@@ -1348,6 +1348,10 @@ const onCalibrationButtonsClick = async (command, msg = "") => {
   //Prints out the index.html version number when test is pressed
   if (command === '$TEST') {
     addMessage(`Index.html Version: ${versionNumber}`);
+    // Run version compatibility check when test button is pressed
+    if (typeof checkVersionCompatibility === 'function') {
+      checkVersionCompatibility();
+    }
   }
 
   if (command !== '$MINFO') {

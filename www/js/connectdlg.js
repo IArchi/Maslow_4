@@ -186,7 +186,7 @@ if (typeof document !== "undefined") {
 
 /** 
  * Check compatibility between firmware version and WebUI version
- * Logs results to console - no popup shown
+ * Logs results to console and messages area - no popup shown
  */
 const checkVersionCompatibility = () => {
 	// Skip check if either version is not available
@@ -201,6 +201,11 @@ const checkVersionCompatibility = () => {
 	
 	console.log(`Version compatibility check: FW=${fw_version}, UI=${web_ui_version}`);
 	
+	// Add version check info to serial messages log
+	if (typeof addMessage === 'function') {
+		addMessage(`Version Check: FW=${fw_version}, UI=${web_ui_version}`, true, false);
+	}
+	
 	// Check if versions are compatible
 	if (!areVersionsCompatible(fwVersionInfo, uiVersionInfo)) {
 		// Log warning to console with version numbers
@@ -208,8 +213,17 @@ const checkVersionCompatibility = () => {
 		console.warn(`  Firmware version: ${fw_version}`);
 		console.warn(`  WebUI version: ${web_ui_version}`);
 		console.warn(`This may cause unexpected behavior or missing features. Consider updating to matching versions.`);
+		
+		// Add warning to serial messages log
+		if (typeof addMessage === 'function') {
+			addMessage(`WARNING: Version mismatch detected! FW: ${fw_version} vs UI: ${web_ui_version}`, true, false);
+		}
 	} else {
 		console.log("Version compatibility check passed - versions are compatible");
+		// Add success message to serial log
+		if (typeof addMessage === 'function') {
+			addMessage(`Version compatibility check PASSED`, true, false);
+		}
 	}
 };
 

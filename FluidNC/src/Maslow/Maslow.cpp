@@ -5,6 +5,7 @@
 #include "Maslow.h"
 #include "../Report.h"
 #include "../WebUI/WifiConfig.h"
+#include "../WebUI/AutoUpdate.h"
 #include "../Protocol.h"
 #include "../System.h"
 #include "../FileStream.h"
@@ -913,6 +914,12 @@ void Maslow_::test_() {
     axisTR.test();
     axisBL.test();
     axisBR.test();
+
+#ifdef ENABLE_WIFI
+    // Check for firmware updates after all tests complete
+    log_info("Checking for firmware updates...");
+    WebUI::AutoUpdate::checkForUpdate();
+#endif
 }
 
 //Blinks out the IP address of the machine on the blue LED

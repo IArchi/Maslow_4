@@ -15,10 +15,6 @@ namespace WebUI {
         static void handle();
 
         ~WiFiServices();
-
-    private:
-        static bool          _updateCheckPending;
-        static unsigned long _updateCheckTime;
     };
 
     extern WiFiServices wifi_services;

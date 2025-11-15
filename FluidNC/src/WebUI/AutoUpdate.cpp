@@ -104,14 +104,14 @@ namespace WebUI {
                     // Look for tag_name if not found yet
                     if (!foundTagName && extractJsonString(window, "tag_name", info.tagName)) {
                         foundTagName = true;
-                        log_info("AutoUpdate: Found tag_name: " << info.tagName);
+                        log_debug("AutoUpdate: Found tag_name: " << info.tagName);
                     }
 
                     // Look for firmware.bin asset name
                     if (firmwareAssetNamePos == std::string::npos) {
                         firmwareAssetNamePos = window.find("\"name\":\"firmware.bin\"");
                         if (firmwareAssetNamePos != std::string::npos) {
-                            log_info("AutoUpdate: Found firmware.bin asset");
+                            log_debug("AutoUpdate: Found firmware.bin asset");
                         }
                     }
                     // If we found the asset name, look for its download URL after that position
@@ -119,7 +119,7 @@ namespace WebUI {
                         if (extractJsonString(window, "browser_download_url", info.firmwareUrl, firmwareAssetNamePos)) {
                             foundFirmware        = true;
                             firmwareAssetNamePos = std::string::npos;  // Reset for next search
-                            log_info("AutoUpdate: Found firmware.bin URL");
+                            log_debug("AutoUpdate: Found firmware.bin URL");
                         }
                     }
 
@@ -127,7 +127,7 @@ namespace WebUI {
                     if (webUIAssetNamePos == std::string::npos) {
                         webUIAssetNamePos = window.find("\"name\":\"index.html.gz\"");
                         if (webUIAssetNamePos != std::string::npos) {
-                            log_info("AutoUpdate: Found index.html.gz asset");
+                            log_debug("AutoUpdate: Found index.html.gz asset");
                         }
                     }
                     // If we found the asset name, look for its download URL after that position
@@ -135,13 +135,13 @@ namespace WebUI {
                         if (extractJsonString(window, "browser_download_url", info.webUIUrl, webUIAssetNamePos)) {
                             foundWebUI        = true;
                             webUIAssetNamePos = std::string::npos;  // Reset for next search
-                            log_info("AutoUpdate: Found index.html.gz URL");
+                            log_debug("AutoUpdate: Found index.html.gz URL");
                         }
                     }
 
                     // Early exit if we found everything
                     if (foundTagName && foundFirmware && foundWebUI) {
-                        log_info("AutoUpdate: Found all required information");
+                        log_debug("AutoUpdate: Found all required information");
                         break;
                     }
                 }
@@ -287,7 +287,7 @@ namespace WebUI {
                         int statusEnd   = line.indexOf(' ', statusStart);
                         if (statusStart > 0 && statusEnd > statusStart) {
                             response.httpStatus = line.substring(statusStart, statusEnd).toInt();
-                            log_info("AutoUpdate: " << logPrefix << " HTTP Status: " << response.httpStatus);
+                            log_debug("AutoUpdate: " << logPrefix << " HTTP Status: " << response.httpStatus);
                         }
                     }
 
@@ -391,7 +391,7 @@ namespace WebUI {
             return false;
         }
 
-        log_info("AutoUpdate: Checking for new release...");
+        log_debug("AutoUpdate: Checking for new release...");
 
         WiFiClientSecure client;
         client.setInsecure();  // For simplicity, disable certificate verification
@@ -427,7 +427,7 @@ namespace WebUI {
             return false;
         }
 
-        log_info("AutoUpdate: Latest release: " << releaseInfo.tagName);
+        log_debug("AutoUpdate: Latest release: " << releaseInfo.tagName);
 
         // Check if this is a newer version than current
         // Extract just the version tag from git_info (e.g., "v1.12 (HEAD-08ab30d2)" -> "v1.12")

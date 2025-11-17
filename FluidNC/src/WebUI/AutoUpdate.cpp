@@ -403,6 +403,7 @@ namespace WebUI {
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, updateURL, "Accept: application/vnd.github.v3+json\r\n", "API");
 
         if (!httpResp.headersParsed) {
+            client.stop();
             return false;
         }
 
@@ -480,6 +481,7 @@ namespace WebUI {
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, url, "", "WebUI download");
 
         if (!httpResp.headersParsed) {
+            client.stop();
             return false;
         }
 
@@ -534,6 +536,7 @@ namespace WebUI {
         HttpResponse httpResp = sendHttpRequestAndParseHeaders(&client, firmwareUrl, "", "Firmware");
 
         if (!httpResp.headersParsed) {
+            client.stop();
             return false;
         }
 

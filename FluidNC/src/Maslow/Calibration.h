@@ -64,6 +64,7 @@ public:
     void resetCalibrationState();
 
     void comply();
+    bool detectOrientation();
 
     void hold(unsigned long time);
 
@@ -121,10 +122,10 @@ private:
     int previousState = UNKNOWN;
 
     //Variables used by extending
-    bool extendedTL   = false;
-    bool extendedTR   = false;
-    bool extendedBL   = false;
-    bool extendedBR   = false;
+    bool extendedTL = false;
+    bool extendedTR = false;
+    bool extendedBL = false;
+    bool extendedBR = false;
 
     //Variables used by take slack
     bool takeSlack = false;
@@ -149,6 +150,12 @@ private:
     unsigned long lastCallToUpdate = millis();
     unsigned long extendCallTimer  = millis();
     unsigned long complyCallTimer  = millis();
+
+    //Variables used for orientation detection
+    unsigned long orientationDetectTimer   = 0;
+    double        tlStartPosition          = 0;
+    double        trStartPosition          = 0;
+    bool          orientationDetectionDone = false;
 
     //Used to overide and drive motors directly...dangerous
     bool          TLIOveride   = false;

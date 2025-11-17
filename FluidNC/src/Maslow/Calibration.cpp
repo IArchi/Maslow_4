@@ -162,8 +162,10 @@ bool Calibration::requestStateChange(int newState) {
                 //If we are at the first point we need to generate the grid before we can start
                 if (waypoint == 0) {
                     // Initialize calibration loop state for fresh start
-                    calibrationDirection  = UP;
-                    measurementInProgress = true;
+                    calibrationDirection     = UP;
+                    measurementInProgress    = true;
+                    orientationDetectionDone = false;  // Reset orientation detection flag for new calibration
+                    orientationDetectTimer   = 0;      // Reset timer so detection starts fresh
 
                     if (!generate_calibration_grid()) {  //Fail out if the grid cannot be generated
                         return false;
@@ -398,8 +400,8 @@ void Calibration::home() {
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
-        !calibrationInProgress && !takeSlack && !checkOverides()) {
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && !calibrationInProgress &&
+        !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }
 }
@@ -418,6 +420,16 @@ void Calibration::calibration_loop() {
         log_info("Calibration complete");
         return;
     }
+
+    // Run orientation detection at the start of calibration (waypoint == 0)
+    if (waypoint == 0 && !orientationDetectionDone) {
+        if (detectOrientation()) {
+            orientationDetectionDone = true;
+            log_info("Orientation detection complete, continuing with calibration");
+        }
+        return;  // Exit early while detection is in progress
+    }
+
     //Taking measurment once we've reached the point
     if (measurementInProgress) {
         if (take_measurement_avg_with_check(waypoint, calibrationDirection)) {  //Takes a measurement and returns true if it's done
@@ -1593,6 +1605,10 @@ void Calibration::resetCalibrationState() {
     calibrationDirection  = UP;    // Default direction
     measurementInProgress = true;  // Start by taking a measurement
 
+    // Reset orientation detection variables so it runs on next calibration
+    orientationDetectionDone = false;
+    orientationDetectTimer   = 0;
+
     // Deallocate memory if allocated
     deallocateCalibrationMemory();
 
@@ -1781,4 +1797,105 @@ void Calibration::handleMotorOverides() {
             Maslow.axisBL.stop();
         }
     }
+}
+
+/*
+ * Detects the orientation (horizontal vs vertical) of the machine
+ * by measuring TL and TR belt extension under gravity.
+ * Returns true when detection is complete.
+ */
+bool Calibration::detectOrientation() {
+    const unsigned long STARTUP_DELAY_MS                = 50;    // Delay before starting test to ensure stable starting position
+    const unsigned long ORIENTATION_DETECT_DURATION_MS  = 1500;  // Duration in ms to run orientation detection test (1.5 seconds)
+    const float         ORIENTATION_DETECT_THRESHOLD_MM = 35.0;  // Minimum extension in mm to detect vertical orientation
+    const int           ORIENTATION_DETECT_SPEED        = 716;   // PWM speed for motors (70% of max 1023)
+
+    // Initialize timer on first call
+    if (orientationDetectTimer == 0) {
+        orientationDetectTimer = millis();
+    }
+
+    unsigned long elapsedTime = millis() - orientationDetectTimer;
+
+    // Phase 1: Record starting positions (once at beginning)
+    if (!orientationDetectionDone && elapsedTime < STARTUP_DELAY_MS) {
+        // Only record and log on first cycle (elapsedTime will be very small)
+        if (elapsedTime < 10) {  // First few milliseconds only
+            tlStartPosition = Maslow.axisTL.getPosition();
+            trStartPosition = Maslow.axisTR.getPosition();
+        }
+        return false;
+    }
+
+    // Phase 2: Actively drive TL and TR motors outward at 70% speed for 1.5 seconds
+    // BL and BR motors are kept stopped (not powered)
+    // In vertical orientation, gravity assists and belts extend significantly
+    // In horizontal orientation, belts extend minimally despite motor drive
+    if (!orientationDetectionDone && elapsedTime >= STARTUP_DELAY_MS && elapsedTime < (STARTUP_DELAY_MS + ORIENTATION_DETECT_DURATION_MS)) {
+        // Drive TL and TR motors at 70% speed in extend direction
+        Maslow.axisTL.driveOut(ORIENTATION_DETECT_SPEED);
+        Maslow.axisTR.driveOut(ORIENTATION_DETECT_SPEED);
+        // Ensure BL and BR are stopped
+        Maslow.axisBL.stop();
+        Maslow.axisBR.stop();
+        return false;
+    }
+
+    // Phase 3: Measure extension and return to starting positions
+    if (!orientationDetectionDone && elapsedTime >= (STARTUP_DELAY_MS + ORIENTATION_DETECT_DURATION_MS)) {
+        double tlCurrentPosition = Maslow.axisTL.getPosition();
+        double trCurrentPosition = Maslow.axisTR.getPosition();
+
+        double tlExtension  = tlCurrentPosition - tlStartPosition;
+        double trExtension  = trCurrentPosition - trStartPosition;
+        double avgExtension = (tlExtension + trExtension) / 2.0;
+
+        log_info("Orientation detection results:");
+        log_info("  TL extension: " << tlExtension << " mm");
+        log_info("  TR extension: " << trExtension << " mm");
+        log_info("  Average extension: " << avgExtension << " mm");
+
+        // Determine orientation based on extension amount
+        bool detectedOrientation = HORIZONTAL;
+        if (avgExtension > ORIENTATION_DETECT_THRESHOLD_MM) {
+            detectedOrientation = VERTICAL;
+            log_info("Detected VERTICAL orientation (extension > " << ORIENTATION_DETECT_THRESHOLD_MM << " mm)");
+        } else {
+            detectedOrientation = HORIZONTAL;
+            log_info("Detected HORIZONTAL orientation (extension <= " << ORIENTATION_DETECT_THRESHOLD_MM << " mm)");
+        }
+
+        // Update the calibration object's orientation
+        // This will be reflected in the Maslow_vertical configuration parameter
+        orientation = detectedOrientation;
+        log_info("Orientation set to: " << (orientation == VERTICAL ? "VERTICAL" : "HORIZONTAL")
+                                        << " (Maslow_vertical=" << (orientation ? "true" : "false") << ")");
+
+        // Set targets to return to starting positions
+        Maslow.axisTL.setTarget(tlStartPosition);
+        Maslow.axisTR.setTarget(trStartPosition);
+
+        orientationDetectionDone = true;
+        return false;
+    }
+
+    // Phase 4: Return to starting positions
+    if (orientationDetectionDone) {
+        // Use PID to return to starting positions
+        Maslow.axisTL.recomputePID();
+        Maslow.axisTR.recomputePID();
+
+        double tlCurrentPosition = Maslow.axisTL.getPosition();
+        double trCurrentPosition = Maslow.axisTR.getPosition();
+
+        // Check if we've returned to starting positions (within 5mm tolerance)
+        if (fabs(tlCurrentPosition - tlStartPosition) < 5.0 && fabs(trCurrentPosition - trStartPosition) < 5.0) {
+            log_info("Orientation detection complete. Returned to starting positions.");
+            Maslow.axisTL.stop();
+            Maslow.axisTR.stop();
+            return true;
+        }
+    }
+
+    return false;
 }

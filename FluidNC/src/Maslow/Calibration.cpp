@@ -422,11 +422,8 @@ void Calibration::calibration_loop() {
     }
 
     // Run orientation detection at the start of calibration (waypoint == 0)
-    if (waypoint == 0 && !orientationDetectionDone) {
-        if (detectOrientation()) {
-            orientationDetectionDone = true;
-            log_info("Orientation detection complete, continuing with calibration");
-        }
+    // Continue calling detectOrientation() until it returns true (all phases complete)
+    if (waypoint == 0 && !detectOrientation()) {
         return;  // Exit early while detection is in progress
     }
 

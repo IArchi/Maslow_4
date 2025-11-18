@@ -1888,7 +1888,6 @@ bool Calibration::detectOrientation() {
 
         // Check if we've returned to starting positions (within 5mm tolerance)
         if (fabs(tlCurrentPosition - tlStartPosition) < 5.0 && fabs(trCurrentPosition - trStartPosition) < 5.0) {
-            log_info("Orientation detection complete. Returned to starting positions.");
             Maslow.axisTL.stop();
             Maslow.axisTR.stop();
             return true;

@@ -1809,9 +1809,19 @@ bool Calibration::detectOrientation() {
     const int           ORIENTATION_DETECT_SPEED        = 716;   // PWM speed for motors (70% of max 1023)
     const unsigned long MOTOR_SETTLING_PAUSE_MS         = 500;   // Pause duration after retraction to allow motors to settle
 
+    // Track whether the settling pause has completed
+    static bool settlingCompleted = false;
+
+    // If settling has already completed, return true immediately on subsequent calls
+    // This prevents re-running detection on subsequent calibration_loop iterations
+    if (settlingCompleted) {
+        return true;
+    }
+
     // Initialize timer on first call
     if (orientationDetectTimer == 0) {
         orientationDetectTimer = millis();
+        settlingCompleted      = false;  // Reset the flag when starting new detection
     }
 
     unsigned long elapsedTime = millis() - orientationDetectTimer;
@@ -1908,9 +1918,8 @@ bool Calibration::detectOrientation() {
             // Check if settling pause is complete
             if (millis() - settlingStartTime >= MOTOR_SETTLING_PAUSE_MS) {
                 log_info("Motor settling pause complete. Ready to proceed with belt tensioning.");
-                settlingStartTime        = 0;      // Reset for next calibration run
-                orientationDetectionDone = false;  // Reset state so function works correctly on next calibration
-                orientationDetectTimer   = 0;      // Reset timer so detection starts fresh next time
+                settlingStartTime = 0;     // Reset for next calibration run
+                settlingCompleted = true;  // Mark settling as complete to prevent re-running detection
                 return true;
             }
 

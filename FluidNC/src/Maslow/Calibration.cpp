@@ -1807,10 +1807,21 @@ bool Calibration::detectOrientation() {
     const unsigned long ORIENTATION_DETECT_DURATION_MS  = 1500;  // Duration in ms to run orientation detection test (1.5 seconds)
     const float         ORIENTATION_DETECT_THRESHOLD_MM = 35.0;  // Minimum extension in mm to detect vertical orientation
     const int           ORIENTATION_DETECT_SPEED        = 716;   // PWM speed for motors (70% of max 1023)
+    const unsigned long MOTOR_SETTLING_PAUSE_MS         = 500;   // Pause duration after retraction to allow motors to settle
+
+    // Track whether the settling pause has completed
+    static bool settlingCompleted = false;
+
+    // If settling has already completed, return true immediately on subsequent calls
+    // This prevents re-running detection on subsequent calibration_loop iterations
+    if (settlingCompleted) {
+        return true;
+    }
 
     // Initialize timer on first call
     if (orientationDetectTimer == 0) {
         orientationDetectTimer = millis();
+        settlingCompleted      = false;  // Reset the flag when starting new detection
     }
 
     unsigned long elapsedTime = millis() - orientationDetectTimer;
@@ -1888,9 +1899,31 @@ bool Calibration::detectOrientation() {
 
         // Check if we've returned to starting positions (within 5mm tolerance)
         if (fabs(tlCurrentPosition - tlStartPosition) < 5.0 && fabs(trCurrentPosition - trStartPosition) < 5.0) {
+            // Phase 5: Power down all motors and pause to allow settling
+            // This prevents current spikes when immediately trying to pull belts tight in horizontal orientation
+            static unsigned long settlingStartTime = 0;
+
+            // Initialize settling timer on first entry to this phase
+            if (settlingStartTime == 0) {
+                settlingStartTime = millis();
+                log_info("Motors returned to starting position. Beginning settling pause...");
+            }
+
+            // Power down all four motors during the settling pause
             Maslow.axisTL.stop();
             Maslow.axisTR.stop();
-            return true;
+            Maslow.axisBL.stop();
+            Maslow.axisBR.stop();
+
+            // Check if settling pause is complete
+            if (millis() - settlingStartTime >= MOTOR_SETTLING_PAUSE_MS) {
+                log_info("Motor settling pause complete. Ready to proceed with belt tensioning.");
+                settlingStartTime = 0;     // Reset for next calibration run
+                settlingCompleted = true;  // Mark settling as complete to prevent re-running detection
+                return true;
+            }
+
+            return false;  // Continue settling pause
         }
     }
 

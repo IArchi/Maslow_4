@@ -1908,7 +1908,9 @@ bool Calibration::detectOrientation() {
             // Check if settling pause is complete
             if (millis() - settlingStartTime >= MOTOR_SETTLING_PAUSE_MS) {
                 log_info("Motor settling pause complete. Ready to proceed with belt tensioning.");
-                settlingStartTime = 0;  // Reset for next calibration run
+                settlingStartTime        = 0;      // Reset for next calibration run
+                orientationDetectionDone = false;  // Reset state so function works correctly on next calibration
+                orientationDetectTimer   = 0;      // Reset timer so detection starts fresh next time
                 return true;
             }
 

@@ -2,7 +2,7 @@
 
 This guide covers the essential features of your Maslow 4 CNC machine's web interface, including connecting to WiFi, uploading files, and running your first cuts.
 
-> **Note:** Images for this guide should be sourced from [the official user guide](https://www.maslowcnc.com/user-guide).
+![Maslow Web Interface](images/guide-01.png)
 
 ## Connecting to Your Maslow
 
@@ -14,9 +14,13 @@ When powered on, your Maslow 4 creates a WiFi network named `maslow`. The defaul
 
 Connect your computer, smartphone, or tablet to the `maslow` WiFi network.
 
+![WiFi Connection](images/guide-02.jpg)
+
 ### Step 3: Access the Web Interface
 
 The interface may auto-open when you connect. If not, enter `192.168.0.1` in your browser's address bar.
+
+![Browser Access](images/guide-03.png)
 
 ## Web Interface Overview
 
@@ -31,6 +35,10 @@ The main dashboard displays:
 - Connection status
 - Quick access to common actions
 
+![Main Dashboard](images/guide-04.png)
+
+![Dashboard Overview](images/guide-05.png)
+
 ### Actions Menu
 
 The Actions menu provides access to:
@@ -39,6 +47,8 @@ The Actions menu provides access to:
 - **Move Machine:** Manual jog controls for X, Y, and Z axes
 - **Calibration:** Run the calibration wizard
 - **Run G-code:** Execute uploaded G-code files
+
+![Actions Menu](images/guide-06.png)
 
 ## Configuring WiFi (Optional)
 
@@ -51,6 +61,8 @@ You can configure Maslow to join your home WiFi for networked access from any de
 3. Enter your home WiFi credentials
 4. Save and restart the machine
 
+![WiFi Configuration](images/guide-10.png)
+
 ## Uploading and Running G-code Files
 
 ### Uploading Files
@@ -60,6 +72,8 @@ You can configure Maslow to join your home WiFi for networked access from any de
 3. Select your `.nc` G-code file
 4. Wait for the upload to complete
 
+![File Upload](images/guide-12.png)
+
 ### Running a G-code File
 
 1. Select the uploaded file from the list
@@ -67,9 +81,15 @@ You can configure Maslow to join your home WiFi for networked access from any de
 3. Click "Run" to start the job
 4. Monitor progress from the dashboard
 
+![Running G-code](images/guide-13.png)
+
+![Job Progress](images/guide-14.png)
+
 ### Visualizing Tool Paths
 
 The web interface can display a visual preview of the tool path, helping you verify the job before running.
+
+![Tool Path Visualization](images/guide-15.png)
 
 ## Manual Machine Controls
 
@@ -81,6 +101,10 @@ Use the arrow buttons to manually move the machine:
 - **Y-axis:** Up and down movement (on vertical setup)
 - **Z-axis:** Router depth control
 
+![Jog Controls](images/guide-16.png)
+
+![Movement Controls](images/guide-17.png)
+
 ### Zeroing Position
 
 Set the current position as zero for any axis:
@@ -89,12 +113,24 @@ Set the current position as zero for any axis:
 2. Click the "Zero" button for the appropriate axis
 3. Confirm the new zero position
 
+![Zeroing Position](images/guide-18.png)
+
 ### Spindle Control
 
 Control the router/spindle using built-in macros:
 
 - **M3:** Spindle ON
 - **M5:** Spindle OFF
+
+![Spindle Control](images/guide-19.png)
+
+## Extending and Retracting Belts
+
+The belts can be extended or retracted using the controls in the interface.
+
+![Belt Controls](images/guide-08.gif)
+
+![Belt Extension](images/guide-26.gif)
 
 ## Updating Firmware
 
@@ -115,6 +151,10 @@ Keeping your firmware up to date ensures you have the latest features and bug fi
 
 5. Restart the machine
 
+![Firmware Update](images/guide-20.png)
+
+![Update Progress](images/guide-21.png)
+
 > **Note:** If updating from a version before 1.0 to after 1.0, a USB cable is required. See the official documentation for USB update instructions.
 
 ## Calibration
@@ -127,6 +167,12 @@ Access the calibration wizard from the Actions menu. The wizard will guide you t
 4. Calibration grid setup
 5. Automated calibration process
 
+![Calibration Wizard](images/guide-22.png)
+
+![Calibration Steps](images/guide-23.png)
+
+![Calibration Grid](images/guide-24.png)
+
 For detailed calibration instructions, see [Putting It All Together](../putting-it-all-together-4-1/README.md).
 
 ## Tips for Best Results
@@ -136,6 +182,8 @@ For detailed calibration instructions, see [Putting It All Together](../putting-
 - **Start Slow:** Begin with conservative feed rates and speeds until you're familiar with the machine
 - **Test Cuts:** Always do a test cut on scrap material before cutting your final piece
 - **Dust Collection:** Connect a shop vacuum to the dust port for cleaner operation
+
+![Cutting Tips](images/guide-25.png)
 
 ## Troubleshooting
 
@@ -156,6 +204,8 @@ For detailed calibration instructions, see [Putting It All Together](../putting-
 - Check all cable connections
 - Verify power is connected
 - Check the serial connection in the web interface
+
+![Troubleshooting](images/guide-27.png)
 
 ## Resources
 

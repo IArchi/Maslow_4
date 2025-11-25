@@ -2,7 +2,7 @@
 
 This guide will walk you through assembling the sled for your Maslow 4.1 CNC. The sled is the platform that holds your router and moves across the work surface.
 
-> **Note:** Images for this guide should be sourced from [the official assembly guide](https://www.maslowcnc.com/assembling-the-sled-4-1).
+![Sled Assembly Overview](images/sled-01.jpg)
 
 ## Tools and Parts Needed
 
@@ -22,11 +22,19 @@ This guide will walk you through assembling the sled for your Maslow 4.1 CNC. Th
 
 Use the eight small bolts to attach the stepper motors to the sled. Insert the bolts through the holes in the sled and screw them into the threaded holes in each stepper motor.
 
+![Stepper Motor Parts](images/sled-02.jpg)
+
+![Stepper Motor Installation](images/sled-03.jpg)
+
 > **Tip:** Orient each motor so that the cord faces toward the outer edge of the sled for easy cable routing.
 
 ## Step 2: Attach the Dust Cover
 
 Flip the sled upside down. Drop the nuts down from the top and insert the bolts from the bottom to secure the dust cover. Use six regular bolts and nuts for this step.
+
+![Dust Cover](images/sled-04.jpg)
+
+![Dust Cover Installation](images/sled-05.jpg)
 
 Make sure the dust cover fits snugly over the stepper motors and wiring.
 
@@ -34,11 +42,19 @@ Make sure the dust cover fits snugly over the stepper motors and wiring.
 
 If the linear rod clamps are pre-installed due to shipping, remove them first. Insert the linear rods into their openings on either side of the sled.
 
+![Linear Rods](images/sled-06.jpg)
+
+![Linear Rod Installation](images/sled-07.jpg)
+
 > **Tip:** A gentle tap with a hammer can help seat them fully, but don't use excessive force.
 
 ## Step 4: Secure Linear Rods with Clamps
 
 Place the linear rod clamps around each rod. Attach each clamp with four bolts, for a total of eight bolts.
+
+![Linear Rod Clamps](images/sled-08.jpg)
+
+![Clamps Installed](images/sled-09.jpg)
 
 > **Important:** Tighten bolts evenly, moving around in a circle. Only snug them—do not overtighten, as it can crack the sled or clamp extrusions.
 
@@ -47,6 +63,10 @@ Place the linear rod clamps around each rod. Attach each clamp with four bolts, 
 - Double-check the orientation of stepper motors and linear rods.
 - Ensure all bolts are secure but not overtightened.
 - Verify that the cords are properly routed away from moving parts.
+
+![Completed Sled](images/sled-10.jpg)
+
+![Sled Ready](images/sled-11.jpg)
 
 ## Tips and Troubleshooting
 

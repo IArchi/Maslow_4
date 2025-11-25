@@ -2,7 +2,7 @@
 
 This guide will walk you through the final assembly steps for your Maslow 4.1 CNC, including connecting all the components, wiring, and initial calibration.
 
-> **Note:** Images for this guide should be sourced from [the official assembly guide](https://www.maslowcnc.com/putting-it-all-together-1).
+![Complete Maslow 4.1](images/together-01.jpg)
 
 ## Prerequisites
 
@@ -16,9 +16,13 @@ Before proceeding, ensure you have completed:
 
 Place the router assembly onto the sled, aligning the power cord with the dust collection port outlet. The router is mounted at four points: two on Z-axis motor shafts and two sliding via the linear ball bearings.
 
+![Router to Sled](images/together-02.jpg)
+
 ## Step 2: Attach Arms to Sled
 
 The four arms rotate around the router body and attach between two clamps. Join all unsupported parts using bolts, tightening gently and gradually.
+
+![Arms to Sled](images/together-03.jpg)
 
 ## Step 3: Connect the Controller
 
@@ -35,6 +39,8 @@ Plug the power supply into the controller after all mechanical parts are connect
 ## Step 4: Set Up Anchor Points
 
 The four steel-reinforced belts run from each arm to anchor points on the frame. Maslow CNC needs four strong anchor points on a flat, rigid surface.
+
+![Anchor Points](images/together-04.jpg)
 
 ### Anchor Requirements
 

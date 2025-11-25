@@ -102,7 +102,7 @@ Keeping your firmware up to date ensures you have the latest features and bug fi
 
 ### Firmware Update Process
 
-1. Download the latest firmware from [GitHub Releases](https://github.com/BarbourSmith/FluidNC/releases):
+1. Download the latest firmware from [GitHub Releases](https://github.com/MaslowCNC/Maslow_4/releases):
    - `firmware.bin`
    - `index.html.gz`
    - `maslow.yaml`

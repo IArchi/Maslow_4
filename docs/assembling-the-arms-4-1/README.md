@@ -13,7 +13,7 @@ This guide will walk you through the process of assembling the arms for your Mas
 - Four encoder board magnets
 - DC drive motor
 - Encoder board
-- Bolts (without thread locker)
+- Bolts (without threadlocker)
 - Locking nuts
 - Drive gear, idler gear, bearings, belt guards
 - Super glue (for non-structural vibration protection)
@@ -34,7 +34,7 @@ Each roller has a shallow recess where the magnet goes. Use a small drop of glue
 
 ## Step 3: Install Bolts and Nuts in Arm Halves
 
-In one arm half, insert six bolts (without blue thread locker). Use a non-lock nut to pull them into place, then remove the nut after. In the second arm half, insert locking nuts into the hex-shaped recesses. Use a bolt from the opposite side to pull each nut into place, then remove the bolt.
+In one arm half, insert six bolts (without blue threadlocker). Use a non-lock nut to pull them into place, then remove the nut after. In the second arm half, insert locking nuts into the hex-shaped recesses. Use a bolt from the opposite side to pull each nut into place, then remove the bolt.
 
 After this step, one arm half should have only bolts, and the other should have only nuts.
 

@@ -330,6 +330,7 @@ var jobEnvelopePoints = []; // Simplified convex hull points (up to 100)
 
 var bboxIsSet = false;
 var jobBboxIsSet = false;
+var initialMovesForBbox = true; // Track if we're still in initial positioning phase
 
 var resetBbox = function() {
     tpBbox.min.x = Infinity;
@@ -348,6 +349,7 @@ var resetBbox = function() {
     jobBbox.max.y = -Infinity;
     jobBbox.max.z = -Infinity;
     jobBboxIsSet = false;
+    initialMovesForBbox = true;
     
     // Reset toolpath points
     jobToolpathPoints = [];
@@ -918,19 +920,31 @@ var bboxHandlers = {
         tpBbox.max.z = Math.max(tpBbox.max.z, start.z, end.z);
         bboxIsSet = true;
         
-        // Update job bounding box in world coordinates - exclude G0 rapid moves
-        // Only include the end position to avoid including the starting position from rapid moves
+        // Update job bounding box in world coordinates
+        // Exclude G0 rapid moves and skip initial positioning moves
+        // Only start tracking once actual cutting (non-G0 XY movement) begins
         if (modal.motion !== 'G0') {
-            jobBbox.min.x = Math.min(jobBbox.min.x, end.x);
-            jobBbox.min.y = Math.min(jobBbox.min.y, end.y);
-            jobBbox.min.z = Math.min(jobBbox.min.z, end.z);
-            jobBbox.max.x = Math.max(jobBbox.max.x, end.x);
-            jobBbox.max.y = Math.max(jobBbox.max.y, end.y);
-            jobBbox.max.z = Math.max(jobBbox.max.z, end.z);
-            jobBboxIsSet = true;
+            // Check if this is actual XY cutting movement (not just Z or feed rate change)
+            var hasXYMovement = (start.x !== end.x || start.y !== end.y);
             
-            // Collect end point for envelope calculation (start may be from rapid move)
-            jobToolpathPoints.push({x: end.x, y: end.y});
+            if (hasXYMovement) {
+                // Once we have actual XY cutting movement, we're no longer in initial moves
+                initialMovesForBbox = false;
+            }
+            
+            // Only add to job bounds once we've started actual cutting
+            if (!initialMovesForBbox) {
+                jobBbox.min.x = Math.min(jobBbox.min.x, end.x);
+                jobBbox.min.y = Math.min(jobBbox.min.y, end.y);
+                jobBbox.min.z = Math.min(jobBbox.min.z, end.z);
+                jobBbox.max.x = Math.max(jobBbox.max.x, end.x);
+                jobBbox.max.y = Math.max(jobBbox.max.y, end.y);
+                jobBbox.max.z = Math.max(jobBbox.max.z, end.z);
+                jobBboxIsSet = true;
+                
+                // Collect end point for envelope calculation
+                jobToolpathPoints.push({x: end.x, y: end.y});
+            }
         }
     },
     addArcCurve: function(modal, start, end, center, extraRotations) {
@@ -1132,10 +1146,11 @@ var bboxHandlers = {
 	}
 	
 	// Now calculate world coordinate bounding box for job bounds
-	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
-	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
-	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
-	var world_minY = world_my ? center.y - world_radius : Math.min(start.y, end.y);
+	// Only use end position in fallback to exclude start from rapid moves
+	var world_maxX = world_px ? center.x + world_radius : end.x;
+	var world_maxY = world_py ? center.y + world_radius : end.y;
+	var world_minX = world_mx ? center.x - world_radius : end.x;
+	var world_minY = world_my ? center.y - world_radius : end.y;
 
 	var minZ = Math.min(start.z, end.z);
 	var maxZ = Math.max(start.z, end.z);
@@ -1156,6 +1171,9 @@ var bboxHandlers = {
 	tpBbox.max.y = Math.max(tpBbox.max.y, p0.y, p1.y, p2.y, p3.y, p4.y, p5.y, p6.y, p7.y);
 	tpBbox.max.z = Math.max(tpBbox.max.z, maxZ);
         bboxIsSet = true;
+        
+        // Arc moves (G2/G3) are always cutting moves, so mark that cutting has started
+        initialMovesForBbox = false;
         
         // Update job bounding box in world coordinates for arc
         jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);

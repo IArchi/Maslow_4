@@ -919,17 +919,17 @@ var bboxHandlers = {
         bboxIsSet = true;
         
         // Update job bounding box in world coordinates - exclude G0 rapid moves
+        // Only include the end position to avoid including the starting position from rapid moves
         if (modal.motion !== 'G0') {
-            jobBbox.min.x = Math.min(jobBbox.min.x, start.x, end.x);
-            jobBbox.min.y = Math.min(jobBbox.min.y, start.y, end.y);
-            jobBbox.min.z = Math.min(jobBbox.min.z, start.z, end.z);
-            jobBbox.max.x = Math.max(jobBbox.max.x, start.x, end.x);
-            jobBbox.max.y = Math.max(jobBbox.max.y, start.y, end.y);
-            jobBbox.max.z = Math.max(jobBbox.max.z, start.z, end.z);
+            jobBbox.min.x = Math.min(jobBbox.min.x, end.x);
+            jobBbox.min.y = Math.min(jobBbox.min.y, end.y);
+            jobBbox.min.z = Math.min(jobBbox.min.z, end.z);
+            jobBbox.max.x = Math.max(jobBbox.max.x, end.x);
+            jobBbox.max.y = Math.max(jobBbox.max.y, end.y);
+            jobBbox.max.z = Math.max(jobBbox.max.z, end.z);
             jobBboxIsSet = true;
             
-            // Collect points for envelope calculation
-            jobToolpathPoints.push({x: start.x, y: start.y});
+            // Collect end point for envelope calculation (start may be from rapid move)
             jobToolpathPoints.push({x: end.x, y: end.y});
         }
     },
@@ -1166,9 +1166,9 @@ var bboxHandlers = {
         jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
         jobBboxIsSet = true;
         
-        // Collect arc points for envelope calculation - exclude G0 rapid moves
+        // Collect arc points for envelope calculation (skip start point - it may be from rapid move)
         if (modal.motion !== 'G0') {
-            // Sample points along the arc
+            // Sample points along the arc (excluding start point)
             var deltaX1 = start.x - center.x;
             var deltaY1 = start.y - center.y;
             var radius = Math.hypot(deltaX1, deltaY1);
@@ -1184,12 +1184,12 @@ var bboxHandlers = {
             theta2 -= Math.PI * 2;
         }
             
-            // Sample arc with enough points to capture its shape
+            // Sample arc with enough points to capture its shape (start at i=1 to skip start point)
             var deltaTheta = theta2 - theta1;
             var numSamples = Math.max(5, Math.ceil(Math.abs(deltaTheta) / (Math.PI / 8))); // At least 5 samples
             var dt = deltaTheta / numSamples;
             
-            for (var i = 0; i <= numSamples; i++) {
+            for (var i = 1; i <= numSamples; i++) {
                 var theta = theta1 + i * dt;
                 var px = center.x + radius * Math.cos(theta);
                 var py = center.y + radius * Math.sin(theta);

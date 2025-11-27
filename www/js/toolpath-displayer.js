@@ -1172,17 +1172,31 @@ var bboxHandlers = {
 	tpBbox.max.z = Math.max(tpBbox.max.z, maxZ);
         bboxIsSet = true;
         
-        // Arc moves (G2/G3) are always cutting moves, so mark that cutting has started
+        // Arc moves (G2/G3) are always cutting moves
+        // Check if this is the first cutting move - if so, we need to be careful about the start position
+        var wasInitialMoves = initialMovesForBbox;
         initialMovesForBbox = false;
         
         // Update job bounding box in world coordinates for arc
-        jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
-        jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
-        jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
-        jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
-        jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
-        jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
-        jobBboxIsSet = true;
+        // Only add bounds if we were already past initial moves (to exclude arc starting from rapid position)
+        if (!wasInitialMoves) {
+            jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
+            jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
+            jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
+            jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
+            jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
+            jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
+            jobBboxIsSet = true;
+        } else {
+            // For the first arc, only include the end point (not the start from rapid)
+            jobBbox.min.x = Math.min(jobBbox.min.x, end.x);
+            jobBbox.min.y = Math.min(jobBbox.min.y, end.y);
+            jobBbox.min.z = Math.min(jobBbox.min.z, end.z);
+            jobBbox.max.x = Math.max(jobBbox.max.x, end.x);
+            jobBbox.max.y = Math.max(jobBbox.max.y, end.y);
+            jobBbox.max.z = Math.max(jobBbox.max.z, end.z);
+            jobBboxIsSet = true;
+        }
         
         // Collect arc points for envelope calculation (skip start point - it may be from rapid move)
         if (modal.motion !== 'G0') {

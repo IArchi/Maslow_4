@@ -13,7 +13,7 @@ Forums:
 [https://forums.maslowcnc.com/](url)
 
 
-This is a rough draft. For more info got to [www.maslow.cnc](url)
+This is a rough draft. For more info go to [www.maslow.cnc](url)
 
 
 ![LogoWithR](https://github.com/user-attachments/assets/66afe41d-6827-4a69-80c6-8bc330a144e1)

@@ -127,7 +127,7 @@ To edit a file here navigate to the file you want to edit, click on the little p
 
 # Future of the project
 
-Currently the focus is on making the Maslow4 run quickly and smoothly mostly through firmware development. Several community members are playing with different 3d printed adaptations of the main parts.  The goal would be to keep developing the software now and then have an updated hardware kit in several years. (written 2025) 
+Currently the focus is on making the Maslow4 run quickly and easily mostly through firmware development. Community members are playing with different 3d printed adaptations of the main parts as well as both larger and smaller frames. The goal would be to keep developing the software now and then have an updated hardware kit in several years. A sister project to Maslow is Abundance, which is working towards being an open source web browser based parametric cad system that could feed directly to Maslow.[ https://abundance.maslowcnc.com/](url) (written 2025) 
 
 ---
 # MANUAL

@@ -221,23 +221,25 @@ Many of these are available in the not shop on the Maslow website.
   
   **When you make a Maslow you are not alone**, the **forums** are the places to look for wisdom, ask questions and ask for help, get and share project ideas propose and develop new functionality and celebrate successes. As a community it is imporant to be polite, to be gentle with criticism and mostly just help if you can. 
 
-  
-    You can read forums without an account but to comment or ask questions you will need an account. 
-    Click on the M logo on the top left to get to the overall list of topics. It is good to search first for a thread to add to in case your question or comment is already under discussion.  If you don't see something relevant then you can make a new topic.  Try to tag the topic with categories to help others find it and understand what you are discussing. 
 
-    
+You can read forums without an account but to comment or ask questions you will need an account. 
+
+
+Click on the M logo on the top left to get to the overall list of topics. It is good to search first for a thread to add to in case your question or comment is already under discussion.  If you don't see something relevant then you can make a new topic.  Try to tag the topic with categories to help others find it and understand what you are discussing. 
+
+
     (link to forum) 
     (list of main topics) 
 
-    
-    Click on your circle and name in the top right to see what activity has been connected with you and your discussions.  You can have a public topic, like and boost converstions with hearts, and send private messages with the mail funciton.  As you become more involved the automatic forum robot will send you messages giving you more priveleges, helpful training, and badges for forum actions as you figure them out. 
+
+Click on your circle and name in the top right to see what activity has been connected with you and your discussions.  You can have a public topic, like and boost converstions with hearts, and send private messages with the mail funciton.  As you become more involved the automatic forum robot will send you messages giving you more priveleges, helpful training, and badges for forum actions as you figure them out. 
 
 
  **Github** is the technical knowledge repository where Maslow is stored and new versions and functions are developed. It is also where as a new user you will download the firmware files.  It is also where Abundance, Maslow's sister project of paramaterized CAD/CAM is being deveoped.  You can download the firmware files and manual there without an account but to participate or use Abundance you will need to create a github account. Github was designed for computer programming projects but can hold other things. Github has a resident AI called copilot primarily designed for computer coding which can help you to make contributions. 
     (links and instructions to find Maslow's stuff in Github) 
 
 # Safety and hazards
-Power tools are inherently powerful and can be dangerous.  This is an open source project created and maintained by amatuer enthusiasts with designs that have not been tested or evaluated for saftey. Follow any instructions here at your own risk and using your own judgement.  The authors of this project make no claims about the saftey or suitability of the designs, ideas, or instructions. Any safety advice is provided in good faith. Use and modify the informatino in this project at your own risk. 
+Power tools are inherently powerful and can be dangerous.  This is an open source project created and maintained by amatuer enthusiasts with designs that have not been tested or evaluated for safety. Follow any instructions here at your own risk and using your own judgement.  The authors of this project make no claims about the saftey or suitability of the designs, ideas, or instructions. Any safety advice is provided in good faith. Use and modify the informatino in this project at your own risk. 
 
 Below is a list of common sense hazards for you to consider
 

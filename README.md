@@ -14,13 +14,13 @@ This is a rough draft. For more info got to [www.maslow.cnc](url)
 
 ![LogoWithR](https://github.com/user-attachments/assets/66afe41d-6827-4a69-80c6-8bc330a144e1)
 
-## INTRO
+# INTRO
 
 
 <img width="2500" height="1875" alt="image" src="https://github.com/user-attachments/assets/ed9fcca8-0106-420d-b355-8df55d405ab9" />
 
 
-# What is it? 
+## What is it? 
 Maslow is a DIY 3 axis (x,y,z) computer numberical control (CNC) robot that controls a router to cut wood, plastic or other flat material.  It has been designed to work well on a 4x8 foot sheet of material or smaller and it is able to sculpt and cut vertically about 30 cm or 2.5 inches deep.  Maslow is designed around a small sled that carries the router and is anchored to an external frame by long belts that it uses to pull itself around.  This means that the core robot is very portable. It does require a stiff frame or anchors external to the robot.  It rides on top of the work being cut so it works well on cutting and sculpting shallow shapes but not giant bathtub sized hollows. Maslow is focused on accessiblility. 
 
 Maslow's control software is a local website hosted inside the machine that you can access through USBC cable, Wifi direct to the machine, or through your local wifi network. It can be used with a phone or a computer. It recieves standard Gcode machine instruction files (.nc)  You will need cnc design software that can generate Gcode. There are many free or fancy options. 
@@ -35,7 +35,7 @@ Donate to FluidNC:
 Maslow4 is different from a gantry designed CNC router which are designed around a table that fits the material inside and then the robot moves forward and back on rails. It is much much less expensive than a gantry machine. It is in general less accurate than a good gantry machine. Gantry machines can also be 4 or 5 axis machines in which they can rotate the material in order to cut it at different angles. 
 
 
-Maslow is a project developed by Barbour Smith and a community of vollunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  If making your own portable blade weilding robot in an enthusiastic online community sounds fun, then you are probably in the right place. 
+Maslow is a project developed by Barbour Smith and a community of vollunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  **If making your own portable blade weilding robot in an enthusiastic online community sounds fun, then you are probably in the right place.** 
 
 <img width="2500" height="1667" alt="image" src="https://github.com/user-attachments/assets/d57a103a-4586-4fb7-8b92-709e616d6aef" />
 
@@ -61,6 +61,7 @@ Ian_ab?Programming?
 
 # How to get involved
 Maslow is a truly open source project. The forums are active with helpers and anybody can add to the discussions there or add to the project here in the github repo.  You can't mess things up here as final commits have to be checked.
+The creative community needs to share fun projects, fun adapatations of the robot and support frames, hacks and troubleshooting tips, programming fixes, and documentation. 
 
 
 /Firmware is edited and developed by volunteers, you can try too, the Github Maslow AI can be asked to change the programming. 
@@ -72,7 +73,7 @@ Three D Printing files and parts lists will soon be in the repo for downloading 
 /docs holds documentation and instructions.  If you have a good idea to make things more clear or help other people understand the machine you could add something there
 
 
-To edit a file here navigate to the file you want to edit, click on the little pencil in the top corner and it will open an editing window as a branch of the main repo. The pages are written in markdown language a kind of simple word processor. Markdown instructions are in a link at the bottom of the editing window.  Once you have edited the document you can commit changes and then make a pull request asking for it to be written back to the main branch.  
+To edit a file here navigate to the file you want to edit, open it, then click on the little pencil in the top corner and it will open an editing window. When you are editing you are making a temporary branch of the main repo. This branch is a copy of the main repo that can be compared and if useful written back into the main repo. The human readable document pages are written in markdown language, a kind of simple word processor. Markdown instructions are in a link at the bottom of the editing window.  Once you have edited the document you can commit changes and then make a pull request asking for it to be written back to the main branch.  
 
 
 # Future of the project

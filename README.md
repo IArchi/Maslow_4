@@ -29,9 +29,15 @@ Maslow is a DIY 3 axis (x,y,z) computer numberical control (CNC) robot that cont
 
 Maslow's control software is a local website hosted inside the machine that you can access through USBC cable, Wifi direct to the machine, or through your local wifi network. It can be used with a phone or a computer. It recieves standard Gcode machine instruction files (.nc)  You will need cnc design software that can generate Gcode. There are many free or fancy options. 
 
-The control software is built on top of FluidNC an open source cnc control software for ESP32 computers. Maslow4's pcb is an esp32 computer. The FluidNC project wiki is here: 
-http://wiki.fluidnc.com/
-Github:https://github.com/bdring/FluidNC
+The control software is built on top of FluidNC an open source cnc control software for ESP32 computers. Maslow4's pcb is an esp32 computer.
+
+
+The FluidNC project wiki is here: [http://wiki.fluidnc.com/](url)
+
+
+Github:[https://github.com/bdring/FluidNC](url)
+
+
 Donate to FluidNC:
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=8DYLB6ZYYDG7Y)
 

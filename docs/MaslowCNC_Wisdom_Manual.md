@@ -260,7 +260,7 @@ Below is a list of common sense hazards for you to consider
 - Do not touch the machine while it is moving or turned on.
 - Have a fire suppression plan and equipment.
 - Consider how you will cut power to the machine in an emergency.
-- Check for lose parts, tools, keys, and if the blades are in an appropriate place before providing power to the machine. 
+- Check for loose parts, tools, keys, and if the blades are in an appropriate place before providing power to the machine. 
 - Train yourself and anyone who will come in contact with the machine on your saftely plan. 
 
 CNC routers are nice in that they may be operated at a greater distance than a handheld router.  Many of the vibration, inhalation, and flying debris dangers are less with a robotic controler.  CNC machines are dangerous when people leave them unattended and beacause there are more motors, more electrical connections, and more moving parts. 

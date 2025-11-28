@@ -9,10 +9,15 @@ As you plan Dlang has made a very useful and cool frame calculator here:
 It shows green areas where the Maslow can move accurately and yellow and red areas where it will start to have trouble. These are determined partly by small angles and high tension near the edges and partly by the arms carrying the motors of the Maslow bumping into the upright pilars of the maslow when the angle between them gets too small. 
 
 ## Frame requirements:
-- The Four anchor points have to fit within a 5 meter by 5 meter square.  It is possible to go bigger with frame extensions which are sticks that attach to the ends of the belts.
+- The Four anchor points have to fit within a 5 meter by 5 meter square.  It is possible to go bigger with frame extensions which are sticks that attach to the ends of the belts. It is also important to make sure the belts have enough length to go all the way across the moving space. 
 - The anchors need to have free space in front of a 9.5mm or similar to that vertical removable bolt or pin. The belts and belt ends need to be able to swing freely back and forth without hitting things as the maslow moves around.
 - The anchor pins should be easy to pull in and out or slide the belt anchor off the top of them.
-- The anchor pins should not allow the belt ends to slide up and down vertically, you want just enough space on the pin for the belt end to freely move.
+- The anchor pins should not allow the belt ends to slide up and down vertically, you want just enough space on the pin for the belt end to freely rotate.
 - It is better if the anchor pins are either in the same plane with the top of the wasteboard that the material to be cut sits on. Even better than that would be if each was in a plane paralell to the sled base straight out from it's position on the Maslow robot. (if the belts came out perfectly straight from the robot)  Anchors will still work if they are below the wasteboard or up and down a bit but it will affect the accuracy of the robot's movements.
 - The anchors need to be solid and not move in any direction. They will be pulled on by the machine with many newtons or pounds of force.  The anchors should not flex the frame that they are attached to.  The more solid the better.
-- The frame should include a wasteboard that can be replaced and cut into underneath the intended cutting area. 
+- The frame should include a wasteboard that can be replaced and cut into underneath the intended cutting area.
+- The frame should fully support the material to be cut.  How will the material be anchored to the frame? You never want the router bit to hit anything steel.  Brass screws, Alluminum screws, plastic pins, bamboo pins, wooden clamps, double sided tape, carpet friction pad, steel screws well away from the cutting area all work.
+- Frames can lie horizontal all the way up to 15 degrees from vertical. Maslow needs a little weight to pull it against the project
+- Frames may need to have room for extra wood around the outside of the cutting area at the level of the cutting surface. For cuts that go right to the edge Maslow will tip over when the sled is not supported.
+
+  

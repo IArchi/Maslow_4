@@ -19,6 +19,14 @@ If you don't know programming you can still share your projects and designs and 
 <img width="441" height="363" alt="image" src="https://github.com/user-attachments/assets/2c17bc64-e913-40f7-8378-0837fbae425e" />
 Click on the **Create an account** link near the bottom of the page. Follow the instructions there.
 
-2. 
+2. Make sure you are in
+  [https://github.com/MaslowCNC/Maslow_4](url)
+<img width="918" height="993" alt="image" src="https://github.com/user-attachments/assets/f6b32284-b403-4327-bcd8-cccaceaa7304" />
+
+3. To add an entry to the frame library click on the folder labeled **docs**
+4. Scroll down to the **FrameLibrary** document and click on it's name.
+5. 
+
+   
 
 

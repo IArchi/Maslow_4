@@ -25,7 +25,7 @@ This is a rough draft. For more info go to [www.maslow.cnc](url)
 
 
 ## What is it? 
-Maslow is a DIY 3 axis (x,y,z) computer numberical control (CNC) robot that controls a router to cut wood, plastic or other flat material.  It has been designed to work well on a 4x8 foot sheet of material or smaller and it is able to sculpt and cut vertically about 30 cm or 2.5 inches deep.  Maslow is designed around a small sled that carries the router and is anchored to an external frame by long belts that it uses to pull itself around.  This means that the core robot is very portable. It does require a stiff frame or anchors external to the robot.  It rides on top of the work being cut so it works well on cutting and sculpting shallow shapes but not giant bathtub sized hollows. Maslow is focused on accessiblility. 
+Maslow is a DIY 3 axis (x,y,z) computer numerical control (CNC) robot that controls a router to cut wood, plastic or other flat material.  It has been designed to work well on a 4x8 foot sheet of material or smaller and it is able to sculpt and cut vertically about 60 cm or 2.5 inches deep.  Maslow is designed around a small sled that carries the router and is anchored to an external frame by long belts that it uses to pull itself around.  This means that the core robot is very portable. It does require a stiff frame or anchors external to the robot.  It rides on top of the work being cut so it works well on cutting and sculpting shallow shapes but not giant bathtub sized hollows. Maslow is focused on accessiblility. 
 
 Maslow's control software is a local website hosted inside the machine that you can access through USBC cable, Wifi direct to the machine, or through your local wifi network. It can be used with a phone or a computer. It recieves standard Gcode machine instruction files (.nc)  You will need cnc design software that can generate Gcode. There are many free or fancy options. 
 
@@ -59,7 +59,8 @@ Maslow is a project developed by Barbour Smith and a community of vollunteers an
  The current version Maslow 4 was prototyped as 3D printed parts with standard hardware. It has four machine belts instead of two chains. The parts are not interchangable with earlier versions. It uses a custom printed circuit board PCB built around an ESP microcontroller. The board also incorporates motor controllers. 
  
  
-It is still possible to 3D print your own parts and replacement parts. It is still possible to design and program your own generic ESP microcontroller and use off the shelf motor controlers.  In ?2023? Barbour and ?? ran a succcesful Kickstarter campaign with which they used the proceeds to design and have injection molds made for injection molded parts and better compact custom PCBs. Injection molded parts are much stronger than most 3d printed parts.  This is what you are buying when you buy a Maslow kit. The custom PCB, the custom wires, the motors and custom made hardware, nuts and bolts,  and the injection molded plastics with fiberglass inclusions. 4.1 was the result of a second kickstarter campaign that upgraded the PCB, the nuts and bolts and other metal hardware as well as a better spool design. 
+It is still possible to 3D print your own parts and replacement parts. It is still possible to design and program your own generic ESP microcontroller and use off the shelf motor controllers. In ?2023? Barbour and ?? ran a successful Kickstarter campaign with which they used the proceeds to design and have injection molds made for injection molded parts and better compact custom PCBs. Injection molded parts are much stronger than most 3d printed parts. This is what you are buying when you buy a Maslow kit. The custom PCB, the custom wires, the motors and custom made hardware, nuts and bolts, and the injection molded plastics with fiberglass inclusions. 4.1 was the result of a second kickstarter campaign that upgraded the PCB, wire connectors, the nuts and bolts and other metal hardware as well as a better spool design.
+
 
 # Community members who have made significant contributions:
 bar founder and primary developer
@@ -87,4 +88,6 @@ To edit a file here navigate to the file you want to edit, open it, then click o
 
 
 # Future of the project
-Currently the focus is on making the Maslow4 run quickly and smoothly mostly through firmware development. Several community members are playing with different 3d printed adaptations of the main parts.  The goal would be to keep developing the software now and then have an updated hardware kit in several years. (written 2025) 
+Currently the focus is on making the Maslow4 run quickly and easily mostly through firmware development. Community members are playing with different 3d printed adaptations of the main parts as well as both larger and smaller frames. The goal would be to keep developing the software now and then have an updated hardware kit in several years. A sister project to Maslow is Abundance, which is working towards being an open source web browser based parametric cad system that could feed directly to Maslow.[ https://abundance.maslowcnc.com/](url) 
+
+(written 2025) 

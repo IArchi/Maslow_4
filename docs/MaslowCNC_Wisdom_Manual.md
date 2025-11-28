@@ -239,7 +239,7 @@ Click on your circle and name in the top right to see what activity has been con
     (links and instructions to find Maslow's stuff in Github) 
 
 # Safety and hazards
-Power tools are inherently powerful and can be dangerous.  This is an open source project created and maintained by amatuer enthusiasts with designs that have not been tested or evaluated for safety. Follow any instructions here at your own risk and using your own judgement.  The authors of this project make no claims about the saftey or suitability of the designs, ideas, or instructions. Any safety advice is provided in good faith. Use and modify the informatino in this project at your own risk. 
+Power tools are inherently powerful and can be dangerous.  This is an open source project created and maintained by amatuer enthusiasts with designs that have not been tested or evaluated for safety. Follow any instructions here at your own risk and using your own judgement.  The authors of this project make no claims about the saftey or suitability of the designs, ideas, or instructions. Any safety advice is provided in good faith. Use and modify the information in this project at your own risk. 
 
 Below is a list of common sense hazards for you to consider
 

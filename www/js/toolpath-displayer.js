@@ -330,6 +330,7 @@ var jobEnvelopePoints = []; // Simplified convex hull points (up to 100)
 
 var bboxIsSet = false;
 var jobBboxIsSet = false;
+var initialMovesForBbox = true; // Track if we're still in initial positioning phase
 
 var resetBbox = function() {
     tpBbox.min.x = Infinity;
@@ -348,6 +349,7 @@ var resetBbox = function() {
     jobBbox.max.y = -Infinity;
     jobBbox.max.z = -Infinity;
     jobBboxIsSet = false;
+    initialMovesForBbox = true;
     
     // Reset toolpath points
     jobToolpathPoints = [];
@@ -918,19 +920,31 @@ var bboxHandlers = {
         tpBbox.max.z = Math.max(tpBbox.max.z, start.z, end.z);
         bboxIsSet = true;
         
-        // Update job bounding box in world coordinates - exclude G0 rapid moves
+        // Update job bounding box in world coordinates
+        // Exclude G0 rapid moves and skip initial positioning moves
+        // Only start tracking once actual cutting (non-G0 XY movement) begins
         if (modal.motion !== 'G0') {
-            jobBbox.min.x = Math.min(jobBbox.min.x, start.x, end.x);
-            jobBbox.min.y = Math.min(jobBbox.min.y, start.y, end.y);
-            jobBbox.min.z = Math.min(jobBbox.min.z, start.z, end.z);
-            jobBbox.max.x = Math.max(jobBbox.max.x, start.x, end.x);
-            jobBbox.max.y = Math.max(jobBbox.max.y, start.y, end.y);
-            jobBbox.max.z = Math.max(jobBbox.max.z, start.z, end.z);
-            jobBboxIsSet = true;
+            // Check if this is actual XY cutting movement (not just Z or feed rate change)
+            var hasXYMovement = (start.x !== end.x || start.y !== end.y);
             
-            // Collect points for envelope calculation
-            jobToolpathPoints.push({x: start.x, y: start.y});
-            jobToolpathPoints.push({x: end.x, y: end.y});
+            if (hasXYMovement) {
+                // Once we have actual XY cutting movement, we're no longer in initial moves
+                initialMovesForBbox = false;
+            }
+            
+            // Only add to job bounds once we've started actual cutting
+            if (!initialMovesForBbox) {
+                jobBbox.min.x = Math.min(jobBbox.min.x, end.x);
+                jobBbox.min.y = Math.min(jobBbox.min.y, end.y);
+                jobBbox.min.z = Math.min(jobBbox.min.z, end.z);
+                jobBbox.max.x = Math.max(jobBbox.max.x, end.x);
+                jobBbox.max.y = Math.max(jobBbox.max.y, end.y);
+                jobBbox.max.z = Math.max(jobBbox.max.z, end.z);
+                jobBboxIsSet = true;
+                
+                // Collect end point for envelope calculation
+                jobToolpathPoints.push({x: end.x, y: end.y});
+            }
         }
     },
     addArcCurve: function(modal, start, end, center, extraRotations) {
@@ -1132,10 +1146,11 @@ var bboxHandlers = {
 	}
 	
 	// Now calculate world coordinate bounding box for job bounds
-	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
-	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
-	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
-	var world_minY = world_my ? center.y - world_radius : Math.min(start.y, end.y);
+	// Only use end position in fallback to exclude start from rapid moves
+	var world_maxX = world_px ? center.x + world_radius : end.x;
+	var world_maxY = world_py ? center.y + world_radius : end.y;
+	var world_minX = world_mx ? center.x - world_radius : end.x;
+	var world_minY = world_my ? center.y - world_radius : end.y;
 
 	var minZ = Math.min(start.z, end.z);
 	var maxZ = Math.max(start.z, end.z);
@@ -1157,18 +1172,35 @@ var bboxHandlers = {
 	tpBbox.max.z = Math.max(tpBbox.max.z, maxZ);
         bboxIsSet = true;
         
-        // Update job bounding box in world coordinates for arc
-        jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
-        jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
-        jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
-        jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
-        jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
-        jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
-        jobBboxIsSet = true;
+        // Arc moves (G2/G3) are always cutting moves
+        // Check if this is the first cutting move - if so, we need to be careful about the start position
+        var wasInitialMoves = initialMovesForBbox;
+        initialMovesForBbox = false;
         
-        // Collect arc points for envelope calculation - exclude G0 rapid moves
+        // Update job bounding box in world coordinates for arc
+        // Only add bounds if we were already past initial moves (to exclude arc starting from rapid position)
+        if (!wasInitialMoves) {
+            jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
+            jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
+            jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
+            jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
+            jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
+            jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
+            jobBboxIsSet = true;
+        } else {
+            // For the first arc, only include the end point (not the start from rapid)
+            jobBbox.min.x = Math.min(jobBbox.min.x, end.x);
+            jobBbox.min.y = Math.min(jobBbox.min.y, end.y);
+            jobBbox.min.z = Math.min(jobBbox.min.z, end.z);
+            jobBbox.max.x = Math.max(jobBbox.max.x, end.x);
+            jobBbox.max.y = Math.max(jobBbox.max.y, end.y);
+            jobBbox.max.z = Math.max(jobBbox.max.z, end.z);
+            jobBboxIsSet = true;
+        }
+        
+        // Collect arc points for envelope calculation (skip start point - it may be from rapid move)
         if (modal.motion !== 'G0') {
-            // Sample points along the arc
+            // Sample points along the arc (excluding start point)
             var deltaX1 = start.x - center.x;
             var deltaY1 = start.y - center.y;
             var radius = Math.hypot(deltaX1, deltaY1);
@@ -1184,12 +1216,12 @@ var bboxHandlers = {
             theta2 -= Math.PI * 2;
         }
             
-            // Sample arc with enough points to capture its shape
+            // Sample arc with enough points to capture its shape (start at i=1 to skip start point)
             var deltaTheta = theta2 - theta1;
             var numSamples = Math.max(5, Math.ceil(Math.abs(deltaTheta) / (Math.PI / 8))); // At least 5 samples
             var dt = deltaTheta / numSamples;
             
-            for (var i = 0; i <= numSamples; i++) {
+            for (var i = 1; i <= numSamples; i++) {
                 var theta = theta1 + i * dt;
                 var px = center.x + radius * Math.cos(theta);
                 var py = center.y + radius * Math.sin(theta);

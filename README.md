@@ -34,10 +34,12 @@ The control software is built on top of FluidNC an open source cnc control softw
 
 
 The FluidNC project wiki is here: 
+
 [http://wiki.fluidnc.com/](url)
 
 
 Github:
+
 [https://github.com/bdring/FluidNC](url)
 
 

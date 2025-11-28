@@ -13,6 +13,7 @@ Forums:
 
 
 This is a rough draft. For more info got to [www.maslow.cnc](url)
+![Maslowrender](https://github.com/user-attachments/assets/fcd47adf-d20b-4b95-bd9e-b85280380865)
 
 
 ![LogoWithR](https://github.com/user-attachments/assets/66afe41d-6827-4a69-80c6-8bc330a144e1)
@@ -210,6 +211,7 @@ Many of these are available in the not shop on the Maslow website.
 7. **Metric meausring tape**
 8. **Emergency Stop Button**  Extension cord with a clearly marked button for turning off power to the router and robot. 
 9. **Handle** for moving the machine (?Best practice?
+10. **Router Speed Controller** Extension cord that varies the voltage to the router. Check power rating and suitablility for your router
 
 ---
 
@@ -235,8 +237,33 @@ Many of these are available in the not shop on the Maslow website.
     (links and instructions to find Maslow's stuff in Github) 
 
 # Safety and hazards
+Power tools are inherently powerful and can be dangerous.  This is an open source project created and maintained by amatuer enthusiasts with designs that have not been tested or evaluated for saftey. Follow any instructions here at your own risk and using your own judgement.  The authors of this project make no claims about the saftey or suitability of the designs, ideas, or instructions. Any safety advice is provided in good faith. Use and modify the informatino in this project at your own risk. 
 
-    ---
+Below is a list of common sense hazards for you to consider
+
+## Hazards may include:
+- **Electrical shock or fire** if used in a damp or wet area or if electrical insulation or protective covering is damaged or removed. Always check your wires, connections and PCB cover for damage. Make sure airflow to the machine is not blocked or restricted. Different routers and spindles will require different airflow. Do not leave the machine unattended while it is in use. Have a plan to cut power to the machine in an emergency. 
+- **Dust inhalation and dust fire**. Routers create dust and heat as blades cut through material.  Evaluate the material you are cutting and take dust mitigation measures including working in the open air, using dust vacuum systems, dust masks and appropriate respirators.
+- **Friction fire hazard.** Blades create heat through friction, this can cause material being cut or other nearby items to ignite, smoke, or smolder. This is especialy dangerous when a power tool gets stuck in one place or bound up in the material being cut. While the machine is running do not leave it unattended and test and evaluate the material being cut and the feed rate, moving speed, and rotational speed for suitablility for each job. Materials may produce fumes while being cut. 
+- **Laceration, burns, pinching, and crushing**. Never touch the blade of a router without saftey measures. Router bits are very sharp and will be hot after use. The motors and belts can entangle hair or loose clothing and fingers or other body parts could be pinched or torn while the machine is moving. Care has been taken in the design to minimize these risks.  Keep clear of the the machine while motors are engaged. Make sure both the router and the control board are unplugged and off before changing bits or touching the machine.
+- **Eye, skin, or equipment damage from backlash or flying debris**.  Spinning power tool blades can throw pieces of themselves or cut material at great speed. Robotic motors put belts and parts under strain which can result in breakage and pieces being thrown with speed. Wear eye protection at all times when the machine is running and only use the machine in a controlled environment where bystanders are protected from flying debris. Do not leave the machine unattended.
+- **Hearing Damage**. Routers and robots can easily exceed safe noise thresholds while running. Wear appropriate hearing proection while the machine is in use.
+
+
+## Overall saftey meaures
+- Regularly check your machine  for evidence of wear or damage.
+- Only use in a safe and controlled space. 
+- Do not leave the machine running unattended.
+- Use personal protective equipment including masks, respirators, gloves, hearing protection,  and eye protection. 
+- Do not touch the machine while it is moving or turned on.
+- Have a fire suppression plan and equipment.
+- Consider how you will cut power to the machine in an emergency.
+- Check for lose parts, tools, keys, and if the blades are in an appropriate place before providing power to the machine. 
+- Train yourself and anyone who will come in contact with the machine on your saftely plan. 
+
+CNC routers are nice in that they may be operated at a greater distance than a handheld router.  Many of the vibration, inhalation, and flying debris dangers are less with a robotic controler.  CNC machines are dangerous when people leave them unattended and beacause there are more motors, more electrical connections, and more moving parts. 
+
+  ---
     
 # Building instructions for 4, 4.1
 Find any of these steps confusing or get stuck? Don’t forget, you aren’t alone! Maslow is a community driven open source project. Ask in the [forums](https://forums.maslowcnc.com/) and we’ll figure it out together!
@@ -1392,6 +1419,7 @@ Congratulations! Your sled is complete.
 7. **Metric meausring tape**
 8. **Emergency Stop Button**  Extension cord with a clearly marked button for turning off power to the router and robot. 
 9. **Handle** for moving the machine (?Best practice?
+10. **Router Speed Controller** Extension cord that varies the voltage to the router. Check power rating and suitablility for your router
 
 
 

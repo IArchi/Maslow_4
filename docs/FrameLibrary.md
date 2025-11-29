@@ -10,7 +10,7 @@ Maslow4 has to have four solid anchor points to pull on. They can be anchors dri
 
 This is a curated list of frame designs. If you have a good one make a branch and add your own at the end of the document then make a pull request to have it added. Add drawings, details and descriptions so that someone else could build your frame. Add links to cnc or .stl 3D printing files if the frame uses those as well as links to the forum if there is discussion of the frame there. 
 
-## Frame calculator
+## Frame calculators
 As you plan 
 
 
@@ -23,6 +23,10 @@ geertdoornbos has made a cool one where you can simulate the movement of the rob
 
 Bar's frame simulator here: 
 [https://maslowcnc.github.io/Layout-Simulator/](url)
+
+Bar's Calibration point tester:
+[https://barboursmith.github.io/Calibration-Simulation/](url)
+
 
 These show areas where the Maslow can move accurately and areas where it will start to have trouble. These are determined partly by small angles and high tension near the edges (top edge especially in vertical mode) and partly by the arms carrying the motors of the Maslow bumping into the upright pilars of the maslow when the angle between them gets too small. Belts generally can't be closer than 130 degrees or farther apart than 140 degrees. 
 
@@ -62,24 +66,49 @@ Consider ventilation, flying debris, people's access to the space, noise, and fi
 
 
 ### Example frame entry heading text
+PICTURE
 - Overview:
 - Links:
 - Materials:
 - Details:
 - Notes:
+- More Pictures:
+- Credits:
 
 
 ## Floor Anchor Systems
 
 
 ### Floor Bolts from Maslow instructions
+![1000012945](https://github.com/user-attachments/assets/c0ca606e-ec0f-4bef-bc12-70f2058c074d)
+![C5D99411-E417-4E7D-AE56-26935D64B1D2](https://github.com/user-attachments/assets/262c7f73-7637-45b3-aea9-e42c543c19cc)
+
+
 - Overview: Drill holes in a concrete floor, insert threaded anchor sleeves put wasteboard on ground in the middle perhaps on a rubber rug fabric anti slide sheet.
 - Links:
 -- https://www.maslowcnc.com/attaching-to-the-floor
 -- https://www.grainger.com/product/DEWALT-Expansion-Anchor-3-8-16-Thread-30RZ53
-- Materials: 3/8"-16 exapansion bolts. 
+- Materials:
+- - 4  3/8"-16 exapansion bolts.
+  - 4  3/8"-16 1.5 or 2 inches long Hex Cap Screw bolts
+  - 8  3/8" fender washers optional
+  - 4x8' nonslip rug netting fabric
+  - 4x8' wasteboard, could be rigid foam insulation, OSB (oriented strand board, plywood or particle board. 
+- Details: Drill holes, insert threaded anchor sleeves, perhaps epoxy them. screw bolts in and out each time to attach the belt ends. 
+- Notes:
+
+### 3D printed Anchors glued or bolted to a concrete or wooden floor
+### Includes a list of different 3D printable Designs. 
+![IMG_1728_002](https://github.com/user-attachments/assets/bb7ebd8c-4176-4b04-aa08-d53e14ed7ffd)
+![image2_004](https://github.com/user-attachments/assets/4e6e1a17-6ebb-4027-a200-e61002e5ac91)
+
+- Overview:
+- Links:
+- Materials:
 - Details:
 - Notes:
+- More Pictures:
+- Credits:  
 
 
 ## Vertical format frames

@@ -21,6 +21,9 @@ Dlang has made a very useful and cool frame calculator here:
 geertdoornbos has made a cool one where you can simulate the movement of the robot:
 [https://maslowcnc.nl/frame](url)
 
+Bar's frame simulator here: 
+[https://maslowcnc.github.io/Layout-Simulator/](url)
+
 These show areas where the Maslow can move accurately and areas where it will start to have trouble. These are determined partly by small angles and high tension near the edges (top edge especially in vertical mode) and partly by the arms carrying the motors of the Maslow bumping into the upright pilars of the maslow when the angle between them gets too small. Belts generally can't be closer than 130 degrees or farther apart than 140 degrees. 
 
 ## Frame requirements:

@@ -33,13 +33,18 @@ Maslow's control software is a local website hosted inside the machine that you 
 The control software is built on top of FluidNC an open source cnc control software for ESP32 computers. Maslow4's pcb is an esp32 computer.
 
 
-The FluidNC project wiki is here: [http://wiki.fluidnc.com/](url)
+The FluidNC project wiki is here: 
+
+[http://wiki.fluidnc.com/](url)
 
 
-Github:[https://github.com/bdring/FluidNC](url)
+Github:
+
+[https://github.com/bdring/FluidNC](url)
 
 
 Donate to FluidNC:
+
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=8DYLB6ZYYDG7Y)
 
 
@@ -51,7 +56,7 @@ Maslow is a project developed by Barbour Smith and a community of vollunteers an
 <img width="2500" height="1667" alt="image" src="https://github.com/user-attachments/assets/d57a103a-4586-4fb7-8b92-709e616d6aef" />
 
 # History (I don't know a lot here) 
- In ???? (Barbour Smith and ?people?) designed the first Maslow as a wall mounted CNC routing robot that hung from two chains and pulled itself back and forth across a space. The robot at that point was designed around an ?arduino? microcontroller and was an open source design. Barbour set up the forums and github groups and sold ??? machines. 
+ In ???? Barbour Smith designed the first Maslow as a wall mounted CNC routing robot that hung from two chains and pulled itself back and forth across a space. The robot at that point was designed around an Arduino Mega 2560 microcontroller and was an open source design. Barbour set up the forums and github groups and sold ??? machines. 
  
  
  It is still possible to make a Maslow Version 1, 2, or 3 and many people have been happy with them as useful tools. Makermade was a company that sold version ?2? under the open source license that is not affiliated directly with Maslow's developers. 
@@ -60,12 +65,11 @@ Maslow is a project developed by Barbour Smith and a community of vollunteers an
  The current version Maslow 4 was prototyped as 3D printed parts with standard hardware. It has four machine belts instead of two chains. The parts are not interchangable with earlier versions. It uses a custom printed circuit board PCB built around an ESP microcontroller. The board also incorporates motor controllers. 
  
  
-It is still possible to 3D print your own parts and replacement parts. It is still possible to design and program your own generic ESP microcontroller and use off the shelf motor controllers. In ?2023? Barbour and ?? ran a successful Kickstarter campaign with which they used the proceeds to design and have injection molds made for injection molded parts and better compact custom PCBs. Injection molded parts are much stronger than most 3d printed parts. This is what you are buying when you buy a Maslow kit. The custom PCB, the custom wires, the motors and custom made hardware, nuts and bolts, and the injection molded plastics with fiberglass inclusions. 4.1 was the result of a second kickstarter campaign that upgraded the PCB, wire connectors, the nuts and bolts and other metal hardware as well as a better spool design.
+It is still possible to 3D print your own parts and replacement parts. It is still possible to design and program your own generic ESP microcontroller and use off the shelf motor controllers. In ?2023? Barbour ran a successful Kickstarter campaign with which he used the proceeds to design and have injection molds made for injection molded parts and better compact custom PCBs. Injection molded parts are much stronger than most 3d printed parts. This is what you are buying when you buy a Maslow kit. The custom PCB, the custom wires, the motors and custom made hardware, nuts and bolts, and the injection molded plastics with fiberglass inclusions. 4.1 was the result of a second kickstarter campaign that upgraded the PCB, wire connectors, the nuts and bolts and other metal hardware as well as a better spool design.
 
 
 # Community members who have made significant contributions:
 bar founder and primary developer
-Other people who made the first machine? 
 
 dlang ?Programming?
 

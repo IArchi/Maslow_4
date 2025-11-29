@@ -3,15 +3,21 @@
 # Frame Library
 ![image2_006](https://github.com/user-attachments/assets/b9bc93a4-2504-4656-9bb4-4939ebc7665c)
 
+# Intro
 
 Maslow4 has to have four solid anchor points to pull on. They can be anchors drilled or glued into a floor, Pins attached to a tilted wall frame, hooks on the ends of spars, or even stakes driven into the ground.
+
 
 This is a curated list of frame designs. If you have a good one make a branch and add your own at the end of the document then make a pull request to have it added. Add drawings, details and descriptions so that someone else could build your frame. Add links to cnc or .stl 3D printing files if the frame uses those as well as links to the forum if there is discussion of the frame there. 
 
 ## Frame calculator
 As you plan 
+
+
 Dlang has made a very useful and cool frame calculator here:
 [http://lang.hm/maslow/maslow4_frame.html](url)
+
+
 geertdoornbos has made a cool one where you can simulate the movement of the robot:
 [https://maslowcnc.nl/frame](url)
 
@@ -38,10 +44,25 @@ These show areas where the Maslow can move accurately and areas where it will st
 ## To add a frame start a new entry with a title started by three ### hash symbols then add pictures, materials and description and links.  Still working on what is a useful format here, use your judgment. If we use the heading system built into markdown it will automatically create a table of contents in the top right corner of the reading pane. 
 
 
+### Example frame entry heading text
+- Overview:
+- Links:
+- Materials:
+- Details:
+- Notes:
+
+
 ## Floor Anchor Systems
 
 
-### Example frame entry heading text
+### Floor Bolts from Maslow instructions
+- Overview: Drill holes in a concrete floor, insert threaded anchor sleeves put wasteboard on ground in the middle perhaps on a rubber rug fabric anti slide sheet.
+- Links:
+-- https://www.maslowcnc.com/attaching-to-the-floor
+-- https://www.grainger.com/product/DEWALT-Expansion-Anchor-3-8-16-Thread-30RZ53
+- Materials: 3/8"-16 exapansion bolts. 
+- Details:
+- Notes:
 
 
 ## Vertical format frames

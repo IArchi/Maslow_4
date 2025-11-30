@@ -12,6 +12,9 @@ Repository and wiki:
 Forums:
 [https://forums.maslowcnc.com/](url)
 
+How to edit this wiki:
+[https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/How%20to%20Edit%20This%20Wiki.md](url)
+
 
 This is a rough draft. For more info go to [www.maslow.cnc](url)
 ![Maslowrender](https://github.com/user-attachments/assets/305da71c-ce76-40d9-ad8a-40902add06af)

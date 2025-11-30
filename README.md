@@ -12,6 +12,9 @@ Repository and wiki:
 Forums:
 [https://forums.maslowcnc.com/](url)
 
+How to edit this wiki:
+[https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/How%20to%20Edit%20This%20Wiki.md](url)
+
 
 This is a rough draft. For more info go to [www.maslow.cnc](url)
 ![Maslowrender](https://github.com/user-attachments/assets/305da71c-ce76-40d9-ad8a-40902add06af)
@@ -26,7 +29,7 @@ This is a rough draft. For more info go to [www.maslow.cnc](url)
 
 
 ## What is it? 
-Maslow is a DIY 3 axis (x,y,z) computer numerical control (CNC) robot that controls a router to cut wood, plastic or other flat material.  It has been designed to work well on a 4x8 foot sheet of material or smaller and it is able to sculpt and cut vertically about 60 cm or 2.5 inches deep.  Maslow is designed around a small sled that carries the router and is anchored to an external frame by long belts that it uses to pull itself around.  This means that the core robot is very portable. It does require a stiff frame or anchors external to the robot.  It rides on top of the work being cut so it works well on cutting and sculpting shallow shapes but not giant bathtub sized hollows. Maslow is focused on accessiblility. 
+Maslow is a DIY 3 axis (x,y,z) computer numerical control (CNC) robot that controls a router to cut wood, plastic or other flat material.  It has been designed to work well on a 4x8 foot sheet of material or smaller and it is able to sculpt and cut vertically about 60 mm or 2.5 inches deep.  Maslow is designed around a small sled that carries the router and is anchored to an external frame by long belts that it uses to pull itself around.  This means that the core robot is very portable. It does require a stiff frame or anchors external to the robot.  It rides on top of the work being cut so it works well on cutting and sculpting shallow shapes but not giant bathtub sized hollows. Maslow is focused on accessiblility. 
 
 Maslow's control software is a local website hosted inside the machine that you can access through USBC cable, Wifi direct to the machine, or through your local wifi network. It can be used with a phone or a computer. It recieves standard Gcode machine instruction files (.nc)  You will need cnc design software that can generate Gcode. There are many free or fancy options. 
 
@@ -51,7 +54,7 @@ Donate to FluidNC:
 Maslow4 is different from a gantry designed CNC router which are designed around a table that fits the material inside and then the robot moves forward and back on rails. It is much much less expensive than a gantry machine. It is in general less accurate than a good gantry machine. Gantry machines can also be 4 or 5 axis machines in which they can rotate the material in order to cut it at different angles. 
 
 
-Maslow is a project developed by Barbour Smith and a community of vollunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  **If making your own portable blade weilding robot in an enthusiastic online community sounds fun, then you are probably in the right place.** 
+Maslow is a project developed by Barbour Smith and a community of volunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  **If making your own portable blade wielding robot in an enthusiastic online community sounds fun, then you are probably in the right place.** 
 
 <img width="2500" height="1667" alt="image" src="https://github.com/user-attachments/assets/d57a103a-4586-4fb7-8b92-709e616d6aef" />
 

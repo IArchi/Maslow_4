@@ -1,22 +1,22 @@
 # Maslow Readme for machines version 4 and 4.1 Current through 2025
 ## Quicklinks:
 Website where you can buy a kit and current assembly instrucitons: 
-[https://www.maslowcnc.com/](url)
+<https://www.maslowcnc.com/>
 
 Assembly instructions in wiki:
-[https://github.com/MaslowCNC/Maslow_4/tree/assembling-the-arms-4-1](url) 
+<https://github.com/MaslowCNC/Maslow_4/tree/assembling-the-arms-4-1>
 
 Repository and wiki:
-[https://github.com/MaslowCNC/Maslow_4/wiki](url)
+<https://github.com/MaslowCNC/Maslow_4/wiki>
 
 Forums:
-[https://forums.maslowcnc.com/](url)
+<https://forums.maslowcnc.com/>
 
 How to edit this wiki:
 <https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/HowToEditThisWiki.md>
 
 
-This is a rough draft. For more info go to [www.maslow.cnc](url)
+This is a rough draft. For more info go to <www.maslow.cnc>
 ![Maslowrender](https://github.com/user-attachments/assets/305da71c-ce76-40d9-ad8a-40902add06af)
 
 
@@ -38,12 +38,12 @@ The control software is built on top of FluidNC an open source cnc control softw
 
 The FluidNC project wiki is here: 
 
-[http://wiki.fluidnc.com/](url)
+<http://wiki.fluidnc.com/>
 
 
 Github:
 
-[https://github.com/bdring/FluidNC](url)
+<https://github.com/bdring/FluidNC>
 
 
 Donate to FluidNC:
@@ -96,8 +96,7 @@ To edit a file here navigate to the file you want to edit, open it, then click o
 
 
 # Future of the project
-Currently the focus is on making the Maslow4 run quickly and easily mostly through firmware development. Community members are playing with different 3d printed adaptations of the main parts as well as both larger and smaller frames. The goal would be to keep developing the software now and then have an updated hardware kit in several years. A sister project to Maslow is Abundance, which is working towards being an open source web browser based parametric cad system that could feed directly to Maslow.[ https://abundance.maslowcnc.com/](url) 
-
+Currently the focus is on making the Maslow4 run quickly and easily mostly through firmware development. Community members are playing with different 3d printed adaptations of the main parts as well as both larger and smaller frames. The goal would be to keep developing the software now and then have an updated hardware kit in several years. A sister project to Maslow is Abundance, which is working towards being an open source web browser based parametric cad system that could feed directly to Maslow <https://abundance.maslowcnc.com/>
 (written 2025) 
 
 # Safety and hazards

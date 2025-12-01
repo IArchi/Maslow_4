@@ -13,16 +13,16 @@ Forums:
 
 
 This is a rough draft. For more info got to [www.maslow.cnc](url)
-![Maslowrender](https://github.com/user-attachments/assets/fcd47adf-d20b-4b95-bd9e-b85280380865)
+![Maslowrender](../assets/MaslowCNC_Wisdom_Manual-assets/Maslowrender.webp)
 
 
-![LogoWithR](https://github.com/user-attachments/assets/66afe41d-6827-4a69-80c6-8bc330a144e1)
+![LogoWithR](../assets/MaslowCNC_Wisdom_Manual-assets/LogoWithR.webp)
 
 # INTRO
 # Maslow-CNC-wisdom-manual for machines version 4 and 4.1 Current through 2025
 Rough draft space for writing down instructions and useful tips for getting started on Maslow CNC currently for machine 4 and 4.1 This is intended as a comprehensive guide. A quick start manual could be made by linking to relevant sections.  If you are editing here is a guide to markdown typing commands https://www.markdownguide.org/cheat-sheet/ The general plan is that the topics are ordered by when you would need them in the process of getting started. To make sure we stayed consistent and throrough there will be parts that are duplicated from the build and setup instructions elsewhere in the manual.  It seems important to keep the basic build instructions and getting started info together and then have the sections later that expand and collect wisdom and specifics.    
 
-<img width="2500" height="1875" alt="image" src="https://github.com/user-attachments/assets/ed9fcca8-0106-420d-b355-8df55d405ab9" />
+<img width="2500" height="1875" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_ed9fcca8.png" />
 
 
 # What is it? 
@@ -44,7 +44,7 @@ Donate to FluidNC:
 
 Maslow is a project developed by Barbour Smith and a community of vollunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  **If making your own portable blade weilding robot in an enthusiastic online community sounds fun, then you are probably in the right place.** 
 
-<img width="2500" height="1667" alt="image" src="https://github.com/user-attachments/assets/d57a103a-4586-4fb7-8b92-709e616d6aef" />
+<img width="2500" height="1667" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d57a103a.png" />
 
 
 ## How does Maslow4 work?
@@ -290,7 +290,7 @@ This is to get you set up for the first time, there is more detailed information
 6. How to define the machine's home position
 7. How to run a g-code file
     
-<img width="636" height="642" alt="image" src="https://github.com/user-attachments/assets/bc8b8ef8-a481-4b43-bfdb-3c76e09be5da" />
+<img width="636" height="642" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_bc8b8ef8.png" />
 
 ## How to connect to your Maslow4
 
@@ -302,7 +302,7 @@ Maslow4 will create a wifi network called **“maslow”** which you can connect
 Connecting to the network will automatically open the user interface on most devices. If it does not you can type **192.168.0.1** into your web browser to open the interface. You may need to look up the exact numerical address for your machine in your home router admin settings.  
 
 
-<img width="1000" height="554" alt="image" src="https://github.com/user-attachments/assets/54a3429f-e694-4c6b-ae67-47cde323115b" />
+<img width="1000" height="554" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_54a3429f.png" />
 
 ## How to update your firmware:
 
@@ -328,13 +328,13 @@ Note: When you first connect to Maslow it will create a popup to control the mac
 **Note that to update from a firmware version before 1.0 to a version after 1.0 you will need to use a USB cable. There is a video walkthrough for that process here.** https://youtu.be/od7DpdLel6A?si=xv1Zp3AIZFgRoeZ_
 
 
-<img width="1000" height="559" alt="image" src="https://github.com/user-attachments/assets/62cc4555-b497-4030-acea-b0fff036329a" />
+<img width="1000" height="559" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_62cc4555.png" />
 
 
 There are two other files which you will need to update periodically. These can be found by clicking on the FluidNC tab and then clicking on the files button.
 
 
-<img width="1000" height="466" alt="image" src="https://github.com/user-attachments/assets/19b16055-8c78-4039-9791-4d9e68ec3fbf" />
+<img width="1000" height="466" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_19b16055.png" />
 
 
 This will show you your system files.
@@ -349,7 +349,7 @@ To upload a new file click the **Upload files** button at the top of the screen.
 **maslow.yaml** contains the configuration settings for your machine. Your calibration values are stored here. You may not need to update the yaml each time you update the index and the firmware.
 
 
-<img width="1000" height="493" alt="image" src="https://github.com/user-attachments/assets/c3eca3b6-95dd-489e-aa19-25930881e199" />
+<img width="1000" height="493" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_c3eca3b6.png" />
 
 
 ## How to connect Maslow4 to your home WiFi network
@@ -360,7 +360,7 @@ If you have an internet connection in your work space, it might be nice to conne
 To connect your Maslow4 to the internet click on the **FluidNC** tab
 
 
-<img width="1000" height="509" alt="image" src="https://github.com/user-attachments/assets/0707784f-985f-4055-8b9b-b4f10960b1b4" />
+<img width="1000" height="509" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0707784f.png" />
 
 
 
@@ -371,7 +371,7 @@ Then scroll down to enter your WiFi network name in the **Sta/SSID** field and y
 When your Maslow4 turns on it will attempt to connect to your WiFi network. If it is not able to find your network it will create a wifi network called “maslow” for you to connect to.
 
 
-<img width="1000" height="536" alt="image" src="https://github.com/user-attachments/assets/0e4c67d3-5e18-4e86-8a88-52a8080b9f43" />
+<img width="1000" height="536" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0e4c67d3.png" />
 
 
 
@@ -381,19 +381,19 @@ Once Maslow4 is connected to your wifi network you will need to find its address
 The easiest way to connect to your Maslow4 on most modern wifi routers is to copy and enter the address **maslow.local** in your internet browser. 
 
 
-<img width="1000" height="549" alt="image" src="https://github.com/user-attachments/assets/504a3129-f5cc-4b95-a804-980409b4fc6f" />
+<img width="1000" height="549" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_504a3129.png" />
 
 
 If that doesn't work, you can use the website findmymaslow.com to find the IP address of your machine. Unfortunately due to some (frankly prudent) security updates to Chrome this will only work in Firefox.
 
 
-<img width="600" height="338" alt="image" src="https://github.com/user-attachments/assets/e963c899-7eb1-4e98-93a8-b1d24e87b9c7" />
+<img width="600" height="338" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_e963c899.png" />
 
 
 Finally if all else fails, the blue LED on your Maslow4 will blink out the IP address so with a pen and paper you can count the flashes and write the number down. It’s not plan A, but it’s low tech and reliable. 
 
 
-<img width="472" height="265" alt="image" src="https://github.com/user-attachments/assets/086357d4-a5f1-4e68-9f69-f137d7ad176b" />
+<img width="472" height="265" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_086357d4.png" />
 
 
 ## How to run calibration:
@@ -410,31 +410,31 @@ Before beginning the calibration process we recommend starting with the machine 
 These instructions can be somewhat confusing to follow so we made a video walk through of the current calibration process which you can also follow.
 
 
-<img width="1000" height="1067" alt="image" src="https://github.com/user-attachments/assets/df7e3813-a2ff-4802-b6d4-a9a2a99f853f" />
+<img width="1000" height="1067" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_df7e3813.png" />
 
 First click on Alarm to unlock your machine
 
-<img width="1000" height="847" alt="image" src="https://github.com/user-attachments/assets/0235efce-b74c-406c-b438-28ca38d94137" />
+<img width="1000" height="847" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0235efce.png" />
 
-<img width="1000" height="750" alt="image" src="https://github.com/user-attachments/assets/3a47a416-ccde-408f-8a7b-50b8c763900c" />
+<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_3a47a416.png" />
 
 
 Next, using the z-axis controls lower your z-axis all the way down until you hear it stop. Note that you want to remove any router bit before doing this.
 
 
-<img width="1000" height="639" alt="image" src="https://github.com/user-attachments/assets/0d56b548-03ee-49ca-9665-3953c89a4b9f" />
+<img width="1000" height="639" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0d56b548.png" />
 
 
 Click Setup and then config
 
 
-<img width="1000" height="543" alt="image" src="https://github.com/user-attachments/assets/73fb48a5-2d3b-40b2-9df3-af75ce4e0981" />
+<img width="1000" height="543" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_73fb48a5.png" />
 
 
 Make a rough measurement or guess at how far it is from your anchor points to the center of your frame in millimeters.
 
 
-<img width="1000" height="1098" alt="image" src="https://github.com/user-attachments/assets/29610fc9-170d-475b-954d-01c246b8535c" />
+<img width="1000" height="1098" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_29610fc9.png" />
 
 
 Enter the distance you came up with into the “Extend Dist” field
@@ -454,13 +454,13 @@ Here you can also select your other calibration settings.
 **Calibration Force**: This is how hard the machine will pull when taking each measurement. This indirectly sets the tension in the machine’s belts while cutting. It seems like lower values might lead to more precise results, but it can’t be so low that the process doesn’t take accurate measurements.
 
 
-<img width="1000" height="794" alt="image" src="https://github.com/user-attachments/assets/1a664a68-aeb0-48fd-aee9-54874415d122" />
+<img width="1000" height="794" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_1a664a68.png" />
 
 
 Next click on Setup and then on Retract All. 
 
 
-<img width="1000" height="750" alt="image" src="https://github.com/user-attachments/assets/6f73e5e9-eeeb-48d0-9757-2885c1bdb5f2" />
+<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6f73e5e9.png" />
 
 
 This will fully retract all four belts.
@@ -469,7 +469,7 @@ This will fully retract all four belts.
 Note that if some of your belts don’t fully retract you can retract and extend them a few times to help loosen them up, or you can increase the amount of power used during retraction in the configuration settings.
 
 
-<img width="1000" height="780" alt="image" src="https://github.com/user-attachments/assets/6b4a295f-da79-4afb-bd7d-48bdeb287bc9" />
+<img width="1000" height="780" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6b4a295f.png" />
 
 
 
@@ -480,37 +480,37 @@ Next press **Extend All** to begin extending the belts. You will hear the coolin
 You want to keep extending all four belts until they stop. The machine will stop extending more belt once they have reached the target length.
 
 
-<img width="600" height="1067" alt="image" src="https://github.com/user-attachments/assets/3c156185-5e35-476e-9bff-81f8a66af2f7" />
+<img width="600" height="1067" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_3c156185.png" />
 
 
 To extend the belts you will need to pull them out. A rocking motion will help get them started extending. You might need to be a little aggressive. After they will extend out to the correct length as long as you pull with a gentle but constant force. 
 
 
-<img width="1000" height="750" alt="image" src="https://github.com/user-attachments/assets/2a5be063-d85e-4cf7-8d40-e8e78ba4352b" />
+<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_2a5be063.png" />
 
 
 Attach all four belts to the frame. This might look different depending on your frame design.
 
 
-<img width="1000" height="783" alt="image" src="https://github.com/user-attachments/assets/099e4067-7e70-48da-b469-4bd29a66d5ef" />
+<img width="1000" height="783" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_099e4067.png" />
 
 
 Press the calibrate button to begin the calibration process. The machine will move to each point in your grid taking a measurement at each one.
 
 
-<img width="1000" height="551" alt="image" src="https://github.com/user-attachments/assets/12d294f4-d2c1-4dca-817d-e87344a92b6d" />
+<img width="1000" height="551" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_12d294f4.png" />
 
 
 Multiple times during this process the machine will stop and recompute it’s anchor points. Be sure to keep your computer awake and connected during this process. The walk-through video above can give you a more clear understanding of what the machine is doing at each step.
 
 
-<img width="1000" height="782" alt="image" src="https://github.com/user-attachments/assets/6f7deeb4-84e3-42db-812b-d5e85f6a9a58" />
+<img width="1000" height="782" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6f7deeb4.png" />
 
 
 That’s it, you are finished with the calibration process. From now on you do not need to do it again unless you change your frame’s dimensions. From now on if you disconnect your Maslow from the frame and want to re-attach it you can press **Retract All -> Extend All**, extend the belts and use the **Apply Tension** button to take up the extra slack.
 
 
-<img width="1000" height="486" alt="image" src="https://github.com/user-attachments/assets/7e66623f-8a47-41ff-bee3-f03e30c14a4b" />
+<img width="1000" height="486" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_7e66623f.png" />
 
 
 ## How to move the machine around
@@ -519,7 +519,7 @@ That’s it, you are finished with the calibration process. From now on you do n
 You can move your Maslow around using the arrow buttons on the right side of the screen.
 
 
-<img width="1000" height="754" alt="image" src="https://github.com/user-attachments/assets/f30cbb3b-bf63-4aaf-83f5-c208fb33b525" />
+<img width="1000" height="754" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_f30cbb3b.png" />
 
 
 The distance that it will move can be set by clicking on a distance number.
@@ -528,13 +528,13 @@ The distance that it will move can be set by clicking on a distance number.
 There are separate distances for XY movements and for Z axis movements.
 
 
-<img width="1000" height="856" alt="image" src="https://github.com/user-attachments/assets/c3a41655-8591-4aaa-84cb-6c0512f2aa2b" />
+<img width="1000" height="856" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_c3a41655.png" />
 
 
 You can switch between mm and inches by clicking on the units.
 
 
-<img width="1000" height="441" alt="image" src="https://github.com/user-attachments/assets/b708d8dc-fa8f-49d3-846b-83b3a4650b00" />
+<img width="1000" height="441" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_b708d8dc.png" />
 
 
 ## How to define the machine’s home position
@@ -543,13 +543,13 @@ You can switch between mm and inches by clicking on the units.
 When you create a gcode file it will have a “home” position. Here you can see the home position shown with a cross in a circle. In this case when we created our gcode file we set it up so our shape would be cut above and to the left of the home position. The current position of the machine is shown with a purple dot.
 
 
-<img width="1000" height="440" alt="image" src="https://github.com/user-attachments/assets/5f463bd4-317d-40e6-ab64-f3c5de447f39" />
+<img width="1000" height="440" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_5f463bd4.png" />
 
 
 If we want to move where the file will be cut on the sheet of plywood we can press the “**Define Home**” button which will move the file’s home position to the machine’s current position letting us move the shape we want to cut anywhere on the sheet.
 
 
-<img width="1000" height="628" alt="image" src="https://github.com/user-attachments/assets/f1cf57bf-c6cd-49e2-9439-67f5eaa9ff10" />
+<img width="1000" height="628" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_f1cf57bf.png" />
 
 
 
@@ -557,7 +557,7 @@ If we want to move where the file will be cut on the sheet of plywood we can pre
 Similarly we can set where the home position is for the z-axis. This will set where the router will start cutting which is typically on the top surface of the plywood. To set the home position for the z-axis click move the z-axis up or down with the **Up** and **Down** buttons. Then press **Define Home** to set the z-axis home position.
 
 
-<img width="1000" height="856" alt="image" src="https://github.com/user-attachments/assets/d0058dc9-49f4-4599-a8c6-f84e0445c3d7" />
+<img width="1000" height="856" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d0058dc9.png" />
 
 
 ## How to run a gcode file
@@ -566,19 +566,19 @@ Similarly we can set where the home position is for the z-axis. This will set wh
 Load your gcode file onto the machine by pressing the **Load File** button
 
 
-<img width="1000" height="1014" alt="image" src="https://github.com/user-attachments/assets/ba4e14ad-55bc-4f47-833b-21c4c35fd7b0" />
+<img width="1000" height="1014" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_ba4e14ad.png" />
 
 
 Select your file from the drop down
 
 
-<img width="1000" height="1105" alt="image" src="https://github.com/user-attachments/assets/d58d5134-a5b6-4c48-82e8-71f09b5b2f17" />
+<img width="1000" height="1105" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d58d5134.png" />
 
 
 Run the file by pressing the green play button.
 
 
-<img width="1000" height="506" alt="image" src="https://github.com/user-attachments/assets/29649372-5061-4595-a448-90d8d3b8c3a5" />
+<img width="1000" height="506" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_29649372.png" />
 
 
 ## Troubleshooting
@@ -600,7 +600,7 @@ https://forums.maslowcnc.com/
 ## What’s in the Maslow4 Kit?!
 
 
-<img width="2500" height="1667" alt="image" src="https://github.com/user-attachments/assets/0522ec66-f20a-4850-a950-2f36577ae45c" />
+<img width="2500" height="1667" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0522ec66.png" />
 
 
 Click links below to Download Printable pages. Thanks to our backer Craig for making these files.
@@ -613,147 +613,147 @@ https://www.maslowcnc.com/s/Whats-in-the-Kit_-Page-5.pdf
 
 
 Five Axis Control Board. Quantity 1. Properties: Four servo axis, one stepper axis (dual drive), four ethernet encoder ports, two AUX ports, one fan control port. Wifi, bluetooth, USB C.
-![DSC00166_002](https://github.com/user-attachments/assets/7a72ed8a-51d0-4be7-85f9-4f0ec5558969)
+![DSC00166_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00166_002.webp)
 
 
 Magnetic Encoder Board. Quantity 4 Properties: AS5600 magnetic encoder with ethernet interface.
-![DSC00168](https://github.com/user-attachments/assets/f9998bc8-dab8-401a-991c-305088c06bda)
+![DSC00168](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00168.webp)
 
 
 Cooling Fan. Quantity 1. Properties: 60mm, brushless.
-![DSC00157_008](https://github.com/user-attachments/assets/a2d650bd-a7d3-4dc7-a4da-40bc64da79c3)
+![DSC00157_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00157_008.webp)
 
 
 Power Supply. Quantity 1. Properties: UL listed, 120-240 volts, 
-![DSC00141_002](https://github.com/user-attachments/assets/ff85e52b-ebc0-49ae-82a5-6a438a39a233)
+![DSC00141_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00141_002.webp)
 
 
 Standard NEMA computer cord plug, US plug cord provided.
-![DSC00138_002](https://github.com/user-attachments/assets/40fb781f-f0b7-4fee-8f45-ec5b87fed560)
+![DSC00138_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00138_002.webp)
 
 
 
 Ethernet Cable. Quantity 4. CAT5e, 310mm long.
-![DSC00163_008](https://github.com/user-attachments/assets/a43d34f2-0826-46cb-89c4-2a6ad1c63e88)
+![DSC00163_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00163_008.webp)
 
 
 PCB Enclosure Top. Quantity 1. Properties: Glass fiber reinforced polycarbonate.
-![DSC00156_008](https://github.com/user-attachments/assets/26f2575b-0c56-4d0d-96a0-c27470f0fb38)
+![DSC00156_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00156_008.webp)
 
 
 PCB Enclosure Bottom. Quantity 1. Properties: Polycarbonate.
-![DSC00171_008](https://github.com/user-attachments/assets/40dc43a9-62a6-4674-9fac-d919b0457b52)
+![DSC00171_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00171_008.webp)
 
 Stepper Motor. Quantity 2. Properties: 5mmx2mm pitch lead screw with POM nut.
-![DSC00162_008](https://github.com/user-attachments/assets/e07d572b-17a2-4d1a-9311-3b38d6514c82)
+![DSC00162_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00162_008.webp)
 
 
 DC Motor. Quantity 4. Properties: Planetary reduction gearbox.
-![DSC00160_008](https://github.com/user-attachments/assets/8c4699b2-6800-4a6d-bf2d-38037c840131)
+![DSC00160_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00160_008.webp)
 
 
 Drive Gear. Quantity 4. Properties: Steel, Fits D-shaped 8mm shaft with set screw.
-![DSC00187_008](https://github.com/user-attachments/assets/8a96a58e-aeb4-4d60-a3c2-7f3539358cee)
+![DSC00187_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00187_008.webp)
 
 
 Idler Gear. Quantity 4. Properties: Steel, Fits round 8mm shaft.
-![DSC00185_008](https://github.com/user-attachments/assets/044f5f8a-9293-48ac-a5c7-fcfdf4620408)
+![DSC00185_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00185_008.webp)
 
 
 Roller. Quantity 8. Properties: Glass fiber reinforced polycarbonate.
-![DSC00195_008](https://github.com/user-attachments/assets/32bd0ec9-2fb8-4faa-ba96-f8e47f09d26d)
+![DSC00195_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00195_008.webp)
 
 
 Belt End Half. Quantity 8. Properties: Glass fiber reinforced polycarbonate.
-![DSC00181_008](https://github.com/user-attachments/assets/8cc61382-26b3-4027-b136-5a337e12b26e)
+![DSC00181_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00181_008.webp)
 
 Belt Guard. Quantity 4. Properties: Polycarbonate.
-![DSC00179_008](https://github.com/user-attachments/assets/4bf085df-cbe9-4bfa-ae29-0980a5ae43ee)
+![DSC00179_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00179_008.webp)
 
 Inner Post. Quantity 8. Properties: Glass fiber reinforced polycarbonate. 
-![DSC00173_008](https://github.com/user-attachments/assets/dc9d75f2-f97b-4daa-b4d7-6dfea70f06c5)
-![DSC00174_008](https://github.com/user-attachments/assets/83b84e7c-cfe2-4546-8248-4e5bef97c912)
+![DSC00173_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00173_008.webp)
+![DSC00174_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00174_008.webp)
 
 
 Linear Rod Clamp. Quantity 2. Properties: Glass fiber reinforced polycarbonate. Note: These will come preinstalled on the sled.
-![DSC00178_008](https://github.com/user-attachments/assets/5cdc1889-e901-45ef-9063-5ad167e5fbba)
+![DSC00178_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00178_008.webp)
 
 
 Support Riser. Quantity 2. Properties: Glass fiber reinforced polycarbonate. 
-![DSC00148_002](https://github.com/user-attachments/assets/4f2d989f-54d0-4ab7-8cf3-a849300a8c8b)
+![DSC00148_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00148_002.webp)
 
 
 Support Riser Top. Quantity 2. Properties: Glass fiber reinforced polycarbonate.
-![DSC00176_008](https://github.com/user-attachments/assets/e062534b-24f9-416e-9fbf-edfb0b41e256)
+![DSC00176_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00176_008.webp)
 
 
 Idler Shaft. Quantity 4. Properties: Hardened steel.
-![DSC00196_008](https://github.com/user-attachments/assets/76eae2d1-76fc-418f-bd15-1515c668bf0b)
+![DSC00196_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00196_008.webp)
 
 
 Linear Shaft. Quantity 2. Properties: Hardened steel.
-![DSC00164_008](https://github.com/user-attachments/assets/b92540e6-35dd-46ed-ac73-5e86b5cfd88b)
+![DSC00164_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00164_008.webp)
 
 
 Bearing. Quantity 20. Properties: Fits 8mm shaft.
-![DSC00200_008](https://github.com/user-attachments/assets/2a9226b6-4507-4e7f-9e05-0de624d3287f)
+![DSC00200_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00200_008.webp)
 
 
 Linear Bearings. Quantity 4. Properties: Fits 10mm linear shaft.
-![DSC00189_008](https://github.com/user-attachments/assets/a446648f-d8f6-49b9-acbe-75d7bbe7311c)
+![DSC00189_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00189_008.webp)
 
 Belt Spool. Quantity 4. Properties: Polycarbonate.
-![DSC00154_008](https://github.com/user-attachments/assets/05bfba0a-81f6-4cf7-b78d-e496bdbb9db8)
+![DSC00154_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00154_008.webp)
 
 
 Belt. Quantity 4. Properties: Steel reinforced TPU, 14.5 feet long.
-![DSC00143_003](https://github.com/user-attachments/assets/d290f84b-8a47-43a3-9855-8170fd991a86)
+![DSC00143_003](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00143_003.webp)
 
 
 Arm Frame. Quantity 8. Properties: POM.
-![DSC00152_008](https://github.com/user-attachments/assets/224eb9ba-356d-4e87-88f7-0710b74ba83e)
+![DSC00152_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00152_008.webp)
 
 
 Z-axis Clamp Wedge. Quantity 2. Properties: Glass fiber reinforced polycarbonate. Note that these will come preinstalled on the router clamp and really blend in.
-![DSC00191_008](https://github.com/user-attachments/assets/d0db92b5-57a2-481c-a61d-10089f18a281)
+![DSC00191_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00191_008.webp)
 
 Router Clamp. Quantity 2. Properties: Glass fiber reinforced polycarbonate.
-![DSC00150_008](https://github.com/user-attachments/assets/5e96a625-66dc-49fe-8f3c-9e239e627abf)
+![DSC00150_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00150_008.webp)
 
 
 Sled. Quantity 1. Properties: Glass fiber reinforced polycarbonate.
-![DSC00209_008](https://github.com/user-attachments/assets/e9425ccb-5634-4312-8621-3e4d6b588928)
+![DSC00209_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00209_008.webp)
 
 
 Dust Cover. Quantity 1. Properties: Laser cut acrylic.
-![DSC00211_008](https://github.com/user-attachments/assets/a5f3364e-4f81-4ba6-8f17-d4a557b046a9)
+![DSC00211_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00211_008.webp)
 
 
 M3x12mm Bolt. Quantity 175. Properties: Stainless steel, 2mm allen drive button head. 
-![DSC00203_008](https://github.com/user-attachments/assets/0232ee0c-89e1-4af4-b035-bea20ab6e86f)
+![DSC00203_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00203_008.webp)
 
 
 M3x6mm Bolt. Quantity 12. Properties: Stainless steel, 2mm allen drive button head. 
-![DSC00215_008](https://github.com/user-attachments/assets/67495dad-95c3-4d4f-a2ae-a8ede0fb2d0f)
+![DSC00215_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00215_008.webp)
 
 M3 Nut. Quantity 100. Properties: Stainless steel.
-![DSC00206_008](https://github.com/user-attachments/assets/7605dd1d-2c76-44ca-aef4-8762651d4408)
+![DSC00206_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00206_008.webp)
 
 
 M3 Locknut. Quantity 160. Properties: Stainless steel.
-![DSC00208](https://github.com/user-attachments/assets/703fc7c8-6380-4537-a28c-67b256b80e97)
+![DSC00208](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00208.webp)
 
 
 2mm Allen Wrench. Quantity 1. Properties: Stainless steel.
-![DSC00183_008](https://github.com/user-attachments/assets/440c3ed6-d6c1-48f4-843b-f79aa58a4388)
+![DSC00183_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00183_008.webp)
 
 
 Encoder Magnet. Quantity 4. Properties: Magnetic.
-![DSC00202_008](https://github.com/user-attachments/assets/ee5cf25d-ed9b-4db3-b3b9-1db43ad2eadd)
+![DSC00202_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00202_008.webp)
 
 
 Super Glue. Quantity 1. Properties: Gel
-![DSC00145_008](https://github.com/user-attachments/assets/27ddd309-cac5-49ee-9ce9-d6f97e678466)
+![DSC00145_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00145_008.webp)
 
 Thread Locker. Quantity 1. Properties: Removable thread locker. (No photo yet)
 
@@ -765,145 +765,145 @@ Silicone Grease. Quantity 1. Properties: Slippery. (No photo yet)
 ## What’s in the Maslow4.1 Kit?
 
 Five Axis Control Board. Quantity 1. Properties: Four servo axis, one stepper axis (dual drive), four JST-XH encoder ports, two AUX ports, one fan control port. Wifi, bluetooth, USB C.
-![IMG_5654](https://github.com/user-attachments/assets/0acd598d-b621-4bce-9d08-3af9379c24c5)
+![IMG_5654](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_5654.webp)
 
 
 Magnetic Encoder Board. Quantity 4 Properties: AS5600 magnetic encoder with JST-XH interface.
-![IMG_5656](https://github.com/user-attachments/assets/c48a00c1-3d80-4dc6-ab31-4e6176c85506)
+![IMG_5656](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_5656.webp)
 
 
 Cooling Fan. Quantity 1. Properties: 60mm, brushless.
-![DSC00157_007](https://github.com/user-attachments/assets/f3dd1a8b-1701-4a2e-b51c-221bc30d4cda)
+![DSC00157_007](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00157_007.webp)
 
 
 Power Supply. Quantity 1. Properties: UL listed, 120-240 volts, Standard NEMA computer cord plug, US plug cord provided.
-![DSC00138](https://github.com/user-attachments/assets/5468a914-fd45-4272-88e1-0ef8c0098a53)
-![DSC00141_007](https://github.com/user-attachments/assets/0b602990-94e8-478a-9b99-5f942ff291aa)
+![DSC00138](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00138.webp)
+![DSC00141_007](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00141_007.webp)
 
 JST-XH Encoder Cable. Quantity 4. 
-![IMG_5651](https://github.com/user-attachments/assets/ee7d86d2-61dc-4a4e-b16e-701eec8a43ad)
+![IMG_5651](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_5651.webp)
 
 
 PCB Enclosure Top. Quantity 1. Properties: Glass fiber reinforced polycarbonate.
-![DSC00156_004](https://github.com/user-attachments/assets/1e3d145b-beed-49d1-9097-af4d17326757)
+![DSC00156_004](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00156_004.webp)
 
 
 PCB Enclosure Bottom. Quantity 1. Properties: Polycarbonate.
-![DSC00171_007](https://github.com/user-attachments/assets/69ded651-6fc7-47a9-b7f6-d28c72f08a10)
+![DSC00171_007](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00171_007.webp)
 
 Stepper Motor. Quantity 2. Properties: 5mmx2mm pitch lead screw with POM nut.
-![DSC00162_006](https://github.com/user-attachments/assets/8396aafd-e441-4cb5-9a8b-e2619ea4914d)
+![DSC00162_006](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00162_006.webp)
 
 
 DC Motor. Quantity 4. Properties: Planetary reduction gearbox.
-![DSC00160](https://github.com/user-attachments/assets/e498f868-c3a0-4ee7-afe3-06dffab9a098)
+![DSC00160](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00160.webp)
 
 
 Drive Gear. Quantity 4. Properties: Steel, Fits D-shaped 8mm shaft with set screw.
-![DSC00187](https://github.com/user-attachments/assets/ec146db7-ebcc-447c-af87-e45059e934f8)
+![DSC00187](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00187.webp)
 
 
 Idler Gear. Quantity 4. Properties: Steel, Fits  8mm bearings.
-![IMG_7371](https://github.com/user-attachments/assets/b213efe4-fed9-4a39-9ad5-f7a35b9f33e4)
+![IMG_7371](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_7371.webp)
 
 
 Roller. Quantity 8. Properties: Glass fiber reinforced polycarbonate.
-![DSC00195_003](https://github.com/user-attachments/assets/bff09b64-e637-4298-bd80-121ec2dd15a2)
+![DSC00195_003](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00195_003.webp)
 
 
 Belt End Half. Quantity 8. Properties: Glass fiber reinforced polycarbonate.
-![DSC00181](https://github.com/user-attachments/assets/346f4aaa-a866-4b0e-9fec-c707f976e3d8)
+![DSC00181](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00181.webp)
 
 Belt Guard. Quantity 4. Properties: Polycarbonate.
-![IMG_7358](https://github.com/user-attachments/assets/781d5814-e39f-4094-88ce-be9e0197ac06)
+![IMG_7358](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_7358.webp)
 
 Inner Post. Quantity 8. Properties: Glass fiber reinforced polycarbonate. 
-![DSC00173](https://github.com/user-attachments/assets/68ed361e-f24c-410f-8316-432580d52e5f)
-![DSC00174_005](https://github.com/user-attachments/assets/538bf3c1-72df-4797-8b08-6175ff36467c)
+![DSC00173](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00173.webp)
+![DSC00174_005](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00174_005.webp)
 
 
 Linear Rod Clamp. Quantity 2. Properties: Glass fiber reinforced polycarbonate. Note: These will come preinstalled on the sled and may be hard to spot.
-![DSC00178](https://github.com/user-attachments/assets/2f250e8c-ce2c-4d43-937c-4a8ea23b3d2d)
+![DSC00178](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00178.webp)
 
 
 Support Riser. Quantity 2. Properties: Glass fiber reinforced polycarbonate. 
-![DSC00148_006](https://github.com/user-attachments/assets/b640e6a9-86ff-4a70-a709-e698d653d716)
+![DSC00148_006](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00148_006.webp)
 
 
 Support Riser Top. Quantity 2. Properties: Glass fiber reinforced polycarbonate.
-![DSC00176_004](https://github.com/user-attachments/assets/95e0e743-f89b-4554-aa40-93b5f8403187)
+![DSC00176_004](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00176_004.webp)
 
 Linear Shaft. Quantity 2. Properties: Hardened steel.
-![DSC00164_004](https://github.com/user-attachments/assets/0ef0f023-724f-4faa-bd18-0eaef1594b72)
+![DSC00164_004](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00164_004.webp)
 
 Bearing. Quantity 30. Properties: Fits 8mm shaft, 148ZZ is the common designation. 
-![DSC00200](https://github.com/user-attachments/assets/6b206378-f3c4-4366-b106-b5e39bf0d6f1)
+![DSC00200](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00200.webp)
 
 
 Linear Bearings. Quantity 4. Properties: Fits 10mm linear shaft.
-![DSC00189](https://github.com/user-attachments/assets/c041756f-0dfb-44c5-a4c1-5698f1dae83b)
+![DSC00189](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00189.webp)
 
 
 
 Belt Spool. Quantity 4. Properties: Polycarbonate.
-![DSC00154_004](https://github.com/user-attachments/assets/2a880cf6-a76b-4ea0-ac48-3568af18ddbe)
+![DSC00154_004](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00154_004.webp)
 
 
 Belt. Quantity 4. Properties: Steel reinforced TPU, 14.5 feet long.
-![DSC00143_008](https://github.com/user-attachments/assets/0dc790d4-0cda-4316-b6b4-89481f2e5777)
+![DSC00143_008](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00143_008.webp)
 
 
 Arm Frame. Quantity 8. Properties: POM.
-![IMG_7363](https://github.com/user-attachments/assets/e253a8fa-9501-40e9-ae28-db442154832f)
+![IMG_7363](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_7363.webp)
 
 
 Z-axis Clamp Wedge. Quantity 2. Properties: Glass fiber reinforced polycarbonate. Note that these will come preinstalled on the router clamp and really blend in.
-![DSC00191](https://github.com/user-attachments/assets/efc4a520-3edb-4f4a-a04e-47bc77c19d94)
+![DSC00191](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00191.webp)
 
 Router Clamp. Quantity 2. Properties: Glass fiber reinforced polycarbonate.
-![DSC00150_002](https://github.com/user-attachments/assets/32d40a77-0406-4c9e-a5e6-f3d66d75d962)
+![DSC00150_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00150_002.webp)
 
 
 Sled. Quantity 1. Properties: Glass fiber reinforced polycarbonate.
-![DSC00209_003](https://github.com/user-attachments/assets/7584ce35-5e44-466f-961a-0cdfd7b4a3a0)
+![DSC00209_003](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00209_003.webp)
 
 
 Dust Cover. Quantity 1. Properties: Laser cut acrylic.
-![DSC00211_002](https://github.com/user-attachments/assets/c0fb7b66-035d-4378-83a7-ab10edb0f0d9)
+![DSC00211_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00211_002.webp)
 
 
 M3x12mm Bolt. Quantity 150. Properties: Black oxide steel, 2mm torx drive button head. 
-![F5C182B1-9B6B-450B-87A6-F663FDC3C1E7](https://github.com/user-attachments/assets/c5a130b9-67aa-4938-b756-f07cda77e8d3)
+![F5C182B1-9B6B-450B-87A6-F663FDC3C1E7](../assets/MaslowCNC_Wisdom_Manual-assets/F5C182B1-9B6B-450B-87A6-F663FDC3C1E7.webp)
 
 M3x12mm Bolt with Loctite. Quantity 20. Properties: Black oxide steel, 2mm torx drive button head.
-![AEE79059-F043-4095-B7D1-8394BD85048F_008](https://github.com/user-attachments/assets/44422998-5dc1-483a-90b9-1147377f5cef)
+![AEE79059-F043-4095-B7D1-8394BD85048F_008](../assets/MaslowCNC_Wisdom_Manual-assets/AEE79059-F043-4095-B7D1-8394BD85048F_008.webp)
 
 M3x6mm Bolt. Quantity 12. Properties: Black oxide steel, torx drive button head. 
-![90E1DD68-72A5-49A2-B337-B99131CA1ECD](https://github.com/user-attachments/assets/929848df-e477-491e-85ce-a886082abe2e)
+![90E1DD68-72A5-49A2-B337-B99131CA1ECD](../assets/MaslowCNC_Wisdom_Manual-assets/90E1DD68-72A5-49A2-B337-B99131CA1ECD.webp)
 
 M3 Nut. Quantity 30. Properties: Stainless steel.
-![DSC00206](https://github.com/user-attachments/assets/1b02e6e1-b05f-4919-a692-c179c988d229)
+![DSC00206](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00206.webp)
 
 M3 Locknut. Quantity 150. Properties: Stainless steel.
-![DSC00208_002](https://github.com/user-attachments/assets/b88650ce-e1dd-413e-ac7b-31a593d3e277)
+![DSC00208_002](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00208_002.webp)
 
 
 T8 Torx Wrench. Quantity 1. Properties: Stainless steel.
-![03CAB142-539C-4F23-9D0B-D1F9354CCF55](https://github.com/user-attachments/assets/42b77165-d530-47f6-ab28-4d243e82a8bb)
+![03CAB142-539C-4F23-9D0B-D1F9354CCF55](../assets/MaslowCNC_Wisdom_Manual-assets/03CAB142-539C-4F23-9D0B-D1F9354CCF55.webp)
 
 T10 Torx Wrench. Quantity 1. Properties: Stainless steel.
-![C381A4C3-4B7D-4DD8-892D-F8F277324CA2](https://github.com/user-attachments/assets/00f967c5-f64a-4072-8219-e6be3bcc1f9a)
+![C381A4C3-4B7D-4DD8-892D-F8F277324CA2](../assets/MaslowCNC_Wisdom_Manual-assets/C381A4C3-4B7D-4DD8-892D-F8F277324CA2.webp)
 
 
 T10 Torx Driver. Quantity 1.
-![47811757-CD7B-4B3C-9B88-13B2481E961F_008](https://github.com/user-attachments/assets/d88f25f2-7f81-4d00-8f53-b1b937b6c815)
+![47811757-CD7B-4B3C-9B88-13B2481E961F_008](../assets/MaslowCNC_Wisdom_Manual-assets/47811757-CD7B-4B3C-9B88-13B2481E961F_008.webp)
 
 Encoder Magnet. Quantity 4. Properties: Magnetic.
-![DSC00202](https://github.com/user-attachments/assets/11288eaf-349c-43f9-8c50-7db123a79b81)
+![DSC00202](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00202.webp)
 
 
 Super Glue. Quantity 1. Properties: Gel
-![DSC00145_004](https://github.com/user-attachments/assets/27e5028f-d6cb-4a11-b934-8b675a78265d)
+![DSC00145_004](../assets/MaslowCNC_Wisdom_Manual-assets/DSC00145_004.webp)
 
 ---
 
@@ -933,11 +933,11 @@ Maslow4 will work at any angle from horizontal up to about 20 degrees from verti
 Each of Maslow4’s belts terminate with a belt end ring which can be attached to an anchor point. The hole in the end of this part is 10mm or 3/8ths inches and can attach to a 10mm or 3/8ths inch bolt. It’s preferable if the bolt is smooth, but it will still work if the bolt is threaded.
 
 
-![4700724E-439F-451D-B10E-B73C26CB7475](https://github.com/user-attachments/assets/f51ac40d-ca10-4ba8-afd4-f1f317239797)
+![4700724E-439F-451D-B10E-B73C26CB7475](../assets/MaslowCNC_Wisdom_Manual-assets/4700724E-439F-451D-B10E-B73C26CB7475.webp)
 
 
 The end of the belt can be connected to a bolt, a shoulder bolt, or a quick release pin.
-![6E78B686-7B2F-4D6C-9158-38F5AF91A4A1_002](https://github.com/user-attachments/assets/7545138f-f6b5-406b-9e36-22695beeb4d9)
+![6E78B686-7B2F-4D6C-9158-38F5AF91A4A1_002](../assets/MaslowCNC_Wisdom_Manual-assets/6E78B686-7B2F-4D6C-9158-38F5AF91A4A1_002.webp)
 
 ### Safety:
 
@@ -954,14 +954,14 @@ The very simplest cheapest, and strongest, version of this is to use 3/8ths inch
 
 
 Then when the machine is not in use it has almost no footprint and when it is in use you have the most rigid and durable frame possible. We used these anchors, but there are many comparable options out there. https://www.grainger.com/product/DEWALT-Expansion-Anchor-3-8-16-Thread-30RZ53
-![1000012945_008](https://github.com/user-attachments/assets/bd1461b1-bfcf-4ec9-89a3-a0317db7b90c)
-![1000012945](https://github.com/user-attachments/assets/1899cda7-c5aa-4b80-84ea-34b7d9ca34ae)
+![1000012945_008](../assets/MaslowCNC_Wisdom_Manual-assets/1000012945_008.webp)
+![1000012945](../assets/MaslowCNC_Wisdom_Manual-assets/1000012945.webp)
 
 
 If you cannot drill into the floor itself you can use 3D printed anchor points which can be glued to the floor. These also work well, but leave a tripping hazard when the machine is not in use.
-![image1](https://github.com/user-attachments/assets/e0589149-89fd-44c6-9289-f611140b4e05)
-![image2](https://github.com/user-attachments/assets/ba12bc84-1c87-48d9-98d5-40c945fe680a)
-![IMG_1728_003](https://github.com/user-attachments/assets/6e19b620-3774-48eb-a470-f64efa82c471)
+![image1](../assets/MaslowCNC_Wisdom_Manual-assets/image1.webp)
+![image2](../assets/MaslowCNC_Wisdom_Manual-assets/image2.webp)
+![IMG_1728_003](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_1728_003.webp)
 
 
 In this case I put my anchor points the long way in the garage, but if I were to do it again I would put them the other way so that they would be all the way by the walls so I wouldn’t need to step over them.
@@ -985,7 +985,7 @@ There are more options for frames depending on your situation and space.  These 
 
 ## Basic Wooden Frame Directions
 
-![90797204-6F40-4B60-8F33-F2EB10633B80_008](https://github.com/user-attachments/assets/46ac4974-9af0-47ee-8af3-77a58d01cf9f)
+![90797204-6F40-4B60-8F33-F2EB10633B80_008](../assets/MaslowCNC_Wisdom_Manual-assets/90797204-6F40-4B60-8F33-F2EB10633B80_008.webp)
 
 If attaching Maslow4 to your floor is not an option, here are the plans for the basic frame that we have been using which has worked well for us. This frame is made from 2x4 lumber which is pretty universally available and affordable. We’re going to show plans for the most basic version of this frame, and then a couple optional upgrades if you want. The materials are listed for US sizes, but very comparable materials exist in metric sizes (ie 18mm plywood instead of 3/4).
 
@@ -999,8 +999,8 @@ If attaching Maslow4 to your floor is not an option, here are the plans for the 
     - 4 count  3/8ths by 6” bolts ($1.43 at Home Depot)
     - 4 count 3/8ths Tee Nuts
     - 4 count 3/8ths Wing Nuts ($1.38 at Home Depot)
-![899F88F4-C47C-4E2C-88D3-2D28D01D6D31_003](https://github.com/user-attachments/assets/ba0ce27f-4f09-4441-8fcb-ad2d7a4f27a2)
-![42F282D7-5E6A-47E4-BA33-A9E156E9D1E6_008](https://github.com/user-attachments/assets/d4e645bd-07dd-4584-8428-912166a663cd)
+![899F88F4-C47C-4E2C-88D3-2D28D01D6D31_003](../assets/MaslowCNC_Wisdom_Manual-assets/899F88F4-C47C-4E2C-88D3-2D28D01D6D31_003.webp)
+![42F282D7-5E6A-47E4-BA33-A9E156E9D1E6_008](../assets/MaslowCNC_Wisdom_Manual-assets/42F282D7-5E6A-47E4-BA33-A9E156E9D1E6_008.webp)
 
 
 ### Tools
@@ -1020,44 +1020,44 @@ Click here for printable templates for the Corner Plate (metric version)
 and the Inside Plate (metric version) 
 [https://www.maslowcnc.com/s/Inside-Plate-to-Scale.pdf ](url). 
 Print this on 8 1/2” by 11” paper or A4 Paper. The exact shape and dimensions of these parts absolutely do not matter. You can cut them by hand without measuring anything if you would like. Note that the circles on these parts are the approximate screw locations and do not need to be drilled.
-![42F282D7-5E6A-47E4-BA33-A9E156E9D1E6_008](https://github.com/user-attachments/assets/a1b76199-edff-4235-b205-98e52f44822f)
+![42F282D7-5E6A-47E4-BA33-A9E156E9D1E6_008](../assets/MaslowCNC_Wisdom_Manual-assets/42F282D7-5E6A-47E4-BA33-A9E156E9D1E6_008_1.webp)
 
 2 - Stack the corner parts in groups of two and drill a 3/8ths hole in each stack two inches from each edge
-![Screenshot+2024-01-09+at+4 15 02+PM](https://github.com/user-attachments/assets/e31538b6-f252-4253-b94c-f25949aab4ce)
+![Screenshot+2024-01-09+at+4 15 02+PM](../assets/MaslowCNC_Wisdom_Manual-assets/Screenshot_2024-01-09_at_4_15_02_PM.webp)
 
 3 - Insert a 3-8ths inch tee nut into one of each pair of corner plates
-![Screenshot+2024-01-09+at+4 20 55+PM_007](https://github.com/user-attachments/assets/72af1e21-e2fa-4ee9-80a1-b769833b9a7f)
-![Screenshot+2024-01-09+at+4 21 10+PM_006](https://github.com/user-attachments/assets/2461b7f3-8877-4562-8894-02bb4e4b0a0d)
+![Screenshot+2024-01-09+at+4 20 55+PM_007](../assets/MaslowCNC_Wisdom_Manual-assets/Screenshot_2024-01-09_at_4_20_55_PM_007.webp)
+![Screenshot+2024-01-09+at+4 21 10+PM_006](../assets/MaslowCNC_Wisdom_Manual-assets/Screenshot_2024-01-09_at_4_21_10_PM_006.webp)
 
 4 - On a flat surface, layout the two 10 ft 2x4s parallel to each other roughly 8 ft apart. The 2 inch sides should be facing up.
 
 
 Place one of the corner plates with the tee nut installed under each end and then place an 8’ 2x4 between them on each side.
-![Screenshot+2024-01-09+at+3 56 02+PM](https://github.com/user-attachments/assets/d479ac03-7d42-4f6c-8c19-1a824290760a)
+![Screenshot+2024-01-09+at+3 56 02+PM](../assets/MaslowCNC_Wisdom_Manual-assets/Screenshot_2024-01-09_at_3_56_02_PM.webp)
 
 
 5 - Layout the five 8 ft 2x4s between the 10 ft pieces perpendicularly. The 2 in sides should  be facing up. There should be one at either end to create a rectangle and three evenly spaced in the middle.
 
 
 The exact spacing of these braces is not critical. Here is an illustration of the recommended spacing, but if your lumber is a slightly different length do not worry. What we are going for is a roughly even spacing.
-![Maslow+Frame+Drawing_002](https://github.com/user-attachments/assets/839d5f2c-12e0-46d2-a56e-560e8e5b544f)
+![Maslow+Frame+Drawing_002](../assets/MaslowCNC_Wisdom_Manual-assets/Maslow_Frame_Drawing_002.webp)
 
 open this drawing (imperial) https://www.maslowcnc.com/s/Maslow-Frame-Drawing.png
 
 open this drawing (metric) https://www.maslowcnc.com/s/Maslow-Frame-Metric.pdf
 
 6 - Using a carpenter's square to make sure the corners are roughly 90 degrees, screw one Corner Plate to each corner of the frame. Use 2 screws for each 2x4 following the layout shown in Detail A. Each plate receives 4 screws
-![PXL_20231220_233225139_003](https://github.com/user-attachments/assets/275e1834-2747-4a44-81c4-3d281440b2a7)
+![PXL_20231220_233225139_003](../assets/MaslowCNC_Wisdom_Manual-assets/PXL_20231220_233225139_003.webp)
 
 7 - Using a carpenter's square to make sure the 2x4s are roughly 90 degrees, screw one Inside Plate to each intersection of 8ft and 10ft 2x4s. Use 2 screws for each 2x4 following the layout shown in Detail A. Each plate receives 4 screws
-![PXL_20231220_233231011_003](https://github.com/user-attachments/assets/ff2dd26f-86e4-46e1-bd02-e63576f83f0b)
+![PXL_20231220_233231011_003](../assets/MaslowCNC_Wisdom_Manual-assets/PXL_20231220_233231011_003.webp)
 
 8 - Flip the frame over so that the newly attached plate are facing down
 
 
 * Tip: Please ask someone to help with this part. This thing is big and awkward to move.
 
-![5E9E41D2-EF00-4EDB-9C93-863DAC9E70FD_002](https://github.com/user-attachments/assets/4f32f827-9a4d-45e7-8f16-3b068570df0f)
+![5E9E41D2-EF00-4EDB-9C93-863DAC9E70FD_002](../assets/MaslowCNC_Wisdom_Manual-assets/5E9E41D2-EF00-4EDB-9C93-863DAC9E70FD_002.webp)
 
 
 9 - Screw one Corner Plate to each corner of the frame. Use 2 screws for each 2x4 following the layout shown in Detail A. Each plate receives 4 screws
@@ -1065,16 +1065,16 @@ open this drawing (metric) https://www.maslowcnc.com/s/Maslow-Frame-Metric.pdf
 10 - Screw one Inside Plate to each intersection of 8ft and 10ft 2x4s. Use 2 screws for each 2x4 following the layout shown in Detail A. Each plate receives 4 screws
 
 11 - Center the remaining piece of ¾” plywood in the frame to create a spoil board..
-![90797204-6F40-4B60-8F33-F2EB10633B80_003](https://github.com/user-attachments/assets/e85d43c1-2395-4314-a97d-7a2d151395f0)
+![90797204-6F40-4B60-8F33-F2EB10633B80_003](../assets/MaslowCNC_Wisdom_Manual-assets/90797204-6F40-4B60-8F33-F2EB10633B80_003.webp)
 
 12 - Screw the plywood to the 2x4s underneath using 2 screws per 2x4, one on either side of the plywood board. There will be 6 screws in the spoil board in total. 
-![PXL_20231220_234115425 MP_008](https://github.com/user-attachments/assets/3c259a60-8f30-4fc6-b719-81c525b73632)
+![PXL_20231220_234115425 MP_008](../assets/MaslowCNC_Wisdom_Manual-assets/PXL_20231220_234115425_MP_008.webp)
 
 13 - Thread the 3/8ths inch bolts through the frame and into the tee nut. Then flip the frame over and thread the bolts all the way through so that they protrude.
-![E080EB3F-7F0D-49AF-A43D-6353258A6639_008](https://github.com/user-attachments/assets/30b094bb-65b1-47d0-bb58-d3a4d475a6b4)
+![E080EB3F-7F0D-49AF-A43D-6353258A6639_008](../assets/MaslowCNC_Wisdom_Manual-assets/E080EB3F-7F0D-49AF-A43D-6353258A6639_008.webp)
 
 These will server as the anchor points for the machine. 
-<img width="1000" height="750" alt="image" src="https://github.com/user-attachments/assets/6483a286-f85b-4eac-bee5-41d06fed5f71" />
+<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6483a286.png" />
 
 14 - Done! Modify as needed.
 
@@ -1095,7 +1095,7 @@ This is a rough guide to make a frame. If you have room you can use 12’ 2x4s t
 
 Maslow4 is designed to be assembled in a weekend using only the provided Allen or Torx wrench. 
 
-![03CAB142-539C-4F23-9D0B-D1F9354CCF55](https://github.com/user-attachments/assets/45d0d87e-b4fb-4823-b72b-147b798bad8a)
+![03CAB142-539C-4F23-9D0B-D1F9354CCF55](../assets/MaslowCNC_Wisdom_Manual-assets/03CAB142-539C-4F23-9D0B-D1F9354CCF55_1.webp)
 
 The assembly process is broken down into four steps. The assembly process is very similar for Maslow 4 and 4.1, but since some parts look slightly different we have created two sets of instructions. You can find step by step instructions and a video for each part here:
 
@@ -1107,27 +1107,27 @@ The assembly process is broken down into four steps. The assembly process is ver
     5. Putting it all together: 4.0 and 4.1
 
 4.0 instructions will be first.  Scroll down to find all of the 4.1 instructions together. 
-![image1](https://github.com/user-attachments/assets/41eff5ab-5708-4eb3-a01c-617cde5b8358)
+![image1](../assets/MaslowCNC_Wisdom_Manual-assets/image1_1.webp)
 
 ## 4.0 Assembly Instructons Background and context
 
-![image5](https://github.com/user-attachments/assets/5e51b546-eb98-4740-aaa2-f82ca993446c)
+![image5](../assets/MaslowCNC_Wisdom_Manual-assets/image5.webp)
 
 
 The Maslow4 design has evolved significantly since we launched the Kickstarter. We are proud of every change and improvement that we’ve made. Maslow4 is a substantially better machine than what we initially promised as a result…but the changes have led to some chaos in the hardware bag.
 
-![IMG_3266_003](https://github.com/user-attachments/assets/62f0ca0f-a039-4d8d-95c5-75159b506a31)
+![IMG_3266_003](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_3266_003.webp)
 
 Maslow4 includes three hardware bags each of which reflects the changing design needing more and different hardware. 
 
 
 Initially Maslow4 used regular nuts, but we decided to offer locking nuts as well. Unless the type of nut is specified feel free to use either. 
 
-![image2_002](https://github.com/user-attachments/assets/edb33a8b-e285-4fe7-b097-8c6d7fb9a5be)
+![image2_002](../assets/MaslowCNC_Wisdom_Manual-assets/image2_002.webp)
 
 Wherever possible Maslow4 is designed to be put together with a single length of bolt (the versatile M3x12mm) to make assembly and maintenance easy. For the most part we have succeeded in that, however there are two places where a different length of bolt are needed. The shorter M3x6 are used to attach the stepper motors due to space constraints, while the longer M3x16 are used to attach the cooling fan due to a miscommunication with the fan manufacturer. We’ll get that one removed down the road.
 
-![image3_003](https://github.com/user-attachments/assets/a8e8208e-37ed-4c1a-beec-12ef18f5c425)
+![image3_003](../assets/MaslowCNC_Wisdom_Manual-assets/image3_003.webp)
 
 
 
@@ -1137,7 +1137,7 @@ We have succeeded in making it so that you only need one tool (the included 2mm 
 Wherever possible we’ve tried to make it so that things can only go together in one clear way.
 
 
-![image4](https://github.com/user-attachments/assets/b31df1ea-e4c9-43db-9eef-cfc9b5f9e3ad)
+![image4](../assets/MaslowCNC_Wisdom_Manual-assets/image4.webp)
 
 If at any point we’ve failed to make a step in the instructions sufficiently clear let us know in the forums! If something was unclear to you it’s almost certainly unclear to other folks too. Your feedback helps to improve the assembly process for everyone.
 
@@ -1150,7 +1150,7 @@ Finally, if you get stuck on something or have a question, the forums are also t
 
 ## Assembling the Arms
 
-![IMG_3168+2](https://github.com/user-attachments/assets/d1e6074e-8fff-4c03-a17b-09e5689d87f2)
+![IMG_3168+2](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_3168_2.webp)
 
 
 Maslow4 has a few parts that need to be glued so we will start there so that the glue can begin drying. In all of the cases where we use glue, the glue is not structural, it is just meant to hold parts in place that might move due to vibration. Use just a small amount of glue.
@@ -1161,47 +1161,47 @@ Assembling the arms is the most complex and difficult part of the Maslow4 build 
 
 Find any of these steps confusing or get stuck? Don’t forget, you aren’t alone! Maslow is a community driven open source project. Ask in the forums and we’ll figure it out together!
 
-![image23](https://github.com/user-attachments/assets/ad0b4024-9f9a-41af-8e6d-09458562ef55)
+![image23](../assets/MaslowCNC_Wisdom_Manual-assets/image23.webp)
 
 
 First we will gather the four belts, the four arms, and the super glue which we will need for this step. The top and bottom halves of the arms are identical.
 
 
-![image31_007](https://github.com/user-attachments/assets/6526849e-f29a-456a-8a21-9a194ba139b6)
+![image31_007](../assets/MaslowCNC_Wisdom_Manual-assets/image31_007.webp)
 
 Removing the spool from each arm, place a small drop of super glue in the slot where the belt will attach like this.
 
 
 A couple notes on this section. The super glue is opened by twisting the top. One end of each belt might fit into the spool more easily than the other so it’s worth checking both ends before starting with the glue.
 
-![image6_004](https://github.com/user-attachments/assets/1225e54c-0b20-4c3d-ad73-c81051127be1)
+![image6_004](../assets/MaslowCNC_Wisdom_Manual-assets/image6_004.webp)
 
 
 You do not need to use much glue. A very small drop is fine. 
 
 
-![image17](https://github.com/user-attachments/assets/0e738994-90c4-43bc-98e2-f836f9c3315f)
+![image17](../assets/MaslowCNC_Wisdom_Manual-assets/image17.webp)
 
 Then press the belt fully into the slot. It should not stick above the top of the slot. 
 
-![image2](https://github.com/user-attachments/assets/87513fab-8019-42fb-a010-6bea9e828287)
+![image2](../assets/MaslowCNC_Wisdom_Manual-assets/image2_1.webp)
 
 Repeat this step for all four spools.
 
-![image14_007](https://github.com/user-attachments/assets/bcb15253-09b0-49b0-ab2b-cbac5efbb82a)
+![image14_007](../assets/MaslowCNC_Wisdom_Manual-assets/image14_007.webp)
 
 
 Next we will glue the encoder magnets into the rollers. For this step we will need to gather the eight rollers and the four magnets.
 
-![image12_003](https://github.com/user-attachments/assets/2b5be5e1-da93-4b2e-92b2-1bbdebddfed2)
+![image12_003](../assets/MaslowCNC_Wisdom_Manual-assets/image12_003.webp)
 
 We will just need four of them for this step:
 
-![image30_008](https://github.com/user-attachments/assets/7ff23dc5-f4ea-4ab6-b718-f1a2a4c73101)
+![image30_008](../assets/MaslowCNC_Wisdom_Manual-assets/image30_008.webp)
 
 Note that each roller has two ends. One end has a shallow recess to hold the magnet. That is the side we want to use.
 
-![image11_002](https://github.com/user-attachments/assets/db4225ec-9c28-4e9d-9354-3f40dbf71704)
+![image11_002](../assets/MaslowCNC_Wisdom_Manual-assets/image11_002.webp)
 
 Again using a drop of glue place a magnet in the end of each of the four rollers. Note that the magnet will be slightly recessed below the top of the roller. 
 
@@ -1211,31 +1211,31 @@ Be careful, the magnets will try to stick to things while the glue is drying.
 
 The magnet is symmetrical so it can be placed in either orientation.
 
-![image22_008](https://github.com/user-attachments/assets/7f556c87-a8a9-4ba8-a1bc-e591af4480ae)
+![image22_008](../assets/MaslowCNC_Wisdom_Manual-assets/image22_008.webp)
 
 Now set those aside to dry. Be careful not to put them too close together while drying because the magnets will attract and stick together. You have to place them further apart than you might expect. 
 
-![image34](https://github.com/user-attachments/assets/92bcbf31-5f72-4875-a685-2994f2929a50)
+![image34](../assets/MaslowCNC_Wisdom_Manual-assets/image34.webp)
 
 
 Next, we can start working on assembling the rest of the arm. To do that we’re going to need to collect our hardware bags, our thread locker, a DC drive motor, and an encoder board.
 
-![image25_008](https://github.com/user-attachments/assets/36d35182-3050-48e2-a4a7-5d7f667fe7cc)
+![image25_008](../assets/MaslowCNC_Wisdom_Manual-assets/image25_008.webp)
 
 
 The first thing that we are going to need to do there is to insert these two nuts into the end of the arm because they will be covered later when we need them. Don’t forget this step or you will have to backtrack a lot later (a mistake I’ve made many times). Using the allen wrench as a guide can help get them in place.
 
-![image32_008](https://github.com/user-attachments/assets/5450f9e8-b6b9-4e96-adc7-935cd6bb8655)
+![image32_008](../assets/MaslowCNC_Wisdom_Manual-assets/image32_008.webp)
 
 
 Next place the encoder board over them. There are two guide pegs which will hold it in just the right place.
 
-![image29_008](https://github.com/user-attachments/assets/07d9af97-32b1-41ae-b0f6-e3217dadbaa8)
+![image29_008](../assets/MaslowCNC_Wisdom_Manual-assets/image29_008.webp)
 
 
 Then place the motor over that. The orientation of the motor does not matter. 
 
-![image1_006](https://github.com/user-attachments/assets/df04ab4b-481e-4cd4-b018-a0a5239242dc)
+![image1_006](../assets/MaslowCNC_Wisdom_Manual-assets/image1_006.webp)
 
 
 The bolts which connect the motor to the arm can wiggle themselves loose over time so we’ve included removable thread locker in your kit. Place a small amount of thread locker on four bolts.
@@ -1243,52 +1243,52 @@ The bolts which connect the motor to the arm can wiggle themselves loose over ti
 
 You will need to cut the end of the thread locker with scissors or a knife. Note - Do not use the super glue here. The thread locker is a blue liquid, while the super glue is a clear gel.
 
-![image20_003](https://github.com/user-attachments/assets/e41514a9-b011-48ff-b6fd-c252545b4650)
+![image20_003](../assets/MaslowCNC_Wisdom_Manual-assets/image20_003.webp)
 
 And then bolt the drive motor into place.
 
 Community Note: There is some play in how these bolts attach the motor and having the motor further forward (to the right in the picture) is better than further back. If you find that the gears are too tight in later steps you can loosen them up by moving the motor forwards.
 
-![image36_006](https://github.com/user-attachments/assets/a9f76ec2-2c90-4aef-a45d-5cffbb29c9fc)
+![image36_006](../assets/MaslowCNC_Wisdom_Manual-assets/image36_006.webp)
 
 Next we need to collect our drive gear (which has a D shaped opening in the center) and set screw:
 
-![image3_008](https://github.com/user-attachments/assets/de169ea9-d933-4429-8ff2-ac5994c67363)
+![image3_008](../assets/MaslowCNC_Wisdom_Manual-assets/image3_008.webp)
 
 Thread the set screw part way into the drive gear:
 
-![image21_007](https://github.com/user-attachments/assets/4efa15ee-9c6a-4859-86ea-c4577924e97c)
+![image21_007](../assets/MaslowCNC_Wisdom_Manual-assets/image21_007.webp)
 
 Then attach it to the motor shaft. The gear should be almost but not quite touching the plastic or lifted up about the width of an index card or three pieces of paper. Tighten the set screw to lock it in place.
 
-![image4_008](https://github.com/user-attachments/assets/5b4c0c45-0dd4-480a-b6f0-f18a671250c1)
+![image4_008](../assets/MaslowCNC_Wisdom_Manual-assets/image4_008.webp)
 
 
 Next collect the idler gear (which has a round opening in the center) and the idler shaft along with our packet of silicone grease.
 
-![image13_008](https://github.com/user-attachments/assets/b6aa0f07-1b35-4b94-a906-613e7e82332a)
+![image13_008](../assets/MaslowCNC_Wisdom_Manual-assets/image13_008.webp)
 
 
 Insert the idler shaft into the arm next to the drive gear. Feel free to bang it on the table a bit to make sure it’s all the way in.
 
-![image16_008](https://github.com/user-attachments/assets/43596e04-ccfc-45ab-b3de-18555b6396ae)
+![image16_008](../assets/MaslowCNC_Wisdom_Manual-assets/image16_008.webp)
 
 
 Then place a small amount of silicone grease on the shaft and inside the gear and then slide the gear into place.
 
-![IMG_3371_008](https://github.com/user-attachments/assets/f3721b55-7120-44c2-928c-a7be01db104e)
+![IMG_3371_008](../assets/MaslowCNC_Wisdom_Manual-assets/IMG_3371_008.webp)
 
 Next we need to press bearings into the arm. Press two bearings into the opening in the front of the arm. You can use one of the rollers that doesn’t have a magnet to help press them into place if needed.
 
-![image8_002](https://github.com/user-attachments/assets/bd14c0df-45ee-4787-a86b-e7e455dcb9a4)
+![image8_002](../assets/MaslowCNC_Wisdom_Manual-assets/image8_002.webp)
 
 Next set this half of the arm aside and we will work on the other half. First we will need to press three bearings into a new arm half. The middle bearing on this side is a bit snug so some GENTLE taps from a hammer can help press it into place.
 
-![image19_008](https://github.com/user-attachments/assets/c4c5c7ca-e2bc-4b33-87de-4df90e85fcd9)
+![image19_008](../assets/MaslowCNC_Wisdom_Manual-assets/image19_008.webp)
 
 Next we will attach the belt guard. Insert three nuts into the holes in the top of the belt guard with the open end of the nuts down.
 
-![image35_008](https://github.com/user-attachments/assets/2e0c5d35-25a9-48db-84e0-fa011696c396)
+![image35_008](../assets/MaslowCNC_Wisdom_Manual-assets/image35_008.webp)
 
 Then add three bolts to hold it in place.
 
@@ -1298,20 +1298,20 @@ Next we need to wait for the glue to finish drying on our other parts before we 
 
 This next part where everything comes together sort of happens all at once and can be a little tricky. Don’t feel frustrated if it takes a couple of tries to get it right. With practice it can be pretty smooth, but the only way to get the hang of it is to try.
 
-![image33](https://github.com/user-attachments/assets/88491a9c-bcb9-41d3-805a-84a7934d6fa5)
+![image33](../assets/MaslowCNC_Wisdom_Manual-assets/image33.webp)
 
 First place the spool with the belt wrapped around it onto the top of the arm so that it engages with the drive gears. The fit will be quite snug.
 
-![205ae4980e697c0f9270b9e9c1200cdb06d8bfa9_2_750x1000_008](https://github.com/user-attachments/assets/d25be824-bd68-43ed-91e0-8b17364cb0c3)
+![205ae4980e697c0f9270b9e9c1200cdb06d8bfa9_2_750x1000_008](../assets/MaslowCNC_Wisdom_Manual-assets/205ae4980e697c0f9270b9e9c1200cdb06d8bfa9_2_750x100.webp)
 
-![5430d717135c8b2eaee948a50da232e88ccb4d9e_2_750x1000_007](https://github.com/user-attachments/assets/3b186ca9-2680-48b9-be1f-ec7309ef2ac4)
+![5430d717135c8b2eaee948a50da232e88ccb4d9e_2_750x1000_007](../assets/MaslowCNC_Wisdom_Manual-assets/5430d717135c8b2eaee948a50da232e88ccb4d9e_2_750x100.webp)
 
 
 Note that when we route the belt we want it to pass in front of the drive gears, not behind them.
 
-![image9](https://github.com/user-attachments/assets/4203930e-626b-497c-b582-ee6a4b1d2d37)
+![image9](../assets/MaslowCNC_Wisdom_Manual-assets/image9.webp)
 
-![Screenshot+2024-03-10+at+2 03 19 PM](https://github.com/user-attachments/assets/8f902a7b-f60b-4bd0-9e03-2c83cf27693d)
+![Screenshot+2024-03-10+at+2 03 19 PM](../assets/MaslowCNC_Wisdom_Manual-assets/Screenshot_2024-03-10_at_2_03_19_PM.webp)
 
 Next on the other side of the arm thread the end of the belt through the belt guard and insert the two rollers. **Note that one roller has a magnet and the other does not. The placement of the magnet is very important. It must line up with the sensor (in green on the right) on the other half of the arm when the two halves come together.**
 
@@ -1320,14 +1320,14 @@ Then press the two halves together. This is much easier said than done and this 
 
 Generally I start from the back of the arm (the side that doesn’t have the belt coming out of it) and work my way forward. 
 
-![image7_007](https://github.com/user-attachments/assets/af059d15-24b9-48e2-b0d4-7b14fbe1aa25)
+![image7_007](../assets/MaslowCNC_Wisdom_Manual-assets/image7_007.webp)
 
 There are three things which will need to go into place. First the idler shaft needs to align with the hole on the opposite side. Then the drive shaft needs to align with the opening in the bearing on the bottom, then the rollers will need to line up with bearings on the other half. 
 
 
 I find that by checking each one of these locations in turn and getting them lined up the two halves will come together. It can be helpful to use the allen wrench to jostle the rollers around to make them line up.
 
-![image28_004](https://github.com/user-attachments/assets/0e642511-5bc5-49ad-a69c-85debaf74b65)
+![image28_004](../assets/MaslowCNC_Wisdom_Manual-assets/image28_004.webp)
 
 Then we join the two halves together with eight bolts. 
 
@@ -1337,24 +1337,24 @@ Two of the bolts at the front already connect to the captive nuts there. If thos
 
 The other six go around the center of the spool. The direction of these bolts can go in either direction. Don’t over tighten these, they just need to be tight enough to keep the two halves together.
 
-![image5_006](https://github.com/user-attachments/assets/a44da471-140f-4bc0-8af5-58b698555f43)
+![image5_006](../assets/MaslowCNC_Wisdom_Manual-assets/image5_006.webp)
 
 Finally we need to attach the belt end to the end of our arms. Gather the eight belt end parts:
 
-![image24_007](https://github.com/user-attachments/assets/c0497cc5-72fa-40f6-bd04-1a1ab6bd58f5)
+![image24_007](../assets/MaslowCNC_Wisdom_Manual-assets/image24_007.webp)
 
 Then take two of the belt ends and the end of one of the belts extending from our arms:
 
-![image15_008](https://github.com/user-attachments/assets/58a83a5b-846f-49a1-82eb-afb90b097b80)
+![image15_008](../assets/MaslowCNC_Wisdom_Manual-assets/image15_008.webp)
 
 
 Fold the belt over and press it into the slot in the belt end so that the end protrudes only slightly. This can be tricky to do because the fit is tight (it needs to be tight to handle the force). I find that starting with the loop in the belt at the open end of the slot and pushing it forward works well. You can use the allen wrench to lever it into place.
 
-![image27_004](https://github.com/user-attachments/assets/1657b930-988f-4280-8c75-a7f30093edc6)
+![image27_004](../assets/MaslowCNC_Wisdom_Manual-assets/image27_004.webp)
 
 Then press on the other half of the belt end. 
 
-![image18_005](https://github.com/user-attachments/assets/6389fb68-ac77-4bb5-9f98-d1b66dd4aec8)
+![image18_005](../assets/MaslowCNC_Wisdom_Manual-assets/image18_005.webp)
 
 And secure it with a bolt and non-lock nut.
 Congratulations! You are done with the most difficult and longest part of the assembly process!
@@ -1408,7 +1408,7 @@ Congratulations! Your sled is complete.
 - add some more!!
 
 # Flowchart of user actions
-![BasicUserFlowchartMaslow](https://github.com/user-attachments/assets/ae4efb43-eb08-4206-ade3-ce42cd5fc7c8)
+![BasicUserFlowchartMaslow](../assets/MaslowCNC_Wisdom_Manual-assets/BasicUserFlowchartMaslow.jpg)
 
 
 

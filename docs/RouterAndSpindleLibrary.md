@@ -5,8 +5,8 @@ Maslow 4 was built aroud the DewaltDWP611 series router. Maslow uses it for the 
 
 Many people in the Maslow community have swapped out the Dewalt for a different router. The key part is that the arms rotate around the motor cylinder of the router.  **The Dewalt611 cylinder has a diameter of 69mm.** Many other routers have different dimensions.  To change the router to one with a smaller cylinder one needs to make a cylindrical spacer to change between the size of the Dewalt and  the smaller router. Many people like the idea of coverting to a CNC spindle which is often quieter than a standard router and can be controlled by a computer. In either case community members have had some success 3D printing adaptors between their chosen router or spindle and the 69mm design size. 
 Here is a link to the forum where people are discusing this.  
-[https://forums.maslowcnc.com/t/m4-router-mounter-be-gone-use-any-router-with-a-side-entry-cord/21202/48
-](url)
+<https://forums.maslowcnc.com/t/m4-router-mounter-be-gone-use-any-router-with-a-side-entry-cord/21202/48
+>
 
 This file is a place to share Routers and spindles and how they have been adapated to work wiht the Maslow. 
 

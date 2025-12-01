@@ -13,7 +13,7 @@ Forums:
 [https://forums.maslowcnc.com/](url)
 
 How to edit this wiki:
-[https://github.com/MaslowCNC/Maslow_4/tree/docs/HowToEditThisWiki.md](url)
+[https://github.com/MaslowCNC/Maslow_4/tree/docs/HowToEditThisWiki.md(url)
 
 
 

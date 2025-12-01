@@ -53,7 +53,7 @@ These show areas where the Maslow can move accurately and areas where it will st
 - Frames may need to have room for extra wood around the outside of the cutting area at the level of the cutting surface. For cuts that go right to the edge Maslow will tip over when the sled is not supported.
 - You can very carefully measure the distance of your frame pins from each other, and assuming you have made it a nice rectange, enter those positions into the Maslow software directly instead of calibrating. For example you would measure in mm from the left side of one anchor pin to the left side of another. This is entered in the Maslow control program under ?settings?. 
 - Belt extensions are freely rotating sticks or machine belt that you could optionally add to the ends of the built in maslow belts in order to make a larger frame with a wider cutting area.  So far people have made belt extensions by adding a metal bar at an anchor where it can freely rotate and then attaching the existing belt to the end of the bar. You would enter this in the Maslow control program under ?settings? directly
-- 
+
 
 ## Safety
 

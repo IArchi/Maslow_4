@@ -25,7 +25,7 @@ If you don't know programming you can still share your projects and designs and 
 Click on the **Create an account** link near the bottom of the page. Follow the instructions there.
 
 2. Make sure you are in
-  [https://github.com/MaslowCNC/Maslow_4](url)
+ <https://github.com/MaslowCNC/Maslow_4>
 <img width="918" height="993" alt="Docsmarked" src="https://github.com/user-attachments/assets/4c12e799-ca5d-4aa5-920d-dffa9ccc5928" />
 
 
@@ -52,7 +52,7 @@ Click on the **Create an account** link near the bottom of the page. Follow the 
 
 It will bring you to this guide:
 
- [https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax](url)
+<https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax>
 
  
 9. When you have edited the document click on the **commit changes** button

@@ -132,7 +132,7 @@ Currently the focus is on making the Maslow4 run quickly and easily mostly throu
 ---
 # MANUAL
 
-# TABLE OF CONTENTS
+# TABLE OF CONTENTS (you can alway jump to a section by clicking the OUTLINE button in the top right corner of the reading pane three dots and three lines) 
 1. Things you will need to get started
 2. Optional but good things to have
 3. Safety and hazards
@@ -211,7 +211,7 @@ Many of these are available in the not shop on the Maslow website.
 7. **Metric meausring tape**
 8. **Emergency Stop Button**  Extension cord with a clearly marked button for turning off power to the router and robot. 
 9. **Handle** for moving the machine (?Best practice?
-10. **Router Speed Controller** Extension cord that varies the voltage to the router. Check power rating and suitablility for your router
+10. **Router Speed Controller** Extension cord that varies the voltage to the router. Check power rating and suitablility for your router. The Dewalt already has a speed control dial at the top of the router. 
 
 ---
 
@@ -1408,7 +1408,9 @@ Congratulations! Your sled is complete.
 - add some more!!
 
 # Flowchart of user actions
-![maslow4_115flowchart](https://github.com/user-attachments/assets/b628c773-63f9-4daf-9388-478431bbd42b)
+![BasicUserFlowchartMaslow](https://github.com/user-attachments/assets/ae4efb43-eb08-4206-ade3-ce42cd5fc7c8)
+
+
 
 
 # Details on Optional addtions (add details and instructions) 
@@ -1421,7 +1423,7 @@ Congratulations! Your sled is complete.
 7. **Metric meausring tape**
 8. **Emergency Stop Button**  Extension cord with a clearly marked button for turning off power to the router and robot. 
 9. **Handle** for moving the machine (?Best practice?
-10. **Router Speed Controller** Extension cord that varies the voltage to the router. Check power rating and suitablility for your router
+10. **Router Speed Controller** Extension cord that varies the voltage to the router. Check power rating and suitablility for your router the Dewalt already has a spee control dial at the top of the router. 
 
 
 

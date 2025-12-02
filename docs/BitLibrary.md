@@ -4,7 +4,7 @@ This is a place to list bits that the community has found useful, for each bit a
 
 Your Maslow kit needs a router DewaltDWP611 to work as well as a cutting bit to go in the router.  The Dewalt 611 has a very exact 1/4 inch hole in the chuck.  As sold it can only use router bits with a 1/4 in shaft. 
 
-To change a Router bit, you will need to press in towards the center of the router on a yellow button that is in a semicircular recess in the bottom Maslow4 Clamp ring. This button pushes a metal rod into a cut out space on the shaft of the router to hold the shaft in place while you use a wrench to 
+To change a Router bit, you will need to press in towards the center of the router on a yellow button that is in a semicircular recess in the bottom Maslow4 Clamp ring. This button pushes a metal rod into a cut out space on the shaft of the router to hold the shaft in place while you use a wrench to loosen the chuck nut which will let the router bit slide in and out.  This is a lot for just two hands to do. Maslow community members have designed a 3D printable button pusher stub to push into the hole to hold the button down while changing the bit. Be sure to remove it before starting. <https://www.maslowcnc.com/the-not-shop>
 
 
 The most common cutting bit is a 1/4 in 2 flute spiral upcutting bit.  These are available in the Maslow website shop and in most hardware stores.  

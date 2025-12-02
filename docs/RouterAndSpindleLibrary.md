@@ -8,7 +8,7 @@ Here is a link to the forum where people are discusing this.
 <https://forums.maslowcnc.com/t/m4-router-mounter-be-gone-use-any-router-with-a-side-entry-cord/21202/48
 >
 
-This file is a place to share Routers and spindles and how they have been adapated to work wiht the Maslow. 
+This file is a place to share Routers and spindles and how they have been adapated to work with the Maslow. 
 
 # ROUTER LIBRARY 
 ## To add a router or spindle start a new entry with a title started by three ### hash symbols then add pictures, materials and description and links.  Still working on what is a useful format here, use your judgment. If we use the heading system built into markdown it will automatically create a table of contents in the top right corner of the reading pane. 

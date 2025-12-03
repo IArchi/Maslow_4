@@ -9,7 +9,7 @@ THere are many many options to get to a sucessful Gcode for Maslow4 Some program
 
 
 Generally a design will start in a program that lets you draw or specify the shapes for your design. You could use a **2D Vector drawing** program like Inkscape or Adobe Illustrator or a **three dimensional program** like Blender or Autodesk. 
-Key words for these programs are **Vector drawing or Computer Aided Design CAD** programs. Files can be .**svg .stl** but generally not .png or .jpg (bitmap pictures) 
+Key words for these programs are **Vector drawing or Computer Aided Design CAD** programs. Files can be .**.dxf .svg .stl** but generally not .png or .jpg (bitmap pictures) 
 
 
 Once you have a mathematcially defined shape, it needs to be translated into Gcode. The programs that can do this are called **Computer Aided Machining or CAM** programs. Examples are Krabzcam on the web, a wonderful and effective 2 dimensional free project. Autodesk and Autocad can do this too. In these programs you would describe the geometry of the router bit that you are using and the type of operation that you would like to do to the wood, like drilling or a profile cut or a shallow pocket cut and then the program designs a pathway for that particular router bit to leave the wood or material behind that you need as it cuts. The resulting file needs to be a **.nc Gcode file**.  
@@ -25,6 +25,9 @@ We would like to a Pepkura Designer that is a specialized program for unfolding 
 
 
 You can open a Gcode file up in a text editor and edit it by hand if you need to.  You could cut parts out.  Only run half of the program, change distances and speeds all by typing in numbers in the Gcode code system.  It is not hard to learn the basics. (insert Gcode library link) 
+
+# Useful external links
+- Shapeoko wiki list of software <https://old.reddit.com/r/shapeoko/wiki/cam>
 
 
 # SOFTWARE LIBRARY 
@@ -64,6 +67,18 @@ PICTURE
 
 - Credits: Barbour Smith
 
+### FreeCAD
+PICTURE
+- Full CAD CAM parametric design software. Can do the entire process from design to Gcode. Well established project with pretty good support. 
+- https://www.freecad.org/
+- Download for Windows Mac and Linux
+- Free Opensource project 
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
 
 ## 2D Vector Design programs
 
@@ -86,6 +101,23 @@ PICTURE<img width="1854" height="1048" alt="Screenshot from 2025-10-26 10-58-50"
 - Notes:
 - More Pictures:
 - Credits: inkscape.org
+
+### Libre Office Draw
+PICTURE
+- Overview: Made for office diagrams and flowcharts. Not really for .svg authoring but it will work if you already use it.  Use Inkscape instead. 
+- Links:
+- Download program for Windows, Mac and Linux, as well as Android. 
+- Free Open Source
+- Experiences:
+- - It is possible to export as an .svg by finding svg hidden as an option in the export window.
+  - It has a pen tool that can draw vector curves. 
+  - Another free opensource option. Not a good one for CNC
+- Details: 
+- Limitations:
+- -No good join tools
+- Notes:
+- More Pictures:
+- Credits:
 
 ### Adobe Illustrator
 PICTURE
@@ -120,6 +152,7 @@ PICTURE
 - Notes:
 - More Pictures:
 - Credits: Corel
+  
 ## 3D Design programs
 
 ### OnShape
@@ -154,12 +187,62 @@ PICTURE
   - More powerful computers work better. Save early save often. 
 - Notes:
 - - Example instructions for a CAD paper cutting machine. <https://www.instructables.com/Stuffed-Animal-or-Clothing-Manufacturing-with-CAD-/>
-  - Example project using Blender to edit a three D model from Abundance 
+  - Example project using Blender to edit a three D model from Abundance <https://forums.maslowcnc.com/t/giant-useless-skull-out-of-my-neighbors-trash-boards/25165>
 - More Pictures:
 - Credits:
 
 
 
 ## CAM Gcode machine path 
+
+### Krabzcam
+<img width="1854" height="1048" alt="Screenshot from 2025-10-27 11-56-06" src="https://github.com/user-attachments/assets/9d806608-08aa-483a-9837-106304f843bc" />
+
+- Great Free 2D Free Browser Based CAM.  Accepts .svg and exports .nc Gcode It is actively maintained and works well, however the number of options and settings can be overwhelming. It is a great free tool if you are getting started. 
+- <https://mkrabset.github.io/krabzcam/krabzcam/index.html>
+- Online browser based. 
+- Free
+- Experiences:
+- - Be sure to read through the key hints in the background of the yellow window.
+  - Save early save often.  It runs in your browser nothing is uploaded so make sure you are saving as you work. If your browser closes the project is gone. 
+  
+- Details:
+- - Has options for loading png or jpg I haven't tried them. 
+- Limitations:
+- - 2D 
+- Notes:
+- More Pictures:
+- Credits: Marius Krabset 
+
+
+### Example Program entry heading text
+PICTURE
+- Overview:
+- Links:
+- Online, Program download or?:
+- Cost:
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+
+### Example Program entry heading text
+PICTURE
+- Overview:
+- Links:
+- Online, Program download or?:
+- Cost:
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+
+
 
 ## Other useful programs

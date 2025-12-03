@@ -45,6 +45,8 @@ PICTURE
 - Credits:
 
 ## ALL IN ONE CAD CAM 
+
+
 ### Abundance
 <img width="813" height="682" alt="image" src="https://github.com/user-attachments/assets/42d79add-c997-4589-9ab5-6154c3f2b6c9" />
 
@@ -75,7 +77,9 @@ PICTURE<img width="1854" height="1048" alt="Screenshot from 2025-10-26 10-58-50"
 - Experiences:
 - - Excellent for 2d editing of .svg files
   - Lots of support videos and tutorials on the web.
-  - For CNC gather the lines that you need to be cut in one operation and change them all to a set color.  Most CAM programs will read each color in a .svg file as a different operation. For instance Drilling can be green while profile cutting could be red. 
+  - Excellent for free graphic design.
+  - For CNC gather the lines that you need to be cut in one operation and change them all to a set color.  Most CAM programs will read each color in a .svg file as a different operation. For instance Drilling can be green while profile cutting could be red.
+  - Remember for CNC that we have to have the outside lines of shapes only , any lines in a .svg that are hidden under another piece of the drawing will cut. When finalizing your design be sure to Join all of the shapes together, turn off fill colors and check that the outlines are single, clear and non overlapping. 
 - Details:
 - Limitations:
 - - Only 2 D, no good way to put pieces together in 3 D as you design. 
@@ -83,7 +87,78 @@ PICTURE<img width="1854" height="1048" alt="Screenshot from 2025-10-26 10-58-50"
 - More Pictures:
 - Credits: inkscape.org
 
+### Adobe Illustrator
+PICTURE
+- Widely used and well supported Vector design software. Part of the Adobe Creative Suite subscriptions. Lots of tools, professional sign designers use it. For CNC it would be good for designing signs, or editing .svg files
+- <https://www.adobe.com/products/illustrator.html>
+- Download program. Works on PC and Apple. Not phones or tablets or linux
+- Cost: Annual subscription through Adobe. Can be free or reduced for students non professional use. If you are in school ask your art or design teachers. 
+- Experiences:
+- - Expensive but good.
+  - Industry standard.
+  - Many many features including AI design tools.
+  - Need a good computer to run it.
+  - Excellent for text and having fun with shaping text. 
+  - Remember for CNC that we have to have the outside lines of shapes only , any lines in a .svg that are hidden under another piece of the drawing will cut. When finalizing your design be sure to Join all of the shapes together, turn off fill colors and check that the outlines are single, clear and non overlapping. 
+- Details:
+- Limitations:
+- - Check your license to make sure you are using one that allows work for pay if you are designing for sales.  Educational licences have been limited. 
+- Notes:
+- More Pictures:
+- Credits: Adobe
+
+### Corel Draw
+
+PICTURE
+- Professional Vector graphics design software. Well established and supported. Lots of tools, professional sign designers use it. For CNC it would be good for designing signs, or editing .svg files
+- <https://www.coreldraw.com/en/product/coreldraw/>
+- Download program for Mac and PC Not phones tablets or Linux
+- Cost:
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits: Corel
 ## 3D Design programs
+
+### OnShape
+![OnShape_007](https://github.com/user-attachments/assets/1b0772c7-5b77-48f6-b0d2-17fff7a35bb7)
+
+- OnShape is a free 3D CAD software as long as you are fine with your 3D models being public. It has paid features and subscriptions. The interface is similar to SolidWorks. Used by product designers. It saves a version history as work is done. 
+- <https://www.onshape.com/en/features/drawings>
+- Online works in anything with a web browser. 
+- Cost: Free and Subscription
+- Experiences:
+- Details:
+- Limitations: Free is limited to public designs
+- Notes:? Does it work better with a more powerful computer? 
+- More Pictures:
+- Credits:
+
+### Blender
+<img width="1854" height="1011" alt="Screenshot from 2025-10-20 17-34-38" src="https://github.com/user-attachments/assets/3a9ff011-b4db-4619-9cab-e56dfe608ff8" />
+
+- Free Opensource project. Blender is a huge program that was designed to make Movies. It has a full set of three D design tools. It can do smooth sculpting as well as polygon models. It was not designed for making physical objects but it works well for this.  It is very powerful.  There are many tools that you can ignore for CNC design.  It is well supported and has lots of tutorials and videos to learn from. 
+- <https://www.blender.org/>
+- Download program for Apple, PC, and Linux Not phones or tablets.
+- Free Open Source Project
+- Experiences:
+- - Focus on the tools that you need for your project.  It is easy to get overwhelmed by all of the tools and windows.
+  - I really like blender for polygon design and for sculpting surfaces to be printed or cut.
+  - It is a good program for students as they can run it on any computer platform and have free access to it. 
+  - There is a plugin named Paper Unfold. It is amazing for making 2D cuttable pieces from a three D polygon model. It outputs as a .svg file that can be edited in inkscape. https://extensions.blender.org/add-ons/export-paper-model/ 
+- Details:
+- Limitations:
+- - Not designed for physical product design but it has good tools that can be used for this.
+  - More powerful computers work better. Save early save often. 
+- Notes:
+- - Example instructions for a CAD paper cutting machine. <https://www.instructables.com/Stuffed-Animal-or-Clothing-Manufacturing-with-CAD-/>
+  - Example project using Blender to edit a three D model from Abundance 
+- More Pictures:
+- Credits:
+
+
 
 ## CAM Gcode machine path 
 

@@ -1622,7 +1622,15 @@ float Calibration::measurementToXYPlane(float measurement, float zHeight) {
     // Include spoilboard and work thickness in the total Z height to match normal operation
     // This ensures calibration measurements are consistent with actual cutting operations
     float totalZHeight = zHeight + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness();
-    float lengthInXY   = sqrt(measurement * measurement - totalZHeight * totalZHeight);
+
+    // Validate that measurement is sufficient to reach the XY plane at this Z height
+    // If totalZHeight >= measurement, the belt would be too short to reach the anchor point
+    if (totalZHeight * totalZHeight >= measurement * measurement) {
+        log_error("Invalid geometry: belt length " << measurement << " too short for Z height " << totalZHeight);
+        return 0.0f;
+    }
+
+    float lengthInXY = sqrt(measurement * measurement - totalZHeight * totalZHeight);
     return lengthInXY + kinematics->getBeltEndExtension() +
            kinematics->getArmLength();  //Add the belt end extension and arm length to get the actual distance
 }
@@ -1638,7 +1646,15 @@ float Calibration::measurementFromXYPlane(float xyPlaneDistance, float zHeight) 
     float totalZHeight = zHeight + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness();
     float lengthInXY =
         xyPlaneDistance - kinematics->getBeltEndExtension() - kinematics->getArmLength();  //Subtract the belt end extension and arm length
-    return sqrt(lengthInXY * lengthInXY + totalZHeight * totalZHeight);                    //Calculate the angled belt length
+
+    // Validate that the XY plane distance is sufficient after subtracting mechanical offsets
+    // Negative lengthInXY indicates an invalid configuration (router position too close to anchor)
+    if (lengthInXY < 0.0f) {
+        log_error("Invalid geometry: XY distance " << xyPlaneDistance << " too short for belt end extension + arm length");
+        return 0.0f;
+    }
+
+    return sqrt(lengthInXY * lengthInXY + totalZHeight * totalZHeight);  //Calculate the angled belt length
 }
 
 /* Calculates and updates the center (X, Y) position based on the coordinates of the four corners

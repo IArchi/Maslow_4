@@ -93,7 +93,7 @@ jobs:
     - name: Build ESP3D-WEBUI
       run: |
         cd ESP3D-WEBUI
-        gulp package --lang en
+        npx gulp package --lang en
         
     - name: Build firmware
       run: |
@@ -103,7 +103,14 @@ jobs:
       run: |
         mkdir -p firmware-package
         cp .pio/build/wifi_s3/firmware.bin firmware-package/
+        
+        # Verify ESP3D-WEBUI build output exists before copying
+        if [ ! -f ESP3D-WEBUI/dist/index.html.gz ]; then
+          echo "Error: ESP3D-WEBUI/dist/index.html.gz not found"
+          exit 1
+        fi
         cp ESP3D-WEBUI/dist/index.html.gz firmware-package/
+        
         cat > firmware-package/README.txt << 'EOF'
         FluidNC Firmware Package
         ========================

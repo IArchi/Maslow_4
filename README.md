@@ -16,7 +16,7 @@ How to edit this wiki:
 <https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/HowToEditThisWiki.md>
 
 
-This is a rough draft. For more info go to <www.maslow.cnc>
+This is a rough draft. For more info go to <https://www.maslowcnc.com>
 ![Maslowrender](https://github.com/user-attachments/assets/305da71c-ce76-40d9-ad8a-40902add06af)
 
 
@@ -119,6 +119,7 @@ Below is a list of common sense hazards for you to consider
 - Do not leave the machine running unattended.
 - Use personal protective equipment including masks, respirators, gloves, hearing protection,  and eye protection. 
 - Do not touch the machine while it is moving or turned on.
+- Do not change blades while the machine is plugged in. 
 - Have a fire suppression plan and equipment.
 - Consider how you will cut power to the machine in an emergency.
 - Check for loose parts, tools, keys, and if the blades are in an appropriate place before providing power to the machine. 

@@ -54,28 +54,46 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-platformio-
           
-    - name: Cache npm dependencies
+    - name: Cache npm dependencies (embedded)
       uses: actions/cache@v4
       with:
-        path: embedded/node_modules
-        key: ${{ runner.os }}-npm-${{ hashFiles('embedded/package-lock.json') }}
+        path: firmware/embedded/node_modules
+        key: ${{ runner.os }}-npm-embedded-${{ hashFiles('firmware/embedded/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-npm-
+          ${{ runner.os }}-npm-embedded-
+          
+    - name: Cache npm dependencies (ESP3D-WEBUI)
+      uses: actions/cache@v4
+      with:
+        path: ESP3D-WEBUI/node_modules
+        key: ${{ runner.os }}-npm-esp3d-${{ hashFiles('ESP3D-WEBUI/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-esp3d-
           
     - name: Install PlatformIO
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade platformio
         
-    - name: Install npm dependencies
+    - name: Install npm dependencies (embedded)
       run: |
-        cd embedded
+        cd firmware/embedded
         npm install
         
     - name: Build embedded web page
       run: |
-        cd embedded
+        cd firmware/embedded
         python3 build.py
+        
+    - name: Install npm dependencies (ESP3D-WEBUI)
+      run: |
+        cd ESP3D-WEBUI
+        npm install
+        
+    - name: Build ESP3D-WEBUI
+      run: |
+        cd ESP3D-WEBUI
+        npx gulp package --lang en
         
     - name: Build firmware
       run: |
@@ -85,17 +103,30 @@ jobs:
       run: |
         mkdir -p firmware-package
         cp .pio/build/wifi_s3/firmware.bin firmware-package/
+        
+        # Verify ESP3D-WEBUI build output exists before copying
+        if [ ! -f ESP3D-WEBUI/dist/index.html.gz ]; then
+          echo "Error: ESP3D-WEBUI/dist/index.html.gz not found"
+          exit 1
+        fi
+        cp ESP3D-WEBUI/dist/index.html.gz firmware-package/
+        
         cat > firmware-package/README.txt << 'EOF'
         FluidNC Firmware Package
         ========================
 
-        Please unzip this folder and then install the included firmware.bin file as normal to test these changes.
+        This package contains both the firmware and the web UI.
+
+        Contents:
+        - firmware.bin: The main FluidNC firmware for ESP32-S3
+        - index.html.gz: The ESP3D web interface (compressed)
 
         Installation Instructions:
         1. Extract this entire folder to your desired location
-        2. Upload to the machine as normal.
+        2. Upload firmware.bin to the machine as normal
+        3. Upload index.html.gz to the /littlefs partition (if web UI changes were made)
 
-        This firmware was automatically compiled from the pull request changes.
+        This firmware and web UI were automatically compiled from the pull request changes.
         EOF
         
     - name: Upload firmware as artifact
@@ -114,6 +145,16 @@ jobs:
           const stats = fs.statSync(path);
           const fileSizeInBytes = stats.size;
           const fileSizeInMB = (fileSizeInBytes / (1024*1024)).toFixed(2);
+          
+          // Get ESP3D-WEBUI size
+          let webuiSizeKB = 'N/A';
+          try {
+            const webuiPath = 'ESP3D-WEBUI/dist/index.html.gz';
+            const webuiStats = fs.statSync(webuiPath);
+            webuiSizeKB = (webuiStats.size / 1024).toFixed(2);
+          } catch (e) {
+            console.log('Could not read ESP3D-WEBUI size:', e.message);
+          }
           
           // Extract version number from version.cpp
           let versionNumber = 'unknown';
@@ -167,21 +208,25 @@ jobs:
           
           const triggerText = '_This comment was automatically generated in response to a build request comment._';
           
-          const comment = `🤖 **Firmware Compilation Complete** 🤖
+          const comment = `🤖 **Firmware & Web UI Compilation Complete** 🤖
           
-          ✅ Successfully compiled FluidNC firmware for ESP32-S3 (wifi_s3 environment)
+          ✅ Successfully compiled FluidNC firmware and ESP3D-WEBUI
           
-          **Build Details:**
+          **Firmware Build Details:**
           - Commit: \`${commitSha}\`
           - Version: \`${versionNumber}\`
-          - Environment: \`wifi_s3\`
+          - Environment: \`wifi_s3\` (ESP32-S3)
           - Firmware size: ${fileSizeInMB} MB
           - Flash usage: ${flashUsed} (${flashPercent}%)
           - RAM usage: ${ramUsed} (${ramPercent}%)
-          - Build time: ~2 minutes
+          
+          **Web UI Build Details:**
+          - Language: English only
+          - WebUI size: ${webuiSizeKB} KB (compressed)
+          - Format: index.html.gz
           
           **Download:**
-          The firmware package (containing firmware.bin and installation instructions) has been uploaded as a build artifact named "firmware-package" and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          The firmware package (containing firmware.bin, index.html.gz, and installation instructions) has been uploaded as a build artifact named "firmware-package" and can be downloaded from the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           
           To test this release please:
           [] Try running calibration with a fresh maslow.yaml file

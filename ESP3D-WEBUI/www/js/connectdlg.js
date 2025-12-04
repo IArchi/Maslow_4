@@ -1,0 +1,184 @@
+// import conErr, displayBlock, displayInline, displayNone, id, closeModal, setactiveModal, showModal, SendGetHttp, logindlg, EventListenerSetup, startSocket,
+
+// Connection state to prevent multiple concurrent connection attempts
+let connectionInProgress = false;
+
+/** Connect Dialog */
+const connectdlg = (getFw = false) => {
+	// Prevent multiple concurrent connection attempts
+	if (connectionInProgress && getFw) {
+		console.log("Connection already in progress, skipping duplicate attempt");
+		return;
+	}
+
+	const modal = setactiveModal("connectdlg.html");
+	if (modal == null) {
+		return;
+	}
+
+	showModal();
+
+	if (getFw) {
+		connectionInProgress = true;
+		retryconnect();
+	}
+};
+
+const getFWdata = (response) => {
+	const tlist = response.split("#");
+	//FW version:0.9.200 # FW target:smoothieware # FW HW:Direct SD # primary sd:/ext/ # secondary sd:/sd/ # authentication: yes
+	if (tlist.length < 3) {
+		return false;
+	}
+	//FW version
+	let sublist = tlist[0].split(":");
+	if (sublist.length !== 2) {
+		return false;
+	}
+	fw_version = sublist[1].toLowerCase().trim();
+	//FW target
+	sublist = tlist[1].split(":");
+	if (sublist.length !== 2) {
+		return false;
+	}
+	target_firmware = sublist[1].toLowerCase().trim();
+	//FW HW
+	sublist = tlist[2].split(":");
+	if (sublist.length !== 2) {
+		return false;
+	}
+	const sddirect = sublist[1].toLowerCase().trim();
+	direct_sd = sddirect === "direct sd";
+	//primary sd
+	sublist = tlist[3].split(":");
+	if (sublist.length !== 2) {
+		return false;
+	}
+	primary_sd = sublist[1].toLowerCase().trim();
+
+	//secondary sd
+	sublist = tlist[4].split(":");
+	if (sublist.length !== 2) {
+		return false;
+	}
+	secondary_sd = sublist[1].toLowerCase().trim();
+
+	//authentication
+	sublist = tlist[5].split(":");
+	if (sublist.length !== 2) {
+		return false;
+	}
+	ESP3D_authentication = sublist[0].trim() === "authentication" && sublist[1].trim() === "yes";
+	//async communications
+	if (tlist.length > 6) {
+		sublist = tlist[6].split(":");
+		if (
+			sublist[0].trim() === "webcommunication" &&
+			sublist[1].trim() === "Async"
+		) {
+			async_webcommunication = true;
+		} else {
+			async_webcommunication = false;
+			websocket_port = sublist[2].trim();
+			if (sublist.length > 3) {
+				websocket_ip = sublist[3].trim();
+			} else {
+				console.log("No IP for websocket, use default");
+				websocket_ip = document.location.hostname;
+			}
+		}
+	}
+	if (tlist.length > 7) {
+		sublist = tlist[7].split(":");
+		if (sublist[0].trim() === "hostname") esp_hostname = sublist[1].trim();
+	}
+
+	if (tlist.length > 8) {
+		sublist = tlist[8].split(":");
+		if (sublist[0].trim() === "axis") {
+			grblaxis = Number.parseInt(sublist[1].trim());
+		}
+	}
+
+	EventListenerSetup();
+	startSocket();
+
+	return true;
+};
+
+const connectfailed = (error_code, response) => {
+	connectionInProgress = false; // Clear connection state on failure
+	displayBlock("connectbtn");
+	displayBlock("failed_connect_msg");
+	displayNone("connecting_msg");
+
+	id("connectbtn").addEventListener("click", retryconnect);
+
+	conErr(error_code, response, "FW identification error");
+};
+
+const connectsuccess = (response) => {
+	connectionInProgress = false; // Clear connection state on success
+	if (getFWdata(response)) {
+		console.log(`FW identification:${response}`);
+		if (ESP3D_authentication) {
+			closeModal("Connection successful");
+			displayInline("menu_authentication");
+			logindlg(initUI, true);
+		} else {
+			displayNone("menu_authentication");
+			initUI();
+		}
+	} else {
+		console.log(response);
+		connectfailed(406, "Wrong data");
+	}
+};
+
+const retryconnect = () => {
+	connectionInProgress = true; // Set connection state when retrying
+	displayNone("connectbtn");
+	displayNone("failed_connect_msg");
+	displayBlock("connecting_msg");
+
+	id("connectbtn").removeEventListener("click", retryconnect);
+
+	const cmd = buildHttpCommandCmd(httpCmdType.plain, "[ESP800]");
+	SendGetHttp(cmd, connectsuccess, connectfailed);
+};
+
+// Helper function to force close connection dialog if it's stuck
+const forceCloseConnectionDialog = () => {
+	const connectModal = id("connectdlg.html");
+	if (connectModal && connectModal.style.display !== "none") {
+		console.log("Force closing stuck connection dialog");
+		closeModal("Force closed");
+	}
+	connectionInProgress = false;
+};
+
+// Handle visibility change to fix stuck connection dialog when tab doesn't have focus
+const handleVisibilityChange = () => {
+	// Only act when tab becomes visible again
+	if (!document.hidden) {
+		// Small delay to allow any pending operations to complete
+		setTimeout(() => {
+			const connectModal = id("connectdlg.html");
+			// Check if connection dialog is still showing but connection is no longer in progress
+			// and main UI is already loaded (indicating successful connection)
+			if (connectModal && 
+				connectModal.style.display !== "none" && 
+				!connectionInProgress && 
+				id("main_ui") && 
+				!id("main_ui").classList.contains("hide_it")) {
+				console.log("Tab regained focus - force closing stuck connection dialog");
+				forceCloseConnectionDialog();
+			}
+		}, 100);
+	}
+};
+
+// Set up the visibility change listener when the page loads
+if (typeof document !== "undefined") {
+	document.addEventListener("visibilitychange", handleVisibilityChange);
+}

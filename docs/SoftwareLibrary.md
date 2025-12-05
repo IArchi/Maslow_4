@@ -209,7 +209,8 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 - Credits:
 
 ### FlatFab
-PICTURE
+<img width="1091" height="750" alt="image" src="https://github.com/user-attachments/assets/9d4c429e-fe2a-43f7-a547-c5d07268cea6" />
+
 - Fun looking Free program for designing 2d cuts to 3D slot together forms. 
 - http://www.flatfab.com/
 - Download for Mac, PC, Linux 

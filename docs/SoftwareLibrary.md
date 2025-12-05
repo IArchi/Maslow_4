@@ -1,6 +1,6 @@
 # Software Library
 
-This file is a place to share software recommendations that have been useful. All costs listed are estimates reported by contributors and have not been checked.  
+This file is a place to share software recommendations that have been useful. All costs listed are estimates reported by contributors and have not been checked. Good opensource programs are listed first in each category otherwise no particular promotion is intended and all links have been submitted by community members.  
 
 Maslow needs **Gcode** instructions to work.  There are many ways to generate those. Gcode is a human readable programming language that consists of a list of instructions that are sent to a machine to tell it how to move. They are mostly x,y,z coordinates and how to move between them. Instructions include curves, straight lines, and speeds. 3D printers and many other robots use gcode. 
 
@@ -71,7 +71,7 @@ PICTURE
 <img width="1927" height="1061" alt="image" src="https://github.com/user-attachments/assets/f552bbcb-6854-424b-b88e-dd916452c828" />
 
 - Full CAD CAM parametric design software. Can do the entire process from design to Gcode. Well established project with pretty good support. 
-- https://www.freecad.org/
+- <https://www.freecad.org/>
 - Download for Windows Mac and Linux
 - Free Opensource project 
 - Experiences:
@@ -85,7 +85,7 @@ PICTURE
 ![Screenshot+2024-02-27+at+11 38 32 AM](https://github.com/user-attachments/assets/0557767a-780b-4867-b824-313bb154f8b6)
 
 - Easel is a CAD CAM software. People like it for it’s easy to use interface.
-- https://easel.com/
+- <https://easel.com/>
 - Browser Based? 
 - Cost: Free version can export gcode and $24/month version with more features
 - Experiences:
@@ -117,22 +117,6 @@ PICTURE<img width="1854" height="1048" alt="Screenshot from 2025-10-26 10-58-50"
 - More Pictures:
 - Credits: inkscape.org
 
-### Libre Office Draw
-PICTURE
-- Overview: Made for office diagrams and flowcharts. Not really for .svg authoring but it will work if you already use it.  Use Inkscape instead. 
-- Links:
-- Download program for Windows, Mac and Linux, as well as Android. 
-- Free Open Source
-- Experiences:
-- - It is possible to export as an .svg by finding svg hidden as an option in the export window.
-  - It has a pen tool that can draw vector curves. 
-  - Another free opensource option. Not a good one for CNC
-- Details: 
-- Limitations:
-- -No good join tools
-- Notes:
-- More Pictures:
-- Credits:
 
 ### Adobe Illustrator
 PICTURE
@@ -214,7 +198,7 @@ PICTURE
 OpenSCAD is not an interactive modeller. Instead it is something like a 3D-compiler that reads in a script file that describes the object and renders the 3D model from this script file. This gives you (the designer) full control over the modelling process and enables you to easily change any step in the modelling process or make designs that are defined by configurable parameters.
 
 OpenSCAD provides two main modelling techniques: First there is constructive solid geometry (aka CSG) and second there is extrusion of 2D outlines. Autocad DXF files can be used as the data exchange format for such 2D outlines. In addition to 2D paths for extrusion it is also possible to read design parameters from DXF files. Besides DXF files OpenSCAD can read and create 3D models in the STL and OFF file formats.
-- https://openscad.org/
+- <https://openscad.org/>
 - Free Download Linux, Mac, PC, BSD 
 - Experiences:
 - Details:
@@ -227,7 +211,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 <img width="1091" height="750" alt="image" src="https://github.com/user-attachments/assets/9d4c429e-fe2a-43f7-a547-c5d07268cea6" />
 
 - Fun looking Free program for designing 2d cuts to 3D slot together forms. 
-- http://www.flatfab.com/
+- <http://www.flatfab.com/>
 - Download for Mac, PC, Linux 
 - Free 
 - Experiences:
@@ -265,7 +249,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 <img width="1854" height="1048" alt="image" src="https://github.com/user-attachments/assets/c48d3233-b2dd-436e-9147-a6b14695b51b" />
 
 - Free Online CAM. Built for 3D printing but works well for CNC.  Works as a plugin to Onshape
-- https://grid.space/kiri/
+- <https://grid.space/kiri/>
 - Free Online in browser
 - Experiences:
 - Details:
@@ -278,7 +262,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 <img width="997" height="691" alt="image" src="https://github.com/user-attachments/assets/7e52fdd1-ec2c-4e8b-b9e9-964c520e1fd7" />
 
 - HeeksCNC is paid ($10 to own) CAM software which handles a large number of file types and can do 2D and 3D work. Windows only.
-- https://sites.google.com/site/heekscad/home
+- <https://sites.google.com/site/heekscad/home>
 - Download Windows only
 - Cost: $10 (2025)
 - Experiences:
@@ -292,7 +276,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 <img width="256" height="221" alt="image" src="https://github.com/user-attachments/assets/ac7a669f-130a-463c-83d6-90b41726055f" />
 
 - CamBam is a paid ($150 to own) CAM software. It does 2D and 3D work and can handle .dxf files.
-- http://www.cambam.info/
+- <http://www.cambam.info/>
 - Download for Windows only
 - Cost: $150 (2025)
 - Experiences:
@@ -307,7 +291,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 
 
 - CarbideCreate is paid ($120/year) CAM software which works well for 2D and basic 3D work. CarbideCreate is one of the only options which works on Mac.
-- https://carbide3d.com/carbidecreate/
+- <https://carbide3d.com/carbidecreate/>
 - Dowload Windows and Mac
 - Cost: $120 (2025)
 - Experiences:
@@ -323,13 +307,14 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 ![Screenshot+2024-02-27+at+11 50 07%20AM_008](https://github.com/user-attachments/assets/97369469-67bc-4419-be1a-7f03dca9a103)
 
 -Estlcam is a paid ($59 to own) CAM software. The interface looks a bit more well thought out than others and the creator is active in our forums if you have any questions.
-- https://www.estlcam.de/
+- <https://www.estlcam.de/>
 - Windows Download
 - Free with paid features 
 - Experiences:
 - Details:
 - Limitations:
 - Notes:
+- - Tutorial video: <https://youtu.be/oQw0z3NS5lY>
 - More Pictures:
 - Credits:
 
@@ -343,7 +328,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 ### Pepakura Designer
 PICTURE
 - Very cool program designed for making paper models but just in general excellent for taking polygon 3D models and unfolding them into flat nets for cutting. 
-- https://pepakura.tamasoft.co.jp/pepakura_designer/
+- <https://pepakura.tamasoft.co.jp/pepakura_designer/>
 - Only Windows PC
 - Free download Have to pay for a license to export 
 - Experiences:
@@ -357,7 +342,7 @@ PICTURE
 ### Donkektools Drag knife stuff
 PICTURE
 - Interesting looking paid software and free software from the makers of a drag knife.  On this list because it looked interesting and a different sort of tool that might give people a different way to use their Maslow. 
-- https://donektools.com/free-cnc-router-software/
+- <https://donektools.com/free-cnc-router-software/>
 - Downloadable programs 
 - Paid Core program and free other programs. 
 - Experiences:

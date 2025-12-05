@@ -4,6 +4,7 @@ This file is a place to share software recommendations that have been useful. Al
 
 Maslow needs **Gcode** instructions to work.  There are many ways to generate those. Gcode is a human readable programming language that consists of a list of instructions that are sent to a machine to tell it how to move. They are mostly x,y,z coordinates and how to move between them. Instructions include curves, straight lines, and speeds. 3D printers and many other robots use gcode. 
 
+You can open a Gcode file up in a text editor and edit it by hand if you need to.  You could cut parts out.  Only run half of the program, change distances and speeds all by typing in numbers in the Gcode code system.  It is not hard to learn the basics. (insert Gcode library link) 
 
 THere are many many options to get to a sucessful Gcode for Maslow4 Some programs can do all of the steps, some can only do one or two. 
 
@@ -24,7 +25,6 @@ There are many good programs that can do both authoring and generate machine ins
 We would like to add programs that people feel are useful maybe in weird ways.  For instance Pepkura Designer that is a specialized program for unfolding 3D polygon shapes into flat panels. It was designed for paper models but it is great for wood as well. Three D printers use programs called slicers that cut three dimensional shapes into a stack of 2D slices. Maslow could cut slices in wood or foam to be stacked. What other odd programs have you found useful in generating desgins to cut? 
 
 
-You can open a Gcode file up in a text editor and edit it by hand if you need to.  You could cut parts out.  Only run half of the program, change distances and speeds all by typing in numbers in the Gcode code system.  It is not hard to learn the basics. (insert Gcode library link) 
 
 # Useful external links
 - Shapeoko wiki list of software <https://old.reddit.com/r/shapeoko/wiki/cam>

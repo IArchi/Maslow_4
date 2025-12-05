@@ -258,6 +258,19 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 - More Pictures:
 - Credits:
 
+### UGS Universal G Code Sender
+PICTURE
+- Online project in Github to make a Gcode tool. looks useful
+- https://github.com/winder/Universal-G-Code-Sender/wiki/Usage#designer
+- Online, Program download or?:
+- Cost:
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
 ### HeeksCNC
 <img width="997" height="691" alt="image" src="https://github.com/user-attachments/assets/7e52fdd1-ec2c-4e8b-b9e9-964c520e1fd7" />
 

@@ -1,6 +1,6 @@
 # Software Library
 
-This file is a place to share software recommendations that have been useful. 
+This file is a place to share software recommendations that have been useful. All costs listed are estimates reported by contributors and have not been checked.  
 
 Maslow needs **Gcode** instructions to work.  There are many ways to generate those. Gcode is a human readable programming language that consists of a list of instructions that are sent to a machine to tell it how to move. They are mostly x,y,z coordinates and how to move between them. Instructions include curves, straight lines, and speeds. 3D printers and many other robots use gcode. 
 
@@ -73,6 +73,20 @@ PICTURE
 - https://www.freecad.org/
 - Download for Windows Mac and Linux
 - Free Opensource project 
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+  ### Easel
+![Screenshot+2024-02-27+at+11 38 32 AM](https://github.com/user-attachments/assets/0557767a-780b-4867-b824-313bb154f8b6)
+
+- Easel is a CAD CAM software. People like it for it’s easy to use interface.
+- https://easel.com/
+- Browser Based? 
+- Cost: Free version can export gcode and $24/month version with more features
 - Experiences:
 - Details:
 - Limitations:
@@ -252,7 +266,6 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 - Free Online CAM. Built for 3D printing but works well for CNC.  Works as a plugin to Onshape
 - https://grid.space/kiri/
 - Free Online in browser
-- Cost:
 - Experiences:
 - Details:
 - Limitations:
@@ -260,6 +273,63 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 - More Pictures:
 - Credits:
 
+### HeeksCNC
+<img width="997" height="691" alt="image" src="https://github.com/user-attachments/assets/7e52fdd1-ec2c-4e8b-b9e9-964c520e1fd7" />
+
+- HeeksCNC is paid ($10 to own) CAM software which handles a large number of file types and can do 2D and 3D work. Windows only.
+- https://sites.google.com/site/heekscad/home
+- Download Windows only
+- Cost: $10 (2025)
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+### CamBam
+<img width="256" height="221" alt="image" src="https://github.com/user-attachments/assets/ac7a669f-130a-463c-83d6-90b41726055f" />
+
+- CamBam is a paid ($150 to own) CAM software. It does 2D and 3D work and can handle .dxf files.
+- http://www.cambam.info/
+- Download for Windows only
+- Cost: $150 (2025)
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+### CarbideCreate
+![Screenshot+2024-02-27+at+11 38 32 AM](https://github.com/user-attachments/assets/41d38956-a93c-4843-af9f-9acbb3dd86ff)
+
+- CarbideCreate is paid ($120/year) CAM software which works well for 2D and basic 3D work. CarbideCreate is one of the only options which works on Mac.
+- https://carbide3d.com/carbidecreate/
+- Dowload Windows and Mac
+- Cost: $120 (2025)
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+
+
+### Estlcam
+![Screenshot+2024-02-27+at+11 50 07%20AM_008](https://github.com/user-attachments/assets/97369469-67bc-4419-be1a-7f03dca9a103)
+
+-Estlcam is a paid ($59 to own) CAM software. The interface looks a bit more well thought out than others and the creator is active in our forums if you have any questions.
+- https://www.estlcam.de/
+- Windows Download
+- Free with paid features 
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
 
 
 
@@ -295,17 +365,5 @@ PICTURE
 - More Pictures:
 - Credits:
 
-### 
-PICTURE
-- Overview:
-- Links:
-- Online, Program download or?:
-- Cost:
-- Experiences:
-- Details:
-- Limitations:
-- Notes:
-- More Pictures:
-- Credits:
 
 

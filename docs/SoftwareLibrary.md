@@ -21,7 +21,7 @@ There are many good programs that can do both authoring and generate machine ins
 **Abundance** is a CAD CAM sister project of Maslow that aims to make a procedural genrated design program that can then output meaningful Gcode files all in the web. <https://abundance.maslowcnc.com/>  It is being developed now and is already fun and useful. 
 
 
-We would like to a Pepkura Designer that is a specialized program for unfolding 3D polygon shapes into flat panels. It was designed for paper models but it is great for wood as well. Three D printers use programs called slicers that cut three dimensional shapes into a stack of 2D slices. Maslow could cut slices in wood or foam to be stacked. What other odd programs have you found useful in generating desgins to cut? 
+We would like to add programs that people feel are useful maybe in weird ways.  For instance Pepkura Designer that is a specialized program for unfolding 3D polygon shapes into flat panels. It was designed for paper models but it is great for wood as well. Three D printers use programs called slicers that cut three dimensional shapes into a stack of 2D slices. Maslow could cut slices in wood or foam to be stacked. What other odd programs have you found useful in generating desgins to cut? 
 
 
 You can open a Gcode file up in a text editor and edit it by hand if you need to.  You could cut parts out.  Only run half of the program, change distances and speeds all by typing in numbers in the Gcode code system.  It is not hard to learn the basics. (insert Gcode library link) 

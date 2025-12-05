@@ -68,7 +68,8 @@ PICTURE
 - Credits: Barbour Smith
 
 ### FreeCAD
-PICTURE
+<img width="1927" height="1061" alt="image" src="https://github.com/user-attachments/assets/f552bbcb-6854-424b-b88e-dd916452c828" />
+
 - Full CAD CAM parametric design software. Can do the entire process from design to Gcode. Well established project with pretty good support. 
 - https://www.freecad.org/
 - Download for Windows Mac and Linux

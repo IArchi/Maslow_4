@@ -191,7 +191,37 @@ PICTURE
 - More Pictures:
 - Credits:
 
+  ### Openscad
+<img width="1000" height="501" alt="image" src="https://github.com/user-attachments/assets/d8c8ba29-92c4-46af-ab59-811c792b8e99" />
 
+- OpenSCAD is software for creating solid 3D CAD models. It is free software and available for Linux/UNIX, Windows and Mac OS X. Unlike most free software for creating 3D models (such as Blender) it does not focus on the artistic aspects of 3D modelling but instead on the CAD aspects. Thus it might be the application you are looking for when you are planning to create 3D models of machine parts but pretty sure is not what you are looking for when you are more interested in creating computer-animated movies.
+
+OpenSCAD is not an interactive modeller. Instead it is something like a 3D-compiler that reads in a script file that describes the object and renders the 3D model from this script file. This gives you (the designer) full control over the modelling process and enables you to easily change any step in the modelling process or make designs that are defined by configurable parameters.
+
+OpenSCAD provides two main modelling techniques: First there is constructive solid geometry (aka CSG) and second there is extrusion of 2D outlines. Autocad DXF files can be used as the data exchange format for such 2D outlines. In addition to 2D paths for extrusion it is also possible to read design parameters from DXF files. Besides DXF files OpenSCAD can read and create 3D models in the STL and OFF file formats.
+- https://openscad.org/
+- Free Download Linux, Mac, PC, BSD 
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+### FlatFab
+PICTURE
+- Fun looking Free program for designing 2d cuts to 3D slot together forms. 
+- http://www.flatfab.com/
+- Download for Mac, PC, Linux 
+- Free 
+- Experiences:
+- Details:
+- - Outputs .svg files
+- Limitations:
+- Notes:
+- - Video showing workflow https://www.youtube.com/watch?v=C_2dtZftMww
+- More Pictures:
+- Credits:
 
 ## CAM Gcode machine path 
 
@@ -215,11 +245,12 @@ PICTURE
 - Credits: Marius Krabset 
 
 
-### Example Program entry heading text
-PICTURE
-- Overview:
-- Links:
-- Online, Program download or?:
+### Kiri:Moto
+<img width="1854" height="1048" alt="image" src="https://github.com/user-attachments/assets/c48d3233-b2dd-436e-9147-a6b14695b51b" />
+
+- Free Online CAM. Built for 3D printing but works well for CNC.  Works as a plugin to Onshape
+- https://grid.space/kiri/
+- Free Online in browser
 - Cost:
 - Experiences:
 - Details:
@@ -229,20 +260,51 @@ PICTURE
 - Credits:
 
 
-### Example Program entry heading text
-PICTURE
-- Overview:
-- Links:
-- Online, Program download or?:
-- Cost:
-- Experiences:
-- Details:
-- Limitations:
-- Notes:
-- More Pictures:
-- Credits:
+
 
 
 
 
 ## Other useful programs
+
+### Pepakura Designer
+PICTURE
+- Very cool program designed for making paper models but just in general excellent for taking polygon 3D models and unfolding them into flat nets for cutting. 
+- https://pepakura.tamasoft.co.jp/pepakura_designer/
+- Only Windows PC
+- Free download Have to pay for a license to export 
+- Experiences:
+- - Excelent program. Used with students in a middle and high school. Maslow with a drag knife would be super fun, Maslow with a pen could draw large scale projects. Could easily make panels with the router to make 3D models large in the real world. 
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+### Donkektools Drag knife stuff
+PICTURE
+- Interesting looking paid software and free software from the makers of a drag knife.  On this list because it looked interesting and a different sort of tool that might give people a different way to use their Maslow. 
+- https://donektools.com/free-cnc-router-software/
+- Downloadable programs 
+- Paid Core program and free other programs. 
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+### 
+PICTURE
+- Overview:
+- Links:
+- Online, Program download or?:
+- Cost:
+- Experiences:
+- Details:
+- Limitations:
+- Notes:
+- More Pictures:
+- Credits:
+
+

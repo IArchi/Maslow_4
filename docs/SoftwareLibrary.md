@@ -303,7 +303,8 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 - Credits:
 
 ### CarbideCreate
-![Screenshot+2024-02-27+at+11 38 32 AM](https://github.com/user-attachments/assets/41d38956-a93c-4843-af9f-9acbb3dd86ff)
+![Screenshot+2024-02-21+at+8 24 43%20AM_005](https://github.com/user-attachments/assets/5bf6220d-9b5a-455c-aa3a-78d33df281d6)
+
 
 - CarbideCreate is paid ($120/year) CAM software which works well for 2D and basic 3D work. CarbideCreate is one of the only options which works on Mac.
 - https://carbide3d.com/carbidecreate/

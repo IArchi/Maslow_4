@@ -2,7 +2,9 @@
 
 FluidNC is a CNC firmware optimized for ESP32 controllers. It's the next generation of firmware from the creators of Grbl_ESP32, featuring a built-in web UI and the flexibility to operate a wide variety of machine types including laser/spindle combinations and tool changers.
 
-This project is a fork from the original FluidNC project specifically for Maslow CNC machines. It is not important to maintain compatability with other kinds of machines, this fork is specific to Maslow CNC type machines. 
+This project is a fork from the original FluidNC project specifically for Maslow CNC machines. It is not important to maintain compatability with other kinds of machines, this fork is specific to Maslow CNC type machines.
+
+**The repository now includes ESP3D-WEBUI**, which was previously a separate project. This is the primary web interface for controlling the Maslow CNC machine through FluidNC firmware.
 
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
@@ -20,16 +22,37 @@ This project is a fork from the original FluidNC project specifically for Maslow
 - **Upload firmware**: `pio run -e wifi_s3 -t upload` (requires connected ESP32)
 - **Upload filesystem**: `pio run -e wifi_s3 -t uploadfs` (requires connected ESP32)
 
-### Embedded Web UI Build
+### Web UI Build Systems
+
+This repository has TWO web UI systems:
+
+#### 1. ESP3D-WEBUI (Primary Web Interface)
+- **Location**: `ESP3D-WEBUI/` directory (root level)
+- **Description**: The main web interface for FluidNC/Maslow, previously a separate project now integrated into this repository
 - **Prerequisites**: Node.js (v20+) and npm are required
-- **Install web dependencies**: `cd embedded && npm install` -- takes ~13 seconds. NEVER CANCEL.
-- **Build web UI**: `cd embedded && python3 build.py` -- takes ~8 seconds
-- **CRITICAL**: Always rebuild web UI after changes to embedded/www/* files before building firmware
+- **Install dependencies**: `cd ESP3D-WEBUI && npm install` -- takes ~13 seconds. NEVER CANCEL.
+- **Build commands**:
+  - **English only (recommended)**: `gulp package --lang en` -- produces ~122KB output
+  - **All languages**: `gulp package` -- produces ~150KB+ output (may be too large for ESP32)
+  - **NPM shortcuts**: `npm run build:en` (English) or `npm run build` (all languages)
+- **Output**: `dist/index.html.gz` - Upload this to ESP32
+- **Testing**: `npm run start` - Builds English and starts local test server
+- **CRITICAL**: Single language builds recommended due to ESP32 storage limits
+- **Documentation**: See `ESP3D-WEBUI/COMPILATION.md` and `ESP3D-WEBUI/HOWTO-Test-Locally.md`
+
+#### 2. Embedded Tool UI (Auxiliary Interface)
+- **Location**: `firmware/embedded/` directory
+- **Description**: Auxiliary tool interface for specific functionality
+- **Prerequisites**: Node.js (v20+) and npm are required
+- **Install dependencies**: `cd firmware/embedded && npm install` -- takes ~13 seconds. NEVER CANCEL.
+- **Build command**: `cd firmware/embedded && python3 build.py` -- takes ~8 seconds
+- **Output**: `firmware/embedded/tool.html.gz`
+- **CRITICAL**: Always rebuild after changes to `firmware/embedded/www/*` files
 
 ### Available Build Environments
 - `wifi_s3` (default) - ESP32-S3 with WiFi
 - `bt_s3` - ESP32-S3 with Bluetooth
-- `wifibt_s3` - ESP32-S3 with WiFi and Bluetooth  
+- `wifibt_s3` - ESP32-S3 with WiFi and Bluetooth
 - `noradio_s3` - ESP32-S3 without wireless
 - `wifi` - ESP32 with WiFi
 - `bt` - ESP32 with Bluetooth
@@ -92,13 +115,15 @@ This project is a fork from the original FluidNC project specifically for Maslow
 ### After Making Changes
 1. **Build test**: `pio run -e wifi_s3` (must succeed without errors)
 2. **Filesystem test**: `pio run -e wifi_s3 -t buildfs` (must succeed)
-3. **Web UI test**: `cd embedded && python3 build.py` (if web changes made)
+3. **Web UI tests** (if web changes made):
+   - **ESP3D-WEBUI**: `cd ESP3D-WEBUI && gulp package --lang en` (for main interface changes)
+   - **Embedded tool**: `cd firmware/embedded && python3 build.py` (for tool interface changes)
 4. **Format test**: Run clang-format ONLY on C++ files you functionally modified (not entire codebase)
 5. **Trailing whitespace check**: Run `git diff --check` to detect and fix trailing whitespace
 6. **Dead code review**: Review changes for unreachable code, unused variables/functions, and remove them
 7. **Clean build test**: `pio run -e wifi_s3 -t clean && pio run -e wifi_s3` (final verification)
 
-### Hardware Testing Requirements  
+### Hardware Testing Requirements
 - **Upload test**: Flash firmware to ESP32 using `pio run -e wifi_s3 -t upload`
 - **Web UI test**: Connect to FluidNC WiFi AP or local network, access web interface
 - **Basic functionality**: Test G-code commands through web interface or serial connection
@@ -121,24 +146,33 @@ This project is a fork from the original FluidNC project specifically for Maslow
 ## Common Development Tasks
 
 ### Project Structure Navigation
-- **Main firmware**: `FluidNC/src/` - Core C++ firmware code
-- **Web interface**: `embedded/www/` - HTML/CSS/JS source files
-- **Configurations**: `FluidNC/data/` - Example machine configurations  
-- **Libraries**: `libraries/` - Custom libraries and dependencies
-- **Build output**: `.pio/build/wifi_s3/` - Compiled firmware and filesystem
-- **Install scripts**: `install_scripts/` - Platform-specific installation helpers
+- **Main firmware**: `firmware/FluidNC/src/` - Core C++ firmware code
+- **Primary web interface**: `ESP3D-WEBUI/` - Main web UI for FluidNC/Maslow (formerly separate project)
+  - Source files: `ESP3D-WEBUI/www/` - HTML/CSS/JS source files
+  - Build output: `ESP3D-WEBUI/dist/` - Compiled web interface
+- **Auxiliary tool interface**: `firmware/embedded/` - Tool UI build system
+  - Source files: `firmware/embedded/www/` - HTML/CSS/JS source files
+- **Configurations**: `firmware/FluidNC/data/` - Example machine configurations
+- **Libraries**: `firmware/libraries/` - Custom libraries and dependencies
+- **Build output**: `firmware/.pio/build/wifi_s3/` - Compiled firmware and filesystem
+- **Install scripts**: `firmware/install_scripts/` - Platform-specific installation helpers
 
 ### Adding New Features
-1. **C++ changes**: Modify files in `FluidNC/src/`
-2. **Web UI changes**: Modify files in `embedded/www/`, then run `python3 build.py`
+1. **C++ changes**: Modify files in `firmware/FluidNC/src/`
+2. **Web UI changes**:
+   - **Main interface**: Modify files in `ESP3D-WEBUI/www/`, then run `cd ESP3D-WEBUI && gulp package --lang en`
+   - **Tool interface**: Modify files in `firmware/embedded/www/`, then run `cd firmware/embedded && python3 build.py`
 3. **Configuration changes**: Update YAML schema and parsing code
 4. **Testing**: Build and test on hardware - native tests are not reliable
 
 ### Build Troubleshooting
 - **Missing libraries**: PlatformIO automatically installs dependencies from `platformio.ini`
-- **Web UI issues**: Ensure `embedded/index.html.gz` exists after running `python3 build.py`
+- **Web UI issues**:
+  - ESP3D-WEBUI: Ensure `ESP3D-WEBUI/dist/index.html.gz` exists after running `gulp package --lang en`
+  - Embedded tool: Ensure `firmware/embedded/tool.html.gz` exists after running `python3 build.py`
 - **Upload failures**: Check USB connection, ESP32 in download mode (hold BOOT button)
 - **Memory issues**: Use `max_littlefs.csv` partition table for 8MB ESP32-S3 boards
+- **Web UI too large**: Use single language build for ESP3D-WEBUI (`gulp package --lang en` instead of `gulp package`)
 
 ## Install Scripts and Distribution
 
@@ -155,9 +189,10 @@ This project is a fork from the original FluidNC project specifically for Maslow
 ## Critical Timing Information
 
 - **Firmware build**: ~2-3 minutes initial, ~30-60 seconds incremental. NEVER CANCEL. Use 5+ minute timeout.
-- **Web UI build**: ~8 seconds. NEVER CANCEL. Use 2+ minute timeout.
+- **ESP3D-WEBUI build**: ~10-15 seconds for English, ~30+ seconds for all languages. NEVER CANCEL. Use 2+ minute timeout.
+- **Embedded tool UI build**: ~8 seconds. NEVER CANCEL. Use 2+ minute timeout.
 - **Filesystem build**: ~4 seconds. NEVER CANCEL. Use 1+ minute timeout.
-- **Dependencies install**: ~13 seconds for npm, ~3 minutes for PlatformIO. NEVER CANCEL.
+- **Dependencies install**: ~13 seconds for npm (both ESP3D-WEBUI and embedded), ~3 minutes for PlatformIO. NEVER CANCEL.
 - **Clean operations**: ~1 second.
 
 ## Dependencies and Prerequisites
@@ -165,7 +200,7 @@ This project is a fork from the original FluidNC project specifically for Maslow
 ### Required Tools
 - **Python 3.x**: For PlatformIO and build scripts
 - **PlatformIO**: `pip3 install --upgrade platformio`
-- **Node.js v20+**: For web UI build system  
+- **Node.js v20+**: For web UI build system
 - **clang-format**: For code formatting (usually available via package manager)
 
 ### Hardware Requirements
@@ -184,6 +219,7 @@ This project is a fork from the original FluidNC project specifically for Maslow
 - **Issue**: Node.js build system has security vulnerabilities in old packages
 - **Impact**: Does not affect runtime security, only build-time warnings
 - **Action**: Ignore npm audit warnings during development
+- **Note**: Both ESP3D-WEBUI and firmware/embedded have their own node_modules and package.json
 
 ### Case Sensitivity
 - **Issue**: Some file systems may have case sensitivity issues with include files
@@ -194,10 +230,15 @@ This project is a fork from the original FluidNC project specifically for Maslow
 ### Source Code
 - **C++ firmware**: `.cpp`, `.h` files using clang-format standards
 - **Configuration**: `.yaml` files for machine definitions
-- **Web assets**: `.html`, `.css`, `.js` files in `embedded/www/`
+- **Web assets**:
+  - Main interface: `.html`, `.css`, `.js` files in `ESP3D-WEBUI/www/`
+  - Tool interface: `.html`, `.css`, `.js` files in `firmware/embedded/www/`
 
 ### Build Artifacts (Do NOT commit)
-- **Binary firmware**: `.pio/build/*/firmware.bin`
-- **Filesystem image**: `.pio/build/*/littlefs.bin`
-- **Compressed web**: `embedded/tool.html.gz`, `FluidNC/data/index.html.gz`
-- **Dependencies**: `.pio/libdeps/`, `embedded/node_modules/`
+- **Binary firmware**: `firmware/.pio/build/*/firmware.bin`
+- **Filesystem image**: `firmware/.pio/build/*/littlefs.bin`
+- **Compressed web**:
+  - Main interface: `ESP3D-WEBUI/dist/index.html.gz`
+  - Tool interface: `firmware/embedded/tool.html.gz`
+  - Deployed: `firmware/FluidNC/data/index.html.gz`
+- **Dependencies**: `firmware/.pio/libdeps/`, `ESP3D-WEBUI/node_modules/`, `firmware/embedded/node_modules/`

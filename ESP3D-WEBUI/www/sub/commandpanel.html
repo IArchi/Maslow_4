@@ -1,0 +1,42 @@
+<div id="commandsPanel" class="panel panel-default panel-flex-col panel-min-width">
+    <div class="panel-heading">
+        <b><span translate>Commands</span></b>
+        <button id="clear_monitor_btn" class="btn btn-primary btn-xs pull-right" translate>Clear</button>
+    </div>
+    <div id="command-body" class="panel-body panel-flex-main">
+        <pre id="cmd_content" style="min-height: 350px; max-height: 350px;"></pre>
+    </div>
+    <div class="panel-footer">
+        <div class="panel-flex-row">
+            <div class="input-group">
+                <div class="input-group">
+                    <form autocomplete="off" onsubmit="return false;">
+                        <input id="custom_cmd_txt" autocomplete="off" class="form-control w14" type="text" value=""
+                            translateph placeholder="Send Command..." />
+                    </form>
+                    <div class="input-group-btn">
+                        <button id="commandspanel_send" class="btn btn-success" translate>Send</button>
+                    </div>
+                </div>
+            </div>
+            &nbsp;&nbsp;
+            <div class="form-group">
+                <div class="checkbox">
+                    <label>
+                        <input id="monitor_enable_autoscroll" type="checkbox" />
+                        <span translate>Autoscroll</span>
+                    </label>
+                </div>
+            </div>
+            &nbsp;&nbsp;
+            <div class="form-group" id="cmd_verbose">
+                <div class="checkbox">
+                    <label>
+                        <input id="monitor_enable_verbose_mode" type="checkbox" />
+                        <span translate>Verbose mode</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

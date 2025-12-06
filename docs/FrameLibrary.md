@@ -32,6 +32,7 @@ These show areas where the Maslow can move accurately and areas where it will st
 
 ## Frame requirements:
 - The Four anchor points have to fit within a 5 meter by 5 meter square.  It is possible to go bigger with belt extensions which are sticks that attach to the ends of the belts. It is also important to make sure for your planned cutting area that the belts have enough length to go all the way across the planned moving space.
+- Belts are 14.5 feet long when they are shipped. 
 - Calibration starts by assuming a rectagular frame with all anchors in the same plane.  Your frame does not have to be a perfect rectangle but if you are having calibration issues this might be a place to adjust. 
 - The anchors need to have free space in front of them. The belts and belt ends need to be able to swing freely back and forth without hitting things as the maslow moves around.
   

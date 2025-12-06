@@ -1,4 +1,5 @@
 # Software Library
+Click on the three bars in the top right corner for a table of contents outline>>>^
 
 This file is a place to share software recommendations that have been useful. All costs listed are estimates reported by contributors and have not been checked. Good opensource programs are listed first in each category otherwise no particular promotion is intended and all links have been submitted by community members.  
 

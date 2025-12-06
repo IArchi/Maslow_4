@@ -97,12 +97,13 @@ jobs:
         
     - name: Build firmware
       run: |
-        pio run -e wifi_s3 | tee build_output.log
+        cd firmware
+        pio run -e wifi_s3 | tee ../build_output.log
         
     - name: Prepare firmware artifact folder
       run: |
         mkdir -p firmware-package
-        cp .pio/build/wifi_s3/firmware.bin firmware-package/
+        cp firmware/.pio/build/wifi_s3/firmware.bin firmware-package/
         
         # Verify ESP3D-WEBUI build output exists before copying
         if [ ! -f ESP3D-WEBUI/dist/index.html.gz ]; then
@@ -141,7 +142,7 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const path = '.pio/build/wifi_s3/firmware.bin';
+          const path = 'firmware/.pio/build/wifi_s3/firmware.bin';
           const stats = fs.statSync(path);
           const fileSizeInBytes = stats.size;
           const fileSizeInMB = (fileSizeInBytes / (1024*1024)).toFixed(2);
@@ -159,7 +160,7 @@ jobs:
           // Extract version number from version.cpp
           let versionNumber = 'unknown';
           try {
-            const versionContent = fs.readFileSync('FluidNC/src/version.cpp', 'utf8');
+            const versionContent = fs.readFileSync('firmware/FluidNC/src/version.cpp', 'utf8');
             const versionMatch = versionContent.match(/const char\* VERSION_NUMBER = "(.+?)";/);
             if (versionMatch) {
               versionNumber = versionMatch[1];

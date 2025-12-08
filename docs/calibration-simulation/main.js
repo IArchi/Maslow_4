@@ -60,7 +60,8 @@ async function startSimulation() {
     // Validate inputs
     if (config.frameWidth < 500 || config.frameWidth > 5000 ||
         config.frameHeight < 500 || config.frameHeight > 5000) {
-        alert('Frame dimensions must be between 500mm and 5000mm');
+        updateStatus('Error: Frame dimensions must be between 500mm and 5000mm', 'idle');
+        log('❌ Invalid frame dimensions. Please adjust settings.', 'error');
         return;
     }
     

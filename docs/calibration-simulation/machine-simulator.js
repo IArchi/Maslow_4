@@ -198,7 +198,7 @@ class MachineSimulator {
         const totalZHeight = zHeight + (this.config.spoilboardThickness || 0) + (this.config.workThickness || 0);
         
         if (totalZHeight * totalZHeight >= measurement * measurement) {
-            console.error('Invalid geometry: belt length too short for Z height');
+            console.error(`Invalid geometry: belt length (${measurement.toFixed(2)}mm) too short for Z height (${totalZHeight.toFixed(2)}mm)`);
             return 0;
         }
         

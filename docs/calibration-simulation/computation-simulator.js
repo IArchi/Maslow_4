@@ -23,7 +23,7 @@ class ComputationSimulator {
      * Process a chunk of measurement data
      * Returns updated anchor positions
      */
-    async processDataChunk(measurements) {
+    async processDataChunk(measurements, progressCallback) {
         // Initialize from initial guess if first computation
         if (!this.currentGuess) {
             this.currentGuess = JSON.parse(JSON.stringify(this.initialGuess));
@@ -34,17 +34,17 @@ class ComputationSimulator {
         this.totalIterations = 0;
 
         // Run optimization
-        const result = await this.optimize(measurements);
+        const result = await this.optimize(measurements, progressCallback);
 
-        // Update initial guess for next stage
-        if (result.fitness > this.acceptableThreshold) {
+        // Update initial guess for next stage (fix: use inverted fitness)
+        if (1 / result.fitness > this.acceptableThreshold) {
             this.initialGuess = JSON.parse(JSON.stringify(result));
         }
 
         return result;
     }
 
-    async optimize(measurements) {
+    async optimize(measurements, progressCallback) {
         const maxIterations = 200000;
         const maxStagnant = 1000;
 
@@ -60,8 +60,11 @@ class ComputationSimulator {
 
             this.totalIterations++;
 
-            // Yield periodically to prevent blocking
-            if (this.totalIterations % 100 === 0) {
+            // Yield periodically to prevent blocking and update progress
+            if (this.totalIterations % 50 === 0) {
+                if (progressCallback) {
+                    progressCallback(this.totalIterations, 1 / this.bestGuess.fitness);
+                }
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
         }

@@ -129,12 +129,18 @@ async function runSimulationStep(delay) {
             updateStats(result.waypoint, result.totalPoints, result.stage, null);
             
             // Simulate data transmission and computation
-            const computedResult = await computation.processDataChunk(result.data);
+            const computedResult = await computation.processDataChunk(result.data, (iterations, fitness) => {
+                // Update UI with computation progress
+                updateStats(result.waypoint, result.totalPoints, result.stage, fitness);
+                if (iterations % 500 === 0) {
+                    log(`  Computing... ${iterations} iterations, fitness: ${fitness.toFixed(6)}`, 'info');
+                }
+            });
             
             const compStatus = computation.getStatus();
             log(`Computation complete: Fitness = ${compStatus.bestFitness.toFixed(6)} (${compStatus.totalIterations} iterations)`, 'success');
             
-            if (computedResult.fitness > computation.acceptableThreshold) {
+            if (compStatus.bestFitness > computation.acceptableThreshold) {
                 log('✓ Fitness acceptable, updating machine parameters', 'success');
             } else {
                 log('⚠ Fitness below threshold, will retry with adjusted parameters', 'warning');

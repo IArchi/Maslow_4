@@ -31,10 +31,34 @@ class Visualizer {
         ctx.translate(margin, canvas.height - margin);
         ctx.scale(scale, -scale);
         
-        // Draw frame
+        // Draw frame as actual quadrilateral connecting the anchor points
+        // This shows the true (non-rectangular) frame shape
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 2 / scale;
+        ctx.beginPath();
+        // Draw from actual anchor positions (centered coordinates)
+        const tlX = state.trueAnchors.tl.x - state.frameWidth/2;
+        const tlY = state.trueAnchors.tl.y - state.frameHeight/2;
+        const trX = state.trueAnchors.tr.x - state.frameWidth/2;
+        const trY = state.trueAnchors.tr.y - state.frameHeight/2;
+        const blX = state.trueAnchors.bl.x - state.frameWidth/2;
+        const blY = state.trueAnchors.bl.y - state.frameHeight/2;
+        const brX = state.trueAnchors.br.x - state.frameWidth/2;
+        const brY = state.trueAnchors.br.y - state.frameHeight/2;
+        
+        ctx.moveTo(tlX, tlY);
+        ctx.lineTo(trX, trY);
+        ctx.lineTo(brX, brY);
+        ctx.lineTo(blX, blY);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Also draw a reference rectangle (dashed) to show ideal shape
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1 / scale;
+        ctx.setLineDash([5 / scale, 5 / scale]);
         ctx.strokeRect(0, 0, state.frameWidth, state.frameHeight);
+        ctx.setLineDash([]);
         
         // Draw true anchor points (green)
         ctx.fillStyle = '#4CAF50';
@@ -117,12 +141,27 @@ class Visualizer {
             { color: '#4CAF50', text: 'True Anchors' },
             { color: '#f44336', text: 'Current Waypoint' },
             { color: '#2196F3', text: 'Measured Points' },
-            { color: '#ccc', text: 'Unmeasured Points' }
+            { color: '#ccc', text: 'Unmeasured Points' },
+            { type: 'line', color: '#333', text: 'Actual Frame', dashed: false },
+            { type: 'line', color: '#ccc', text: 'Ideal Rectangle', dashed: true }
         ];
         
         items.forEach((item, index) => {
-            ctx.fillStyle = item.color;
-            ctx.fillRect(legendX, legendY + index * lineHeight, 10, 10);
+            if (item.type === 'line') {
+                ctx.strokeStyle = item.color;
+                ctx.lineWidth = 2;
+                if (item.dashed) {
+                    ctx.setLineDash([3, 3]);
+                }
+                ctx.beginPath();
+                ctx.moveTo(legendX, legendY + index * lineHeight + 5);
+                ctx.lineTo(legendX + 10, legendY + index * lineHeight + 5);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            } else {
+                ctx.fillStyle = item.color;
+                ctx.fillRect(legendX, legendY + index * lineHeight, 10, 10);
+            }
             ctx.fillStyle = '#000';
             ctx.fillText(item.text, legendX + 15, legendY + index * lineHeight + 10);
         });

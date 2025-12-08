@@ -11,14 +11,22 @@ class MachineSimulator {
 
     reset() {
         // True anchor positions (what the machine actually has)
+        // Add realistic imperfections to simulate non-rectangular frame
+        // Typical real-world variations: ±10-30mm from perfect rectangle
+        const tlXOffset = (Math.random() - 0.5) * 40; // ±20mm
+        const tlYOffset = (Math.random() - 0.5) * 40; // ±20mm
+        const trXOffset = (Math.random() - 0.5) * 40; // ±20mm
+        const trYOffset = (Math.random() - 0.5) * 40; // ±20mm
+        const brXOffset = (Math.random() - 0.5) * 40; // ±20mm
+        
         this.trueAnchors = {
-            tl: { x: 0, y: this.config.frameHeight, z: 100 },
-            tr: { x: this.config.frameWidth, y: this.config.frameHeight, z: 56 },
-            bl: { x: 0, y: 0, z: 34 },
-            br: { x: this.config.frameWidth, y: 0, z: 78 }
+            tl: { x: 0 + tlXOffset, y: this.config.frameHeight + tlYOffset, z: 100 },
+            tr: { x: this.config.frameWidth + trXOffset, y: this.config.frameHeight + trYOffset, z: 56 },
+            bl: { x: 0, y: 0, z: 34 },  // Keep bottom-left as reference point (0, 0)
+            br: { x: this.config.frameWidth + brXOffset, y: 0, z: 78 }
         };
 
-        // Initial guess (often incorrect, simulating what user enters)
+        // Initial guess (often incorrect, simulating what user enters as perfect rectangle)
         this.initialGuess = {
             tl: { x: 0, y: this.config.frameHeight * 1.1 },
             tr: { x: this.config.frameWidth * 1.1, y: this.config.frameHeight * 1.1 },

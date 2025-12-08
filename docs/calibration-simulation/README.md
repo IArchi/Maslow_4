@@ -9,6 +9,7 @@ This simulator provides an accurate representation of the Maslow CNC machine's c
 - **Grid Generation**: Replicates the spiral pattern grid generation algorithm
 - **Chunked Data Flow**: Simulates how measurements are collected and sent in stages (matching `recomputePoints`)
 - **Measurement Accuracy**: Models real-world measurement errors and Z-plane projection
+- **Non-Rectangular Frame**: Simulates realistic frame imperfections (±20mm variations) instead of perfect rectangles
 
 ### Browser-Side Computation
 - **Iterative Optimization**: Implements the same "magnetically attracted lines" algorithm used in `calculatesCalibrationStuff.js`
@@ -173,9 +174,16 @@ This simulation does not model:
 - Network latency
 - Serial communication errors
 - Multiple measurement runs per waypoint
-- Frame flex under tension
 
 These factors exist in the real machine but don't significantly affect the calibration algorithm's behavior.
+
+## Frame Imperfections
+
+The simulator now includes realistic frame imperfections to better match real-world conditions:
+- Each simulation run generates a non-rectangular frame with random variations (±20mm per anchor)
+- The visualization shows both the actual frame shape (solid line) and ideal rectangle (dashed line)
+- This helps test the calibration algorithm's robustness to frame irregularities
+- The bottom-left anchor (BL) is kept at (0, 0) as a reference point
 
 ## Future Enhancements
 

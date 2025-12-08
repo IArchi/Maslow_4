@@ -103,6 +103,7 @@ jobs:
     - name: Prepare firmware artifact folder
       run: |
         mkdir -p firmware-package
+
         cp firmware/.pio/build/wifi_s3/firmware.bin firmware-package/
         
         # Verify ESP3D-WEBUI build output exists before copying

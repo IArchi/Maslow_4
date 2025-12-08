@@ -17,15 +17,17 @@ How to edit this wiki:
 
 
 This is a rough draft. For more info go to <https://www.maslowcnc.com>
+
 ![Maslowrender](https://github.com/user-attachments/assets/305da71c-ce76-40d9-ad8a-40902add06af)
 
 
-![LogoWithR](https://github.com/user-attachments/assets/66afe41d-6827-4a69-80c6-8bc330a144e1)
+
+![LogoWithR](assets/README-assets/LogoWithR.webp)
 
 # INTRO
 
 
-<img width="2500" height="1875" alt="image" src="https://github.com/user-attachments/assets/ed9fcca8-0106-420d-b355-8df55d405ab9" />
+<img width="2500" height="1875" alt="image" src="assets/README-assets/image_ed9fcca8.png" />
 
 
 ## What is it? 
@@ -56,7 +58,7 @@ Maslow4 is different from a gantry designed CNC router which are designed around
 
 Maslow is a project developed by Barbour Smith and a community of volunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  **If making your own portable blade wielding robot in an enthusiastic online community sounds fun, then you are probably in the right place.** 
 
-<img width="2500" height="1667" alt="image" src="https://github.com/user-attachments/assets/d57a103a-4586-4fb7-8b92-709e616d6aef" />
+<img width="2500" height="1667" alt="image" src="assets/README-assets/image_d57a103a.png" />
 
 # History (I don't know a lot here) 
  In ???? Barbour Smith designed the first Maslow as a wall mounted CNC routing robot that hung from two chains and pulled itself back and forth across a space. The robot at that point was designed around an Arduino Mega 2560 microcontroller and was an open source design. Barbour set up the forums and github groups and sold ??? machines. 

@@ -38,10 +38,13 @@ class Visualizer {
         
         // Draw true anchor points (green)
         ctx.fillStyle = '#4CAF50';
-        this.drawAnchor(ctx, state.trueAnchors.tl.x - state.frameWidth/2, state.trueAnchors.tl.y - state.frameHeight/2, 8 / scale, 'TL');
-        this.drawAnchor(ctx, state.trueAnchors.tr.x - state.frameWidth/2, state.trueAnchors.tr.y - state.frameHeight/2, 8 / scale, 'TR');
-        this.drawAnchor(ctx, state.trueAnchors.bl.x - state.frameWidth/2, state.trueAnchors.bl.y - state.frameHeight/2, 8 / scale, 'BL');
-        this.drawAnchor(ctx, state.trueAnchors.br.x - state.frameWidth/2, state.trueAnchors.br.y - state.frameHeight/2, 8 / scale, 'BR');
+        const anchors = [
+            { anchor: state.trueAnchors.tl, x: state.trueAnchors.tl.x - state.frameWidth/2, y: state.trueAnchors.tl.y - state.frameHeight/2, label: 'TL' },
+            { anchor: state.trueAnchors.tr, x: state.trueAnchors.tr.x - state.frameWidth/2, y: state.trueAnchors.tr.y - state.frameHeight/2, label: 'TR' },
+            { anchor: state.trueAnchors.bl, x: state.trueAnchors.bl.x - state.frameWidth/2, y: state.trueAnchors.bl.y - state.frameHeight/2, label: 'BL' },
+            { anchor: state.trueAnchors.br, x: state.trueAnchors.br.x - state.frameWidth/2, y: state.trueAnchors.br.y - state.frameHeight/2, label: 'BR' }
+        ];
+        anchors.forEach(a => this.drawAnchor(ctx, a.x, a.y, 8 / scale, a.label));
         
         // Draw calibration grid points
         if (state.grid && state.grid.length > 0) {

@@ -79,7 +79,7 @@ class ComputationSimulator {
             allLines.push(lines);
         });
 
-        const avgFitness = fitnesses.reduce((a, b) => Math.abs(a) + Math.abs(b), 0) / fitnesses.length;
+        const avgFitness = fitnesses.reduce((a, b) => a + Math.abs(b), 0) / fitnesses.length;
         
         const updatedGuess = this.computeFurthestFromCenterOfMass(allLines, guess);
         updatedGuess.fitness = avgFitness;

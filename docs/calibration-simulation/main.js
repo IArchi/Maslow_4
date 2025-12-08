@@ -183,12 +183,7 @@ async function runSimulationStep(delay) {
     }
     
     // Continue simulation
-    if (delay === 0) {
-        // Run as fast as possible
-        setImmediate(() => runSimulationStep(delay));
-    } else {
-        setTimeout(() => runSimulationStep(delay), delay);
-    }
+    setTimeout(() => runSimulationStep(delay), delay);
 }
 
 function stopSimulation() {
@@ -207,13 +202,6 @@ function stopSimulation() {
     if (machine) {
         log('Simulation stopped', 'warning');
     }
-}
-
-// Polyfill for setImmediate
-if (typeof setImmediate === 'undefined') {
-    window.setImmediate = function(callback) {
-        return setTimeout(callback, 0);
-    };
 }
 
 // Initialize on page load

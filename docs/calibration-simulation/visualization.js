@@ -257,12 +257,6 @@ class Visualizer {
         ctx.font = '14px Arial';
         ctx.fillText('Computed Anchor Positions', 10, compY);
         
-        // Calculate centroid for true positions (to match computed coordinates)
-        const centroidX = (trueAnchors.tl.x + trueAnchors.tr.x + 
-                          trueAnchors.bl.x + trueAnchors.br.x) / 4;
-        const centroidY = (trueAnchors.tl.y + trueAnchors.tr.y + 
-                          trueAnchors.bl.y + trueAnchors.br.y) / 4;
-        
         const anchors = ['tl', 'tr', 'bl', 'br'];
         const anchorY = compY + 20;
         const lineHeight = 40;
@@ -273,9 +267,9 @@ class Visualizer {
             const guess = currentGuess[anchor];
             const trueAnchor = trueAnchors[anchor];
             
-            // True position in same coordinate system as computed (centered on centroid)
-            const trueX = trueAnchor.x - centroidX;
-            const trueY = trueAnchor.y - centroidY;
+            // True position in same coordinate system as computed (BL at 0,0)
+            const trueX = trueAnchor.x;
+            const trueY = trueAnchor.y;
             
             ctx.fillStyle = '#333';
             ctx.fillText(`${anchor.toUpperCase()}:`, 10, y);

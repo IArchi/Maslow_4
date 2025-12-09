@@ -31,20 +31,26 @@ class Visualizer {
         ctx.translate(margin, canvas.height - margin);
         ctx.scale(scale, -scale);
         
+        // Calculate centroid of actual frame for proper centering
+        const centroidX = (state.trueAnchors.tl.x + state.trueAnchors.tr.x + 
+                          state.trueAnchors.bl.x + state.trueAnchors.br.x) / 4;
+        const centroidY = (state.trueAnchors.tl.y + state.trueAnchors.tr.y + 
+                          state.trueAnchors.bl.y + state.trueAnchors.br.y) / 4;
+        
         // Draw frame as actual quadrilateral connecting the anchor points
         // This shows the true (non-rectangular) frame shape
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 2 / scale;
         ctx.beginPath();
-        // Draw from actual anchor positions (centered coordinates)
-        const tlX = state.trueAnchors.tl.x - state.frameWidth/2;
-        const tlY = state.trueAnchors.tl.y - state.frameHeight/2;
-        const trX = state.trueAnchors.tr.x - state.frameWidth/2;
-        const trY = state.trueAnchors.tr.y - state.frameHeight/2;
-        const blX = state.trueAnchors.bl.x - state.frameWidth/2;
-        const blY = state.trueAnchors.bl.y - state.frameHeight/2;
-        const brX = state.trueAnchors.br.x - state.frameWidth/2;
-        const brY = state.trueAnchors.br.y - state.frameHeight/2;
+        // Draw from actual anchor positions (centered on frame centroid)
+        const tlX = state.trueAnchors.tl.x - centroidX;
+        const tlY = state.trueAnchors.tl.y - centroidY;
+        const trX = state.trueAnchors.tr.x - centroidX;
+        const trY = state.trueAnchors.tr.y - centroidY;
+        const blX = state.trueAnchors.bl.x - centroidX;
+        const blY = state.trueAnchors.bl.y - centroidY;
+        const brX = state.trueAnchors.br.x - centroidX;
+        const brY = state.trueAnchors.br.y - centroidY;
         
         ctx.moveTo(tlX, tlY);
         ctx.lineTo(trX, trY);
@@ -54,23 +60,26 @@ class Visualizer {
         ctx.stroke();
         
         // Also draw a reference rectangle (dashed) to show ideal shape
+        // Centered on the same centroid as the actual frame
         ctx.strokeStyle = '#ccc';
         ctx.lineWidth = 1 / scale;
         ctx.setLineDash([5 / scale, 5 / scale]);
-        ctx.strokeRect(0, 0, state.frameWidth, state.frameHeight);
+        const rectX = -state.frameWidth / 2;
+        const rectY = -state.frameHeight / 2;
+        ctx.strokeRect(rectX, rectY, state.frameWidth, state.frameHeight);
         ctx.setLineDash([]);
         
-        // Draw true anchor points (green)
+        // Draw true anchor points (green) - using centroid-based coordinates
         ctx.fillStyle = '#4CAF50';
         const anchors = [
-            { anchor: state.trueAnchors.tl, x: state.trueAnchors.tl.x - state.frameWidth/2, y: state.trueAnchors.tl.y - state.frameHeight/2, label: 'TL' },
-            { anchor: state.trueAnchors.tr, x: state.trueAnchors.tr.x - state.frameWidth/2, y: state.trueAnchors.tr.y - state.frameHeight/2, label: 'TR' },
-            { anchor: state.trueAnchors.bl, x: state.trueAnchors.bl.x - state.frameWidth/2, y: state.trueAnchors.bl.y - state.frameHeight/2, label: 'BL' },
-            { anchor: state.trueAnchors.br, x: state.trueAnchors.br.x - state.frameWidth/2, y: state.trueAnchors.br.y - state.frameHeight/2, label: 'BR' }
+            { x: tlX, y: tlY, label: 'TL' },
+            { x: trX, y: trY, label: 'TR' },
+            { x: blX, y: blY, label: 'BL' },
+            { x: brX, y: brY, label: 'BR' }
         ];
         anchors.forEach(a => this.drawAnchor(ctx, a.x, a.y, 8 / scale, a.label));
         
-        // Draw calibration grid points
+        // Draw calibration grid points (centered around origin like the frames)
         if (state.grid && state.grid.length > 0) {
             state.grid.forEach((point, index) => {
                 if (index < currentWaypoint) {
@@ -85,13 +94,8 @@ class Visualizer {
                 }
                 
                 ctx.beginPath();
-                ctx.arc(
-                    point.x + state.frameWidth / 2,
-                    point.y + state.frameHeight / 2,
-                    4 / scale,
-                    0,
-                    2 * Math.PI
-                );
+                // Grid points are already centered (0,0 is center)
+                ctx.arc(point.x, point.y, 4 / scale, 0, 2 * Math.PI);
                 ctx.fill();
             });
             
@@ -102,9 +106,9 @@ class Visualizer {
             for (let i = 0; i < Math.min(currentWaypoint, state.grid.length); i++) {
                 const point = state.grid[i];
                 if (i === 0) {
-                    ctx.moveTo(point.x + state.frameWidth / 2, point.y + state.frameHeight / 2);
+                    ctx.moveTo(point.x, point.y);
                 } else {
-                    ctx.lineTo(point.x + state.frameWidth / 2, point.y + state.frameHeight / 2);
+                    ctx.lineTo(point.x, point.y);
                 }
             }
             ctx.stroke();

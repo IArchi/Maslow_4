@@ -11,22 +11,33 @@ class MachineSimulator {
 
     reset() {
         // True anchor positions (what the machine actually has)
-        // Add realistic imperfections to simulate non-rectangular frame
-        // Typical real-world variations: ±10-30mm from perfect rectangle
-        const tlXOffset = (Math.random() - 0.5) * 40; // ±20mm
-        const tlYOffset = (Math.random() - 0.5) * 40; // ±20mm
-        const trXOffset = (Math.random() - 0.5) * 40; // ±20mm
-        const trYOffset = (Math.random() - 0.5) * 40; // ±20mm
-        const brXOffset = (Math.random() - 0.5) * 40; // ±20mm
-        
-        this.trueAnchors = {
-            tl: { x: 0 + tlXOffset, y: this.config.frameHeight + tlYOffset, z: 100 },
-            tr: { x: this.config.frameWidth + trXOffset, y: this.config.frameHeight + trYOffset, z: 56 },
-            bl: { x: 0, y: 0, z: 34 },  // Keep bottom-left as reference point (0, 0)
-            br: { x: this.config.frameWidth + brXOffset, y: 0, z: 78 }
-        };
+        if (this.config.configMode === 'anchors' && this.config.manualAnchors) {
+            // Use manually specified anchor positions
+            this.trueAnchors = {
+                tl: { x: this.config.manualAnchors.tlX, y: this.config.manualAnchors.tlY, z: 100 },
+                tr: { x: this.config.manualAnchors.trX, y: this.config.manualAnchors.trY, z: 56 },
+                bl: { x: this.config.manualAnchors.blX, y: 0, z: 34 },
+                br: { x: this.config.manualAnchors.brX, y: 0, z: 78 }
+            };
+        } else {
+            // Generate with realistic imperfections (dimensions mode)
+            // Typical real-world variations: ±10-30mm from perfect rectangle
+            const tlXOffset = (Math.random() - 0.5) * 40; // ±20mm
+            const tlYOffset = (Math.random() - 0.5) * 40; // ±20mm
+            const trXOffset = (Math.random() - 0.5) * 40; // ±20mm
+            const trYOffset = (Math.random() - 0.5) * 40; // ±20mm
+            const brXOffset = (Math.random() - 0.5) * 40; // ±20mm
+            
+            this.trueAnchors = {
+                tl: { x: 0 + tlXOffset, y: this.config.frameHeight + tlYOffset, z: 100 },
+                tr: { x: this.config.frameWidth + trXOffset, y: this.config.frameHeight + trYOffset, z: 56 },
+                bl: { x: 0, y: 0, z: 34 },  // Keep bottom-left as reference point (0, 0)
+                br: { x: this.config.frameWidth + brXOffset, y: 0, z: 78 }
+            };
+        }
 
         // Initial guess (often incorrect, simulating what user enters as perfect rectangle)
+        // Use nominal frame dimensions for initial guess
         this.initialGuess = {
             tl: { x: 0, y: this.config.frameHeight * 1.1 },
             tr: { x: this.config.frameWidth * 1.1, y: this.config.frameHeight * 1.1 },
@@ -195,8 +206,16 @@ class MachineSimulator {
     }
 
     calculateDistance(point, anchor) {
-        const dx = point.x - (anchor.x - this.config.frameWidth / 2);
-        const dy = point.y - (anchor.y - this.config.frameHeight / 2);
+        // Calculate centroid for consistent coordinate system
+        const centroidX = (this.trueAnchors.tl.x + this.trueAnchors.tr.x + 
+                          this.trueAnchors.bl.x + this.trueAnchors.br.x) / 4;
+        const centroidY = (this.trueAnchors.tl.y + this.trueAnchors.tr.y + 
+                          this.trueAnchors.bl.y + this.trueAnchors.br.y) / 4;
+        
+        // Point coordinates are centered around origin (0,0)
+        // Anchor coordinates need to be centered around the centroid
+        const dx = point.x - (anchor.x - centroidX);
+        const dy = point.y - (anchor.y - centroidY);
         const dz = anchor.z;
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }

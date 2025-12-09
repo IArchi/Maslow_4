@@ -62,7 +62,7 @@ async function startSimulation() {
         tlY: parseFloat(document.getElementById('tlY').value),
         trX: parseFloat(document.getElementById('trX').value),
         trY: parseFloat(document.getElementById('trY').value),
-        blX: parseFloat(document.getElementById('blX').value),
+        blX: 0, // BL X is always 0
         brX: parseFloat(document.getElementById('brX').value)
     };
     

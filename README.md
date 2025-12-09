@@ -3,6 +3,9 @@
 Website where you can buy a kit and current assembly instrucitons: 
 <https://www.maslowcnc.com/>
 
+📚 **Documentation Site (GitHub Pages):**
+<https://maslowcnc.github.io/Maslow_4/>
+
 Assembly instructions in wiki:
 <https://github.com/MaslowCNC/Maslow_4/tree/assembling-the-arms-4-1>
 

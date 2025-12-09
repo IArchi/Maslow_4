@@ -20,22 +20,36 @@ class Visualizer {
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Set up coordinate system
-        const margin = 50;
-        const scale = Math.min(
-            (canvas.width - 2 * margin) / state.frameWidth,
-            (canvas.height - 2 * margin) / state.frameHeight
-        );
-        
-        ctx.save();
-        ctx.translate(margin, canvas.height - margin);
-        ctx.scale(scale, -scale);
-        
         // Calculate centroid of actual frame for proper centering
         const centroidX = (state.trueAnchors.tl.x + state.trueAnchors.tr.x + 
                           state.trueAnchors.bl.x + state.trueAnchors.br.x) / 4;
         const centroidY = (state.trueAnchors.tl.y + state.trueAnchors.tr.y + 
                           state.trueAnchors.bl.y + state.trueAnchors.br.y) / 4;
+        
+        // Calculate the bounding box of the actual frame
+        const minX = Math.min(state.trueAnchors.tl.x, state.trueAnchors.tr.x, 
+                              state.trueAnchors.bl.x, state.trueAnchors.br.x);
+        const maxX = Math.max(state.trueAnchors.tl.x, state.trueAnchors.tr.x, 
+                              state.trueAnchors.bl.x, state.trueAnchors.br.x);
+        const minY = Math.min(state.trueAnchors.tl.y, state.trueAnchors.tr.y, 
+                              state.trueAnchors.bl.y, state.trueAnchors.br.y);
+        const maxY = Math.max(state.trueAnchors.tl.y, state.trueAnchors.tr.y, 
+                              state.trueAnchors.bl.y, state.trueAnchors.br.y);
+        
+        const actualWidth = maxX - minX;
+        const actualHeight = maxY - minY;
+        
+        // Set up coordinate system - translate to center of canvas
+        const margin = 50;
+        const scale = Math.min(
+            (canvas.width - 2 * margin) / actualWidth,
+            (canvas.height - 2 * margin) / actualHeight
+        );
+        
+        ctx.save();
+        // Translate to center of canvas
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(scale, -scale);
         
         // Draw frame as actual quadrilateral connecting the anchor points
         // This shows the true (non-rectangular) frame shape

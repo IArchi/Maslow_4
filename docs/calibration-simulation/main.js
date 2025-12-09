@@ -37,28 +37,12 @@ function updateStats(waypoint, totalPoints, stage, fitness) {
     document.getElementById('fitness').textContent = fitness ? fitness.toFixed(6) : '-';
 }
 
-function toggleConfigMode() {
-    const mode = document.getElementById('configMode').value;
-    const dimensionsMode = document.getElementById('dimensionsMode');
-    const anchorsMode = document.getElementById('anchorsMode');
-    
-    if (mode === 'dimensions') {
-        dimensionsMode.style.display = 'block';
-        anchorsMode.style.display = 'none';
-    } else {
-        dimensionsMode.style.display = 'none';
-        anchorsMode.style.display = 'block';
-    }
-}
-
 async function startSimulation() {
     if (isRunning) return;
     
-    const configMode = document.getElementById('configMode').value;
-    
     // Get configuration from UI
     const config = {
-        configMode: configMode,
+        configMode: 'anchors',
         gridSize: parseInt(document.getElementById('gridSize').value),
         measurementError: parseFloat(document.getElementById('measurementError').value),
         simulationSpeed: parseFloat(document.getElementById('simulationSpeed').value),
@@ -72,39 +56,25 @@ async function startSimulation() {
         armLength: 0
     };
     
-    // Get anchor positions based on mode
-    if (configMode === 'dimensions') {
-        config.frameWidth = parseFloat(document.getElementById('frameWidth').value);
-        config.frameHeight = parseFloat(document.getElementById('frameHeight').value);
-        
-        // Validate dimensions mode
-        if (config.frameWidth < 500 || config.frameWidth > 5000 ||
-            config.frameHeight < 500 || config.frameHeight > 5000) {
-            updateStatus('Error: Frame dimensions must be between 500mm and 5000mm', 'idle');
-            log('❌ Invalid frame dimensions. Please adjust settings.', 'error');
-            return;
-        }
-    } else {
-        // Manual anchor mode
-        config.manualAnchors = {
-            tlX: parseFloat(document.getElementById('tlX').value),
-            tlY: parseFloat(document.getElementById('tlY').value),
-            trX: parseFloat(document.getElementById('trX').value),
-            trY: parseFloat(document.getElementById('trY').value),
-            blX: parseFloat(document.getElementById('blX').value),
-            brX: parseFloat(document.getElementById('brX').value)
-        };
-        
-        // Calculate frame dimensions from anchors for grid generation
-        config.frameWidth = Math.max(
-            config.manualAnchors.trX - config.manualAnchors.tlX,
-            config.manualAnchors.brX - config.manualAnchors.blX
-        );
-        config.frameHeight = Math.max(
-            config.manualAnchors.tlY - 0, // BL Y is 0
-            config.manualAnchors.trY - 0  // BR Y is 0
-        );
-    }
+    // Always use manual anchor mode
+    config.manualAnchors = {
+        tlX: parseFloat(document.getElementById('tlX').value),
+        tlY: parseFloat(document.getElementById('tlY').value),
+        trX: parseFloat(document.getElementById('trX').value),
+        trY: parseFloat(document.getElementById('trY').value),
+        blX: parseFloat(document.getElementById('blX').value),
+        brX: parseFloat(document.getElementById('brX').value)
+    };
+    
+    // Calculate frame dimensions from anchors for grid generation
+    config.frameWidth = Math.max(
+        config.manualAnchors.trX - config.manualAnchors.tlX,
+        config.manualAnchors.brX - config.manualAnchors.blX
+    );
+    config.frameHeight = Math.max(
+        config.manualAnchors.tlY - 0, // BL Y is 0
+        config.manualAnchors.trY - 0  // BR Y is 0
+    );
     
     
     isRunning = true;

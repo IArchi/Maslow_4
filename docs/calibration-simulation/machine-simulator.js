@@ -11,30 +11,13 @@ class MachineSimulator {
 
     reset() {
         // True anchor positions (what the machine actually has)
-        if (this.config.configMode === 'anchors' && this.config.manualAnchors) {
-            // Use manually specified anchor positions
-            this.trueAnchors = {
-                tl: { x: this.config.manualAnchors.tlX, y: this.config.manualAnchors.tlY, z: 100 },
-                tr: { x: this.config.manualAnchors.trX, y: this.config.manualAnchors.trY, z: 56 },
-                bl: { x: this.config.manualAnchors.blX, y: 0, z: 34 },
-                br: { x: this.config.manualAnchors.brX, y: 0, z: 78 }
-            };
-        } else {
-            // Generate with realistic imperfections (dimensions mode)
-            // Typical real-world variations: ±10-30mm from perfect rectangle
-            const tlXOffset = (Math.random() - 0.5) * 40; // ±20mm
-            const tlYOffset = (Math.random() - 0.5) * 40; // ±20mm
-            const trXOffset = (Math.random() - 0.5) * 40; // ±20mm
-            const trYOffset = (Math.random() - 0.5) * 40; // ±20mm
-            const brXOffset = (Math.random() - 0.5) * 40; // ±20mm
-            
-            this.trueAnchors = {
-                tl: { x: 0 + tlXOffset, y: this.config.frameHeight + tlYOffset, z: 100 },
-                tr: { x: this.config.frameWidth + trXOffset, y: this.config.frameHeight + trYOffset, z: 56 },
-                bl: { x: 0, y: 0, z: 34 },  // Keep bottom-left as reference point (0, 0)
-                br: { x: this.config.frameWidth + brXOffset, y: 0, z: 78 }
-            };
-        }
+        // Always use manually specified anchor positions
+        this.trueAnchors = {
+            tl: { x: this.config.manualAnchors.tlX, y: this.config.manualAnchors.tlY, z: 100 },
+            tr: { x: this.config.manualAnchors.trX, y: this.config.manualAnchors.trY, z: 56 },
+            bl: { x: this.config.manualAnchors.blX, y: 0, z: 34 },
+            br: { x: this.config.manualAnchors.brX, y: 0, z: 78 }
+        };
 
         // Initial guess (often incorrect, simulating what user enters as perfect rectangle)
         // Use nominal frame dimensions for initial guess

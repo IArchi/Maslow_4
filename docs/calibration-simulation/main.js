@@ -159,7 +159,7 @@ async function runSimulationStep(delay) {
             }
             
             // Update visualization with computation results
-            visualizer.drawComputationProgress(compStatus, computedResult);
+            visualizer.drawComputationProgress(compStatus, computedResult, machine.trueAnchors);
             updateStats(result.waypoint, result.totalPoints, result.stage, compStatus.bestFitness);
             
             updateStatus('Collecting measurements...', 'running');

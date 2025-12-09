@@ -185,7 +185,7 @@ class Visualizer {
         });
     }
     
-    drawComputationProgress(computationState, currentGuess) {
+    drawComputationProgress(computationState, currentGuess, trueAnchors) {
         const ctx = this.computationCtx;
         const canvas = this.computationCanvas;
         
@@ -257,6 +257,12 @@ class Visualizer {
         ctx.font = '14px Arial';
         ctx.fillText('Computed Anchor Positions', 10, compY);
         
+        // Calculate centroid for true positions (to match computed coordinates)
+        const centroidX = (trueAnchors.tl.x + trueAnchors.tr.x + 
+                          trueAnchors.bl.x + trueAnchors.br.x) / 4;
+        const centroidY = (trueAnchors.tl.y + trueAnchors.tr.y + 
+                          trueAnchors.bl.y + trueAnchors.br.y) / 4;
+        
         const anchors = ['tl', 'tr', 'bl', 'br'];
         const anchorY = compY + 20;
         const lineHeight = 40;
@@ -265,11 +271,20 @@ class Visualizer {
         anchors.forEach((anchor, index) => {
             const y = anchorY + index * lineHeight;
             const guess = currentGuess[anchor];
+            const trueAnchor = trueAnchors[anchor];
+            
+            // True position in same coordinate system as computed (centered on centroid)
+            const trueX = trueAnchor.x - centroidX;
+            const trueY = trueAnchor.y - centroidY;
             
             ctx.fillStyle = '#333';
             ctx.fillText(`${anchor.toUpperCase()}:`, 10, y);
             ctx.fillText(`X: ${guess.x.toFixed(1)}mm`, 50, y);
             ctx.fillText(`Y: ${guess.y.toFixed(1)}mm`, 180, y);
+            
+            // Display true positions in brackets
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillText(`[${trueX.toFixed(1)}, ${trueY.toFixed(1)}]`, 310, y);
         });
         
         // Draw iteration count

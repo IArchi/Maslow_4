@@ -44,7 +44,9 @@ async function startSimulation() {
     const config = {
         configMode: 'anchors',
         gridSize: parseInt(document.getElementById('gridSize').value),
-        measurementError: parseFloat(document.getElementById('measurementError').value),
+        randomError: parseFloat(document.getElementById('randomError').value),
+        constantError: parseFloat(document.getElementById('constantError').value),
+        proportionalError: parseFloat(document.getElementById('proportionalError').value),
         simulationSpeed: parseFloat(document.getElementById('simulationSpeed').value),
         orientation: document.getElementById('orientation').value,
         calibration_grid_width_mm_X: 0, // Auto-compute
@@ -92,7 +94,7 @@ async function startSimulation() {
     
     log('=== Calibration Simulation Started ===', 'success');
     log(`Frame: ${config.frameWidth}mm x ${config.frameHeight}mm`);
-    log(`Measurement Error: ±${config.measurementError}mm`);
+    log(`Random Error: ±${config.randomError}mm, Constant: ${config.constantError}mm, Proportional: ${config.proportionalError}x`);
     log(`Orientation: ${config.orientation}`);
     
     updateStatus('Generating calibration grid...', 'running');

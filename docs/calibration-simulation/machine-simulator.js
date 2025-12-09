@@ -172,12 +172,28 @@ class MachineSimulator {
             br: this.calculateDistance(point, this.trueAnchors.br)
         };
 
-        // Add measurement error
-        const error = this.config.measurementError;
-        measurements.tl += (Math.random() - 0.5) * 2 * error;
-        measurements.tr += (Math.random() - 0.5) * 2 * error;
-        measurements.bl += (Math.random() - 0.5) * 2 * error;
-        measurements.br += (Math.random() - 0.5) * 2 * error;
+        // Apply measurement errors in order: proportional, constant, then random
+        const randomError = this.config.randomError || 0;
+        const constantError = this.config.constantError || 0;
+        const proportionalError = this.config.proportionalError || 1.0;
+        
+        // Apply proportional error (scale factor)
+        measurements.tl *= proportionalError;
+        measurements.tr *= proportionalError;
+        measurements.bl *= proportionalError;
+        measurements.br *= proportionalError;
+        
+        // Add constant error
+        measurements.tl += constantError;
+        measurements.tr += constantError;
+        measurements.bl += constantError;
+        measurements.br += constantError;
+        
+        // Add random error
+        measurements.tl += (Math.random() - 0.5) * 2 * randomError;
+        measurements.tr += (Math.random() - 0.5) * 2 * randomError;
+        measurements.bl += (Math.random() - 0.5) * 2 * randomError;
+        measurements.br += (Math.random() - 0.5) * 2 * randomError;
 
         // Project to XY plane (matching measurementToXYPlane function)
         measurements.tl = this.measurementToXYPlane(measurements.tl, this.trueAnchors.tl.z);

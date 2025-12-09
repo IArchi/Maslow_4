@@ -218,8 +218,24 @@
 
             <div class="control-group">
                 <h3>Simulation Settings</h3>
-                <label for="measurementError">Measurement Error (mm):</label>
-                <input type="number" id="measurementError" value="0.5" min="0" max="5" step="0.1">
+                
+                <label for="randomError">Random Measurement Error ± (mm):</label>
+                <input type="number" id="randomError" value="0.5" min="0" max="10" step="0.1">
+                <p style="font-size: 11px; color: #666; margin-top: 2px; margin-bottom: 10px;">
+                    Randomly adds/subtracts between -X and +X mm to each measurement
+                </p>
+                
+                <label for="constantError">Constant Measurement Error (mm):</label>
+                <input type="number" id="constantError" value="0" min="-10" max="10" step="0.1">
+                <p style="font-size: 11px; color: #666; margin-top: 2px; margin-bottom: 10px;">
+                    Adds a fixed value to all measurements
+                </p>
+                
+                <label for="proportionalError">Proportional Measurement Error (scale):</label>
+                <input type="number" id="proportionalError" value="1.0" min="0.9" max="1.1" step="0.001">
+                <p style="font-size: 11px; color: #666; margin-top: 2px; margin-bottom: 10px;">
+                    Multiplies each measurement by this scale factor (1.0 = no error)
+                </p>
                 
                 <label for="simulationSpeed">Simulation Speed:</label>
                 <select id="simulationSpeed">

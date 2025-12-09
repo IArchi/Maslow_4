@@ -1,5 +1,7 @@
 # Calibration Simulator - Quick Start
 
+**[🚀 Launch the Interactive Simulator](index.html)**
+
 ## Opening the Simulator
 
 1. Navigate to `docs/calibration-simulation/`

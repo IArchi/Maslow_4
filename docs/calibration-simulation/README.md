@@ -1,5 +1,7 @@
 # Maslow CNC Calibration Simulator
 
+**[🚀 Launch the Interactive Simulator](index.html)**
+
 This simulator provides an accurate representation of the Maslow CNC machine's calibration process. Unlike the previous simulation at https://github.com/BarbourSmith/Calibration-Simulation/, this implementation exactly mimics how data flows between the machine firmware and the browser-side computation.
 
 ## Key Features

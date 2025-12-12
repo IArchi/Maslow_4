@@ -389,22 +389,27 @@ function tabletShowMessage(msg, collecting) {
 
   //These are used for populating WiFi settings in the configuration popup
   if (valueStartsWith(msg, ["$/Sta/"])) {
-    const keyValue = msg.substring(2).split("="); // Remove $/ prefix
+    const PREFIX_LENGTH = 2; // Length of "$/" prefix
+    const keyValue = msg.substring(PREFIX_LENGTH).split("=");
     if (keyValue.length === 2) {
       const key = keyValue[0];
       const value = keyValue[1].trim();
-      if (key === "Sta/SSID") {
-        setValue("wifiSSID", value);
-        if (!globalThis.loadedValues) {
-          globalThis.loadedValues = {};
-        }
-        globalThis.loadedValues["wifiSSID"] = value;
-      } else if (key === "Sta/Password") {
-        setValue("wifiPassword", value);
-        if (!globalThis.loadedValues) {
-          globalThis.loadedValues = {};
-        }
-        globalThis.loadedValues["wifiPassword"] = value;
+      
+      // Initialize loadedValues if needed
+      if (!globalThis.loadedValues) {
+        globalThis.loadedValues = {};
+      }
+      
+      // Map Sta/ keys to input field IDs
+      const wifiSettingsMap = {
+        "Sta/SSID": "wifiSSID",
+        "Sta/Password": "wifiPassword"
+      };
+      
+      const fieldId = wifiSettingsMap[key];
+      if (fieldId) {
+        setValue(fieldId, value);
+        globalThis.loadedValues[fieldId] = value;
       }
     }
     return; //We don't want to display these messages

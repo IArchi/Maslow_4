@@ -105,17 +105,20 @@ PICTURE
 ![IMG_1728_002](../assets/FrameLibrary-assets/IMG_1728_002.webp)
 ![image2_004](../assets/FrameLibrary-assets/image2_004.webp)
 
-- Overview:  Print an anchor with a slot for the belt end and two holes for a pin to go through.
+- Overview:  Print an anchor with a slot for the belt end and two holes for a pin to go through. Glue, screw or bolt the anchor to the floor frame. These work great with any other frame design. When printing print solid without fill patterns. they need to be strong. Consider three D print strengthing techniques. 
 - Links:
-- - https://cad.onshape.com/documents/764e57e1318b9953e5986480/w/d0fb021f278db7c3ec637c49/e/b61d6c0eb4e663195972c4e3
-  - 
+- - Dlang's raised anchors: <https://cad.onshape.com/documents/764e57e1318b9953e5986480/w/d0fb021f278db7c3ec637c49/e/b61d6c0eb4e663195972c4e3>
+  - Frogmouth anchors <https://www.maslowcnc.com/s/Frogmouth-Anchor-3D-Print.stl>
+  - Triangle Anchors <https://www.maslowcnc.com/s/Triangle-Anchor-3D-Print.stl>
+  - Wall anchors <https://www.maslowcnc.com/s/Wall-Anchor.stl>
   
 - Materials:
 - Details:
 - Notes:
 - - discussion about printable anchors <https://forums.maslowcnc.com/t/printable-bolt-down-tower-anchors/24612>
+  - Another thread: <https://forums.maslowcnc.com/t/easy-to-use-concrete-floor-mounts/24595>
 - More Pictures:
-- Credits:  Dlang, 
+- Credits:  Dlang
 
 
 ## Vertical format frames

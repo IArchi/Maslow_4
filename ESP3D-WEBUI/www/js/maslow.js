@@ -354,9 +354,6 @@ const vertIs = (value) => value === "false" ? "horizontal" : "vertical";
 
 const cfgDef = {
 	vertical: { name: "machineOrientation", type: "A", fnVal: isVert, fnDisp: vertIs, cmd: "Maslow_vertical" },
-	calibration_grid_size: { name: "gridSize", type: "A", cmd: "maslow_calibration_grid_size" },
-	calibration_grid_width_mm_X: { name: "gridWidth", type: "A", cmd: "maslow_calibration_grid_width_mm_X" },
-	calibration_grid_height_mm_Y: { name: "gridHeight", type: "A", cmd: "maslow_calibration_grid_height_mm_Y" },
 	Retract_Current_Threshold: { name: "retractionForce", type: "A", cmd: "Maslow_Retract_Current_Threshold" },
 	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A", cmd: "Maslow_Acceptable_Calibration_Threshold" },
 	Extend_Dist: { name: "extendDist", type: "A", cmd: "Maslow_Extend_Dist" },
@@ -523,15 +520,6 @@ const saveConfigValues = () => {
 		cfgVal.val = getValue(cfgVal.name);
 		cfgVal.loadedVal = globalThis.loadedValues ? globalThis.loadedValues[cfgVal.name] : undefined;
 	};
-
-	const gridSpacingWidth = cfgDef.calibration_grid_width_mm_X.val / (cfgDef.calibration_grid_size.val - 1);
-	const gridSpacingHeight = cfgDef.calibration_grid_height_mm_Y.val / (cfgDef.calibration_grid_size.val - 1);
-
-	//If the grid spacing is going to be more than 200 don't save the values
-	if (gridSpacingWidth > 260 || gridSpacingHeight > 260) {
-		alert("Grid spacing is too large. Please reduce the grid size or increase the number of points.");
-		return;
-	}
 
 	// Save the individual values
 	for (const key of allConfigKeys()) {

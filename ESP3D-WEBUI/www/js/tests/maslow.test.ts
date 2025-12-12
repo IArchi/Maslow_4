@@ -12,9 +12,6 @@ describe('maslowMsgHandling', () => {
   beforeEach(() => {
     // Set up the DOM elements and initial values
     document.body.innerHTML = `
-              <input id="gridSize" value="" />
-              <input id="gridWidth" value="" />
-              <input id="gridHeight" value="" />
               <input id="retractionForce" value="" />
               <input id="machineOrientation" value="" />
               <input id="machineWidth" value="" />
@@ -43,9 +40,6 @@ describe('maslowMsgHandling', () => {
   });
 
   const stdActions = [
-    ["calibration_grid_size", "10", "gridSize"],
-    ["calibration_grid_width_mm_X", "2000", "gridWidth"],
-    ["calibration_grid_height_mm_Y", "1000", "gridHeight"],
     ["Retract_Current_Threshold", "1500", "retractionForce"],
   ];
 

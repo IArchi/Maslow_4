@@ -13,7 +13,6 @@ describe('maslowMsgHandling', () => {
     // Set up the DOM elements and initial values
     document.body.innerHTML = `
               <input id="retractionForce" value="" />
-              <input id="machineOrientation" value="" />
               <input id="machineWidth" value="" />
               <input id="machineHeight" value="" />
           `;
@@ -51,17 +50,6 @@ describe('maslowMsgHandling', () => {
   test.each(stdActions)("Key %p sets value %p into %p", (key, value, outputValueName) => {
     noErrorResult(key, value);
     expect(global.loadedValues[outputValueName]).toBe(value);
-  });
-
-  const orientationActions = [
-    ["vertical", "false", "machineOrientation", "horizontal"],
-    ["vertical", "true", "machineOrientation", "vertical"],
-    ["vertical", "something else", "machineOrientation", "vertical"],
-  ];
-
-  test.each(orientationActions)("Key %p with value %p sets %p to %p", (key, value, outputValueName, outputValue) => {
-    noErrorResult(key, value);
-    expect(global.loadedValues[outputValueName]).toBe(outputValue);
   });
 
   const setDim = (key, value, outDim, outValue) => {

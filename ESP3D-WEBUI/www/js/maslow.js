@@ -347,13 +347,7 @@ const maslowErrorMsgHandling = (msg) => {
 	return `${msg}${msgExtra[msg.split(":")[1]] || ""}`;
 }
 
-/** Is the machine orientation 'vertical' (the default) */
-const isVert = (value) => value === "horizontal" ? "false" : "true";
-/** What orientation is the machine? */
-const vertIs = (value) => value === "false" ? "horizontal" : "vertical";
-
 const cfgDef = {
-	vertical: { name: "machineOrientation", type: "A", fnVal: isVert, fnDisp: vertIs, cmd: "Maslow_vertical" },
 	Retract_Current_Threshold: { name: "retractionForce", type: "A", cmd: "Maslow_Retract_Current_Threshold" },
 	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A", cmd: "Maslow_Acceptable_Calibration_Threshold" },
 	Extend_Dist: { name: "extendDist", type: "A", cmd: "Maslow_Extend_Dist" },

@@ -200,50 +200,10 @@
         <hr style="border-top: 1px dashed;">
         <div class="grid-container">
           <div class="input-row" title="Max 4,250mm">
-            <label for="extendDist" class="input-label">Extend Dist(mm)</label>
+            <label for="extendDist" class="input-label">Extend Dist (mm)</label>
           </div>
           <div class="input-row" title="Max 4,250mm">
             <input id="extendDist" type="text" class="calibration-modal-input">
-          </div>
-          <div class="input-row">
-            <label for="machineOrientation" class="input-label">Orientation</label>
-          </div>
-          <div class="input-row">
-            <select id="machineOrientation" class="calibration-modal-input">
-              <option value="horizontal">Horizontal</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </div>
-        </div>
-        <hr style="border-top: 1px dashed;">
-        <div class="input-row">
-          <div style="display: flex; justify-content: center;">
-            <label style="text-align: center;">Calibration Grid</label>
-          </div>
-        </div>
-        <div class="grid-container">
-          <div class="input-row">
-            <label for="gridWidth" class="input-label">Width(mm)</label>
-          </div>
-          <div class="input-row">
-            <input id="gridWidth" type="text" class="calibration-modal-input">
-          </div>
-          <div class="input-row">
-            <label for="gridHeight" class="input-label">Height(mm)</label>
-          </div>
-          <div class="input-row">
-            <input id="gridHeight" type="text" class="calibration-modal-input">
-          </div>
-          <div class="input-row">
-            <label for="gridSize" class="input-label">Grid Size:</label>
-          </div>
-          <div class="input-row">
-            <select id="gridSize" class="calibration-modal-input">
-              <option value="3">3x3</option>
-              <option value="5">5x5</option>
-              <option value="7">7x7</option>
-              <option value="9" selected>9x9</option>
-            </select>
           </div>
         </div>
         <hr style="border-top: 1px dashed;">
@@ -255,12 +215,19 @@
             <input id="retractionForce" type="text" class="calibration-modal-input">
           </div>
         </div>
-        <div class="grid-container" title="Valid Range is 0-2500">
+        <hr style="border-top: 1px dashed;">
+        <div class="grid-container" title="Valid Range is 0-50mm">
           <div class="input-row">
-            <label for="calibrationForce" class="input-label">Calibration Force</label>
+            <label for="spoilboardThickness" class="input-label">Spoil Board Thickness (mm)</label>
           </div>
           <div class="input-row">
-            <input id="calibrationForce" type="text" class="calibration-modal-input">
+            <input id="spoilboardThickness" type="number" min="0" max="50" step="0.1" class="calibration-modal-input">
+          </div>
+          <div class="input-row">
+            <label for="workThickness" class="input-label">Work Thickness (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="workThickness" type="number" min="0" max="50" step="0.1" class="calibration-modal-input">
           </div>
         </div>
         <hr style="border-top: 1px dashed;">

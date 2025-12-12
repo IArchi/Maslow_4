@@ -957,9 +957,9 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
         allocateMeasurements();  //This is structured [[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]],[[tl],[tr],[bl],[br]]
     }
 
-    int howHardToPull = calibrationCurrentThreshold;
+    int howHardToPull = retractCurrentThreshold;
     if (measureFlex) {
-        howHardToPull = calibrationCurrentThreshold + 500;
+        howHardToPull = retractCurrentThreshold + 500;
     }
 
     if (take_measurement(measurements[max(run - 2, 0)], dir, run, howHardToPull, waypoint)) {  //Throw away measurements are stored in [0]

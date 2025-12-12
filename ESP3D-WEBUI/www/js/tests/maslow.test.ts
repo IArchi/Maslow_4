@@ -12,11 +12,9 @@ describe('maslowMsgHandling', () => {
   beforeEach(() => {
     // Set up the DOM elements and initial values
     document.body.innerHTML = `
-              <input id="gridSize" value="" />
-              <input id="gridWidth" value="" />
-              <input id="gridHeight" value="" />
               <input id="retractionForce" value="" />
-              <input id="machineOrientation" value="" />
+              <input id="spoilboardThickness" value="" />
+              <input id="workThickness" value="" />
               <input id="machineWidth" value="" />
               <input id="machineHeight" value="" />
           `;
@@ -43,10 +41,9 @@ describe('maslowMsgHandling', () => {
   });
 
   const stdActions = [
-    ["calibration_grid_size", "10", "gridSize"],
-    ["calibration_grid_width_mm_X", "2000", "gridWidth"],
-    ["calibration_grid_height_mm_Y", "1000", "gridHeight"],
     ["Retract_Current_Threshold", "1500", "retractionForce"],
+    ["spoilboardThickness", "5.5", "spoilboardThickness"],
+    ["workThickness", "19.0", "workThickness"],
   ];
 
   const noErrorResult = (key, value) => {
@@ -57,17 +54,6 @@ describe('maslowMsgHandling', () => {
   test.each(stdActions)("Key %p sets value %p into %p", (key, value, outputValueName) => {
     noErrorResult(key, value);
     expect(global.loadedValues[outputValueName]).toBe(value);
-  });
-
-  const orientationActions = [
-    ["vertical", "false", "machineOrientation", "horizontal"],
-    ["vertical", "true", "machineOrientation", "vertical"],
-    ["vertical", "something else", "machineOrientation", "vertical"],
-  ];
-
-  test.each(orientationActions)("Key %p with value %p sets %p to %p", (key, value, outputValueName, outputValue) => {
-    noErrorResult(key, value);
-    expect(global.loadedValues[outputValueName]).toBe(outputValue);
   });
 
   const setDim = (key, value, outDim, outValue) => {

@@ -101,7 +101,6 @@ namespace Machine {
         handler.item(M + "_calibration_grid_size", Maslow.calibration.calibrationGridSize, 3, 9);
 
         handler.item(M + "_Retract_Current_Threshold", Maslow.calibration.retractCurrentThreshold, 0, 3500);
-        handler.item(M + "_Calibration_Current_Threshold", Maslow.calibration.calibrationCurrentThreshold, 0, 3500);
         handler.item(M + "_Acceptable_Calibration_Threshold", Maslow.calibration.acceptableCalibrationThreshold, 0, 1);
         handler.item(M + "_Extend_Dist", Maslow.calibration.extendDist, 0, 4250);
 
@@ -211,13 +210,13 @@ namespace Machine {
     const std::string dcBoard = "name: Default (" + M + " S3 Board)\nboard: " + M + "\n";
 
     const std::string dcM4Vert            = M + "_vertical: false\n";
-    const std::string dcM4CalibrationGrid = mcgrid + "width_mm_X: 2000\n" + mcgrid + "height_mm_Y: 1000\n" + mcgrid + "size: 9\n";
+    const std::string dcM4CalibrationGrid = mcgrid + "width_mm_X: 0\n" + mcgrid + "height_mm_Y: 0\n" + mcgrid + "size: 9\n";
 
     const std::string dcM4Anchors = M + "_tlX: -27.6\n" + M + "_tlY: 2064.9\n" + M + "_trX: 2924.3\n" + M + "_trY: 2066.5\n" + M +
                                     "_blX: 0\n" + M + "_blY: 0\n" + M + "_brX: 2953.2\n" + M + "_brY: 0\n";
     const std::string dcM4ZAxis = M + "_tlZ: 100\n" + M + "_trZ: 56\n" + M + "_blZ: 34\n" + M + "_brZ: 78\n";
 
-    const std::string dcM4CurrentThreshold = M + "_Retract_Current_Threshold: 1300\n" + M + "_Calibration_Current_Threshold: 1500\n" + M +
+    const std::string dcM4CurrentThreshold = M + "_Retract_Current_Threshold: 1300\n" + M +
                                              "_Acceptable_Calibration_Threshold: 0.5\n";
 
     const std::string dcM4Thickness = M + "_spoilboardThickness: 0.0\n" + M + "_workThickness: 0.0\n";

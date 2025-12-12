@@ -357,6 +357,8 @@ const cfgDef = {
 	Scale_Y: { name: "scaleY", type: "A", cmd: "Maslow_Scale_Y" },
 	beltEndExtension: { name: "beltEndExtension", type: "A", cmd: "kinematics/MaslowKinematics/beltEndExtension" },
 	armLength: { name: "armLength", type: "A", cmd: "kinematics/MaslowKinematics/armLength" },
+	Sta_SSID: { name: "wifiSSID", type: "A", cmd: "Sta/SSID" },
+	Sta_Password: { name: "wifiPassword", type: "A", cmd: "Sta/Password" },
 	trX: { name: "tr.x", type: "D", cmd: "kinematics/MaslowKinematics/trX", alsoSet: "machineWidth" },
 	trY: { name: "tr.y", type: "D", cmd: "kinematics/MaslowKinematics/trY", alsoSet: "machineHeight" },
 	trZ: { name: "tr.z", type: "D", cmd: "kinematics/MaslowKinematics/trZ" },

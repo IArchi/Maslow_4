@@ -387,6 +387,29 @@ function tabletShowMessage(msg, collecting) {
     return; //We don't want to display these messages
   }
 
+  //These are used for populating WiFi settings in the configuration popup
+  if (valueStartsWith(msg, ["$/Sta/"])) {
+    const keyValue = msg.substring(2).split("="); // Remove $/ prefix
+    if (keyValue.length === 2) {
+      const key = keyValue[0];
+      const value = keyValue[1].trim();
+      if (key === "Sta/SSID") {
+        setValue("wifiSSID", value);
+        if (!globalThis.loadedValues) {
+          globalThis.loadedValues = {};
+        }
+        globalThis.loadedValues["wifiSSID"] = value;
+      } else if (key === "Sta/Password") {
+        setValue("wifiPassword", value);
+        if (!globalThis.loadedValues) {
+          globalThis.loadedValues = {};
+        }
+        globalThis.loadedValues["wifiPassword"] = value;
+      }
+    }
+    return; //We don't want to display these messages
+  }
+
   // Filter out motor current messages from console display (they're still processed for debugging)
   if (/\[MSG:INFO:\s*TLC:\s*[\d.]+\s*TRC:\s*[\d.]+\s*BLC:\s*[\d.]+\s*BRC:\s*[\d.]+\]/.test(msg)) {
     return; //We don't want to display these messages

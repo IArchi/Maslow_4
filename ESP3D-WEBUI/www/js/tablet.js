@@ -387,33 +387,6 @@ function tabletShowMessage(msg, collecting) {
     return; //We don't want to display these messages
   }
 
-  //Handle WiFi configuration settings for the configuration popup
-  if (valueStartsWith(msg, ["$/Sta/"])) {
-    const keyValue = msg.substring('$/'.length).split("=");
-    if (keyValue.length === 2) {
-      const key = keyValue[0];
-      const value = keyValue[1].trim();
-
-      // Initialize loadedValues if needed
-      if (!globalThis.loadedValues) {
-        globalThis.loadedValues = {};
-      }
-
-      // Map Sta/ keys to input field IDs
-      const wifiSettingsMap = {
-        "Sta/SSID": "wifiSSID",
-        "Sta/Password": "wifiPassword"
-      };
-
-      const fieldId = wifiSettingsMap[key];
-      if (fieldId) {
-        setValue(fieldId, value);
-        globalThis.loadedValues[fieldId] = value;
-      }
-    }
-    return; //We don't want to display these messages
-  }
-
   // Filter out motor current messages from console display (they're still processed for debugging)
   if (/\[MSG:INFO:\s*TLC:\s*[\d.]+\s*TRC:\s*[\d.]+\s*BLC:\s*[\d.]+\s*BRC:\s*[\d.]+\]/.test(msg)) {
     return; //We don't want to display these messages

@@ -357,8 +357,6 @@ const cfgDef = {
 	Scale_Y: { name: "scaleY", type: "A", cmd: "Maslow_Scale_Y" },
 	beltEndExtension: { name: "beltEndExtension", type: "A", cmd: "kinematics/MaslowKinematics/beltEndExtension" },
 	armLength: { name: "armLength", type: "A", cmd: "kinematics/MaslowKinematics/armLength" },
-	Sta_SSID: { name: "wifiSSID", type: "A", cmd: "Sta/SSID" },
-	Sta_Password: { name: "wifiPassword", type: "A", cmd: "Sta/Password" },
 	trX: { name: "tr.x", type: "D", cmd: "kinematics/MaslowKinematics/trX", alsoSet: "machineWidth" },
 	trY: { name: "tr.y", type: "D", cmd: "kinematics/MaslowKinematics/trY", alsoSet: "machineHeight" },
 	trZ: { name: "tr.z", type: "D", cmd: "kinematics/MaslowKinematics/trZ" },
@@ -493,12 +491,16 @@ const allConfigKeys = () => Object.keys(cfgDef).filter((key) => cfgDef[key].type
 
 /** Used to populate the config popup when it loads */
 const loadConfigValues = () => {
+	// Load Maslow configuration values
 	// biome-ignore lint/complexity/noForEach: <explanation>
 	allConfigKeys().forEach((key) => {
 		const cfgVal = cfgDef[key];
 		const cmd = `$/${cfgVal.cmd || `${M}_${key}`}`;
 		SendPrinterCommand(cmd);
 	});
+
+	// Load WiFi settings separately
+	loadWiFiSettings();
 };
 
 /** Load all of the corner values */
@@ -531,10 +533,80 @@ const saveConfigValues = () => {
 		}
 	};
 
+	// Save WiFi settings separately
+	saveWiFiSettings();
+
 	refreshSettings(current_setting_filter);
 	saveMaslowYaml();
 	loadCornerValues();
 
 	hideModal('configuration-popup');
 }
+
+/** Load WiFi settings from ESP settings system */
+const loadWiFiSettings = () => {
+	// Request all ESP settings to get WiFi SSID and Password
+	// The response will be handled by the existing settings system
+	const cmd = buildHttpCommandCmd(httpCmdType.plain, "[ESP400]");
+	SendGetHttp(cmd, processWiFiSettingsResponse, (error, response) => {
+		console.error("Failed to load WiFi settings:", error, response);
+	});
+};
+
+/** Process ESP settings response to extract WiFi settings */
+const processWiFiSettingsResponse = (response) => {
+	try {
+		const data = JSON.parse(response);
+		if (data.EEPROM && Array.isArray(data.EEPROM)) {
+			data.EEPROM.forEach(setting => {
+				if (setting.H === "Sta/SSID") {
+					const value = setting.V || "";
+					setValue("wifiSSID", value);
+					if (!globalThis.loadedValues) {
+						globalThis.loadedValues = {};
+					}
+					globalThis.loadedValues["wifiSSID"] = value;
+					globalThis.wifiSSIDPos = setting.P;
+					globalThis.wifiSSIDType = setting.T;
+				} else if (setting.H === "Sta/Password") {
+					const value = setting.V || "";
+					setValue("wifiPassword", value);
+					if (!globalThis.loadedValues) {
+						globalThis.loadedValues = {};
+					}
+					globalThis.loadedValues["wifiPassword"] = value;
+					globalThis.wifiPasswordPos = setting.P;
+					globalThis.wifiPasswordType = setting.T;
+				}
+			});
+		}
+	} catch (e) {
+		console.error("Error parsing WiFi settings:", e);
+	}
+};
+
+/** Save WiFi settings using ESP401 command */
+const saveWiFiSettings = () => {
+	const ssid = getValue("wifiSSID");
+	const password = getValue("wifiPassword");
+	const loadedSSID = globalThis.loadedValues ? globalThis.loadedValues["wifiSSID"] : undefined;
+	const loadedPassword = globalThis.loadedValues ? globalThis.loadedValues["wifiPassword"] : undefined;
+
+	// Only save if values have changed and we have the position/type info
+	if (ssid !== loadedSSID && typeof globalThis.wifiSSIDPos !== "undefined") {
+		const cmd = buildHttpCommandCmd(
+			httpCmdType.plain,
+			`[ESP401]P=${globalThis.wifiSSIDPos} T=${globalThis.wifiSSIDType} V=${ssid}`
+		);
+		SendGetHttp(cmd);
+	}
+
+	if (password !== loadedPassword && typeof globalThis.wifiPasswordPos !== "undefined") {
+		const cmd = buildHttpCommandCmd(
+			httpCmdType.plain,
+			`[ESP401]P=${globalThis.wifiPasswordPos} T=${globalThis.wifiPasswordType} V=${password}`
+		);
+		SendGetHttp(cmd);
+	}
+};
 

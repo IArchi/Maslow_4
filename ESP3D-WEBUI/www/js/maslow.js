@@ -358,7 +358,7 @@ const cfgDef = {
 	calibration_grid_width_mm_X: { name: "gridWidth", type: "A", cmd: "maslow_calibration_grid_width_mm_X" },
 	calibration_grid_height_mm_Y: { name: "gridHeight", type: "A", cmd: "maslow_calibration_grid_height_mm_Y" },
 	Retract_Current_Threshold: { name: "retractionForce", type: "A", cmd: "Maslow_Retract_Current_Threshold" },
-	Calibration_Current_Threshold: { name: "calibrationForce", type: "A", cmd: "Maslow_Calibration_Current_Threshold" },
+	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A", cmd: "Maslow_Acceptable_Calibration_Threshold" },
 	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A", cmd: "Maslow_Acceptable_Calibration_Threshold" },
 	Extend_Dist: { name: "extendDist", type: "A", cmd: "Maslow_Extend_Dist" },
 	Scale_X: { name: "scaleX", type: "A", cmd: "Maslow_Scale_X" },

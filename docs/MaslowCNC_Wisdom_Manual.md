@@ -449,9 +449,7 @@ Here you can also select your other calibration settings.
 
 **Grid Size**: This is how many measurement points the machine will use to compute the calibration. More is slower but also potentially more accurate. 
 
-**Retraction Force**: This is how hard the machine will pull when retracting the belts for storage. Increase this number if you are having trouble getting all of your belts to retract reliably. Turning it up too high can be hard on the machine.
-
-**Calibration Force**: This is how hard the machine will pull when taking each measurement. This indirectly sets the tension in the machine’s belts while cutting. It seems like lower values might lead to more precise results, but it can’t be so low that the process doesn’t take accurate measurements.
+**Retraction Force**: This is how hard the machine will pull when retracting the belts for storage and when taking each measurement during calibration. Increase this number if you are having trouble getting all of your belts to retract reliably or if calibration measurements are inconsistent. This indirectly sets the tension in the machine's belts while cutting. It seems like lower values might lead to more precise results, but it can't be so low that the process doesn't take accurate measurements or that the belts fail to retract fully. Turning it up too high can be hard on the machine.
 
 
 <img width="1000" height="794" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_1a664a68.png" />

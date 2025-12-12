@@ -374,7 +374,7 @@ function tabletShowMessage(msg, collecting) {
     return;
   }
 
-  // let errMsg = "";
+  let errMsg = "";
 
   //Hide kinematics commands from being displayed in the user log
   if (valueStartsWith(msg, ["$/kinematics"])) {

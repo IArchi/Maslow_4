@@ -1,0 +1,52 @@
+# Jekyll configuration for Maslow 4 Documentation
+title: Maslow 4 Documentation
+description: Documentation and resources for Maslow 4 CNC machine
+baseurl: "/Maslow_4"
+url: "https://maslowcnc.github.io"
+
+# Theme
+theme: jekyll-theme-cayman
+remote_theme: pages-themes/cayman@v0.2.0
+
+# Plugin configuration
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+  - jekyll-github-metadata
+
+# Markdown configuration
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# Enable relative links plugin
+relative_links:
+  enabled: true
+  collections: false
+
+# Enable titles from headings
+titles_from_headings:
+  enabled: true
+  strip_title: true
+  collections: false
+
+# Enable readme index
+readme_index:
+  enabled: true
+  remove_originals: false
+  with_frontmatter: false
+
+# Include files
+include:
+  - _config.yml
+  - calibration-simulation
+
+# Exclude build artifacts
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor

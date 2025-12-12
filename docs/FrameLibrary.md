@@ -1,7 +1,7 @@
 
-![Maslow+Frame+Drawing_005](https://github.com/user-attachments/assets/3379ff5c-6201-409f-bc3f-e986189d208a)
+![Maslow+Frame+Drawing_005](../assets/FrameLibrary-assets/Maslow_Frame_Drawing_005.webp)
 # Frame Library
-![image2_006](https://github.com/user-attachments/assets/b9bc93a4-2504-4656-9bb4-4939ebc7665c)
+![image2_006](../assets/FrameLibrary-assets/image2_006.webp)
 
 # Intro
 
@@ -36,15 +36,15 @@ These show areas where the Maslow can move accurately and areas where it will st
 - Calibration starts by assuming a rectagular frame with all anchors in the same plane.  Your frame does not have to be a perfect rectangle but if you are having calibration issues this might be a place to adjust. 
 - The anchors need to have free space in front of them. The belts and belt ends need to be able to swing freely back and forth without hitting things as the maslow moves around.
   
-  ![6E78B686-7B2F-4D6C-9158-38F5AF91A4A1_002](https://github.com/user-attachments/assets/46fbdb0a-31ad-4949-8a23-18b27ee0ef5e)
+  ![6E78B686-7B2F-4D6C-9158-38F5AF91A4A1_002](../assets/FrameLibrary-assets/6E78B686-7B2F-4D6C-9158-38F5AF91A4A1_002.webp)
 
 - Anchors can be a bolt, a shoulder bolt, cotter pin, or a quick release pin.Each of Maslow4’s belts terminate with a belt end ring which can be attached to an anchor point. The hole in the end of this part is 10mm or 3/8ths inches and can attach to a 10mm or 3/8ths inch bolt. It’s preferable if the bolt is smooth, but it will still work if the bolt is threaded.
 - The anchor pins should be easy to pull in and out or slide the belt anchor off the top of them.
-![1000012938_004](https://github.com/user-attachments/assets/0010c13e-6aa0-4f87-b895-774994dff083)
+![1000012938_004](../assets/FrameLibrary-assets/1000012938_004.webp)
 
 - The anchor pins should not allow the belt ends to slide up and down vertically or fall off of the top, you want just enough space on the pin for the belt end to freely rotate.
 - It is better if the anchor pins are in the same plane with the top of the wasteboard that the material to be cut sits on. Even better than that would be if each was in a plane parallel to the sled base straight out from it's position on the Maslow robot. (if the belts came out perfectly straight from the robot)  Anchors will still work if they are below the wasteboard or up and down a bit individually but it will affect the accuracy of the robot's movements.
-  <img width="557" height="524" alt="image" src="https://github.com/user-attachments/assets/84d8645a-e01d-4eb0-a66d-28a6099b6376" />
+  <img width="557" height="524" alt="image" src="../assets/FrameLibrary-assets/image_84d8645a.png" />
 (image showing belt anchors lined up with belt heights. credit dlang) 
 - The anchors need to be solid and not move in any direction. They will be pulled on by the machine with many newtons or as much as 40 pounds of force.  The anchors should not flex the frame that they are attached to.  The more solid the better.
 - The frame should include a wasteboard that can be replaced and cut into underneath the intended cutting area.
@@ -83,8 +83,8 @@ PICTURE
 
 
 ### Floor Bolts from Maslow instructions
-![1000012945](https://github.com/user-attachments/assets/c0ca606e-ec0f-4bef-bc12-70f2058c074d)
-![C5D99411-E417-4E7D-AE56-26935D64B1D2](https://github.com/user-attachments/assets/262c7f73-7637-45b3-aea9-e42c543c19cc)
+![1000012945](../assets/FrameLibrary-assets/1000012945.webp)
+![C5D99411-E417-4E7D-AE56-26935D64B1D2](../assets/FrameLibrary-assets/C5D99411-E417-4E7D-AE56-26935D64B1D2.webp)
 
 
 - Overview: Drill holes in a concrete floor, insert threaded anchor sleeves put wasteboard on ground in the middle perhaps on a rubber rug fabric anti slide sheet.
@@ -102,8 +102,8 @@ PICTURE
 
 ### 3D printed Anchors glued or bolted to a concrete or wooden floor
 ### Includes a list of different 3D printable Designs. 
-![IMG_1728_002](https://github.com/user-attachments/assets/bb7ebd8c-4176-4b04-aa08-d53e14ed7ffd)
-![image2_004](https://github.com/user-attachments/assets/4e6e1a17-6ebb-4027-a200-e61002e5ac91)
+![IMG_1728_002](../assets/FrameLibrary-assets/IMG_1728_002.webp)
+![image2_004](../assets/FrameLibrary-assets/image2_004.webp)
 
 - Overview:
 - Links:

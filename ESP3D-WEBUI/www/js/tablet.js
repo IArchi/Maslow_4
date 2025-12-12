@@ -374,14 +374,14 @@ function tabletShowMessage(msg, collecting) {
     return;
   }
 
-  // let errMsg = "";
+  let errMsg = "";
 
   //Hide kinematics commands from being displayed in the user log
   if (valueStartsWith(msg, ["$/kinematics"])) {
     return; //We don't want to display these messages
   }
 
-  //These are used for populating the configuration popup
+  //These are used for populating the Maslow configuration popup
   if (valueStartsWith(msg, ["$/Maslow_", "$/maslow_"])) {
     errMsg = maslowMsgHandling(msg.substring(9));
     return; //We don't want to display these messages

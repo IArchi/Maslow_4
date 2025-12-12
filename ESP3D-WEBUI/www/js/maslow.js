@@ -593,18 +593,18 @@ const saveWiFiSettings = () => {
 	const loadedPassword = globalThis.loadedValues ? globalThis.loadedValues["wifiPassword"] : undefined;
 
 	// Only save if values have changed and we have the position/type info
-	if (ssid !== loadedSSID && typeof globalThis.wifiSSIDPos !== "undefined") {
+	if (ssid !== loadedSSID && globalThis.wifiSSIDPos !== undefined) {
 		const cmd = buildHttpCommandCmd(
 			httpCmdType.plain,
-			`[ESP401]P=${globalThis.wifiSSIDPos} T=${globalThis.wifiSSIDType} V=${ssid}`
+			`[ESP401]P=${globalThis.wifiSSIDPos} T=${globalThis.wifiSSIDType} V=${encodeURIComponent(ssid)}`
 		);
 		SendGetHttp(cmd);
 	}
 
-	if (password !== loadedPassword && typeof globalThis.wifiPasswordPos !== "undefined") {
+	if (password !== loadedPassword && globalThis.wifiPasswordPos !== undefined) {
 		const cmd = buildHttpCommandCmd(
 			httpCmdType.plain,
-			`[ESP401]P=${globalThis.wifiPasswordPos} T=${globalThis.wifiPasswordType} V=${password}`
+			`[ESP401]P=${globalThis.wifiPasswordPos} T=${globalThis.wifiPasswordType} V=${encodeURIComponent(password)}`
 		);
 		SendGetHttp(cmd);
 	}

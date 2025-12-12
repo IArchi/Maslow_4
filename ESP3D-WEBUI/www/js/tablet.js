@@ -381,31 +381,30 @@ function tabletShowMessage(msg, collecting) {
     return; //We don't want to display these messages
   }
 
-  //These are used for populating the configuration popup
+  //These are used for populating the Maslow configuration popup
   if (valueStartsWith(msg, ["$/Maslow_", "$/maslow_"])) {
     errMsg = maslowMsgHandling(msg.substring(9));
     return; //We don't want to display these messages
   }
 
-  //These are used for populating WiFi settings in the configuration popup
+  //Handle WiFi configuration settings for the configuration popup
   if (valueStartsWith(msg, ["$/Sta/"])) {
-    const PREFIX_LENGTH = 2; // Length of "$/" prefix
-    const keyValue = msg.substring(PREFIX_LENGTH).split("=");
+    const keyValue = msg.substring('$/'.length).split("=");
     if (keyValue.length === 2) {
       const key = keyValue[0];
       const value = keyValue[1].trim();
-      
+
       // Initialize loadedValues if needed
       if (!globalThis.loadedValues) {
         globalThis.loadedValues = {};
       }
-      
+
       // Map Sta/ keys to input field IDs
       const wifiSettingsMap = {
         "Sta/SSID": "wifiSSID",
         "Sta/Password": "wifiPassword"
       };
-      
+
       const fieldId = wifiSettingsMap[key];
       if (fieldId) {
         setValue(fieldId, value);

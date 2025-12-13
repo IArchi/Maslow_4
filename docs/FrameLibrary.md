@@ -31,8 +31,8 @@ Bar's Calibration point tester:
 These show areas where the Maslow can move accurately and areas where it will start to have trouble. These are determined partly by small angles and high tension near the edges (top edge especially in vertical mode) and partly by the arms carrying the motors of the Maslow bumping into the upright pilars of the maslow when the angle between them gets too small. Belts generally can't be closer than 130 degrees or farther apart than 140 degrees. 
 
 ## Frame requirements:
-- The Four anchor points have to fit within a 5 meter by 5 meter square.  It is possible to go bigger with belt extensions which are sticks that attach to the ends of the belts. It is also important to make sure for your planned cutting area that the belts have enough length to go all the way across the planned moving space.
-- Belts are 14.5 feet long when they are shipped. 
+- The Four anchor points have to fit within a 5 meter by 5 meter square.  It is possible to go bigger with belt extensions which are sticks that attach to the ends of the belts. 
+- Belts are 14.5 feet long when they are shipped When planning your frame and cutting area . It is also important to make sure for your planned cutting area that the belts have enough length to go all the way across the planned moving space.
 - Calibration starts by assuming a rectagular frame with all anchors in the same plane.  Your frame does not have to be a perfect rectangle but if you are having calibration issues this might be a place to adjust. 
 - The anchors need to have free space in front of them. The belts and belt ends need to be able to swing freely back and forth without hitting things as the maslow moves around.
   
@@ -105,13 +105,20 @@ PICTURE
 ![IMG_1728_002](../assets/FrameLibrary-assets/IMG_1728_002.webp)
 ![image2_004](../assets/FrameLibrary-assets/image2_004.webp)
 
-- Overview:
+- Overview:  Print an anchor with a slot for the belt end and two holes for a pin to go through. Glue, screw or bolt the anchor to the floor frame. These work great with any other frame design. When printing print solid without fill patterns. they need to be strong. Consider three D print strengthing techniques. 
 - Links:
+- - Dlang's raised anchors: <https://cad.onshape.com/documents/764e57e1318b9953e5986480/w/d0fb021f278db7c3ec637c49/e/b61d6c0eb4e663195972c4e3>
+  - Frogmouth anchors <https://www.maslowcnc.com/s/Frogmouth-Anchor-3D-Print.stl>
+  - Triangle Anchors <https://www.maslowcnc.com/s/Triangle-Anchor-3D-Print.stl>
+  - Wall anchors <https://www.maslowcnc.com/s/Wall-Anchor.stl>
+  
 - Materials:
 - Details:
 - Notes:
+- - discussion about printable anchors <https://forums.maslowcnc.com/t/printable-bolt-down-tower-anchors/24612>
+  - Another thread: <https://forums.maslowcnc.com/t/easy-to-use-concrete-floor-mounts/24595>
 - More Pictures:
-- Credits:  
+- Credits:  Dlang
 
 
 ## Vertical format frames

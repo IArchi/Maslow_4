@@ -1,4 +1,7 @@
 # Software Library
+**Click on the three bars in the top right corner for a table of contents outline>>>^**
+
+**QUICK START TIP: use Inkscape to draw something with no fill. Export as a regular .svg (not inkscape svg)  Upload that to Krabscam.com build paths for the tools that you have and then Export as a .nc Gcode file which can up uploaded to your Maslow.**
 
 This file is a place to share software recommendations that have been useful. All costs listed are estimates reported by contributors and have not been checked. Good opensource programs are listed first in each category otherwise no particular promotion is intended and all links have been submitted by community members.  
 

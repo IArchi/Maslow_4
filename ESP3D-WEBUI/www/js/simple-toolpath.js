@@ -424,20 +424,22 @@ var Toolpath = function () {
 
                     if (wcs_index >= 1 && wcs_index <= 6 && _this.wcsOffsets[wcs_name]) {
                         // For L20, calculate WCS offset based on current position
-                        // WCS = MPos - G92 - WPos
-                        // Since position is already in work coordinates (after G92), we need:
-                        // WCS_new = (position + g92offset) - specified_value
+                        // Firmware formula: WCS = MPos - G92 - TLO - WPos
+                        // MPos = position + g92offset + wcs + tlo, so:
+                        // WCS_new = (position + g92offset + wcs_old + tlo) - g92offset - tlo - specified_value
+                        // WCS_new = position + wcs_old - specified_value
+                        var old_wcs = _this.wcsOffsets[wcs_name];
                         if (params.X !== undefined) {
                             var xmm = _this.translateX(params.X, false);
-                            _this.wcsOffsets[wcs_name].x = (_this.position.x + _this.g92offset.x) - xmm;
+                            _this.wcsOffsets[wcs_name].x = _this.position.x + old_wcs.x - xmm;
                         }
                         if (params.Y !== undefined) {
                             var ymm = _this.translateY(params.Y, false);
-                            _this.wcsOffsets[wcs_name].y = (_this.position.y + _this.g92offset.y) - ymm;
+                            _this.wcsOffsets[wcs_name].y = _this.position.y + old_wcs.y - ymm;
                         }
                         if (params.Z !== undefined) {
                             var zmm = _this.translateZ(params.Z, false);
-                            _this.wcsOffsets[wcs_name].z = (_this.position.z + _this.g92offset.z) - zmm;
+                            _this.wcsOffsets[wcs_name].z = _this.position.z + old_wcs.z - zmm;
                         }
                     }
                 }

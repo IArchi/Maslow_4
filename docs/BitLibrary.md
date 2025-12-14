@@ -17,7 +17,7 @@ The 1/4 inch bit limits you by resolution and shape, many people buy a more deli
 
 Two common router bit adapters that Maslow community members have found useful are a 1/4 to 1/8 inch chuck adaptor so that you can use 1/8 router and carving bits (common size for Dremel tools and widely available)  And then an alternate chuck tightening system and nut as it is a bit challenging to change router bits in the tight space inside the Maslow. Some of these like MuscleChuck use a hex wrench or other tool, others use different tightening systems that also may be easier to use. 
 
-# Saftey
+# Safety
 Unplug the router and Maslow while changing bits. 
 Router bits are razor sharp and will be burning hot after use.  Consider gloves or have a plan. The impulse to just reach in and grab the working end of the bit is not a good one. Also think about where the bit will fall when the chuck is loosened. Dropping an $80 dollar bit on concrete is sad. 
 
@@ -40,6 +40,40 @@ PICTURE
 - Credits:
 
 ## Straight Cylinders
+### Straight 1/4 inch two flute spiral upcut
+PICTURE
+-  Excellent all round starter bit. Cylinder with spirals that bring material up to the surface as it cuts.  Upcutting can had a slightly rougher edge as wood fibers are pulled up out of the surface. It cuts a 1/4 kerf (cutting hole) as it goes. Limited in resolution. Avaliable anywhere where routers sold. 
+- Links:
+- Sources:
+  - https://shop.maslowcnc.com/products/1-4-inch-two-flute-up-spiral-router-bit
+- Profile:
+- Materials used on:
+  - Plywood 1/2, 3/4 in
+  - OSB (oriented strand board) 1/2, 3/4 in
+  - Particle board 1/2, 3/4 in
+- Speeds and Settings:
+- Details:
+- Notes:
+  - Can act as a 1/4 in drill but it is not very good for deep holes. Pecking or lifting in and out of the cut while working is slower but it helps keep holes clear and circular. It can move in a small circle to drill larger holes but it would be slower than a dedicated short drill bit. 
+- More Pictures:
+- Credits:
+
+
+### Straight 1/8 inch cutting, 1/4 inch router shaft. Two flute upcut spiral
+PICTURE
+- Excellent all round bit.  Smaller with better resolution than a 1/4 inch bit. Have to move a little slower as it is more fragile. Widely available in router stores. Upcutting can make more splinters than downcutting but do clear the debris better. 
+- Links:
+- Sources:
+- Profile:
+- Materials used on:
+  - Particle board
+  - Plywood
+  - OSB (oriented strand board)
+- Speeds and Settings:
+- Details:
+- Notes:
+- More Pictures:
+- Credits:
 
 ## V shapes
 

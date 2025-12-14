@@ -340,6 +340,30 @@ PICTURE
 - More Pictures:
 - Credits:
 
+### Maslow4 Collapsable Horizontal Frame on Sawhorses. 
+<img width="663" height="500" alt="image" src="https://github.com/user-attachments/assets/17e1cc5f-f91e-4122-a197-ab254d87d832" />
+<img width="376" height="500" alt="image" src="https://github.com/user-attachments/assets/6e56ee95-3109-4533-bde6-8b81f3767ed6" />
+
+- Two x's of 2x4 spars inset across beams on sawhorses. Makes a nice table to get to the router on. Flexible design.  Concerns about stiffness. 
+- Links:
+  - https://forums.maslowcnc.com/t/maslow-4-collapsible-frame-for-horizontal-use/19717/9
+  - Onshape Design from Dlang https://cad.onshape.com/documents/20374c29acfc54620a72c6ad/w/195bfd9d55ceaae5efbbcd33/e/4364ee75c5b2cffa6174ced9
+- Materials:
+- Details:
+- Notes:
+  -  If you want to really reduce the odds of flexure you can try turning the outrigger ends into a compression chord of a truss. By using ratchet straps that pass through a M4 attachment point (think eye-bolt attached under the outrigger) and connecting the straps back to the frame rails at equal-ish angles, that outrigger will now have the shear properties of a simple truss w/o the need to add extra members. I am yet to test the concept on my existing frame, but I have used this rigging in construction for temporary bracing of long cantilevered posts. Attached below is a screenshot of the concept; green representing the path of each racket strap.
+    <img width="689" height="418" alt="image" src="https://github.com/user-attachments/assets/940d2280-344b-4d08-a0a6-ac16d6650cf7" />
+  - Adding greater shear strength could also be achieved with a bigger outrigger member, a box beam member or shear plates / panels as discussed in the thread. It’s worth noting that many of these concepts are at odds the initial purpose of this design: to make a frame as minimal as possible so it can be assembled, disassembled and moved easily. Granted, everyone has different needs and priorities. Mine just require these somewhat restrictive constraints. I’m interested to see what you all come up with your own constraints and priorities.
+
+- More Pictures:
+  <img width="653" height="778" alt="image" src="https://github.com/user-attachments/assets/fe8946d0-cdcc-4fef-8c56-87ac000d7768" />
+<img width="523" height="784" alt="image" src="https://github.com/user-attachments/assets/d2a1bdcc-461c-4790-8c71-3b170efadf40" />
+<img width="509" height="863" alt="image" src="https://github.com/user-attachments/assets/8579849d-2a98-4993-8404-3d4973c897bc" />
+<img width="612" height="771" alt="image" src="https://github.com/user-attachments/assets/e4cbab2e-ccba-4aad-a0f6-cbd4e8f2c92e" />
+<img width="405" height="500" alt="image" src="https://github.com/user-attachments/assets/f0226ffd-eaea-4cfc-9f44-68f110a96241" />
+<img width="690" height="322" alt="image" src="https://github.com/user-attachments/assets/ba0a0357-1f93-4acb-944c-878e6b387f40" />
+
+- Credits:Garse, Dlang, Rolf, Grim
 
 ## Other frame Formats
 

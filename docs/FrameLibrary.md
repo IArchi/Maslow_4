@@ -222,6 +222,21 @@ PICTURE
 - More Pictures:
 - Credits: Barbour Smith
 
+### Pull-out Vertical Frame
+<img width="666" height="500" alt="image" src="https://github.com/user-attachments/assets/962dcfad-7901-4690-b96e-5a045f2d345a" />
+
+- Hanging the frame on a wall then pulling it out to get the angle for use. Fun idea if it makes things compact on the wall. 
+- Links:
+  - <https://forums.maslowcnc.com/t/pull-out-vertical-frame/23904/4>
+- Materials:
+- Details:
+- Notes:
+  - Some users have just leaned a frame against a wall
+  - Others have hung the frame on the wall then lifted the bottom out on cinderblocks. 
+- More Pictures:
+- Credits: kyleschoen, Rolf
+
+
 ## Horizontal format frames
 ### Fast Fold up X frame
 <img width="1920" height="1442" alt="image" src="https://github.com/user-attachments/assets/d7981c10-ed09-4036-a546-def237aa7244" />
@@ -366,6 +381,19 @@ PICTURE
 - Credits:Garse, Dlang, Rolf, Grim
 
 ## Other frame Formats
+
+### Discussion of a rectangle of beams with corners to attach the anchors 
+<img width="690" height="402" alt="image" src="https://github.com/user-attachments/assets/957371f0-cfde-434d-8bf2-d487f8fb77ef" />
+
+- https://forums.maslowcnc.com/t/possible-super-simple-frame/20306/29
+- Notes:
+  -Frame and wood would need to be jammed in place or weighted down.
+
+### Discussion of using an angled shelf
+- <https://forums.maslowcnc.com/t/maslow-frame-with-storage-shelves/19879>
+
+### Disucsssion of using two two by fours, wasteboard and two ladders
+- <https://forums.maslowcnc.com/t/maslow-frame-with-storage-shelves/19879>
 
 
 

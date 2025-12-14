@@ -8,6 +8,9 @@ var blZ = 34
 var brZ = 78
 var acceptableCalibrationThreshold = 0.5
 
+// Maximum number of low-fitness retry attempts before giving up
+const MAX_LOW_FITNESS_RETRIES = 10;
+
 //Establish initial guesses for the corners
 var initialGuess = {
   tl: { x: 0, y: 2000 },
@@ -743,6 +746,11 @@ async function findMaxFitness(measurements) {
   let totalCounter = 0;
   let bestGuess = JSON.parse(JSON.stringify(startingGuess));
 
+  // Track retry attempts and best result across all retries
+  let lowFitnessRetryCount = 0;
+  let bestGuessAcrossAllRetries = JSON.parse(JSON.stringify(startingGuess));
+  let bestFitnessAcrossAllRetries = 1 / bestGuess.fitness;
+
   function iterate() {
     if (stagnantCounter < 1000 && totalCounter < 200000) {
 
@@ -774,12 +782,52 @@ async function findMaxFitness(measurements) {
       setTimeout(iterate, 0);
 
     } else { //We have completed the calibration (success or timeout)
-      if (1 / bestGuess.fitness < acceptableCalibrationThreshold) {
-        messagesBox.textContent += '\nCalculated Fitness Too Low. The process will automatically try again.!';
+      // Track best guess across all retry attempts
+      const currentFitness = 1 / bestGuess.fitness;
+      if (currentFitness > bestFitnessAcrossAllRetries) {
+        bestFitnessAcrossAllRetries = currentFitness;
+        bestGuessAcrossAllRetries = JSON.parse(JSON.stringify(bestGuess));
+      }
+
+      if (currentFitness < acceptableCalibrationThreshold) {
+        messagesBox.textContent += `\nCalculated Fitness Too Low (${currentFitness.toFixed(7)} < ${acceptableCalibrationThreshold}).`;
+
+        // Check if we've exceeded max retry attempts
+        if (lowFitnessRetryCount >= MAX_LOW_FITNESS_RETRIES) {
+          messagesBox.textContent += `\n\n⚠️ Maximum retry attempts (${MAX_LOW_FITNESS_RETRIES}) reached.`;
+          messagesBox.textContent += `\nBest fitness achieved: ${bestFitnessAcrossAllRetries.toFixed(7)}`;
+          messagesBox.textContent += '\nUpdating initial frame size with best estimate from all attempts.';
+          messagesBox.scrollTop = messagesBox.scrollHeight;
+
+          // Update initialGuess with the best result from all retries
+          initialGuess = JSON.parse(JSON.stringify(bestGuessAcrossAllRetries));
+          initialGuess.fitness = 100000000;
+
+          messagesBox.textContent += '\n\n❌ Calibration stopped due to low fitness after maximum retries.';
+          messagesBox.textContent += '\nOptions:';
+          messagesBox.textContent += '\n  1. Click "Calibrate" to restart with updated frame size estimate';
+          messagesBox.textContent += '\n  2. Manually check belt tension and frame measurements';
+          messagesBox.textContent += '\n  3. Verify measurements are accurate';
+          messagesBox.scrollTop = messagesBox.scrollHeight;
+
+          sendCalibrationEvent({
+            good: false,
+            final: true,
+            maxRetriesReached: true,
+            retryCount: lowFitnessRetryCount,
+            bestGuess: bestGuessAcrossAllRetries,
+            bestFitness: bestFitnessAcrossAllRetries
+          }, true);
+
+          return; // Exit the function without automatic retry
+        }
+
+        lowFitnessRetryCount++;
+        messagesBox.textContent += ` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`;
       }
 
       messagesBox.textContent += '\nCalibration values:';
-      messagesBox.textContent += `\nFitness: ${1 / bestGuess.fitness.toFixed(7)}`;
+      messagesBox.textContent += `\nFitness: ${currentFitness.toFixed(7)}`;
 
       const tlxStr = bestGuess.tl.x.toFixed(1), tlyStr = bestGuess.tl.y.toFixed(1);
       const trxStr = bestGuess.tr.x.toFixed(1), tryStr = bestGuess.tr.y.toFixed(1);
@@ -797,7 +845,7 @@ async function findMaxFitness(measurements) {
       messagesBox.scrollTop
       messagesBox.scrollTop = messagesBox.scrollHeight;
 
-      if (1 / bestGuess.fitness > acceptableCalibrationThreshold) {
+      if (currentFitness > acceptableCalibrationThreshold) {
         sendCommand(`$/kinematics/MaslowKinematics/tlX=${tlxStr}`);
         sendCommand(`$/kinematics/MaslowKinematics/tlY=${tlyStr}`);
         sendCommand(`$/kinematics/MaslowKinematics/trX=${trxStr}`);

@@ -395,6 +395,10 @@ PICTURE
 ### Disucsssion of using two two by fours, wasteboard and two ladders
 - <https://forums.maslowcnc.com/t/maslow-frame-with-storage-shelves/19879>
 
+### Steel pipe and rope 
+<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/66d07080-c84b-4d25-8752-bf8e22f4edbc" />
+<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/86e4b1fd-f9ec-4d40-9971-7fb66cc47878" />
 
+- Too flexible in the z direction arms would visibly lift up.  Maybe with more structure but the fun of this was that it was huge (too big) and packed up to nothing. 
 
 

@@ -14,6 +14,7 @@ This guide is intended to get your Maslow up and running in as few words as poss
   - Drill holes in a concrete floor, insert threaded anchor sleeves for 3/8in (9mm) bolts. Put wasteboard on ground in the middle perhaps on a rubber rug fabric anti slide sheet. Can also glue 3D printed anchors to floor. 
 
 - Size considerations
+  - Can be horizontal to 20 degrees from vertical.
   - Does not have to be exactly rectangular.
   - Software limits basic frames to less than 5 meters wide and tall.
   - Belts are 4.4 meters long. Cutting area can not be farther than that from an anchor. 
@@ -21,7 +22,9 @@ This guide is intended to get your Maslow up and running in as few words as poss
 ## Getting set up
 	
 - Connecting to the machine
-  - Turn on Maslow. 
+  - Turn on Maslow.
+  - Connect to Maslow wifi access point.
+  - 
 
 - Connecting Maslow to your wifi
 

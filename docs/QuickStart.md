@@ -1,22 +1,27 @@
 # Quick Start Guide
 
-This guide is intended to get your Maslow up and running in as few words as possible. It is intended to be used immediately after completing assembly.
+This guide is intended to get your Maslow up and running in as few words as possible. It is intended to be used immediately after completing assembly so we can assume that the user has already assembled their machine and they are now looking for how to set it up.
 
-## Things you have to buy before cutting
-- Dewalt dwp611 (or Dewalt D26200 in 240 volt)
-- Cnc router bits at minimum a 1/4 in Upcut spiral
   
 ## Choosing your Anchors
-- Option to build a frame
-  - <img width="2500" height="1932" alt="image" src="https://github.com/user-attachments/assets/8e36c830-4d37-4d99-a702-d1638e9ebba6" />
-  - Use 9 or 10 mm bolts or 3/8in bolts to attach the belt ends to the frame. 
 
-- Prefer to use fixed anchor points
-- ![IMG_1728_008](https://github.com/user-attachments/assets/d23d8f62-3247-4021-b801-6f804004a208)
+Maslow 4 is designed to turn any flat rigid surface into a large format CNC router. This is powerful, but it can lead to an overwhelming number of options. 
 
-  - Drill holes in a concrete floor, insert threaded anchor sleeves for 3/8in (9mm) bolts. Put wasteboard on ground in the middle perhaps on a rubber rug fabric anti slide sheet. ![1000012945_007](https://github.com/user-attachments/assets/eb3b7083-ba87-4b3d-877e-17002e466056)
-Can also glue or bolt 3D printed anchors to floor. ![image2_005](https://github.com/user-attachments/assets/e4e45bdf-ab11-4ca4-8c4c-58b3d8b04731)
+The best option is to attach the machine directly to a concrete floor. This can be done by either attaching 3D printed anchors to the floor or by adding threaded inserts into the concrete.
 
+![IMG_1728_008](https://github.com/user-attachments/assets/d23d8f62-3247-4021-b801-6f804004a208)
+
+The anchors are sized to fit a 10mm or 4/8ths inch bolt.
+ 
+![1000012945_007](https://github.com/user-attachments/assets/eb3b7083-ba87-4b3d-877e-17002e466056)
+ 
+You can find a complete list of different anchor types here: [ADD LINK]
+
+  If you don't have a floor to connect to you can construct a flat rigid surface to use the machine on. You can find instructions to assemble a basic one that we recommend here: https://www.maslowcnc.com/frame-options
+
+<img width="833" height="644" alt="image" src="https://github.com/user-attachments/assets/8e36c830-4d37-4d99-a702-d1638e9ebba6" />
+
+We've put together a tool to help you to better understand what size of frame you might want and how that will impact your cutting area. You can find that tool here: https://maslowcnc.github.io/Layout-Simulator/
 
 - Size and other considerations
   - Belt ends need to be loose to rotate in the XY directions but gently held in the z direction so they don't pop up and down.
@@ -29,11 +34,30 @@ Can also glue or bolt 3D printed anchors to floor. ![image2_005](https://github.
 ## Getting set up
 	
 - Connecting to the machine
-  - Turn on Maslow.
-  - Connect to Maslow wifi access point.
-  - 
+
+  Maslow4 is controlled using a built-in interface accessible from your web browser. You can connect to Maslow4 from any Windows, Mac, or Linux computer or iOS or Android tablet or phone. You do not need to install any software. 
+
+Maslow4 will create a wifi network called **“maslow”** which you can connect to. The default password for this network will be **“12345678”**.
+
+Connecting to the network will automatically open the user interface on most devices. If it does not you can type **192.168.0.1** into your web browser to open the interface. 
+
+![File Upload](images/guide-12.png)
 
 - Connecting Maslow to your wifi
+
+  While you don't need to connect Maslow to your home wifi network for it to work, if you have wifi available the next thing to do is to connect to it.
+
+  To connect Maslow to your wifi press on "Setup" in the top right corner.
+
+  Then press "Config"
+
+  Then enter your wifi network information and press save.
+
+  Maslow will try to connect to this wifi network every time it powers up. If it can't find that network or cant connect for some reason it will create the Maslow wifi network for you to connect to it. Turn your Maslow off and back on to let it connect to your wifi network.
+
+  Once Maslow is connected to your wifi network you you can access it by navigating to the address **maslow.local** from any browser. If you are having trouble finding it try a different device or browser.
+
+  As a last resort you can always find your machine's IP address by counting the blinks of the blue light.
 
 - Updating the firmware
 

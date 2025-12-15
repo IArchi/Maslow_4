@@ -13,6 +13,11 @@ IntSetting* sd_fallback_cs;
 
 EnumSetting* message_level;
 
+IntSetting* work_area_x;
+IntSetting* work_area_y;
+IntSetting* work_area_center_offset_x;
+IntSetting* work_area_center_offset_y;
+
 enum_opt_t messageLevels = {
     // clang-format off
     { "None", MsgLevelNone },
@@ -64,4 +69,9 @@ void make_settings() {
 
     start_message =
         new StringSetting("Message issued at startup", EXTENDED, WG, NULL, "Start/Message", "Grbl \\V [FluidNC \\B (\\R) \\H]", 0, 40, NULL);
+
+    work_area_x = new IntSetting("Work area X dimension", EXTENDED, WG, NULL, "WorkArea/X", 2440, 1, 10000, NULL);
+    work_area_y = new IntSetting("Work area Y dimension", EXTENDED, WG, NULL, "WorkArea/Y", 1220, 1, 10000, NULL);
+    work_area_center_offset_x = new IntSetting("Work area center offset X", EXTENDED, WG, NULL, "WorkArea/CenterOffsetX", 0, -5000, 5000, NULL);
+    work_area_center_offset_y = new IntSetting("Work area center offset Y", EXTENDED, WG, NULL, "WorkArea/CenterOffsetY", 0, -5000, 5000, NULL);
 }

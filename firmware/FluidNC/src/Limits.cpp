@@ -9,6 +9,8 @@
 #include "System.h"         // sys.*
 #include "Protocol.h"       // protocol_execute_realtime
 #include "Platform.h"       // WEAK_LINK
+#include "SettingsDefinitions.h"  // work area settings
+#include "Config.h"         // X_AXIS, Y_AXIS
 
 #include <freertos/task.h>
 #include <freertos/queue.h>
@@ -62,6 +64,38 @@ void constrainToSoftLimits(float* cartesian) {
     float*    current_position = get_mpos();
     MotorMask lim_pin_state    = limits_get_state();
 
+    // Apply work area constraints for X and Y axes
+    if (n_axis > X_AXIS && work_area_x != nullptr) {
+        float half_width = work_area_x->get() / 2.0f;
+        float offset_x = work_area_center_offset_x->get();
+        float min_x = -half_width + offset_x;
+        float max_x = half_width + offset_x;
+
+        if (cartesian[X_AXIS] < min_x) {
+            cartesian[X_AXIS] = min_x;
+            log_debug("X constrained to work area minimum: " << min_x);
+        } else if (cartesian[X_AXIS] > max_x) {
+            cartesian[X_AXIS] = max_x;
+            log_debug("X constrained to work area maximum: " << max_x);
+        }
+    }
+
+    if (n_axis > Y_AXIS && work_area_y != nullptr) {
+        float half_height = work_area_y->get() / 2.0f;
+        float offset_y = work_area_center_offset_y->get();
+        float min_y = -half_height + offset_y;
+        float max_y = half_height + offset_y;
+
+        if (cartesian[Y_AXIS] < min_y) {
+            cartesian[Y_AXIS] = min_y;
+            log_debug("Y constrained to work area minimum: " << min_y);
+        } else if (cartesian[Y_AXIS] > max_y) {
+            cartesian[Y_AXIS] = max_y;
+            log_debug("Y constrained to work area maximum: " << max_y);
+        }
+    }
+
+    // Apply existing per-axis soft limits
     for (int axis = 0; axis < n_axis; axis++) {
         auto axisSetting = axes->_axis[axis];
         // If the axis is moving from the current location and soft limits are on.
@@ -120,6 +154,32 @@ void limits_soft_check(float* cartesian) {
     auto axes   = config->_axes;
     auto n_axis = config->_axes->_numberAxis;
 
+    // Check work area constraints for X and Y axes
+    if (n_axis > X_AXIS && work_area_x != nullptr) {
+        float half_width = work_area_x->get() / 2.0f;
+        float offset_x = work_area_center_offset_x->get();
+        float min_x = -half_width + offset_x;
+        float max_x = half_width + offset_x;
+
+        if (cartesian[X_AXIS] < min_x || cartesian[X_AXIS] > max_x) {
+            log_info("Work area limit on X, target:" << cartesian[X_AXIS] << " limits:[" << min_x << "," << max_x << "]");
+            limit_error = true;
+        }
+    }
+
+    if (n_axis > Y_AXIS && work_area_y != nullptr) {
+        float half_height = work_area_y->get() / 2.0f;
+        float offset_y = work_area_center_offset_y->get();
+        float min_y = -half_height + offset_y;
+        float max_y = half_height + offset_y;
+
+        if (cartesian[Y_AXIS] < min_y || cartesian[Y_AXIS] > max_y) {
+            log_info("Work area limit on Y, target:" << cartesian[Y_AXIS] << " limits:[" << min_y << "," << max_y << "]");
+            limit_error = true;
+        }
+    }
+
+    // Check existing per-axis soft limits
     for (int axis = 0; axis < n_axis; axis++) {
         if (axes->_axis[axis]->_softLimits && (cartesian[axis] < limitsMinPosition(axis) || cartesian[axis] > limitsMaxPosition(axis))) {
             log_info("Soft limit on " << Machine::Axes::_names[axis] << " target:" << cartesian[axis]);

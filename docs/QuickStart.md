@@ -23,6 +23,8 @@ You can find a complete list of different anchor types here: [ADD LINK]
 
 We've put together a tool to help you to better understand what size of frame you might want and how that will impact your cutting area. You can find that tool here: https://maslowcnc.github.io/Layout-Simulator/
 
+![simulator](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Layout%20Simulator.png)
+
 - Size and other considerations
   - Belt ends need to be loose to rotate in the XY directions but gently held in the z direction so they don't pop up and down.
   - Belt ends will be taken on and off a lot. 
@@ -41,7 +43,7 @@ Maslow4 will create a wifi network called **“maslow”** which you can connect
 
 Connecting to the network will automatically open the user interface on most devices. If it does not you can type **192.168.0.1** into your web browser to open the interface. 
 
-![File Upload](images/guide-12.png)
+![File Upload](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-12.png)
 
 - Connecting Maslow to your wifi
 
@@ -49,9 +51,15 @@ Connecting to the network will automatically open the user interface on most dev
 
   To connect Maslow to your wifi press on "Setup" in the top right corner.
 
+![press setup](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Screenshot%202025-12-15%20at%203.11.49%E2%80%AFPM.png)
+
   Then press "Config"
 
+![Press config](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Screenshot%202025-12-15%20at%203.12.30%E2%80%AFPM.png)
+
   Then enter your wifi network information and press save.
+
+![enter wifi name](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Screenshot%202025-12-15%20at%203.13.02%E2%80%AFPM.png)
 
   Maslow will try to connect to this wifi network every time it powers up. If it can't find that network or cant connect for some reason it will create the Maslow wifi network for you to connect to it. Turn your Maslow off and back on to let it connect to your wifi network.
 

@@ -56,6 +56,29 @@ bool ambiguousLimit() {
 
 bool soft_limit = false;
 
+// Helper functions to calculate work area bounds
+static inline bool getWorkAreaBoundsX(float& min_x, float& max_x) {
+    if (work_area_x != nullptr && work_area_center_offset_x != nullptr) {
+        float half_width = work_area_x->get() / 2.0f;
+        float offset_x = work_area_center_offset_x->get();
+        min_x = -half_width + offset_x;
+        max_x = half_width + offset_x;
+        return true;
+    }
+    return false;
+}
+
+static inline bool getWorkAreaBoundsY(float& min_y, float& max_y) {
+    if (work_area_y != nullptr && work_area_center_offset_y != nullptr) {
+        float half_height = work_area_y->get() / 2.0f;
+        float offset_y = work_area_center_offset_y->get();
+        min_y = -half_height + offset_y;
+        max_y = half_height + offset_y;
+        return true;
+    }
+    return false;
+}
+
 // Constrain the coordinates to stay within the soft limit envelope
 void constrainToSoftLimits(float* cartesian) {
     auto axes   = config->_axes;
@@ -65,33 +88,29 @@ void constrainToSoftLimits(float* cartesian) {
     MotorMask lim_pin_state    = limits_get_state();
 
     // Apply work area constraints for X and Y axes
-    if (n_axis > X_AXIS && work_area_x != nullptr) {
-        float half_width = work_area_x->get() / 2.0f;
-        float offset_x = work_area_center_offset_x->get();
-        float min_x = -half_width + offset_x;
-        float max_x = half_width + offset_x;
-
-        if (cartesian[X_AXIS] < min_x) {
-            cartesian[X_AXIS] = min_x;
-            log_debug("X constrained to work area minimum: " << min_x);
-        } else if (cartesian[X_AXIS] > max_x) {
-            cartesian[X_AXIS] = max_x;
-            log_debug("X constrained to work area maximum: " << max_x);
+    if (n_axis > X_AXIS) {
+        float min_x, max_x;
+        if (getWorkAreaBoundsX(min_x, max_x)) {
+            if (cartesian[X_AXIS] < min_x) {
+                cartesian[X_AXIS] = min_x;
+                log_debug("X constrained to work area minimum: " << min_x);
+            } else if (cartesian[X_AXIS] > max_x) {
+                cartesian[X_AXIS] = max_x;
+                log_debug("X constrained to work area maximum: " << max_x);
+            }
         }
     }
 
-    if (n_axis > Y_AXIS && work_area_y != nullptr) {
-        float half_height = work_area_y->get() / 2.0f;
-        float offset_y = work_area_center_offset_y->get();
-        float min_y = -half_height + offset_y;
-        float max_y = half_height + offset_y;
-
-        if (cartesian[Y_AXIS] < min_y) {
-            cartesian[Y_AXIS] = min_y;
-            log_debug("Y constrained to work area minimum: " << min_y);
-        } else if (cartesian[Y_AXIS] > max_y) {
-            cartesian[Y_AXIS] = max_y;
-            log_debug("Y constrained to work area maximum: " << max_y);
+    if (n_axis > Y_AXIS) {
+        float min_y, max_y;
+        if (getWorkAreaBoundsY(min_y, max_y)) {
+            if (cartesian[Y_AXIS] < min_y) {
+                cartesian[Y_AXIS] = min_y;
+                log_debug("Y constrained to work area minimum: " << min_y);
+            } else if (cartesian[Y_AXIS] > max_y) {
+                cartesian[Y_AXIS] = max_y;
+                log_debug("Y constrained to work area maximum: " << max_y);
+            }
         }
     }
 
@@ -155,27 +174,23 @@ void limits_soft_check(float* cartesian) {
     auto n_axis = config->_axes->_numberAxis;
 
     // Check work area constraints for X and Y axes
-    if (n_axis > X_AXIS && work_area_x != nullptr) {
-        float half_width = work_area_x->get() / 2.0f;
-        float offset_x = work_area_center_offset_x->get();
-        float min_x = -half_width + offset_x;
-        float max_x = half_width + offset_x;
-
-        if (cartesian[X_AXIS] < min_x || cartesian[X_AXIS] > max_x) {
-            log_info("Work area limit on X, target:" << cartesian[X_AXIS] << " limits:[" << min_x << "," << max_x << "]");
-            limit_error = true;
+    if (n_axis > X_AXIS) {
+        float min_x, max_x;
+        if (getWorkAreaBoundsX(min_x, max_x)) {
+            if (cartesian[X_AXIS] < min_x || cartesian[X_AXIS] > max_x) {
+                log_info("Work area limit on X, target:" << cartesian[X_AXIS] << " limits:[" << min_x << "," << max_x << "]");
+                limit_error = true;
+            }
         }
     }
 
-    if (n_axis > Y_AXIS && work_area_y != nullptr) {
-        float half_height = work_area_y->get() / 2.0f;
-        float offset_y = work_area_center_offset_y->get();
-        float min_y = -half_height + offset_y;
-        float max_y = half_height + offset_y;
-
-        if (cartesian[Y_AXIS] < min_y || cartesian[Y_AXIS] > max_y) {
-            log_info("Work area limit on Y, target:" << cartesian[Y_AXIS] << " limits:[" << min_y << "," << max_y << "]");
-            limit_error = true;
+    if (n_axis > Y_AXIS) {
+        float min_y, max_y;
+        if (getWorkAreaBoundsY(min_y, max_y)) {
+            if (cartesian[Y_AXIS] < min_y || cartesian[Y_AXIS] > max_y) {
+                log_info("Work area limit on Y, target:" << cartesian[Y_AXIS] << " limits:[" << min_y << "," << max_y << "]");
+                limit_error = true;
+            }
         }
     }
 

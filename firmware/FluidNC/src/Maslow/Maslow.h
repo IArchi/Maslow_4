@@ -189,6 +189,12 @@ public:
     float  scaleX = 1.0;
     float  scaleY = 1.0;
 
+    // Work area constraints
+    float workAreaX = 2440.0;
+    float workAreaY = 1220.0;
+    float workAreaCenterOffsetX = 0.0;
+    float workAreaCenterOffsetY = 0.0;
+
     bool test         = false;
     bool debugEnabled = false;
 

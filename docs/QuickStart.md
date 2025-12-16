@@ -33,10 +33,8 @@ We've put together a tool to help you to better understand what size of frame yo
   - Software limits basic frames to less than 5 meters wide and tall.
   - Belts are 4.4 meters long. Cutting area can not be farther than that from an anchor. 
 
-## Getting set up
+## Connecting
 	
-- Connecting to the machine
-
   Maslow4 is controlled using a built-in interface accessible from your web browser. You can connect to Maslow4 from any Windows, Mac, or Linux computer or iOS or Android tablet or phone. You do not need to install any software. 
 
 Maslow4 will create a wifi network called **“maslow”** which you can connect to. The default password for this network will be **“12345678”**.
@@ -67,20 +65,20 @@ Connecting to the network will automatically open the user interface on most dev
 
   As a last resort you can always find your machine's IP address by counting the blinks of the blue light.
 
-- Updating the firmware
+## Updating the firmware
 
-- Extending the belts
+## Extending the belts
 
-- Finding your anchor point locations
+## Finding your anchor point locations
  
 ## Running your first cut
 
-- Generating gcode 
+## Generating gcode 
 
-- Uploading to Maslow
+## Uploading to Maslow
 
-- Move the machine around
+## Move the machine around
 
-- Define home position
+## Define home position
 
-- Running a file
+## Running a file

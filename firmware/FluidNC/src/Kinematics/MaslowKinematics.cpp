@@ -90,6 +90,28 @@ namespace Kinematics {
             return false;
         }
 
+        // Apply work area constraints to the target position
+        // Calculate work area bounds
+        float halfWidth = Maslow.workAreaX / 2.0f;
+        float halfHeight = Maslow.workAreaY / 2.0f;
+        float minX = -halfWidth + Maslow.workAreaCenterOffsetX;
+        float maxX = halfWidth + Maslow.workAreaCenterOffsetX;
+        float minY = -halfHeight + Maslow.workAreaCenterOffsetY;
+        float maxY = halfHeight + Maslow.workAreaCenterOffsetY;
+
+        // Constrain X and Y to work area
+        if (target[X_AXIS] < minX) {
+            target[X_AXIS] = minX;
+        } else if (target[X_AXIS] > maxX) {
+            target[X_AXIS] = maxX;
+        }
+
+        if (target[Y_AXIS] < minY) {
+            target[Y_AXIS] = minY;
+        } else if (target[Y_AXIS] > maxY) {
+            target[Y_AXIS] = maxY;
+        }
+
         // Calculate cartesian distance of the move (X,Y,Z only)
         float cartesian_distance = vector_distance(target, position, 3);  // Only X,Y,Z for cartesian
 

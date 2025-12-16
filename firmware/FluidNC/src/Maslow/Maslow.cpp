@@ -472,8 +472,6 @@ void Maslow_::loadZPos() {
 
 /** Sets the 'bottom' Z position, this is a 'stop' beyond which travel cannot continue */
 void Maslow_::setZStop() {
-    log_info("Setting z-stop position");
-
     targetZ = 0;
 
     // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)
@@ -598,8 +596,6 @@ void Maslow_::saveBeltPositions() {
 
 //This function loads the belt positions from non-volatile storage
 void Maslow_::loadBeltPositions() {
-    log_info("loadBeltPositions() called");
-
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
     if (ret != ESP_OK) {
@@ -610,7 +606,6 @@ void Maslow_::loadBeltPositions() {
     // Check if the data is valid
     int32_t validityMarker;
     ret = nvs_get_i32(nvsHandle, "beltValid", &validityMarker);
-    log_info("Validity check: ret=" << ret << " validityMarker=" << validityMarker);
     if (ret != ESP_OK || validityMarker != 1) {
         log_debug("Belt positions NOT loaded from NVS - data is stale/invalid or not found");
         if (ret == ESP_ERR_NVS_NOT_FOUND) {
@@ -657,7 +652,6 @@ void Maslow_::loadBeltPositions() {
                 // Using mmPerRevolution = 43.975
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 tlPos += movementMM;
-                log_info("TL encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
             } else {
                 log_info("TL encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
                 nvs_close(nvsHandle);
@@ -699,7 +693,6 @@ void Maslow_::loadBeltPositions() {
             if (abs(angleDiff) < 1024) {
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 trPos += movementMM;
-                log_info("TR encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
             } else {
                 log_info("TR encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
                 nvs_close(nvsHandle);
@@ -740,7 +733,6 @@ void Maslow_::loadBeltPositions() {
             if (abs(angleDiff) < 1024) {
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 blPos += movementMM;
-                log_info("BL encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
             } else {
                 log_info("BL encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
                 nvs_close(nvsHandle);
@@ -781,7 +773,6 @@ void Maslow_::loadBeltPositions() {
             if (abs(angleDiff) < 1024) {
                 float movementMM = (angleDiff / 4096.0) * 43.975 * -1;
                 brPos += movementMM;
-                log_info("BR encoder moved " << angleDiff << " counts (" << movementMM << "mm) since save, adjusting position");
             } else {
                 log_info("BR encoder angle difference too large (" << angleDiff << " counts), treating belt positions as stale");
                 nvs_close(nvsHandle);
@@ -817,7 +808,6 @@ void Maslow_::loadBeltPositions() {
     // This is appropriate when restoring a known-good saved state at boot time
     // requestStateChange() would reject EXTENDEDOUT from UNKNOWN state
     calibration.currentState = newState;
-    log_info("Belt position load: Set currentState directly to " << (newState == EXTENDEDOUT ? "EXTENDEDOUT" : "RETRACTED"));
 
     // Set the extended* state variables in the Calibration class to match the restored state
     // When belts are extended (EXTENDEDOUT), mark all belts as extended

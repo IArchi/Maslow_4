@@ -195,8 +195,8 @@ bool Calibration::requestStateChange(int newState) {
                 auto  kinematics = getKinematics();
 
                 // Get current Z position to accurately convert measurements to XY plane
-                float* mpos = get_mpos();
-                float currentZ = mpos[2];
+                float* mpos     = get_mpos();
+                float  currentZ = mpos[2];
 
                 // Compute total vertical distances for TL and TR
                 float tlTotalZ = (currentZ + kinematics->getTlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness());
@@ -505,8 +505,8 @@ bool Calibration::takeSlackFunc() {
                 return true;
 
             // Get current Z position to accurately compute expected belt lengths
-            float* mpos = get_mpos();
-            float currentZ = mpos[2];  // Z position from motor position array
+            float* mpos     = get_mpos();
+            float  currentZ = mpos[2];  // Z position from motor position array
 
             float extension = kinematics->getBeltEndExtension() + kinematics->getArmLength();
 
@@ -544,8 +544,8 @@ bool Calibration::takeSlackFunc() {
                 // position synchronization issues between hardware and FluidNC's motion planning system
 
                 // Get current motor position array
-                float* mpos = get_mpos();
-                float currentZ = mpos[2];
+                float* mpos     = get_mpos();
+                float  currentZ = mpos[2];
                 log_info("Before update - mpos: X=" << mpos[0] << " Y=" << mpos[1] << " Z=" << mpos[2]);
 
                 // Compute total vertical distances from each anchor to router (including current Z position)
@@ -708,8 +708,8 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                 return false;
 
             // Get current Z position to accurately convert measurements to XY plane
-            float* mpos = get_mpos();
-            float currentZ = mpos[2];
+            float* mpos     = get_mpos();
+            float  currentZ = mpos[2];
 
             // Compute total vertical distances from each anchor to router (including current Z position)
             float tlTotalZ = (currentZ + kinematics->getTlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness());
@@ -809,8 +809,8 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                     return false;
 
                 // Get current Z position to accurately convert measurements to XY plane
-                float* mpos = get_mpos();
-                float currentZ = mpos[2];
+                float* mpos     = get_mpos();
+                float  currentZ = mpos[2];
 
                 // Compute total vertical distances from each anchor to router (including current Z position)
                 float tlTotalZ = (currentZ + kinematics->getTlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness());
@@ -903,8 +903,8 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
                     return false;
 
                 // Get current Z position to accurately convert measurements to XY plane
-                float* mpos = get_mpos();
-                float currentZ = mpos[2];
+                float* mpos     = get_mpos();
+                float  currentZ = mpos[2];
 
                 // Compute total vertical distances from each anchor to router (including current Z position)
                 float tlTotalZ = (currentZ + kinematics->getTlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness());
@@ -1369,8 +1369,22 @@ bool Calibration::generate_calibration_grid() {
 
         log_info("Frame size: " << frameWidth << " x " << frameHeight << " mm");
 
+        // Calculate initial grid size based on frame dimensions
         float gridWidth  = frameWidth * 0.5;
         float gridHeight = frameHeight * 0.2;
+
+        // Constrain grid to be at most 200mm less than work area to ensure it stays within bounds
+        float maxGridWidth  = Maslow.workAreaX - 200.0;
+        float maxGridHeight = Maslow.workAreaY - 200.0;
+
+        if (gridWidth > maxGridWidth) {
+            gridWidth = maxGridWidth;
+            log_info("Grid width constrained to work area: " << gridWidth << " mm (work area X: " << Maslow.workAreaX << " mm)");
+        }
+        if (gridHeight > maxGridHeight) {
+            gridHeight = maxGridHeight;
+            log_info("Grid height constrained to work area: " << gridHeight << " mm (work area Y: " << Maslow.workAreaY << " mm)");
+        }
 
         log_info("Computed grid size: " << gridWidth << " x " << gridHeight << " mm");
 

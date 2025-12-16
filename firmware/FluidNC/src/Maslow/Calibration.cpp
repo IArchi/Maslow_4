@@ -156,9 +156,6 @@ bool Calibration::requestStateChange(int newState) {
 
                 sys.set_state(State::Homing);
 
-                // Log the calibration orientation mode for debugging
-                log_info("Calibration starting in " << (orientation == VERTICAL ? "VERTICAL" : "HORIZONTAL") << " orientation mode");
-
                 //If we are at the first point we need to generate the grid before we can start
                 if (waypoint == 0) {
                     // Initialize calibration loop state for fresh start
@@ -537,8 +534,6 @@ bool Calibration::takeSlackFunc() {
                 takeSlackState = 0;
                 holdTimer      = millis();
 
-                log_info("Current machine position loaded as X: " << x << " Y: " << y);
-
                 // Instead of setting cartesian position and letting kinematics recalculate motor positions,
                 // we need to set the motor positions directly from the measured belt lengths to avoid
                 // position synchronization issues between hardware and FluidNC's motion planning system
@@ -546,7 +541,6 @@ bool Calibration::takeSlackFunc() {
                 // Get current motor position array
                 float* mpos     = get_mpos();
                 float  currentZ = mpos[2];
-                log_info("Before update - mpos: X=" << mpos[0] << " Y=" << mpos[1] << " Z=" << mpos[2]);
 
                 // Compute total vertical distances from each anchor to router (including current Z position)
                 float tlTotalZ = (currentZ + kinematics->getTlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness());
@@ -561,10 +555,6 @@ bool Calibration::takeSlackFunc() {
                 float blBeltLength = measurementFromXYPlane(calibration_data[0][2], blTotalZ);
                 float brBeltLength = measurementFromXYPlane(calibration_data[0][3], brTotalZ);
 
-                log_info("Setting motor positions directly from measurements:");
-                log_info("TL belt: " << tlBeltLength << " TR belt: " << trBeltLength);
-                log_info("BL belt: " << blBeltLength << " BR belt: " << brBeltLength);
-
                 // Set motor positions directly from measured belt lengths
                 // Axis mapping: A=TL(0), B=TR(1), C=BL(2), D=BR(3), Z=router(4)
                 set_motor_steps(0, mpos_to_steps(tlBeltLength, 0));  // A axis = TL belt
@@ -575,7 +565,6 @@ bool Calibration::takeSlackFunc() {
 
                 // Verify that the position was set correctly by reading back from motors
                 float* verify_mpos = get_mpos();
-                log_info("After update - mpos: X=" << verify_mpos[0] << " Y=" << verify_mpos[1] << " Z=" << verify_mpos[2]);
 
                 gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
                 plan_sync_position();
@@ -1364,11 +1353,6 @@ bool Calibration::generate_calibration_grid() {
         float frameWidth  = getKinematics()->getTrX() - getKinematics()->getTlX();
         float frameHeight = getKinematics()->getTlY() - getKinematics()->getBlY();
 
-        log_info("Frame dimensions from kinematics: TR_X" << getKinematics()->getTrX() << " TL_X: " << getKinematics()->getTlX() << " TL_Y: "
-                                                          << getKinematics()->getTlY() << " BL_Y: " << getKinematics()->getBlY());
-
-        log_info("Frame size: " << frameWidth << " x " << frameHeight << " mm");
-
         // Calculate initial grid size based on frame dimensions
         float gridWidth  = frameWidth * 0.5;
         float gridHeight = frameHeight * 0.2;
@@ -1385,8 +1369,6 @@ bool Calibration::generate_calibration_grid() {
             gridHeight = maxGridHeight;
             log_info("Grid height constrained to work area: " << gridHeight << " mm (work area Y: " << Maslow.workAreaY << " mm)");
         }
-
-        log_info("Computed grid size: " << gridWidth << " x " << gridHeight << " mm");
 
         // Automatically select the grid spacing (3x3, 5x5, 7x7, or 9x9) such that
         // the smallest grid is used which will not leave more than 260mm between each point
@@ -1408,7 +1390,6 @@ bool Calibration::generate_calibration_grid() {
         }
 
         calibrationGridSize = selectedGridSize;
-        log_info("Automatically selected grid size: " << calibrationGridSize << "x" << calibrationGridSize);
 
         xSpacing = gridWidth / (calibrationGridSize - 1);
         ySpacing = gridHeight / (calibrationGridSize - 1);
@@ -1740,7 +1721,6 @@ void Calibration::updateCenterXY() {
     auto kinematics = getKinematics();
     if (kinematics) {
         // The center is already calculated in MaslowKinematics and accessible via getters
-        log_info("Center coordinates updated in MaslowKinematics: X=" << kinematics->getCenterX() << " Y=" << kinematics->getCenterY());
     }
 }
 
@@ -1954,11 +1934,6 @@ bool Calibration::detectOrientation() {
         double trExtension  = trCurrentPosition - trStartPosition;
         double avgExtension = (tlExtension + trExtension) / 2.0;
 
-        log_info("Orientation detection results:");
-        log_info("  TL extension: " << tlExtension << " mm");
-        log_info("  TR extension: " << trExtension << " mm");
-        log_info("  Average extension: " << avgExtension << " mm");
-
         // Determine orientation based on extension amount
         bool detectedOrientation = HORIZONTAL;
         if (avgExtension > ORIENTATION_DETECT_THRESHOLD_MM) {
@@ -2001,7 +1976,6 @@ bool Calibration::detectOrientation() {
             // Initialize settling timer on first entry to this phase
             if (settlingStartTime == 0) {
                 settlingStartTime = millis();
-                log_info("Motors returned to starting position. Beginning settling pause...");
             }
 
             // Power down all four motors during the settling pause
@@ -2012,7 +1986,6 @@ bool Calibration::detectOrientation() {
 
             // Check if settling pause is complete
             if (millis() - settlingStartTime >= MOTOR_SETTLING_PAUSE_MS) {
-                log_info("Motor settling pause complete. Ready to proceed with belt tensioning.");
                 settlingStartTime = 0;     // Reset for next calibration run
                 settlingCompleted = true;  // Mark settling as complete to prevent re-running detection
                 return true;

@@ -38,12 +38,33 @@ var Toolpath = function () {
             y: 0,
             z: 0
         };
+        // Work Coordinate System offsets for G54-G59
+        this.wcsOffsets = {
+            'G54': { x: 0, y: 0, z: 0 },
+            'G55': { x: 0, y: 0, z: 0 },
+            'G56': { x: 0, y: 0, z: 0 },
+            'G57': { x: 0, y: 0, z: 0 },
+            'G58': { x: 0, y: 0, z: 0 },
+            'G59': { x: 0, y: 0, z: 0 }
+        };
+        this.toolLengthOffset = 0;
+        this.machineCoordinateMode = false;
         function offsetG92(pos) {
-            return {
-                x: pos.x + _this.g92offset.x,
-                y: pos.y + _this.g92offset.y,
-                z: pos.z + _this.g92offset.z,
+            // Skip G92 offset when in machine coordinate mode (G53)
+            if (_this.machineCoordinateMode) {
+                return {
+                    x: pos.x,
+                    y: pos.y,
+                    z: pos.z,
+                };
             }
+            // Apply both WCS and G92 offsets
+            var wcs = _this.wcsOffsets[_this.modal.wcs] || { x: 0, y: 0, z: 0 };
+            return {
+                x: pos.x + _this.g92offset.x + wcs.x,
+                y: pos.y + _this.g92offset.y + wcs.y,
+                z: pos.z + _this.g92offset.z + wcs.z + _this.toolLengthOffset,
+            };
         }
         function offsetAddLine(start, end) {
             _this.fn.addLine(_this.modal, offsetG92(start), offsetG92(end));
@@ -56,6 +77,8 @@ var Toolpath = function () {
             y: 0,
             z: 0
         };
+        this.homePosition0 = null;
+        this.homePosition1 = null;
         this.modal = {
             // Motion Mode
             // G0, G1, G2, G3, G38.2, G38.3, G38.4, G38.5, G80
@@ -252,9 +275,9 @@ var Toolpath = function () {
                     let x = v2.x - v1.x;
                     let y = v2.y - v1.y;
                     let distance = Math.hypot(x, y);
-                    let height = Math.sqrt(4 * radius * radius - x * x - y * y) / 2;
+                    let height = -Math.sqrt(4 * radius * radius - x * x - y * y) / 2;
 
-                    if (isClockwise) {
+                    if (!isClockwise) {
                         height = -height;
                     }
                     if (radius < 0) {
@@ -342,9 +365,9 @@ var Toolpath = function () {
                     let x = v2.x - v1.x;
                     let y = v2.y - v1.y;
                     let distance = Math.hypot(x, y);
-                    let height = Math.sqrt(4 * radius * radius - x * x - y * y) / 2;
+                    let height = -Math.sqrt(4 * radius * radius - x * x - y * y) / 2;
 
-                    if (isClockwise) {
+                    if (!isClockwise) {
                         height = -height;
                     }
                     if (radius < 0) {
@@ -370,7 +393,57 @@ var Toolpath = function () {
             //   G4 P200
             'G4': function G4(params) {},
             // G10: Coordinate System Data Tool and Work Offset Tables
-            'G10': function G10(params) {},
+            'G10': function G10(params) {
+                // G10 L2 Pn - Set WCS origin to absolute machine coordinates
+                // G10 L20 Pn - Set WCS so current position becomes the specified coordinates
+                if (params.L === 2) {
+                    // G10 L2: Set WCS origin to absolute machine coordinates
+                    var wcs_index = params.P || 1;  // P1-P6 for G54-G59
+                    var wcs_name = 'G' + (53 + wcs_index);  // P1=G54, P2=G55, etc.
+
+                    if (wcs_index >= 1 && wcs_index <= 6 && _this.wcsOffsets[wcs_name]) {
+                        // For L2, the WCS offset is set to the specified machine coordinates
+                        // WCS offset is the position of the origin in machine coordinates
+                        if (params.X !== undefined) {
+                            var xmm = _this.translateX(params.X, false);
+                            _this.wcsOffsets[wcs_name].x = xmm;
+                        }
+                        if (params.Y !== undefined) {
+                            var ymm = _this.translateY(params.Y, false);
+                            _this.wcsOffsets[wcs_name].y = ymm;
+                        }
+                        if (params.Z !== undefined) {
+                            var zmm = _this.translateZ(params.Z, false);
+                            _this.wcsOffsets[wcs_name].z = zmm;
+                        }
+                    }
+                } else if (params.L === 20) {
+                    // G10 L20: Set WCS so current position becomes the specified coordinates
+                    var wcs_index = params.P || 1;  // P1-P6 for G54-G59
+                    var wcs_name = 'G' + (53 + wcs_index);  // P1=G54, P2=G55, etc.
+
+                    if (wcs_index >= 1 && wcs_index <= 6 && _this.wcsOffsets[wcs_name]) {
+                        // For L20, calculate WCS offset based on current position
+                        // Firmware formula: WCS = MPos - G92 - TLO - WPos
+                        // MPos = position + g92offset + wcs + tlo, so:
+                        // WCS_new = (position + g92offset + wcs_old + tlo) - g92offset - tlo - specified_value
+                        // WCS_new = position + wcs_old - specified_value
+                        var old_wcs = _this.wcsOffsets[wcs_name];
+                        if (params.X !== undefined) {
+                            var xmm = _this.translateX(params.X, false);
+                            _this.wcsOffsets[wcs_name].x = _this.position.x + old_wcs.x - xmm;
+                        }
+                        if (params.Y !== undefined) {
+                            var ymm = _this.translateY(params.Y, false);
+                            _this.wcsOffsets[wcs_name].y = _this.position.y + old_wcs.y - ymm;
+                        }
+                        if (params.Z !== undefined) {
+                            var zmm = _this.translateZ(params.Z, false);
+                            _this.wcsOffsets[wcs_name].z = _this.position.z + old_wcs.z - zmm;
+                        }
+                    }
+                }
+            },
             // G17..19: Plane Selection
             // G17: XY (default)
             'G17': function G17(params) {
@@ -402,6 +475,102 @@ var Toolpath = function () {
                     _this.setModal({ units: 'G21' });
                 }
             },
+            // G28: Move to predefined position 0 (home position)
+            // If axis words are specified, move to intermediate position first, then to home
+            'G28': function G28(params) {
+                // Check if any axis words are present for intermediate move
+                var hasAxisWords = params.X !== undefined || params.Y !== undefined || params.Z !== undefined;
+
+                if (hasAxisWords) {
+                    // First move to intermediate position specified by axis words
+                    var v1 = {
+                        x: _this.position.x,
+                        y: _this.position.y,
+                        z: _this.position.z
+                    };
+                    var v2 = {
+                        x: _this.translateX(params.X, _this.isRelativeDistance()),
+                        y: _this.translateY(params.Y, _this.isRelativeDistance()),
+                        z: _this.translateZ(params.Z, _this.isRelativeDistance())
+                    };
+
+                    offsetAddLine(v1, v2);
+                    _this.setPosition(v2.x, v2.y, v2.z);
+                }
+
+                // Then move to stored home position if it exists
+                if (_this.homePosition0) {
+                    var v1Home = {
+                        x: _this.position.x,
+                        y: _this.position.y,
+                        z: _this.position.z
+                    };
+                    var v2Home = {
+                        x: _this.homePosition0.x,
+                        y: _this.homePosition0.y,
+                        z: _this.homePosition0.z
+                    };
+
+                    offsetAddLine(v1Home, v2Home);
+                    _this.setPosition(v2Home.x, v2Home.y, v2Home.z);
+                }
+            },
+            // G28.1: Store current position as position 0 (home position)
+            'G28.1': function G281(params) {
+                _this.homePosition0 = {
+                    x: _this.position.x,
+                    y: _this.position.y,
+                    z: _this.position.z
+                };
+            },
+            // G30: Move to predefined position 1 (alternate home position)
+            // If axis words are specified, move to intermediate position first, then to home
+            'G30': function G30(params) {
+                // Check if any axis words are present for intermediate move
+                var hasAxisWords = params.X !== undefined || params.Y !== undefined || params.Z !== undefined;
+
+                if (hasAxisWords) {
+                    // First move to intermediate position specified by axis words
+                    var v1 = {
+                        x: _this.position.x,
+                        y: _this.position.y,
+                        z: _this.position.z
+                    };
+                    var v2 = {
+                        x: _this.translateX(params.X, _this.isRelativeDistance()),
+                        y: _this.translateY(params.Y, _this.isRelativeDistance()),
+                        z: _this.translateZ(params.Z, _this.isRelativeDistance())
+                    };
+
+                    offsetAddLine(v1, v2);
+                    _this.setPosition(v2.x, v2.y, v2.z);
+                }
+
+                // Then move to stored home position if it exists
+                if (_this.homePosition1) {
+                    var v1Home = {
+                        x: _this.position.x,
+                        y: _this.position.y,
+                        z: _this.position.z
+                    };
+                    var v2Home = {
+                        x: _this.homePosition1.x,
+                        y: _this.homePosition1.y,
+                        z: _this.homePosition1.z
+                    };
+
+                    offsetAddLine(v1Home, v2Home);
+                    _this.setPosition(v2Home.x, v2Home.y, v2Home.z);
+                }
+            },
+            // G30.1: Store current position as position 1 (alternate home position)
+            'G30.1': function G301(params) {
+                _this.homePosition1 = {
+                    x: _this.position.x,
+                    y: _this.position.y,
+                    z: _this.position.z
+                };
+            },
             // G38.x: Straight Probe
             // G38.2: Probe toward workpiece, stop on contact, signal error if failure
             'G38.2': function G382(params) {
@@ -432,12 +601,24 @@ var Toolpath = function () {
                 if (_this.modal.tlo !== 'G43.1') {
                     _this.setModal({ tlo: 'G43.1' });
                 }
+                // G43.1 uses axis word as the offset. This implementation handles Z-axis only.
+                if (params.Z !== undefined) {
+                    _this.toolLengthOffset = _this.translateZ(params.Z, false);
+                }
             },
             // G49: No Tool Length Offset
             'G49': function G49() {
                 if (_this.modal.tlo !== 'G49') {
                     _this.setModal({ tlo: 'G49' });
                 }
+                _this.toolLengthOffset = 0;
+            },
+            // G53: Move in Machine Coordinates (non-modal)
+            // This is a one-shot command that causes the next move to be
+            // interpreted in machine coordinates, ignoring work coordinate
+            // system offsets (G54-G59) and G92 offsets
+            'G53': function G53(params) {
+                _this.machineCoordinateMode = true;
             },
             // G54..59: Coordinate System Select
             'G54': function G54() {
@@ -528,7 +709,7 @@ var Toolpath = function () {
                         _this.position.y = ymm;
                     }
                     if (params.Z != undefined) {
-			var zmm = _this.translateX(params.Z, false);
+			var zmm = _this.translateZ(params.Z, false);
                         _this.g92offset.z += _this.position.z - zmm;
                         _this.position.z = zmm;
                     }
@@ -564,7 +745,7 @@ var Toolpath = function () {
                     _this.setModal({ feedmode: 'G94' });
                 }
             },
-            // G94: Units per Revolution Mode
+            // G95: Units per Revolution Mode
             // In units per rev feed rate mode, an F word on the line is interpreted to mean the
             // controlled point should move at a certain number of inches per spindle revolution,
             // millimeters per spindle revolution or degrees per spindle revolution, depending upon
@@ -704,6 +885,21 @@ var Toolpath = function () {
         };
         toolpath.setModal = function (modal) {
             return _this.setModal(modal);
+        };
+
+        // Override loadFromLinesSync to reset machineCoordinateMode at the start of each line
+        // This ensures G53 only affects axis words on the same line, matching firmware behavior
+        toolpath.loadFromLinesSync = function(lines) {
+            for (var i = 0; i < lines.length; ++i) {
+                var line = lines[i].trim();
+                if (line.length !== 0) {
+                    // Reset machine coordinate mode at the start of each line
+                    // G53 is non-modal and only affects the line it appears on
+                    _this.machineCoordinateMode = false;
+                    // Parse and interpret this line (note: parseLine and interpret must be globally available)
+                    interpret(this, parseLine(line, {}));
+                }
+            }
         };
 
         return toolpath;

@@ -21,7 +21,6 @@
     // Get all direct children of main content
     const children = Array.from(mainContent.children);
     let imageCounter = 0;
-    let currentSection = null;
     let elementsToGroup = [];
 
     children.forEach((element, index) => {
@@ -101,27 +100,49 @@
       section.classList.add('image-right');
     }
 
-    // Find the image element
-    let imgElement = elements[0];
-    if (imgElement.tagName === 'P' && imgElement.querySelector('img')) {
-      imgElement = imgElement.querySelector('img');
+    // Find the first element (which contains or is the image)
+    let firstElement = elements[0];
+    let imgElement;
+
+    if (firstElement.tagName === 'P' && firstElement.querySelector('img')) {
+      // Extract the image from the paragraph
+      imgElement = firstElement.querySelector('img');
+    } else if (firstElement.tagName === 'IMG') {
+      imgElement = firstElement;
     }
+
+    if (!imgElement) return;
 
     // Clone the image
     const imgClone = imgElement.cloneNode(true);
     section.appendChild(imgClone);
 
     // Create text content container
-    if (elements.length > 1) {
-      const textContainer = document.createElement('div');
-      textContainer.className = 'text-content';
+    const textContainer = document.createElement('div');
+    textContainer.className = 'text-content';
 
-      // Add remaining elements (skip the first which contains the image)
-      for (let i = 1; i < elements.length; i++) {
-        const clone = elements[i].cloneNode(true);
-        textContainer.appendChild(clone);
+    // If first element is a paragraph with an image, extract any text content
+    if (firstElement.tagName === 'P' && firstElement.querySelector('img')) {
+      // Clone the paragraph without the image
+      const textOnlyPara = firstElement.cloneNode(true);
+      const imgInPara = textOnlyPara.querySelector('img');
+      if (imgInPara) {
+        imgInPara.remove();
       }
+      // Only add the paragraph if it has text content
+      if (textOnlyPara.textContent.trim()) {
+        textContainer.appendChild(textOnlyPara);
+      }
+    }
 
+    // Add remaining elements
+    for (let i = 1; i < elements.length; i++) {
+      const clone = elements[i].cloneNode(true);
+      textContainer.appendChild(clone);
+    }
+
+    // Only add text container if it has content
+    if (textContainer.children.length > 0 || textContainer.textContent.trim()) {
       section.appendChild(textContainer);
     }
 

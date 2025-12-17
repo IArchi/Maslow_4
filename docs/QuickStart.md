@@ -65,6 +65,8 @@ Connecting to the network will automatically open the user interface on most dev
 
   As a last resort you can always find your machine's IP address by counting the blinks of the blue light.
 
+  ![LED blinking](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-08.gif)
+
 ## Updating the firmware
 
 Maslow4’s firmware is improving regularly.

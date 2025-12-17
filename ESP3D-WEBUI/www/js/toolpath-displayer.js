@@ -1461,7 +1461,7 @@ var displayHandlers = {
 	    theta2 += Math.PI * ((cw) ? -2 : 2);
 	}
         if (extraRotations > 1) {
-            theta2 += (extraRotations-1) * Math.PI * ((cw) ? -2 : 2);;
+            theta2 += (extraRotations-1) * Math.PI * ((cw) ? -2 : 2);
         }
 
         initialMoves = false;
@@ -1482,7 +1482,7 @@ var displayHandlers = {
             next.x = centerMPOS.x + radius * Math.cos(theta);
             next.y = centerMPOS.y + radius * Math.sin(theta);
             next.z += dz;
-            pe = projection(next)
+            pe = projection(next);
             tp.lineTo(pe.x, pe.y);
         }
         tp.stroke();

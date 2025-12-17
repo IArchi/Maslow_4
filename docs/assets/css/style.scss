@@ -24,9 +24,9 @@
 /* Image on the left, text on the right */
 .image-section.image-left img {
   float: left;
-  margin-right: 2rem;
+  margin-right: 1rem;
   margin-bottom: 1rem;
-  max-width: 48%;
+  max-width: 58%;
 }
 
 .image-section.image-left .text-content {
@@ -36,9 +36,9 @@
 /* Image on the right, text on the left */
 .image-section.image-right img {
   float: right;
-  margin-left: 2rem;
+  margin-left: 1rem;
   margin-bottom: 1rem;
-  max-width: 48%;
+  max-width: 58%;
 }
 
 .image-section.image-right .text-content {

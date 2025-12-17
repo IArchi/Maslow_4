@@ -7,6 +7,10 @@ title: Home
 
 Welcome to the official documentation for Maslow 4 CNC machine. This site contains assembly instructions, user guides, reference materials, and interactive tools.
 
+## Quick Start
+
+- [Quick Start Guide](QuickStart.md) - Get your Maslow up and running quickly after assembly
+
 ## Assembly Guides
 
 Step-by-step instructions for building your Maslow 4:

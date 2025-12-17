@@ -1,0 +1,84 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+/* Alternating image layout styles for documentation pages */
+
+/* Base image styling */
+.main-content img {
+  max-width: 100%;
+  height: auto;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Container for image-text sections - created by JavaScript */
+.image-section {
+  clear: both;
+  margin-bottom: 2.5rem;
+  overflow: auto;
+  min-height: 200px;
+}
+
+/* Image on the left, text on the right */
+.image-section.image-left img {
+  float: left;
+  margin-right: 2rem;
+  margin-bottom: 1rem;
+  max-width: 48%;
+}
+
+.image-section.image-left .text-content {
+  overflow: auto;
+}
+
+/* Image on the right, text on the left */
+.image-section.image-right img {
+  float: right;
+  margin-left: 2rem;
+  margin-bottom: 1rem;
+  max-width: 48%;
+}
+
+.image-section.image-right .text-content {
+  overflow: auto;
+}
+
+/* Fallback: Images that aren't wrapped in sections */
+.main-content > p > img,
+.main-content > img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Clear floats before major headings */
+.main-content h2,
+.main-content h3 {
+  clear: both;
+  padding-top: 1rem;
+}
+
+/* Responsive design for smaller screens */
+@media screen and (max-width: 768px) {
+  .image-section.image-left img,
+  .image-section.image-right img {
+    float: none;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+
+  .image-section {
+    min-height: auto;
+  }
+}
+
+/* Ensure proper clearing */
+.image-section::after {
+  content: "";
+  display: table;
+  clear: both;
+}

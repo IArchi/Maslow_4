@@ -67,11 +67,45 @@ Connecting to the network will automatically open the user interface on most dev
 
 ## Updating the firmware
 
+Maslow4’s firmware is improving regularly.
+
+Luckily updating the Maslow4 firmware is easy. 
+
+To update Maslow4’s firmware click on the FluidNC tab at the top of the screen, then click on the Update the Firmware button, and select your new firmware file.
+
+You can always find the latest firmware version at [https://github.com/BarbourSmith/FluidNC/releases](https://github.com/BarbourSmith/FluidNC/releases)
+
+There will be 3 files that you need to download, **firmware.bin**, **index.html.gz**, and **maslow.yaml**. When you download the files, make sure your computer does not change their name. You must change the name back if this happens.
+
+Note: When you first connect to Maslow it will create a popup to control the machine. On some devices you cannot upload files from within that popup (the window won’t open). The solution is to connect to Maslow from a regular browser window.
+
+Note that to update from a firmware version before 1.0 to a version after 1.0 you will need to use a USB cable. There is a video walkthrough for that process [here](https://youtu.be/od7DpdLel6A?si=xv1Zp3AIZFgRoeZ_).
+
+![firmware update](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-32.png)
+
+There are two other files which you will need to update periodically. These can be found by clicking on the FluidNC tab and then clicking on the files button.
+
+![these files](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-14.png)
+
+
+
+This will show you your system files.
+
+To upload a new file click the Upload files button at the top of the screen. If a file with the same name already exists it will be replaced.
+
+index.html.gz controls how the machine interface looks. If you wanted for example a dark mode, replacing this file would give the interface a new look. I expect that there will be a number of community created UI options created quite quickly.
+
+maslow.yaml contains the configuration settings for your machine. Your calibration values are stored here. You may not need to update the yaml each time you update the index and the firmware.
+
+![maslow yaml](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-25.png)
+
+
+
+
+
 ## Extending the belts
 
 ## Finding your anchor point locations
- 
-## Running your first cut
 
 ## Generating gcode 
 

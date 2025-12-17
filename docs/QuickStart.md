@@ -105,9 +105,43 @@ maslow.yaml contains the configuration settings for your machine. Your calibrati
 
 
 
-## Extending the belts
+## Extending and Retracting the Belts
+
+The Maslow 4 belts can be retracted for storage and extended for use. 
+
+Every time that the belts are retracted the machine will use that as an oportunity to reset it's understanding of how long each belt is. This is done by monitoring the current required to retract each belt. If your machine is in an unknown state retracting the belts will help it to understand exactly where it is.
+
+To retract the belts press **Setup -> Retract All**
+
+![Retract All](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Retract%20All.png)
+
+If all of your belts don't fully retract you may need to increase the amount of force that the machine uses to retract. You can do this by clicking on **Config** and increasing the retraction force. The lower that this number can be the better.
+
+![Retraction force Image](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Retraction%20Force.png)
+
+When you are ready to extend your belts, press **Extend All**. Extending the belts can take a little practice. To prevent tangles the belts will only extend as long as you are pulling on them. Use a rocking motion to start the belts extending and then pull steadily.
+
+![guide-26.gif](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-26.gif)
+
+The belts will extend to the length set in the config file. If you need to extend more belt to reach your anchor points, adjust the number there and press **Extend All** again.
+
+![Extend Dist Pic](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Extend%20Dist.png)
+
+Once all four belts are fully extended you will hear the cooling fan turn off. Connect each of the four belts to your four anchor points.
+
+![guide-35](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-35.jpg)
 
 ## Finding your anchor point locations
+
+If you haven't prevously connected your machine to these anchor points, you will need to locate them. This can be done with a tape measure, but that is slow and error prone. 
+
+Press **Find Anchor Locations** to have the machine take a series of measruements to automatically locate the anchor points for you. The machine will move through a grid of points and take measurements at each one. 
+
+Be sure to leave your web bowser tab open through the entire process because the calculations will be done there since your computer has much more processing power than the ESP32 in the Maslow. 
+
+Keep an eye on the machine during this entire process, it may be tempting to walk away, but it is important to keep an eye on it.
+
+![guide-02 Image](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-02.jpg)
 
 ## Generating gcode 
 

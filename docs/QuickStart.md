@@ -23,7 +23,7 @@ You can find a complete list of different anchor types here: [ADD LINK]
 
 We've put together a tool to help you to better understand what size of frame you might want and how that will impact your cutting area. You can find that tool here: https://maslowcnc.github.io/Layout-Simulator/
 
-<img src="https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Layout%20Simulator.png" alt="Layout Simulator" width="800">
+<img src="quick-start/images/Layout%20Simulator.png" alt="Layout Simulator" width="800">
 
 - Size and other considerations
   - Belt ends need to be loose to rotate in the XY directions but gently held in the z direction so they don't pop up and down.
@@ -41,7 +41,7 @@ Maslow4 will create a wifi network called **“maslow”** which you can connect
 
 Connecting to the network will automatically open the user interface on most devices. If it does not you can type **192.168.0.1** into your web browser to open the interface. 
 
-<img src="https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-12.png" alt="File Upload" width="800">
+<img src="user-guide/images/guide-12.png" alt="File Upload" width="800">
 
 - Connecting Maslow to your wifi
 
@@ -49,15 +49,15 @@ Connecting to the network will automatically open the user interface on most dev
 
   To connect Maslow to your wifi press on "Setup" in the top right corner.
 
-<img src="https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Screenshot%202025-12-15%20at%203.11.49%E2%80%AFPM.png" alt="Press setup" width="800">
+<img src="quick-start/images/Screenshot%202025-12-15%20at%203.11.49%E2%80%AFPM.png" alt="Press setup" width="800">
 
   Then press "Config"
 
-<img src="https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Screenshot%202025-12-15%20at%203.12.30%E2%80%AFPM.png" alt="Press config" width="800">
+<img src="quick-start/images/Screenshot%202025-12-15%20at%203.12.30%E2%80%AFPM.png" alt="Press config" width="800">
 
   Then enter your wifi network information and press save.
 
-<img src="https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Screenshot%202025-12-15%20at%203.13.02%E2%80%AFPM.png" alt="Enter wifi name" width="800">
+<img src="quick-start/images/Screenshot%202025-12-15%20at%203.13.02%E2%80%AFPM.png" alt="Enter wifi name" width="800">
 
   Maslow will try to connect to this wifi network every time it powers up. If it can't find that network or cant connect for some reason it will create the Maslow wifi network for you to connect to it. Turn your Maslow off and back on to let it connect to your wifi network.
 
@@ -65,7 +65,7 @@ Connecting to the network will automatically open the user interface on most dev
 
   As a last resort you can always find your machine's IP address by counting the blinks of the blue light.
 
-  ![LED blinking](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-08.gif)
+  ![LED blinking](user-guide/images/guide-08.gif)
 
 ## Updating the firmware
 
@@ -83,11 +83,11 @@ Note: When you first connect to Maslow it will create a popup to control the mac
 
 Note that to update from a firmware version before 1.0 to a version after 1.0 you will need to use a USB cable. There is a video walkthrough for that process [here](https://youtu.be/od7DpdLel6A?si=xv1Zp3AIZFgRoeZ_).
 
-![firmware update](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-32.png)
+![firmware update](user-guide/images/guide-32.png)
 
 There are two other files which you will need to update periodically. These can be found by clicking on the FluidNC tab and then clicking on the files button.
 
-![these files](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-14.png)
+![these files](user-guide/images/guide-14.png)
 
 
 
@@ -99,7 +99,7 @@ index.html.gz controls how the machine interface looks. If you wanted for exampl
 
 maslow.yaml contains the configuration settings for your machine. Your calibration values are stored here. You may not need to update the yaml each time you update the index and the firmware.
 
-![maslow yaml](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-25.png)
+![maslow yaml](user-guide/images/guide-25.png)
 
 
 
@@ -113,23 +113,23 @@ Every time that the belts are retracted the machine will use that as an oportuni
 
 To retract the belts press **Setup -> Retract All**
 
-![Retract All](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Retract%20All.png)
+![Retract All](quick-start/images/Retract%20All.png)
 
 If all of your belts don't fully retract you may need to increase the amount of force that the machine uses to retract. You can do this by clicking on **Config** and increasing the retraction force. The lower that this number can be the better.
 
-![Retraction force Image](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Retraction%20Force.png)
+![Retraction force Image](quick-start/images/Retraction%20Force.png)
 
 When you are ready to extend your belts, press **Extend All**. Extending the belts can take a little practice. To prevent tangles the belts will only extend as long as you are pulling on them. Use a rocking motion to start the belts extending and then pull steadily.
 
-![guide-26.gif](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-26.gif)
+![guide-26.gif](user-guide/images/guide-26.gif)
 
 The belts will extend to the length set in the config file. If you need to extend more belt to reach your anchor points, adjust the number there and press **Extend All** again.
 
-![Extend Dist Pic](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/quick-start/images/Extend%20Dist.png)
+![Extend Dist Pic](quick-start/images/Extend%20Dist.png)
 
 Once all four belts are fully extended you will hear the cooling fan turn off. Connect each of the four belts to your four anchor points.
 
-![guide-35](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-35.jpg)
+![guide-35](user-guide/images/guide-35.jpg)
 
 ## Finding your anchor point locations
 
@@ -141,7 +141,7 @@ Be sure to leave your web bowser tab open through the entire process because the
 
 Keep an eye on the machine during this entire process, it may be tempting to walk away, but it is important to keep an eye on it.
 
-![guide-02 Image](https://github.com/MaslowCNC/Maslow_4/blob/Maslow-Main/docs/user-guide/images/guide-02.jpg)
+![guide-02 Image](user-guide/images/guide-02.jpg)
 
 ## Generating gcode 
 

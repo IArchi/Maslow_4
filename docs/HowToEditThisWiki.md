@@ -26,7 +26,7 @@ Click on the **Create an account** link near the bottom of the page. Follow the 
 
 2. Make sure you are in
  <https://github.com/MaslowCNC/Maslow_4>
-<img width="918" height="993" alt="Docsmarked" src="../assets/HowToEditThisWiki-assets/Docsmarked.png" />
+<img width="600" alt="Docsmarked" src="../assets/HowToEditThisWiki-assets/Docsmarked.png" />
 
 
 3. To add an entry to the frame library click on the folder labeled **docs**
@@ -40,7 +40,7 @@ Click on the **Create an account** link near the bottom of the page. Follow the 
 
 
 6. When you start editing Github will make a new branch of the project for you. You can change things and it won't affect the main branch. If you have made a good new frame or adaptation, add it. 
-<img width="954" height="441" alt="Newbranchmarked" src="../assets/HowToEditThisWiki-assets/Newbranchmarked.png" />
+<img width="600" alt="Newbranchmarked" src="../assets/HowToEditThisWiki-assets/Newbranchmarked.png" />
 
 
 
@@ -58,7 +58,7 @@ It will bring you to this guide:
 9. When you have edited the document click on the **commit changes** button
 10. Your work is saved and stable.  You can keep working in your branch to change more things.  When you have finished you will need to make a **pull request** to request that your work be merged back into the main branch. To make a pull request click on the green button. If you lose your pull request go back to the main branch and click on Pull requests at the top to find it again. 
 13. When the owner of the main branch repository sees your request they can approve it or merge just parts of it.  
-<img width="939" height="855" alt="Pull request marked" src="../assets/HowToEditThisWiki-assets/Pull_request_marked.png" />
+<img width="600" alt="Pull request marked" src="../assets/HowToEditThisWiki-assets/Pull_request_marked.png" />
 
 # Be brave and add your knowledge and wisdom to the project. 
 

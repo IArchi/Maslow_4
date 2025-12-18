@@ -22,7 +22,7 @@ This is a rough draft. For more info got to [www.maslow.cnc](url)
 # Maslow-CNC-wisdom-manual for machines version 4 and 4.1 Current through 2025
 Rough draft space for writing down instructions and useful tips for getting started on Maslow CNC currently for machine 4 and 4.1 This is intended as a comprehensive guide. A quick start manual could be made by linking to relevant sections.  If you are editing here is a guide to markdown typing commands https://www.markdownguide.org/cheat-sheet/ The general plan is that the topics are ordered by when you would need them in the process of getting started. To make sure we stayed consistent and throrough there will be parts that are duplicated from the build and setup instructions elsewhere in the manual.  It seems important to keep the basic build instructions and getting started info together and then have the sections later that expand and collect wisdom and specifics.    
 
-<img width="2500" height="1875" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_ed9fcca8.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_ed9fcca8.png" />
 
 
 # What is it? 
@@ -44,7 +44,7 @@ Donate to FluidNC:
 
 Maslow is a project developed by Barbour Smith and a community of vollunteers and forum members as an open source project that is still under development.  It is portable, exciting, inexpensive and perhaps frustrating and still requires some troubleshooting and figuring out to get started.  Barbour has been working on iterations of this for more than a decade and many people have been successful at making many exciting projects including saunas, tables, signs, and a 30 foot catamaran! (link to project gallery) but it is not at the moment a perfect plug and play tool.  **If making your own portable blade weilding robot in an enthusiastic online community sounds fun, then you are probably in the right place.** 
 
-<img width="2500" height="1667" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d57a103a.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d57a103a.png" />
 
 
 ## How does Maslow4 work?
@@ -290,7 +290,7 @@ This is to get you set up for the first time, there is more detailed information
 6. How to define the machine's home position
 7. How to run a g-code file
     
-<img width="636" height="642" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_bc8b8ef8.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_bc8b8ef8.png" />
 
 ## How to connect to your Maslow4
 
@@ -302,7 +302,7 @@ Maslow4 will create a wifi network called **“maslow”** which you can connect
 Connecting to the network will automatically open the user interface on most devices. If it does not you can type **192.168.0.1** into your web browser to open the interface. You may need to look up the exact numerical address for your machine in your home router admin settings.  
 
 
-<img width="1000" height="554" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_54a3429f.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_54a3429f.png" />
 
 ## How to update your firmware:
 
@@ -328,13 +328,13 @@ Note: When you first connect to Maslow it will create a popup to control the mac
 **Note that to update from a firmware version before 1.0 to a version after 1.0 you will need to use a USB cable. There is a video walkthrough for that process here.** https://youtu.be/od7DpdLel6A?si=xv1Zp3AIZFgRoeZ_
 
 
-<img width="1000" height="559" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_62cc4555.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_62cc4555.png" />
 
 
 There are two other files which you will need to update periodically. These can be found by clicking on the FluidNC tab and then clicking on the files button.
 
 
-<img width="1000" height="466" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_19b16055.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_19b16055.png" />
 
 
 This will show you your system files.
@@ -349,7 +349,7 @@ To upload a new file click the **Upload files** button at the top of the screen.
 **maslow.yaml** contains the configuration settings for your machine. Your calibration values are stored here. You may not need to update the yaml each time you update the index and the firmware.
 
 
-<img width="1000" height="493" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_c3eca3b6.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_c3eca3b6.png" />
 
 
 ## How to connect Maslow4 to your home WiFi network
@@ -360,7 +360,7 @@ If you have an internet connection in your work space, it might be nice to conne
 To connect your Maslow4 to the internet click on the **FluidNC** tab
 
 
-<img width="1000" height="509" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0707784f.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0707784f.png" />
 
 
 
@@ -371,7 +371,7 @@ Then scroll down to enter your WiFi network name in the **Sta/SSID** field and y
 When your Maslow4 turns on it will attempt to connect to your WiFi network. If it is not able to find your network it will create a wifi network called “maslow” for you to connect to.
 
 
-<img width="1000" height="536" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0e4c67d3.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0e4c67d3.png" />
 
 
 
@@ -381,7 +381,7 @@ Once Maslow4 is connected to your wifi network you will need to find its address
 The easiest way to connect to your Maslow4 on most modern wifi routers is to copy and enter the address **maslow.local** in your internet browser. 
 
 
-<img width="1000" height="549" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_504a3129.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_504a3129.png" />
 
 
 If that doesn't work, you can use the website findmymaslow.com to find the IP address of your machine. Unfortunately due to some (frankly prudent) security updates to Chrome this will only work in Firefox.
@@ -410,31 +410,31 @@ Before beginning the calibration process we recommend starting with the machine 
 These instructions can be somewhat confusing to follow so we made a video walk through of the current calibration process which you can also follow.
 
 
-<img width="1000" height="1067" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_df7e3813.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_df7e3813.png" />
 
 First click on Alarm to unlock your machine
 
-<img width="1000" height="847" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0235efce.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0235efce.png" />
 
-<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_3a47a416.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_3a47a416.png" />
 
 
 Next, using the z-axis controls lower your z-axis all the way down until you hear it stop. Note that you want to remove any router bit before doing this.
 
 
-<img width="1000" height="639" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0d56b548.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0d56b548.png" />
 
 
 Click Setup and then config
 
 
-<img width="1000" height="543" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_73fb48a5.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_73fb48a5.png" />
 
 
 Make a rough measurement or guess at how far it is from your anchor points to the center of your frame in millimeters.
 
 
-<img width="1000" height="1098" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_29610fc9.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_29610fc9.png" />
 
 
 Enter the distance you came up with into the “Extend Dist” field
@@ -452,13 +452,13 @@ Here you can also select your other calibration settings.
 **Retraction Force**: This is how hard the machine will pull when retracting the belts for storage and when taking each measurement during calibration. Increase this number if you are having trouble getting all of your belts to retract reliably or if calibration measurements are inconsistent. This indirectly sets the tension in the machine's belts while cutting. It seems like lower values might lead to more precise results, but it can't be so low that the process doesn't take accurate measurements or that the belts fail to retract fully. Turning it up too high can be hard on the machine.
 
 
-<img width="1000" height="794" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_1a664a68.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_1a664a68.png" />
 
 
 Next click on Setup and then on Retract All. 
 
 
-<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6f73e5e9.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6f73e5e9.png" />
 
 
 This will fully retract all four belts.
@@ -467,7 +467,7 @@ This will fully retract all four belts.
 Note that if some of your belts don’t fully retract you can retract and extend them a few times to help loosen them up, or you can increase the amount of power used during retraction in the configuration settings.
 
 
-<img width="1000" height="780" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6b4a295f.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6b4a295f.png" />
 
 
 
@@ -484,31 +484,31 @@ You want to keep extending all four belts until they stop. The machine will stop
 To extend the belts you will need to pull them out. A rocking motion will help get them started extending. You might need to be a little aggressive. After they will extend out to the correct length as long as you pull with a gentle but constant force. 
 
 
-<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_2a5be063.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_2a5be063.png" />
 
 
 Attach all four belts to the frame. This might look different depending on your frame design.
 
 
-<img width="1000" height="783" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_099e4067.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_099e4067.png" />
 
 
 Press the calibrate button to begin the calibration process. The machine will move to each point in your grid taking a measurement at each one.
 
 
-<img width="1000" height="551" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_12d294f4.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_12d294f4.png" />
 
 
 Multiple times during this process the machine will stop and recompute it’s anchor points. Be sure to keep your computer awake and connected during this process. The walk-through video above can give you a more clear understanding of what the machine is doing at each step.
 
 
-<img width="1000" height="782" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6f7deeb4.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6f7deeb4.png" />
 
 
 That’s it, you are finished with the calibration process. From now on you do not need to do it again unless you change your frame’s dimensions. From now on if you disconnect your Maslow from the frame and want to re-attach it you can press **Retract All -> Extend All**, extend the belts and use the **Apply Tension** button to take up the extra slack.
 
 
-<img width="1000" height="486" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_7e66623f.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_7e66623f.png" />
 
 
 ## How to move the machine around
@@ -517,7 +517,7 @@ That’s it, you are finished with the calibration process. From now on you do n
 You can move your Maslow around using the arrow buttons on the right side of the screen.
 
 
-<img width="1000" height="754" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_f30cbb3b.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_f30cbb3b.png" />
 
 
 The distance that it will move can be set by clicking on a distance number.
@@ -526,13 +526,13 @@ The distance that it will move can be set by clicking on a distance number.
 There are separate distances for XY movements and for Z axis movements.
 
 
-<img width="1000" height="856" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_c3a41655.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_c3a41655.png" />
 
 
 You can switch between mm and inches by clicking on the units.
 
 
-<img width="1000" height="441" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_b708d8dc.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_b708d8dc.png" />
 
 
 ## How to define the machine’s home position
@@ -541,13 +541,13 @@ You can switch between mm and inches by clicking on the units.
 When you create a gcode file it will have a “home” position. Here you can see the home position shown with a cross in a circle. In this case when we created our gcode file we set it up so our shape would be cut above and to the left of the home position. The current position of the machine is shown with a purple dot.
 
 
-<img width="1000" height="440" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_5f463bd4.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_5f463bd4.png" />
 
 
 If we want to move where the file will be cut on the sheet of plywood we can press the “**Define Home**” button which will move the file’s home position to the machine’s current position letting us move the shape we want to cut anywhere on the sheet.
 
 
-<img width="1000" height="628" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_f1cf57bf.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_f1cf57bf.png" />
 
 
 
@@ -555,7 +555,7 @@ If we want to move where the file will be cut on the sheet of plywood we can pre
 Similarly we can set where the home position is for the z-axis. This will set where the router will start cutting which is typically on the top surface of the plywood. To set the home position for the z-axis click move the z-axis up or down with the **Up** and **Down** buttons. Then press **Define Home** to set the z-axis home position.
 
 
-<img width="1000" height="856" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d0058dc9.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d0058dc9.png" />
 
 
 ## How to run a gcode file
@@ -564,19 +564,19 @@ Similarly we can set where the home position is for the z-axis. This will set wh
 Load your gcode file onto the machine by pressing the **Load File** button
 
 
-<img width="1000" height="1014" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_ba4e14ad.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_ba4e14ad.png" />
 
 
 Select your file from the drop down
 
 
-<img width="1000" height="1105" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d58d5134.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_d58d5134.png" />
 
 
 Run the file by pressing the green play button.
 
 
-<img width="1000" height="506" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_29649372.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_29649372.png" />
 
 
 ## Troubleshooting
@@ -598,7 +598,7 @@ https://forums.maslowcnc.com/
 ## What’s in the Maslow4 Kit?!
 
 
-<img width="2500" height="1667" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0522ec66.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_0522ec66.png" />
 
 
 Click links below to Download Printable pages. Thanks to our backer Craig for making these files.
@@ -1072,7 +1072,7 @@ open this drawing (metric) https://www.maslowcnc.com/s/Maslow-Frame-Metric.pdf
 ![E080EB3F-7F0D-49AF-A43D-6353258A6639_008](../assets/MaslowCNC_Wisdom_Manual-assets/E080EB3F-7F0D-49AF-A43D-6353258A6639_008.webp)
 
 These will server as the anchor points for the machine. 
-<img width="1000" height="750" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6483a286.png" />
+<img width="600" alt="image" src="../assets/MaslowCNC_Wisdom_Manual-assets/image_6483a286.png" />
 
 14 - Done! Modify as needed.
 

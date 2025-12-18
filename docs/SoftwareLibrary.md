@@ -54,7 +54,7 @@ PICTURE
 
 
 ### Abundance
-<img width="813" height="682" alt="image" src="https://github.com/user-attachments/assets/42d79add-c997-4589-9ab5-6154c3f2b6c9" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/42d79add-c997-4589-9ab5-6154c3f2b6c9" />
 
 - Overview: Abundance is a sister project to Maslow. It is in the process of being developed by many of the same people working on Maslow4.  Abundance is built around the idea of procedural design.  Instead of drawing a table, in abundance you would program a table with variables and parts that could rebuilt and remixed. Leg length, top dimension, lumber size can all be variables that can be changed and the end design would be automatically changed as well. Abundance is being designed to work with Maslow as a free online full CAD CAM program so that you could design and then output cutting Gcode .nc files directly. (written 2025) 
 - <https://abundance.maslowcnc.com/>
@@ -66,12 +66,12 @@ PICTURE
 - - Build parts first as "molecules" then make a new project that puts those molecule pieces together.
 - - Boolean operations make it easy to have pieces designed separately intersect and define cutting boundaries as you put them together. 
 - More Pictures:
-- <img width="949" height="769" alt="image" src="https://github.com/user-attachments/assets/37e9b15c-f8d7-4343-a4dc-1faf1bd257e5" />
+- <img width="600" alt="image" src="https://github.com/user-attachments/assets/37e9b15c-f8d7-4343-a4dc-1faf1bd257e5" />
 
 - Credits: Barbour Smith
 
 ### FreeCAD
-<img width="1927" height="1061" alt="image" src="https://github.com/user-attachments/assets/f552bbcb-6854-424b-b88e-dd916452c828" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/f552bbcb-6854-424b-b88e-dd916452c828" />
 
 - Full CAD CAM parametric design software. Can do the entire process from design to Gcode. Well established project with pretty good support. 
 - <https://www.freecad.org/>
@@ -101,7 +101,7 @@ PICTURE
 ## 2D Vector Design programs
 
 ### Inkscape
-PICTURE<img width="1854" height="1048" alt="Screenshot from 2025-10-26 10-58-50" src="https://github.com/user-attachments/assets/4ec98e9a-0aee-45b4-9187-1475a10595ca" />
+PICTURE<img width="600" alt="Screenshot from 2025-10-26 10-58-50" src="https://github.com/user-attachments/assets/4ec98e9a-0aee-45b4-9187-1475a10595ca" />
 
 - Overview: Free Opensource go to program for Vector drawing. Inkscape is the well supported and developed opensource option for Vector drawing. It would be a great tool for designing a engraved sign or for drawing 2d cuts directly. 
 - <https://inkscape.org/>
@@ -172,7 +172,7 @@ PICTURE
 - Credits:
 
 ### Blender
-<img width="1854" height="1011" alt="Screenshot from 2025-10-20 17-34-38" src="https://github.com/user-attachments/assets/3a9ff011-b4db-4619-9cab-e56dfe608ff8" />
+<img width="600" alt="Screenshot from 2025-10-20 17-34-38" src="https://github.com/user-attachments/assets/3a9ff011-b4db-4619-9cab-e56dfe608ff8" />
 
 - Free Opensource project. Blender is a huge program that was designed to make Movies. It has a full set of three D design tools. It can do smooth sculpting as well as polygon models. It was not designed for making physical objects but it works well for this.  It is very powerful.  There are many tools that you can ignore for CNC design.  It is well supported and has lots of tutorials and videos to learn from. 
 - <https://www.blender.org/>
@@ -194,7 +194,7 @@ PICTURE
 - Credits:
 
   ### Openscad
-<img width="1000" height="501" alt="image" src="https://github.com/user-attachments/assets/d8c8ba29-92c4-46af-ab59-811c792b8e99" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/d8c8ba29-92c4-46af-ab59-811c792b8e99" />
 
 - OpenSCAD is software for creating solid 3D CAD models. It is free software and available for Linux/UNIX, Windows and Mac OS X. Unlike most free software for creating 3D models (such as Blender) it does not focus on the artistic aspects of 3D modelling but instead on the CAD aspects. Thus it might be the application you are looking for when you are planning to create 3D models of machine parts but pretty sure is not what you are looking for when you are more interested in creating computer-animated movies.
 
@@ -211,7 +211,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 - Credits:
 
 ### FlatFab
-<img width="1091" height="750" alt="image" src="https://github.com/user-attachments/assets/9d4c429e-fe2a-43f7-a547-c5d07268cea6" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/9d4c429e-fe2a-43f7-a547-c5d07268cea6" />
 
 - Fun looking Free program for designing 2d cuts to 3D slot together forms. 
 - <http://www.flatfab.com/>
@@ -229,7 +229,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 ## CAM Gcode machine path 
 
 ### Krabzcam
-<img width="1854" height="1048" alt="Screenshot from 2025-10-27 11-56-06" src="https://github.com/user-attachments/assets/9d806608-08aa-483a-9837-106304f843bc" />
+<img width="600" alt="Screenshot from 2025-10-27 11-56-06" src="https://github.com/user-attachments/assets/9d806608-08aa-483a-9837-106304f843bc" />
 
 - Great Free 2D Free Browser Based CAM.  Accepts .svg and exports .nc Gcode It is actively maintained and works well, however the number of options and settings can be overwhelming. It is a great free tool if you are getting started. 
 - <https://mkrabset.github.io/krabzcam/krabzcam/index.html>
@@ -249,7 +249,7 @@ OpenSCAD provides two main modelling techniques: First there is constructive sol
 
 
 ### Kiri:Moto
-<img width="1854" height="1048" alt="image" src="https://github.com/user-attachments/assets/c48d3233-b2dd-436e-9147-a6b14695b51b" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/c48d3233-b2dd-436e-9147-a6b14695b51b" />
 
 - Free Online CAM. Built for 3D printing but works well for CNC.  Works as a plugin to Onshape
 - <https://grid.space/kiri/>
@@ -275,7 +275,7 @@ PICTURE
 - Credits:
 
 ### HeeksCNC
-<img width="997" height="691" alt="image" src="https://github.com/user-attachments/assets/7e52fdd1-ec2c-4e8b-b9e9-964c520e1fd7" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/7e52fdd1-ec2c-4e8b-b9e9-964c520e1fd7" />
 
 - HeeksCNC is paid ($10 to own) CAM software which handles a large number of file types and can do 2D and 3D work. Windows only.
 - <https://sites.google.com/site/heekscad/home>

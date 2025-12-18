@@ -119,7 +119,7 @@ PICTURE
 
   - Wall anchors <https://www.maslowcnc.com/s/Wall-Anchor.stl>
   - Andrew_Matthews printed anchors
-  -<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/a6df396c-6e10-45a7-a82b-8ea547828eb4" />
+  -<img width="600" alt="image" src="https://github.com/user-attachments/assets/a6df396c-6e10-45a7-a82b-8ea547828eb4" />
 
     - CAD:<https://cad.onshape.com/documents/52c6753a65b636197608508b/w/22529bd3a6dcbe9860300aa4/e/f488bdd33c15626c4d663c6d?renderMode=0&uiState=693ce94d8ef17e8212cc7c26> ,
     - STL: <https://github.com/agmatthews/maslowcnc/blob/main/Maslow%20Anchor%20v003.stl> ,
@@ -223,7 +223,7 @@ PICTURE
 - Credits: Barbour Smith
 
 ### Pull-out Vertical Frame
-<img width="666" height="500" alt="image" src="https://github.com/user-attachments/assets/962dcfad-7901-4690-b96e-5a045f2d345a" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/962dcfad-7901-4690-b96e-5a045f2d345a" />
 
 - Hanging the frame on a wall then pulling it out to get the angle for use. Fun idea if it makes things compact on the wall. 
 - Links:
@@ -239,13 +239,13 @@ PICTURE
 
 ## Horizontal format frames
 ### Fast Fold up X frame
-<img width="1920" height="1442" alt="image" src="https://github.com/user-attachments/assets/d7981c10-ed09-4036-a546-def237aa7244" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/d7981c10-ed09-4036-a546-def237aa7244" />
 
 - A frame that is four beams joined at the center by a hinge style pin with a chain or rope putting tension around the outside edge of the x to make it sturdy and stiff. It is easy to put up and take down, fits on or in a car and folds down to four beams with hardware, a chain, and a wasteboard. 
 - Links:
   - https://forums.maslowcnc.com/t/new-fast-fold-up-frame-experiment-for-4-1-updated-with-chain/25044/6
 - Materials
-  <img width="1920" height="686" alt="image" src="https://github.com/user-attachments/assets/491a59a9-42d2-471f-aa7c-1272ad2a4aeb" />
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/491a59a9-42d2-471f-aa7c-1272ad2a4aeb" />
 
   - 4 2x8 by 8’ lumber
   - 8 5/16’’ by 4’’ eyebolts with about an inch eye.
@@ -272,23 +272,23 @@ PICTURE
  
     
 - Details:
-  - <img width="1920" height="1442" alt="image" src="https://github.com/user-attachments/assets/e4614b33-2868-4e62-8aee-ae2ce4936fac" />
+  - <img width="600" alt="image" src="https://github.com/user-attachments/assets/e4614b33-2868-4e62-8aee-ae2ce4936fac" />
   - The hardest part was lining up the eyebolts in each board so that each set of two (four inches apart) was stepped down by 1/4 inch from the set before so that they all would fit together stacked in the center. Picture below
-<img width="1920" height="2557" alt="image" src="https://github.com/user-attachments/assets/fc06e435-e309-423a-9aa0-6756f3fda62c" />
-<img width="1920" height="2557" alt="image" src="https://github.com/user-attachments/assets/226d5585-5968-43bb-ad04-68aaf5adad06" />
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/97edc4c3-2d16-4309-afce-59edb0951255" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/fc06e435-e309-423a-9aa0-6756f3fda62c" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/226d5585-5968-43bb-ad04-68aaf5adad06" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/97edc4c3-2d16-4309-afce-59edb0951255" />
 <img width="375" height="499" alt="image" src="https://github.com/user-attachments/assets/f4a06386-3c68-446e-80c1-d77e4f6e59a8" />
 <img width="375" height="499" alt="image" src="https://github.com/user-attachments/assets/e0948f3d-9320-4dae-87fe-9dd3ad53a060" />
 <img width="375" height="499" alt="image" src="https://github.com/user-attachments/assets/76d6856f-ae78-4133-8c2b-eae7aeb9e2cc" />
 
   - I had to round the corners so that they would all fit with room to change the angle of the X
   - <img width="375" height="499" alt="image" src="https://github.com/user-attachments/assets/72e0cdcc-2de2-4651-9dd4-3cb99c785cea" />
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/b0f59fa1-bf79-4a66-ab0c-3bab94b91527" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/b0f59fa1-bf79-4a66-ab0c-3bab94b91527" />
 <img width="375" height="499" alt="image" src="https://github.com/user-attachments/assets/affc831f-8236-4b6d-91f9-075400502d65" />
   - It is important to go through BOTH links when anchoring the corners for accuracy. Later I marked the links that I used with marker so that I could find them again.
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/9a66b79c-988e-46f3-a4ca-1b90f134ebfe" />
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/c8740647-0c47-4cc0-aa03-6bc9d1ce2c15" />
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/789c72ca-47de-402e-a902-8cee851cb866" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/9a66b79c-988e-46f3-a4ca-1b90f134ebfe" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/c8740647-0c47-4cc0-aa03-6bc9d1ce2c15" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/789c72ca-47de-402e-a902-8cee851cb866" />
 
 
 - Notes:
@@ -322,7 +322,7 @@ PICTURE
 - Details:
   - <img width="375" height="500" alt="image" src="https://github.com/user-attachments/assets/bea665b3-7aa7-453c-b411-08520dd9bcdb" />
   - I like this bolt-through-brackets as it lets me play with and adjust the anchor point height with 3D printed shims.
-    <img width="1920" height="2560" alt="image" src="https://github.com/user-attachments/assets/4f568437-8d8f-4f4f-bebb-d6cd8aaeef73" />
+    <img width="600" alt="image" src="https://github.com/user-attachments/assets/4f568437-8d8f-4f4f-bebb-d6cd8aaeef73" />
    - For adjusting the anchor point height, I printed a bunch of spacers - what you see here is far more than needed:
    - Originally, the black ones were going to be for setting the anchor height, and red ones for quick adjustments for material height when experimenting. In the end, the red ones also were a lot of the smaller shim heights.
    - I printed something like 0.5,1,2,4, 6, 8, 9, 12, 18 and 40mm sizes. To get what I wanted I actually did:
@@ -335,9 +335,9 @@ PICTURE
 
   - I used a laser level to get all of these vertical. The reason being, my shed is not square, at all, and so if I want to shim but have the positions relative to each other be consistent, vertical with a laser level gives me that.
   -  Bolts are ok, but once you’re happy with it, it’s easy to get hold of steel rod to replace them. Use 9.5mm not 10mm. I also did a little handles on mine:
-<img width="666" height="500" alt="image" src="https://github.com/user-attachments/assets/867619f5-d234-45bb-90e4-28fb9b075f48" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/867619f5-d234-45bb-90e4-28fb9b075f48" />
   -  The frame. I wanted something that can be packed away, so I did a variant of the X-frame to hold the wood off of the floor:
-<img width="666" height="500" alt="image" src="https://github.com/user-attachments/assets/92149360-e19d-4141-86eb-3854cfcd9477" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/92149360-e19d-4141-86eb-3854cfcd9477" />
   -  Did an X-frame even though the attachment points are in the wall, because having a frame to screw things into makes a lot of stuff easier.
   - My waste board is screwed down into the X-frame - this means nothing moves round.
   - But also, I made a while ago1200mm*200mm boards in the thicknesses I tend to cut. These have a dual purpose:
@@ -356,7 +356,7 @@ PICTURE
 - Credits:
 
 ### Maslow4 Collapsable Horizontal Frame on Sawhorses. 
-<img width="663" height="500" alt="image" src="https://github.com/user-attachments/assets/17e1cc5f-f91e-4122-a197-ab254d87d832" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/17e1cc5f-f91e-4122-a197-ab254d87d832" />
 <img width="376" height="500" alt="image" src="https://github.com/user-attachments/assets/6e56ee95-3109-4533-bde6-8b81f3767ed6" />
 
 - Two x's of 2x4 spars inset across beams on sawhorses. Makes a nice table to get to the router on. Flexible design.  Concerns about stiffness. 
@@ -367,23 +367,23 @@ PICTURE
 - Details:
 - Notes:
   -  If you want to really reduce the odds of flexure you can try turning the outrigger ends into a compression chord of a truss. By using ratchet straps that pass through a M4 attachment point (think eye-bolt attached under the outrigger) and connecting the straps back to the frame rails at equal-ish angles, that outrigger will now have the shear properties of a simple truss w/o the need to add extra members. I am yet to test the concept on my existing frame, but I have used this rigging in construction for temporary bracing of long cantilevered posts. Attached below is a screenshot of the concept; green representing the path of each racket strap.
-    <img width="689" height="418" alt="image" src="https://github.com/user-attachments/assets/940d2280-344b-4d08-a0a6-ac16d6650cf7" />
+    <img width="600" alt="image" src="https://github.com/user-attachments/assets/940d2280-344b-4d08-a0a6-ac16d6650cf7" />
   - Adding greater shear strength could also be achieved with a bigger outrigger member, a box beam member or shear plates / panels as discussed in the thread. It’s worth noting that many of these concepts are at odds the initial purpose of this design: to make a frame as minimal as possible so it can be assembled, disassembled and moved easily. Granted, everyone has different needs and priorities. Mine just require these somewhat restrictive constraints. I’m interested to see what you all come up with your own constraints and priorities.
 
 - More Pictures:
-  <img width="653" height="778" alt="image" src="https://github.com/user-attachments/assets/fe8946d0-cdcc-4fef-8c56-87ac000d7768" />
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/fe8946d0-cdcc-4fef-8c56-87ac000d7768" />
 <img width="523" height="784" alt="image" src="https://github.com/user-attachments/assets/d2a1bdcc-461c-4790-8c71-3b170efadf40" />
 <img width="509" height="863" alt="image" src="https://github.com/user-attachments/assets/8579849d-2a98-4993-8404-3d4973c897bc" />
-<img width="612" height="771" alt="image" src="https://github.com/user-attachments/assets/e4cbab2e-ccba-4aad-a0f6-cbd4e8f2c92e" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/e4cbab2e-ccba-4aad-a0f6-cbd4e8f2c92e" />
 <img width="405" height="500" alt="image" src="https://github.com/user-attachments/assets/f0226ffd-eaea-4cfc-9f44-68f110a96241" />
-<img width="690" height="322" alt="image" src="https://github.com/user-attachments/assets/ba0a0357-1f93-4acb-944c-878e6b387f40" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/ba0a0357-1f93-4acb-944c-878e6b387f40" />
 
 - Credits:Garse, Dlang, Rolf, Grim
 
 ## Other frame Formats
 
 ### Discussion of a rectangle of beams with corners to attach the anchors 
-<img width="690" height="402" alt="image" src="https://github.com/user-attachments/assets/957371f0-cfde-434d-8bf2-d487f8fb77ef" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/957371f0-cfde-434d-8bf2-d487f8fb77ef" />
 
 - https://forums.maslowcnc.com/t/possible-super-simple-frame/20306/29
 - Notes:
@@ -396,8 +396,8 @@ PICTURE
 - <https://forums.maslowcnc.com/t/maslow-frame-with-storage-shelves/19879>
 
 ### Steel pipe and rope 
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/66d07080-c84b-4d25-8752-bf8e22f4edbc" />
-<img width="665" height="500" alt="image" src="https://github.com/user-attachments/assets/86e4b1fd-f9ec-4d40-9971-7fb66cc47878" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/66d07080-c84b-4d25-8752-bf8e22f4edbc" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/86e4b1fd-f9ec-4d40-9971-7fb66cc47878" />
 
 - Too flexible in the z direction arms would visibly lift up.  Maybe with more structure but the fun of this was that it was huge (too big) and packed up to nothing. 
 

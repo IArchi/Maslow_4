@@ -53,40 +53,12 @@
 .main-content img {
   max-width: 100%;
   height: auto;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
 }
 
-/* Container for image-text sections - created by JavaScript */
-.image-section {
-  clear: both;
-  margin-bottom: 2.5rem;
-  overflow: auto;
-  min-height: 200px;
-}
-
-/* Image on the left, text on the right */
-.image-section.image-left img {
-  float: left;
-  margin-right: 1rem;
-  margin-bottom: 1rem;
-  max-width: 58%;
-}
-
-.image-section.image-left .text-content {
-  overflow: auto;
-}
-
-/* Image on the right, text on the left */
-.image-section.image-right img {
-  float: right;
-  margin-left: 1rem;
-  margin-bottom: 1rem;
-  max-width: 58%;
-}
-
-.image-section.image-right .text-content {
-  overflow: auto;
+/* Images within sections controlled by layout script */
+.image-section img {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* Fallback: Images that aren't wrapped in sections */
@@ -95,24 +67,69 @@
   display: block;
   margin-left: auto;
   margin-right: auto;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Container for image-text sections - created by JavaScript */
+.image-section {
+  margin-bottom: 2.5rem;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Image on the left, text on the right */
+.image-section.image-left {
+  flex-direction: row;
+}
+
+.image-section.image-left img {
+  flex-shrink: 0;
+  max-width: 58%;
+}
+
+.image-section.image-left .text-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Image on the right, text on the left */
+.image-section.image-right {
+  flex-direction: row-reverse;
+}
+
+.image-section.image-right img {
+  flex-shrink: 0;
+  max-width: 58%;
+}
+
+.image-section.image-right .text-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Clear floats before major headings */
 .main-content h2,
 .main-content h3 {
-  clear: both;
   padding-top: 1rem;
 }
 
 /* Responsive design for smaller screens */
 @media screen and (max-width: 768px) {
+  .image-section.image-left,
+  .image-section.image-right {
+    flex-direction: column;
+  }
+
   .image-section.image-left img,
   .image-section.image-right img {
-    float: none;
     max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
   }
 
   .image-section {
@@ -120,9 +137,4 @@
   }
 }
 
-/* Ensure proper clearing */
-.image-section::after {
-  content: "";
-  display: table;
-  clear: both;
-}
+/* No longer needed with flexbox layout */

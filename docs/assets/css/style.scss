@@ -3,6 +3,14 @@
 
 @import "{{ site.theme }}";
 
+/* Override header background with custom image */
+.page-header {
+  background-image: url('{{ "/images/Background.jpg" | relative_url }}');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Extend content area all the way to the edges of the screen */
 .main-content {
   max-width: 100%;

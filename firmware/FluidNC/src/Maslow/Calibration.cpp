@@ -148,6 +148,12 @@ bool Calibration::requestStateChange(int newState) {
             }
         case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
             if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
+                // If we're coming from CALIBRATION_COMPUTING, reset the calibration state
+                // to ensure a fresh start (e.g., after calibration failure with max retries)
+                if (currentState == CALIBRATION_COMPUTING) {
+                    resetCalibrationState();
+                }
+
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration

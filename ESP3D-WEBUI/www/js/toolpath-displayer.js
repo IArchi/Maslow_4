@@ -14,6 +14,10 @@ tp.lineWidth = 0.1;
 tp.lineCap = 'round';
 tp.strokeStyle = 'black';
 
+// Arc detection epsilon - matches FluidNC firmware (Config.h:179, MotionControl.cpp:144,154)
+// See firmware/FluidNC/src/Config.h:179 and MotionControl.cpp:142-160
+var ARC_ANGULAR_TRAVEL_EPSILON = 5e-7;
+
 var cameraAngle = 2; // Default to top-down view
 
 // Default fallback values (will be replaced by actual configuration values)
@@ -1130,10 +1134,6 @@ var bboxHandlers = {
 	// Every path through the axis crossing logic is 4 or 5 simple comparisons.
 	
 	// Check for full circle or multi-rotation arcs using same logic as FluidNC firmware
-	// See firmware/FluidNC/src/MotionControl.cpp lines 142-160 and Config.h line 179
-	// ARC_ANGULAR_TRAVEL_EPSILON = 5E-7 radians
-	var ARC_ANGULAR_TRAVEL_EPSILON = 5e-7;
-	
 	// Calculate angular travel (CCW angle between start and end from center)
 	// Same calculation as firmware: atan2(r_axis0 * rt_axis1 - r_axis1 * rt_axis0, r_axis0 * rt_axis0 + r_axis1 * rt_axis1)
 	var angular_travel = Math.atan2(sx * ey - sy * ex, sx * ex + sy * ey);
@@ -1472,10 +1472,7 @@ var displayHandlers = {
         
         var cw = modal.motion == "G2";
         
-        // Use same epsilon as firmware to detect full circles
-        // See firmware/FluidNC/src/Config.h:179 and MotionControl.cpp:144,154
-        var ARC_ANGULAR_TRAVEL_EPSILON = 5e-7;
-        
+        // Use firmware's epsilon to detect full circles (defined at module level)
         if (cw) {  // Clockwise - correct atan2 output per direction
             if (angular_travel >= -ARC_ANGULAR_TRAVEL_EPSILON) {
                 angular_travel -= 2 * Math.PI;

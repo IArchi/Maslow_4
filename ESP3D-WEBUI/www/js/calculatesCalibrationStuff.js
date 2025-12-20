@@ -819,6 +819,9 @@ async function findMaxFitness(measurements) {
             bestFitness: bestFitnessAcrossAllRetries
           }, true);
 
+          // Reset calibration state in firmware and return to EXTENDEDOUT state
+          sendCommand('$CALRESET');
+
           return; // Exit the function without automatic retry
         }
 

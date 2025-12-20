@@ -148,36 +148,6 @@ bool Calibration::requestStateChange(int newState) {
             }
         case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
             if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
-                // If we're coming from CALIBRATION_COMPUTING, determine if this is a normal continuation
-                // (after successful stage) or a retry after failure. We reset only if it's a retry.
-                // After a successful stage, waypoint should be just past a recompute point.
-                // After a failure, waypoint will be at some arbitrary value.
-                if (currentState == CALIBRATION_COMPUTING) {
-                    bool isNormalContinuation = false;
-
-                    // Check if waypoint is at a valid continuation point (just after a recompute point)
-                    // recomputeCountIndex was incremented after entering CALIBRATION_COMPUTING,
-                    // so we check against the previous recompute point
-                    if (recomputeCountIndex > 0 && recomputeCountIndex <= recomputeCount) {
-                        int lastRecomputePoint = recomputePoints[recomputeCountIndex - 1];
-                        // Waypoint should be one past the recompute point after successful completion
-                        if (waypoint == lastRecomputePoint + 1) {
-                            // Also check if this is a recent transition (within 10 seconds)
-                            // If we've been in CALIBRATION_COMPUTING for more than 10 seconds,
-                            // it's likely a manual retry after JavaScript gave up
-                            if (calibrationDataWaiting > 0 && (millis() - calibrationDataWaiting < 10000)) {
-                                isNormalContinuation = true;
-                            }
-                        }
-                    }
-
-                    // If not a normal continuation, this is a retry after failure - reset everything
-                    if (!isNormalContinuation) {
-                        log_info("Resetting calibration state for fresh start after interruption");
-                        resetCalibrationState();
-                    }
-                }
-
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration

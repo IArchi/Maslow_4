@@ -14,6 +14,10 @@ tp.lineWidth = 0.1;
 tp.lineCap = 'round';
 tp.strokeStyle = 'black';
 
+// Arc detection epsilon - matches FluidNC firmware (Config.h:179, MotionControl.cpp:144,154)
+// See firmware/FluidNC/src/Config.h:179 and MotionControl.cpp:142-160
+var ARC_ANGULAR_TRAVEL_EPSILON = 5e-7;
+
 var cameraAngle = 2; // Default to top-down view
 
 // Default fallback values (will be replaced by actual configuration values)
@@ -1075,12 +1079,6 @@ var bboxHandlers = {
 	// Update units in case it changed in a previous line
         tpUnits = modal.units;
 
-        if (modal.motion == 'G2') {  // clockwise
-            var tmp = start;
-            start = end;
-            end = tmp;
-        }
-
         // Convert work coordinates to machine coordinates if WCO is available
         const wco = WCO;
         let startProj, centerProj, endProj;
@@ -1131,18 +1129,25 @@ var bboxHandlers = {
 	var world_mx = false;
 	var world_my = false;
 
-	// There are ways to express this decision tree in fewer lines
-	// of code by converting to alternate representations like angles,
-	// but this way is probably the most computationally efficient.
-	// It avoids any use of transcendental functions.  Every path
-	// through this decision tree is either 4 or 5 simple comparisons.
-
+	// Note: We use one atan2() call to detect full circles (matching firmware behavior),
+	// but the rest of the decision tree avoids transcendental functions for efficiency.
+	// Every path through the axis crossing logic is 4 or 5 simple comparisons.
+	
+	// Check for full circle or multi-rotation arcs using same logic as FluidNC firmware
+	// Calculate angular travel (CCW angle between start and end from center)
+	// Same calculation as firmware: atan2(r_axis0 * rt_axis1 - r_axis1 * rt_axis0, r_axis0 * rt_axis0 + r_axis1 * rt_axis1)
+	var angular_travel = Math.atan2(sx * ey - sy * ex, sx * ex + sy * ey);
+	
+	// Check if angular travel is near zero (full circle) using firmware's epsilon
+	var isFullCircle = (extraRotations >= 1) || 
+	                   (Math.abs(angular_travel) <= ARC_ANGULAR_TRAVEL_EPSILON);
+	
 	// Calculate axis crossings for PROJECTED coordinates (for display)
 	if (ey >= 0) {              // End in upper half plane
 	    if (ex > 0) {             // End in quadrant 0 - X+ Y+
 		if (sy >= 0) {          // Start in upper half plane
 		    if (sx > 0) {         // Start in quadrant 0 - X+ Y+
-			if (sx <= ex) {     // wraparound
+			if (isFullCircle && sx <= ex) {     // wraparound
 			    px = py = mx = my = true;
 			}
 		    } else {              // Start in quadrant 1 - X- Y+
@@ -1160,7 +1165,7 @@ var bboxHandlers = {
 		    if (sx > 0) {         // Start in quadrant 0 - X+ Y+
 			py = true;
 		    } else {              // Start in quadrant 1 - X- Y+
-			if (sx <= ex) {     // wraparound
+			if (isFullCircle && sx <= ex) {     // wraparound
 			    px = py = mx = my = true;
 			}
 		    }
@@ -1182,7 +1187,7 @@ var bboxHandlers = {
 		    }
 		} else {                // Start in lower half plane
 		    if (sx > 0) {         // Start in quadrant 3 - X+ Y-
-			if (sx >= ex) {      // wraparound
+			if (isFullCircle && sx >= ex) {      // wraparound
 			    px = py = mx = my = true;
 			}
 		    } else {              // Start in quadrant 2 - X- Y-
@@ -1200,7 +1205,7 @@ var bboxHandlers = {
 		    if (sx > 0) {         // Start in quadrant 3 - X+ Y-
 			px = py = mx = true;
 		    } else {              // Start in quadrant 2 - X- Y-
-			if (sx >= ex) {      // wraparound
+			if (isFullCircle && sx >= ex) {      // wraparound
 			    px = py = mx = my = true;
 			}
 		    }
@@ -1211,13 +1216,19 @@ var bboxHandlers = {
 	var maxY = py ? pc.y + radius : Math.max(ps.y, pe.y);
 	var minX = mx ? pc.x - radius : Math.min(ps.x, pe.x);
 	var minY = my ? pc.y - radius : Math.min(ps.y, pe.y);
-
+	
+	// Check for full circle or multi-rotation arcs in world coordinates
+	// Use same logic as firmware (see above for projected coordinates)
+	var world_angular_travel = Math.atan2(world_sx * world_ey - world_sy * world_ex, world_sx * world_ex + world_sy * world_ey);
+	var world_isFullCircle = (extraRotations >= 1) || 
+	                         (Math.abs(world_angular_travel) <= ARC_ANGULAR_TRAVEL_EPSILON);
+	
 	// Calculate axis crossings for WORLD coordinates (for job bounding box)
 	if (world_ey >= 0) {              // End in upper half plane
 	    if (world_ex > 0) {             // End in quadrant 0 - X+ Y+
 		if (world_sy >= 0) {          // Start in upper half plane
 		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
-			if (world_sx <= world_ex) {     // wraparound
+			if (world_isFullCircle && world_sx <= world_ex) {     // wraparound
 			    world_px = world_py = world_mx = world_my = true;
 			}
 		    } else {              // Start in quadrant 1 - X- Y+
@@ -1235,7 +1246,7 @@ var bboxHandlers = {
 		    if (world_sx > 0) {         // Start in quadrant 0 - X+ Y+
 			world_py = true;
 		    } else {              // Start in quadrant 1 - X- Y+
-			if (world_sx <= world_ex) {     // wraparound
+			if (world_isFullCircle && world_sx <= world_ex) {     // wraparound
 			    world_px = world_py = world_mx = world_my = true;
 			}
 		    }
@@ -1257,7 +1268,7 @@ var bboxHandlers = {
 		    }
 		} else {                // Start in lower half plane
 		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
-			if (world_sx >= world_ex) {      // wraparound
+			if (world_isFullCircle && world_sx >= world_ex) {      // wraparound
 			    world_px = world_py = world_mx = world_my = true;
 			}
 		    } else {              // Start in quadrant 2 - X- Y-
@@ -1275,7 +1286,7 @@ var bboxHandlers = {
 		    if (world_sx > 0) {         // Start in quadrant 3 - X+ Y-
 			world_px = world_py = world_mx = true;
 		    } else {              // Start in quadrant 2 - X- Y-
-			if (world_sx >= world_ex) {      // wraparound
+			if (world_isFullCircle && world_sx >= world_ex) {      // wraparound
 			    world_px = world_py = world_mx = world_my = true;
 			}
 		    }
@@ -1284,11 +1295,11 @@ var bboxHandlers = {
 	}
 
 	// Now calculate world coordinate bounding box for job bounds
-	// Only use end position in fallback to exclude start from rapid moves
-	var world_maxX = world_px ? center.x + world_radius : end.x;
-	var world_maxY = world_py ? center.y + world_radius : end.y;
-	var world_minX = world_mx ? center.x - world_radius : end.x;
-	var world_minY = world_my ? center.y - world_radius : end.y;
+	// Use both start and end positions when axis is not crossed
+	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
+	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
+	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
+	var world_minY = world_my ? center.y - world_radius : Math.min(start.y, end.y);
 
 	var minZ = Math.min(start.z, end.z);
 	var maxZ = Math.max(start.z, end.z);
@@ -1428,6 +1439,10 @@ var displayHandlers = {
     addArcCurve: function(modal, start, end, center, extraRotations) {
         var motion = modal.motion;
 
+        // Note: JavaScript uses double precision (64-bit) floats by default, which provides
+        // better precision than firmware's single precision (32-bit) floats. This ensures
+        // we won't have false positives for large radius arcs due to precision limits.
+        
         // Convert work coordinates to machine coordinates if WCO is available
         const wco = WCO;
         let startMPOS, centerMPOS, endMPOS;
@@ -1449,33 +1464,45 @@ var displayHandlers = {
         var radius = Math.hypot(deltaX1, deltaY1);
         var deltaX2 = endMPOS.x - centerMPOS.x;
         var deltaY2 = endMPOS.y - centerMPOS.y;
-        var theta1 = Math.atan2(deltaY1, deltaX1);
-        var theta2 = Math.atan2(deltaY2, deltaX2);
+        
+        // Calculate angular travel using same formula as firmware (MotionControl.cpp:142)
+        // and bounding box calculation above
+        var angular_travel = Math.atan2(deltaX1 * deltaY2 - deltaY1 * deltaX2, 
+                                        deltaX1 * deltaX2 + deltaY1 * deltaY2);
+        
         var cw = modal.motion == "G2";
-        if (!cw && theta2 < theta1) {
-            theta2 += Math.PI * 2;
-        } else if (cw && theta2 > theta1) {
-            theta2 -= Math.PI * 2;
-        }
-	if (theta1 == theta2) {
-	    theta2 += Math.PI * ((cw) ? -2 : 2);
-	}
-        if (extraRotations > 1) {
-            theta2 += (extraRotations-1) * Math.PI * ((cw) ? -2 : 2);
+        
+        // Use firmware's epsilon to detect full circles (defined at module level)
+        if (cw) {  // Clockwise - correct atan2 output per direction
+            if (angular_travel >= -ARC_ANGULAR_TRAVEL_EPSILON) {
+                angular_travel -= 2 * Math.PI;
+            }
+            if (extraRotations > 1) {
+                angular_travel -= (extraRotations - 1) * 2 * Math.PI;
+            }
+        } else {  // Counter-clockwise
+            if (angular_travel <= ARC_ANGULAR_TRAVEL_EPSILON) {
+                angular_travel += 2 * Math.PI;
+            }
+            if (extraRotations > 1) {
+                angular_travel += (extraRotations - 1) * 2 * Math.PI;
+            }
         }
 
         initialMoves = false;
 
         tp.beginPath();
         tp.strokeStyle = 'black';
-        deltaTheta = theta2 - theta1;
-        n = 10 * Math.ceil(Math.abs(deltaTheta) / Math.PI);
-        dt = (deltaTheta) / n;
+        n = 10 * Math.ceil(Math.abs(angular_travel) / Math.PI);
+        dt = angular_travel / n;
         dz = (end.z - start.z) / n;
+        
+        // Start angle
+        var theta = Math.atan2(deltaY1, deltaX1);
+        
         ps = projection(startMPOS);
         tp.moveTo(ps.x, ps.y);
         next = {};
-        theta = theta1;
         next.z = startMPOS.z;
         for (i = 0; i < n; i++) {
             theta += dt;

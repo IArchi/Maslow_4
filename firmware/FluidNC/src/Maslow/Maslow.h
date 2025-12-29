@@ -17,14 +17,6 @@
 
 #define CALIBRATION_GRID_SIZE_MAX (10 * 10) + 2
 
-#define UP 1
-#define DOWN 2
-#define LEFT 3
-#define RIGHT 4
-
-#define HORIZONTAL 0
-#define VERTICAL 1
-
 #define MASLOW_TELEM_FILE "M4_telemetry.bin"
 
 // Common Default strings - especially used by config

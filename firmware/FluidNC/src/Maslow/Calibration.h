@@ -2,21 +2,6 @@
 #include <Arduino.h>
 #include "MaslowEnums.h"
 
-//------------------------------------------------------
-//------------------------------------------------------ State Definitions
-//------------------------------------------------------
-
-#define UNKNOWN 0
-#define RETRACTING 1
-#define RETRACTED 2
-#define EXTENDING 3
-#define EXTENDEDOUT 4  //Extended is a reserved word
-#define TAKING_SLACK 5
-#define CALIBRATION_IN_PROGRESS 6
-#define READY_TO_CUT 7
-#define RELEASE_TENSION 8
-#define CALIBRATION_COMPUTING 9
-
 class Calibration {
 public:
     // Constructor

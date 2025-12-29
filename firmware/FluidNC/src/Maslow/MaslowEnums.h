@@ -19,3 +19,28 @@ enum CartesianAxis {
     Coord_Z     = 2,  // Z axis
     Coord_COUNT = 3
 };
+
+// Movement direction for calibration
+#define UP 1
+#define DOWN 2
+#define LEFT 3
+#define RIGHT 4
+
+// Machine orientation
+#define HORIZONTAL 0
+#define VERTICAL 1
+
+// Calibration state machine states
+#define UNKNOWN 0
+#define RETRACTING 1
+#define RETRACTED 2
+#define EXTENDING 3
+#define EXTENDEDOUT 4  // Extended is a reserved word
+#define TAKING_SLACK 5
+#define CALIBRATION_IN_PROGRESS 6
+#define READY_TO_CUT 7
+#define RELEASE_TENSION 8
+#define CALIBRATION_COMPUTING 9
+
+// DCMotor direction
+enum direction { BACKWARD, FORWARD };

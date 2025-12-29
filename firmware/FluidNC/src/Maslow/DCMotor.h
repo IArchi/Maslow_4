@@ -12,9 +12,8 @@
 #ifndef DCMotor_H
 #define DCMotor_H
 
-enum direction { BACKWARD, FORWARD };
-
 #include <Arduino.h>
+#include "MaslowEnums.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 

@@ -1001,6 +1001,15 @@ static Error maslow_ack_cal(const char* value, WebUI::AuthenticationLevel auth_l
     return Error::Ok;
 }
 
+static Error maslow_reset_calibration(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
+    if (Maslow.using_default_config) {
+        return Error::ConfigurationInvalid;
+    }
+    Maslow.calibration.resetCalibrationState();
+    Maslow.calibration.requestStateChange(EXTENDEDOUT);
+    return Error::Ok;
+}
+
 static Error maslow_estop(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
     sys.set_state(State::Alarm);
     Maslow.eStop();
@@ -1109,6 +1118,7 @@ void make_user_commands() {
     new UserCommand("TEST", M + "/test", maslow_test, anyState);
     new UserCommand("TKSLK", M + "/takeSlack", maslow_takeSlack, anyState);
     new UserCommand("ACKCAL", M + "/ackCalibration", maslow_ack_cal, anyState);
+    new UserCommand("CALRESET", M + "/resetCalibration", maslow_reset_calibration, anyState);
     new UserCommand("ESTOP", M + "/estop", maslow_estop, anyState);
     new UserCommand("SETZSTOP", M + "/setZStop", maslow_set_zStop, anyState);
     new UserCommand("MINFO", M + "/getInfo", maslow_get_info, anyState);

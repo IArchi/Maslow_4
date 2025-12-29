@@ -195,17 +195,18 @@ void Maslow_::update() {
         if (sys.state() == State::Jog || sys.state() == State::Cycle) {
             // With MaslowKinematics, read belt motor positions directly from the axis system
             // Axis mapping: A=TL, B=TR, C=BL, D=BR, Z=Router
-            float tlBeltLength = steps_to_mpos(get_axis_motor_steps(0), 0);  // TL from A axis (axis 0)
-            float trBeltLength = steps_to_mpos(get_axis_motor_steps(1), 1);  // TR from B axis (axis 1)
-            float blBeltLength = steps_to_mpos(get_axis_motor_steps(2), 2);  // BL from C axis (axis 2)
-            float brBeltLength = steps_to_mpos(get_axis_motor_steps(3), 3);  // BR from D axis (axis 3)
-            float zPosition    = steps_to_mpos(get_axis_motor_steps(4), 4);  // Z from Z axis (axis 4)
+            float beltLength[ARM_COUNT];
+            beltLength[_TL] = steps_to_mpos(get_axis_motor_steps(0), 0);  // TL from A axis (axis 0)
+            beltLength[_TR] = steps_to_mpos(get_axis_motor_steps(1), 1);  // TR from B axis (axis 1)
+            beltLength[_BL] = steps_to_mpos(get_axis_motor_steps(2), 2);  // BL from C axis (axis 2)
+            beltLength[_BR] = steps_to_mpos(get_axis_motor_steps(3), 3);  // BR from D axis (axis 3)
+            float zPosition = steps_to_mpos(get_axis_motor_steps(4), 4);  // Z from Z axis (axis 4)
 
             // Set individual belt targets using the computed positions
-            axis[_TL].setTarget(tlBeltLength);
-            axis[_TR].setTarget(trBeltLength);
-            axis[_BL].setTarget(blBeltLength);
-            axis[_BR].setTarget(brBeltLength);
+            axis[_TL].setTarget(beltLength[_TL]);
+            axis[_TR].setTarget(beltLength[_TR]);
+            axis[_BL].setTarget(beltLength[_BL]);
+            axis[_BR].setTarget(beltLength[_BR]);
 
             // Update internal target tracking for getTargetX/Y/Z functions
             // For now, we'll use the Z position directly and estimate X,Y from frame center

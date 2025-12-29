@@ -15,7 +15,7 @@
 /* Add rounded rectangle background behind header text */
 .project-name,
 .project-tagline {
-  display: inline-block;
+  display: block;
   background-color: rgba(255, 255, 255, 0.85);
   padding: 0.5rem 1.5rem;
   border-radius: 15px;

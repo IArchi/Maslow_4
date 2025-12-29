@@ -4,6 +4,7 @@
 
 #pragma once
 #include <Arduino.h>
+#include "MaslowEnums.h"
 #include "MotorUnit.h"
 #include "Calibration.h"
 #include "../System.h"  // sys.*
@@ -26,22 +27,6 @@
 
 #define MASLOW_TELEM_FILE "M4_telemetry.bin"
 
-// Enums for indexing arms and axes to reduce code duplication
-enum MaslowArm {
-    _TL       = 0,  // Top Left
-    _TR       = 1,  // Top Right
-    _BL       = 2,  // Bottom Left
-    _BR       = 3,  // Bottom Right
-    ARM_COUNT = 4
-};
-
-enum CartesianAxis {
-    Coord_X     = 0,  // X axis
-    Coord_Y     = 1,  // Y axis
-    Coord_Z     = 2,  // Z axis
-    Coord_COUNT = 3
-};
-
 // Common Default strings - especially used by config
 const std::string M = "Maslow";
 // Non-volatile storage name
@@ -56,36 +41,13 @@ struct TelemetryFileHeader {
 
 struct TelemetryData {
     unsigned long timestamp;
-    // motors
-    double tlCurrent;
-    double trCurrent;
-    double blCurrent;
-    double brCurrent;
-    // power
-    double tlPower;
-    double trPower;
-    double blPower;
-    double brPower;
-    // speed
-    double tlSpeed;
-    double trSpeed;
-    double blSpeed;
-    double brSpeed;
-    // position
-    double tlPos;
-    double trPos;
-    double blPos;
-    double brPos;
-
-    int tlState;
-    int trState;
-    int blState;
-    int brState;
-
-    bool extendedTL;
-    bool extendedTR;
-    bool extendedBL;
-    bool extendedBR;
+    // motors - indexed by MaslowArm enum
+    double Current[ARM_COUNT];
+    double Power[ARM_COUNT];
+    double Speed[ARM_COUNT];
+    double Pos[ARM_COUNT];
+    int    State[ARM_COUNT];
+    bool   extended[ARM_COUNT];
 
     bool extendingALL;
     bool complyALL;
@@ -158,10 +120,7 @@ public:
     void   safety_control();
     bool   axis_homed[4] = { false, false, false, false };
 
-    bool extendedTL = false;
-    bool extendedTR = false;
-    bool extendedBL = false;
-    bool extendedBR = false;
+    bool extended[ARM_COUNT] = { false, false, false, false };
 
     bool takeSlack = false;
 
@@ -185,10 +144,7 @@ public:
     double targetY = 0;
     double targetZ = 0;
 
-    MotorUnit axisTL;
-    MotorUnit axisTR;
-    MotorUnit axisBL;
-    MotorUnit axisBR;
+    MotorUnit axis[ARM_COUNT];
 
     bool readingFromSD = false;  //Used to turn off reading from the encoders when reading from the - i dont think we need this anymore TODO
     bool using_default_config = false;

@@ -71,10 +71,9 @@ bool Calibration::requestStateChange(int newState) {
             retracting[_TR] = true;
             retracting[_BL] = true;
             retracting[_BR] = true;
-            Maslow.axis[_TL].reset();
-            Maslow.axis[_TR].reset();
-            Maslow.axis[_BL].reset();
-            Maslow.axis[_BR].reset();
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                Maslow.axis[arm].reset();
+            }
 
             success = true;
             break;
@@ -129,10 +128,9 @@ bool Calibration::requestStateChange(int newState) {
                 retracting[_BL] = false;
                 retracting[_BR] = false;
 
-                Maslow.axis[_TL].reset();
-                Maslow.axis[_TR].reset();
-                Maslow.axis[_BL].reset();
-                Maslow.axis[_BR].reset();
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    Maslow.axis[arm].reset();
+                }
 
                 Maslow.x  = 0;
                 Maslow.y  = 0;
@@ -214,10 +212,9 @@ bool Calibration::requestStateChange(int newState) {
                     //Set the internal machine position using actual belt positions to avoid synchronization issues
                     // Get current belt positions from hardware and set motor steps directly
                     float beltLength[ARM_COUNT];
-                    beltLength[_TL] = Maslow.axis[_TL].getPosition();  // Actual belt position from hardware
-                    beltLength[_TR] = Maslow.axis[_TR].getPosition();
-                    beltLength[_BL] = Maslow.axis[_BL].getPosition();
-                    beltLength[_BR] = Maslow.axis[_BR].getPosition();
+                    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                        beltLength[arm] = Maslow.axis[arm].getPosition();  // Actual belt position from hardware
+                    }
 
                     log_info("Setting motor positions from hardware readings:");
                     log_info("TL: " << beltLength[_TL] << " TR: " << beltLength[_TR] << " BL: " << beltLength[_BL]
@@ -275,10 +272,9 @@ bool Calibration::requestStateChange(int newState) {
                 retracting[_TR] = false;
                 retracting[_BL] = false;
                 retracting[_BR] = false;
-                Maslow.axis[_TL].reset();  //This just resets the thresholds for pull tight
-                Maslow.axis[_TR].reset();
-                Maslow.axis[_BL].reset();
-                Maslow.axis[_BR].reset();
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    Maslow.axis[arm].reset();  //This just resets the thresholds for pull tight
+                }
                 success = true;
                 break;
             } else {
@@ -380,15 +376,13 @@ void Calibration::home() {
                 Maslow.axis[_TR].decompressBelt();
                 Maslow.axis[_TL].decompressBelt();
             } else if (millis() - complyCallTimer < 800) {
-                Maslow.axis[_TL].comply();
-                Maslow.axis[_TR].comply();
-                Maslow.axis[_BL].comply();
-                Maslow.axis[_BR].comply();
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    Maslow.axis[arm].comply();
+                }
             } else {
-                Maslow.axis[_TL].stop();
-                Maslow.axis[_TR].stop();
-                Maslow.axis[_BL].stop();
-                Maslow.axis[_BR].stop();
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    Maslow.axis[arm].stop();
+                }
                 sys.set_state(State::Idle);
 
                 // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
@@ -1228,16 +1222,14 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     //Check to see if we have reached our target position
     if (abs(Maslow.getTargetX() - toX) < 5 && abs(Maslow.getTargetY() - toY) < 5) {
         // First, set ALL belt targets to their current position to prevent unwinding
-        Maslow.axis[_TL].setTarget(Maslow.axis[_TL].getPosition());
-        Maslow.axis[_TR].setTarget(Maslow.axis[_TR].getPosition());
-        Maslow.axis[_BL].setTarget(Maslow.axis[_BL].getPosition());
-        Maslow.axis[_BR].setTarget(Maslow.axis[_BR].getPosition());
+        for (int arm = _TL; arm < ARM_COUNT; arm++) {
+            Maslow.axis[arm].setTarget(Maslow.axis[arm].getPosition());
+        }
 
         // Stabilize all belts at their new target positions to prevent unwinding
-        Maslow.axis[_TL].recomputePID();
-        Maslow.axis[_TR].recomputePID();
-        Maslow.axis[_BL].recomputePID();
-        Maslow.axis[_BR].recomputePID();
+        for (int arm = _TL; arm < ARM_COUNT; arm++) {
+            Maslow.axis[arm].recomputePID();
+        }
 
         // Small delay to allow stabilization
         static unsigned long stabilizeTimer = 0;
@@ -1599,10 +1591,9 @@ void Calibration::comply() {
     retracting[_TR] = false;
     retracting[_BL] = false;
     retracting[_BR] = false;
-    Maslow.axis[_TL].reset();  //This just resets the thresholds for pull tight
-    Maslow.axis[_TR].reset();
-    Maslow.axis[_BL].reset();
-    Maslow.axis[_BR].reset();
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        Maslow.axis[arm].reset();  //This just resets the thresholds for pull tight
+    }
 }
 
 // Direction from maslow current coordinates to the target coordinates
@@ -1981,10 +1972,9 @@ bool Calibration::detectOrientation() {
             }
 
             // Power down all four motors during the settling pause
-            Maslow.axis[_TL].stop();
-            Maslow.axis[_TR].stop();
-            Maslow.axis[_BL].stop();
-            Maslow.axis[_BR].stop();
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                Maslow.axis[arm].stop();
+            }
 
             // Check if settling pause is complete
             if (millis() - settlingStartTime >= MOTOR_SETTLING_PAUSE_MS) {

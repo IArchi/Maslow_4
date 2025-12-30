@@ -170,10 +170,9 @@ void Maslow_::update() {
 
         Maslow.updateEncoderPositions();  //We always update encoder positions in any state,
 
-        axis[_TL].update();  //update motor currents and belt speeds like this for now
-        axis[_TR].update();
-        axis[_BL].update();
-        axis[_BR].update();
+        for (int arm = _TL; arm < ARM_COUNT; arm++) {
+            axis[arm].update();  //update motor currents and belt speeds like this for now
+        }
 
         if (safetyOn)
             safety_control();
@@ -203,10 +202,9 @@ void Maslow_::update() {
             float zPosition = steps_to_mpos(get_axis_motor_steps(4), 4);  // Z from Z axis (axis 4)
 
             // Set individual belt targets using the computed positions
-            axis[_TL].setTarget(beltLength[_TL]);
-            axis[_TR].setTarget(beltLength[_TR]);
-            axis[_BL].setTarget(beltLength[_BL]);
-            axis[_BR].setTarget(beltLength[_BR]);
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                axis[arm].setTarget(beltLength[arm]);
+            }
 
             // Update internal target tracking for getTargetX/Y/Z functions
             // For now, we'll use the Z position directly and estimate X,Y from frame center
@@ -898,10 +896,9 @@ void Maslow_::test_() {
     log_info("I2C Timeout: ");
     log_info(Wire.getTimeOut());
 
-    axis[_TL].test();
-    axis[_TR].test();
-    axis[_BL].test();
-    axis[_BR].test();
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        axis[arm].test();
+    }
 
 #ifdef ENABLE_WIFI
     // Check for firmware updates after all tests complete
@@ -982,10 +979,9 @@ void Maslow_::print_motor_currents() {
 
 // Resets variables on all 4 axis
 void Maslow_::reset_all_axis() {
-    axis[_TL].reset();
-    axis[_TR].reset();
-    axis[_BL].reset();
-    axis[_BR].reset();
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        axis[arm].reset();
+    }
 }
 
 // Stop all motors and reset all state variables
@@ -995,10 +991,9 @@ void Maslow_::stop() {
     test                              = false;
     takeSlack                         = false;
 
-    axis[_TL].reset();
-    axis[_TR].reset();
-    axis[_BL].reset();
-    axis[_BR].reset();
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        axis[arm].reset();
+    }
 
     // if we are stopping, stop any running job too
     allChannels.stopJob();

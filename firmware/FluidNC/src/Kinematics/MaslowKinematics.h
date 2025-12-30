@@ -18,6 +18,7 @@
 */
 
 #include "Kinematics.h"
+#include "../Maslow/MaslowEnums.h"
 
 namespace Kinematics {
     class MaslowKinematics : public KinematicSystem {
@@ -57,18 +58,18 @@ namespace Kinematics {
         float computeBR(float x, float y, float z);
 
         // Getters for parameters used by calibration system
-        float getTlX() const { return _tlX; }
-        float getTlY() const { return _tlY; }
-        float getTlZ() const { return _tlZ; }
-        float getTrX() const { return _trX; }
-        float getTrY() const { return _trY; }
-        float getTrZ() const { return _trZ; }
-        float getBlX() const { return _blX; }
-        float getBlY() const { return _blY; }
-        float getBlZ() const { return _blZ; }
-        float getBrX() const { return _brX; }
-        float getBrY() const { return _brY; }
-        float getBrZ() const { return _brZ; }
+        float getTlX() const { return anchor_location[_TL][Coord_X]; }
+        float getTlY() const { return anchor_location[_TL][Coord_Y]; }
+        float getTlZ() const { return anchor_location[_TL][Coord_Z]; }
+        float getTrX() const { return anchor_location[_TR][Coord_X]; }
+        float getTrY() const { return anchor_location[_TR][Coord_Y]; }
+        float getTrZ() const { return anchor_location[_TR][Coord_Z]; }
+        float getBlX() const { return anchor_location[_BL][Coord_X]; }
+        float getBlY() const { return anchor_location[_BL][Coord_Y]; }
+        float getBlZ() const { return anchor_location[_BL][Coord_Z]; }
+        float getBrX() const { return anchor_location[_BR][Coord_X]; }
+        float getBrY() const { return anchor_location[_BR][Coord_Y]; }
+        float getBrZ() const { return anchor_location[_BR][Coord_Z]; }
         float getBeltEndExtension() const { return _beltEndExtension; }
         float getArmLength() const { return _armLength; }
         float getSpoilboardThickness() const { return _spoilboardThickness; }
@@ -91,22 +92,14 @@ namespace Kinematics {
         // Validation and correction helper method
         void validateAndCorrectAnchorCoordinates();
 
-        // Anchor point coordinates (in mm)
-        float _tlX = -27.6f;   // Top left X
-        float _tlY = 2064.9f;  // Top left Y
-        float _tlZ = 100.0f;   // Top left Z
-
-        float _trX = 2924.3f;  // Top right X
-        float _trY = 2066.5f;  // Top right Y
-        float _trZ = 56.0f;    // Top right Z
-
-        float _blX = 0.0f;   // Bottom left X
-        float _blY = 0.0f;   // Bottom left Y
-        float _blZ = 34.0f;  // Bottom left Z
-
-        float _brX = 2953.2f;  // Bottom right X
-        float _brY = 0.0f;     // Bottom right Y
-        float _brZ = 78.0f;    // Bottom right Z
+        // Anchor point coordinates (in mm) - [ARM_COUNT][Coord_COUNT]
+        // Access as: anchor_location[arm][coord] where arm is _TL/_TR/_BL/_BR and coord is Coord_X/Coord_Y/Coord_Z
+        float anchor_location[ARM_COUNT][Coord_COUNT] = {
+            { -27.6f, 2064.9f, 100.0f },  // _TL: Top Left (X, Y, Z)
+            { 2924.3f, 2066.5f, 56.0f },  // _TR: Top Right (X, Y, Z)
+            { 0.0f, 0.0f, 34.0f },        // _BL: Bottom Left (X, Y, Z)
+            { 2953.2f, 0.0f, 78.0f }      // _BR: Bottom Right (X, Y, Z)
+        };
 
         // Belt and arm parameters (in mm)
         float _beltEndExtension = 30.0f;   // Belt end extension

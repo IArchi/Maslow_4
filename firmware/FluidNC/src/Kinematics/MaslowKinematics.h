@@ -87,8 +87,6 @@ namespace Kinematics {
 
         // Setter methods for calibration system to update frame parameters
         void setFrameSize(float frameSize);
-        void updateAnchorCoordinates(
-            float tlX, float tlY, float tlZ, float trX, float trY, float trZ, float blX, float blY, float blZ, float brX, float brY, float brZ);
         void setSpoilboardThickness(float thickness);
         void setWorkThickness(float thickness);
 

@@ -52,24 +52,28 @@ namespace Kinematics {
         ~MaslowKinematics();
 
         // Public access to compute functions for calibration system
-        float computeTL(float x, float y, float z);
-        float computeTR(float x, float y, float z);
-        float computeBL(float x, float y, float z);
-        float computeBR(float x, float y, float z);
+        float compute(int arm, float x, float y, float z);
+        // Deprecated: Use compute(arm, x, y, z) instead
+        float computeTL(float x, float y, float z) { return compute(_TL, x, y, z); }
+        float computeTR(float x, float y, float z) { return compute(_TR, x, y, z); }
+        float computeBL(float x, float y, float z) { return compute(_BL, x, y, z); }
+        float computeBR(float x, float y, float z) { return compute(_BR, x, y, z); }
 
         // Getters for parameters used by calibration system
-        float getTlX() const { return anchor_location[_TL][Coord_X]; }
-        float getTlY() const { return anchor_location[_TL][Coord_Y]; }
-        float getTlZ() const { return anchor_location[_TL][Coord_Z]; }
-        float getTrX() const { return anchor_location[_TR][Coord_X]; }
-        float getTrY() const { return anchor_location[_TR][Coord_Y]; }
-        float getTrZ() const { return anchor_location[_TR][Coord_Z]; }
-        float getBlX() const { return anchor_location[_BL][Coord_X]; }
-        float getBlY() const { return anchor_location[_BL][Coord_Y]; }
-        float getBlZ() const { return anchor_location[_BL][Coord_Z]; }
-        float getBrX() const { return anchor_location[_BR][Coord_X]; }
-        float getBrY() const { return anchor_location[_BR][Coord_Y]; }
-        float getBrZ() const { return anchor_location[_BR][Coord_Z]; }
+        float getAnchorCoord(int arm, int axis) const { return anchor_location[arm][axis]; }
+        // Deprecated: Use getAnchorCoord(arm, axis) instead
+        float getTlX() const { return getAnchorCoord(_TL, Coord_X); }
+        float getTlY() const { return getAnchorCoord(_TL, Coord_Y); }
+        float getTlZ() const { return getAnchorCoord(_TL, Coord_Z); }
+        float getTrX() const { return getAnchorCoord(_TR, Coord_X); }
+        float getTrY() const { return getAnchorCoord(_TR, Coord_Y); }
+        float getTrZ() const { return getAnchorCoord(_TR, Coord_Z); }
+        float getBlX() const { return getAnchorCoord(_BL, Coord_X); }
+        float getBlY() const { return getAnchorCoord(_BL, Coord_Y); }
+        float getBlZ() const { return getAnchorCoord(_BL, Coord_Z); }
+        float getBrX() const { return getAnchorCoord(_BR, Coord_X); }
+        float getBrY() const { return getAnchorCoord(_BR, Coord_Y); }
+        float getBrZ() const { return getAnchorCoord(_BR, Coord_Z); }
         float getBeltEndExtension() const { return _beltEndExtension; }
         float getArmLength() const { return _armLength; }
         float getSpoilboardThickness() const { return _spoilboardThickness; }

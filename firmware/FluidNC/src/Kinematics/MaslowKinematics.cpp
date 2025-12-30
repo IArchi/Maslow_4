@@ -317,73 +317,15 @@ namespace Kinematics {
     }
 
     // Belt length calculation functions - moved from Maslow.cpp
-    float MaslowKinematics::computeTL(float x, float y, float z) {
-        // Move from lower left corner coordinates to centered coordinates
-        float orig_x = x, orig_y = y;
-        x       = x + _centerX;
-        y       = y + _centerY;
-        float a = anchor_location[_TL][Coord_X] - x;  // X dist from corner to router center
-        float b = anchor_location[_TL][Coord_Y] - y;  // Y dist from corner to router center
-        // When fixedZ is true, don't use current Z position - only use fixed anchor Z values
-        float effectiveZ = _fixedZ ? 0.0f : z;
-        float c          = 0.0f - (effectiveZ + anchor_location[_TL][Coord_Z] + _spoilboardThickness +
-                          _workThickness);  // Z dist from corner to router center (includes material thickness)
-
-        float XYlength = sqrt(a * a + b * b);  // Get the distance in the XY plane from the corner to the router center
-        float XYBeltLength =
-            XYlength - (_beltEndExtension + _armLength);           // Subtract the belt end extension and arm length to get the belt length
-        float length = sqrt(XYBeltLength * XYBeltLength + c * c);  // Get the angled belt length
-
-        return length;
-    }
-
-    float MaslowKinematics::computeTR(float x, float y, float z) {
+    float MaslowKinematics::compute(int arm, float x, float y, float z) {
         // Move from lower left corner coordinates to centered coordinates
         x       = x + _centerX;
         y       = y + _centerY;
-        float a = anchor_location[_TR][Coord_X] - x;
-        float b = anchor_location[_TR][Coord_Y] - y;
+        float a = anchor_location[arm][Coord_X] - x;  // X dist from corner to router center
+        float b = anchor_location[arm][Coord_Y] - y;  // Y dist from corner to router center
         // When fixedZ is true, don't use current Z position - only use fixed anchor Z values
         float effectiveZ = _fixedZ ? 0.0f : z;
-        float c          = 0.0f - (effectiveZ + anchor_location[_TR][Coord_Z] + _spoilboardThickness +
-                          _workThickness);  // Z dist from corner to router center (includes material thickness)
-
-        float XYlength = sqrt(a * a + b * b);  // Get the distance in the XY plane from the corner to the router center
-        float XYBeltLength =
-            XYlength - (_beltEndExtension + _armLength);           // Subtract the belt end extension and arm length to get the belt length
-        float length = sqrt(XYBeltLength * XYBeltLength + c * c);  // Get the angled belt length
-
-        return length;
-    }
-
-    float MaslowKinematics::computeBL(float x, float y, float z) {
-        // Move from lower left corner coordinates to centered coordinates
-        x       = x + _centerX;
-        y       = y + _centerY;
-        float a = anchor_location[_BL][Coord_X] - x;  // X dist from corner to router center
-        float b = anchor_location[_BL][Coord_Y] - y;  // Y dist from corner to router center
-        // When fixedZ is true, don't use current Z position - only use fixed anchor Z values
-        float effectiveZ = _fixedZ ? 0.0f : z;
-        float c          = 0.0f - (effectiveZ + anchor_location[_BL][Coord_Z] + _spoilboardThickness +
-                          _workThickness);  // Z dist from corner to router center (includes material thickness)
-
-        float XYlength = sqrt(a * a + b * b);  // Get the distance in the XY plane from the corner to the router center
-        float XYBeltLength =
-            XYlength - (_beltEndExtension + _armLength);           // Subtract the belt end extension and arm length to get the belt length
-        float length = sqrt(XYBeltLength * XYBeltLength + c * c);  // Get the angled belt length
-
-        return length;
-    }
-
-    float MaslowKinematics::computeBR(float x, float y, float z) {
-        // Move from lower left corner coordinates to centered coordinates
-        x       = x + _centerX;
-        y       = y + _centerY;
-        float a = anchor_location[_BR][Coord_X] - x;
-        float b = anchor_location[_BR][Coord_Y] - y;
-        // When fixedZ is true, don't use current Z position - only use fixed anchor Z values
-        float effectiveZ = _fixedZ ? 0.0f : z;
-        float c          = 0.0f - (effectiveZ + anchor_location[_BR][Coord_Z] + _spoilboardThickness +
+        float c          = 0.0f - (effectiveZ + anchor_location[arm][Coord_Z] + _spoilboardThickness +
                           _workThickness);  // Z dist from corner to router center (includes material thickness)
 
         float XYlength = sqrt(a * a + b * b);  // Get the distance in the XY plane from the corner to the router center

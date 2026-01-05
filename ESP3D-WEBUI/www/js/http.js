@@ -9,8 +9,8 @@ let cmdInterval = 0;
 const processNextCmd = () => {
     if (!cmd_list.length) {
         console.warn("Command list empty, no messages to process at this time");
-        clearInterval(cmdInterval);
         cmdInterval = 0;
+        return;
     }
 
     switch (process_cmd_list(cmd_list[0], "process")) {
@@ -154,11 +154,19 @@ const process_cmd_list = (cmd, step = "") => {
     cmd_lock = false;
 
     if (doNext) {
-        // setInterval is used here to ensure that this call goes onto the event loop
-        // i.e. so that it is effectively treated asynchronously
-        const throttleInterval = 10;
+        // Use scheduleCallback to ensure command processing works in background tabs
+        // The 10ms delay provides throttling while avoiding setInterval's background throttling
         if (!cmdInterval) {
-            cmdInterval = setInterval(() => processNextCmd(), throttleInterval);
+            const scheduleNext = () => {
+                processNextCmd();
+                if (cmd_list.length > 0) {
+                    scheduleCallback(scheduleNext, 10);
+                } else {
+                    cmdInterval = 0;
+                }
+            };
+            cmdInterval = 1; // Mark as active
+            scheduleCallback(scheduleNext, 10);
         }
     }
 

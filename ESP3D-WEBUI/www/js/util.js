@@ -14,7 +14,11 @@ function createBackgroundTaskScheduler() {
     channel.port1.onmessage = () => {
       if (taskQueue.length > 0) {
         const callback = taskQueue.shift();
-        callback();
+        try {
+          callback();
+        } catch (error) {
+          console.error('Error executing scheduled task:', error);
+        }
       }
     };
 
@@ -26,7 +30,13 @@ function createBackgroundTaskScheduler() {
   }
   // Fallback to Promise.resolve() which also executes immediately
   return function(callback) {
-    Promise.resolve().then(callback);
+    Promise.resolve().then(() => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('Error executing scheduled task:', error);
+      }
+    });
   };
 }
 
@@ -50,6 +60,15 @@ function yieldToEventLoop() {
  * @param {number} delay - Minimum delay in milliseconds (0 for immediate)
  */
 function scheduleCallback(callback, delay = 0) {
+  if (typeof callback !== 'function') {
+    console.error('scheduleCallback: callback must be a function');
+    return;
+  }
+  if (typeof delay !== 'number' || delay < 0) {
+    console.error('scheduleCallback: delay must be a non-negative number');
+    return;
+  }
+  
   if (delay === 0) {
     scheduleTask(callback);
   } else {

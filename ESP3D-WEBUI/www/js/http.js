@@ -30,6 +30,13 @@ const processNextCmd = () => {
         default:
             break;
     }
+    
+    // Schedule next processing if there are more commands
+    if (cmd_list.length > 0 && cmdInterval) {
+        scheduleTask(processNextCmd);
+    } else if (cmd_list.length === 0) {
+        cmdInterval = 0;
+    }
 }
 
 /** This comes straight out of the Mozilla website for Math.random */
@@ -136,7 +143,6 @@ const process_cmd_list = (cmd, step = "") => {
             if (cmd_list.length) {
                 doNext = true;
             } else {
-                clearInterval(cmdInterval);
                 cmdInterval = 0;
             }
 
@@ -145,7 +151,6 @@ const process_cmd_list = (cmd, step = "") => {
         case "purge":
             // Wipe the command list 
             cmd_list.length = 0;
-            clearInterval(cmdInterval);
             cmdInterval = 0;
             doNext = false;
             processing_cmd = false;
@@ -154,19 +159,12 @@ const process_cmd_list = (cmd, step = "") => {
     cmd_lock = false;
 
     if (doNext) {
-        // Use scheduleCallback to ensure command processing works in background tabs
-        // The 10ms delay provides throttling while avoiding setInterval's background throttling
+        // Use scheduleTask (MessageChannel) to ensure command processing works in background tabs
+        // This provides immediate scheduling without the 10ms throttling, which is acceptable
+        // since HTTP requests themselves provide natural throttling
         if (!cmdInterval) {
-            const scheduleNext = () => {
-                processNextCmd();
-                if (cmd_list.length > 0) {
-                    scheduleCallback(scheduleNext, 10);
-                } else {
-                    cmdInterval = 0;
-                }
-            };
             cmdInterval = 1; // Mark as active
-            scheduleCallback(scheduleNext, 10);
+            scheduleTask(processNextCmd);
         }
     }
 

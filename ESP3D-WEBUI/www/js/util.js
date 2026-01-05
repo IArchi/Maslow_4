@@ -54,8 +54,8 @@ function yieldToEventLoop() {
 
 /**
  * Schedules a callback to run after a minimum delay without being throttled in background tabs.
- * For delays > 0, this still uses setTimeout but is provided for consistency.
- * For delay = 0, uses the background-safe scheduler.
+ * Uses requestAnimationFrame polling for delays to avoid browser throttling.
+ * For delay = 0, uses the background-safe MessageChannel scheduler.
  * @param {Function} callback - The function to call
  * @param {number} delay - Minimum delay in milliseconds (0 for immediate)
  */
@@ -72,7 +72,21 @@ function scheduleCallback(callback, delay = 0) {
   if (delay === 0) {
     scheduleTask(callback);
   } else {
-    setTimeout(callback, delay);
+    // Use requestAnimationFrame polling to avoid setTimeout throttling in background tabs
+    const startTime = performance.now();
+    const poll = () => {
+      const elapsed = performance.now() - startTime;
+      if (elapsed >= delay) {
+        try {
+          callback();
+        } catch (error) {
+          console.error('Error executing scheduled callback:', error);
+        }
+      } else {
+        requestAnimationFrame(poll);
+      }
+    };
+    requestAnimationFrame(poll);
   }
 }
 

@@ -34,50 +34,6 @@ let result
  */
 
 /**
- * Creates a task scheduler that works even when the browser tab is inactive.
- * Uses MessageChannel API which is not throttled in background tabs, unlike setTimeout.
- * Falls back to Promise.resolve() for immediate execution if MessageChannel is unavailable.
- * @returns {Function} - A function that schedules a callback to run asynchronously.
- */
-function createBackgroundTaskScheduler() {
-  // Try to use MessageChannel for immediate task scheduling (not throttled in background)
-  if (typeof MessageChannel !== 'undefined') {
-    const channel = new MessageChannel();
-    const taskQueue = [];
-
-    // Set up the message handler once
-    channel.port1.onmessage = () => {
-      if (taskQueue.length > 0) {
-        const callback = taskQueue.shift();
-        callback();
-      }
-    };
-
-    // Return a function that enqueues tasks and triggers execution
-    return function(callback) {
-      taskQueue.push(callback);
-      channel.port2.postMessage(null);
-    };
-  }
-  // Fallback to Promise.resolve() which also executes immediately
-  return function(callback) {
-    Promise.resolve().then(callback);
-  };
-}
-
-// Create the scheduler once at module load time
-const scheduleTask = createBackgroundTaskScheduler();
-
-/**
- * Yields control to the browser event loop without being throttled in background tabs.
- * This replaces setTimeout(..., 0) which is throttled to ~1 second in inactive tabs.
- * @returns {Promise} - A promise that resolves on the next event loop tick.
- */
-function yieldToEventLoop() {
-  return new Promise(resolve => scheduleTask(resolve));
-}
-
-/**
  * Computes the distance between two points.
  * @param {number} a - The x-coordinate of the first point.
  * @param {number} b - The y-coordinate of the first point.
@@ -916,7 +872,7 @@ async function findMaxFitness(measurements) {
         initialGuess.fitness = 100000000;
 
         // This restarts calibration process for the next stage
-        setTimeout(() => { onCalibrationButtonsClick('$CAL', 'Calibrate'); }, 2000);
+        scheduleCallback(() => { onCalibrationButtonsClick('$CAL', 'Calibrate'); }, 2000);
       } else {
 
         sendCalibrationEvent({

@@ -42,9 +42,20 @@ let result
 function createBackgroundTaskScheduler() {
   // Try to use MessageChannel for immediate task scheduling (not throttled in background)
   if (typeof MessageChannel !== 'undefined') {
+    const channel = new MessageChannel();
+    const taskQueue = [];
+
+    // Set up the message handler once
+    channel.port1.onmessage = () => {
+      if (taskQueue.length > 0) {
+        const callback = taskQueue.shift();
+        callback();
+      }
+    };
+
+    // Return a function that enqueues tasks and triggers execution
     return function(callback) {
-      const channel = new MessageChannel();
-      channel.port1.onmessage = () => callback();
+      taskQueue.push(callback);
       channel.port2.postMessage(null);
     };
   }

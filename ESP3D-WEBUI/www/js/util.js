@@ -58,19 +58,21 @@ function yieldToEventLoop() {
  * For delay = 0, uses the background-safe MessageChannel scheduler.
  * @param {Function} callback - The function to call
  * @param {number} delay - Minimum delay in milliseconds (0 for immediate)
+ * @returns {Function|undefined} - Cancel function for delays > 0, undefined for immediate execution
  */
 function scheduleCallback(callback, delay = 0) {
   if (typeof callback !== 'function') {
     console.error('scheduleCallback: callback must be a function');
-    return;
+    return undefined;
   }
   if (typeof delay !== 'number' || delay < 0) {
     console.error('scheduleCallback: delay must be a non-negative number');
-    return;
+    return undefined;
   }
   
   if (delay === 0) {
     scheduleTask(callback);
+    return undefined;
   } else {
     // Use requestAnimationFrame polling to avoid setTimeout throttling in background tabs
     const startTime = performance.now();

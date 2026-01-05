@@ -34,7 +34,7 @@ const processNextCmd = () => {
     // Schedule next processing if there are more commands
     if (cmd_list.length > 0 && cmdInterval) {
         scheduleTask(processNextCmd);
-    } else if (cmd_list.length === 0) {
+    } else {
         cmdInterval = 0;
     }
 }

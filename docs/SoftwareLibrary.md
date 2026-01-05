@@ -341,7 +341,7 @@ PICTURE
 
 ## Other useful programs
 
-###GCodeClean
+### GCodeClean
 - Command line program to clean up simplify and shorten Gcode. Does lots of things including reducing travel time, simplifying tiny fragrmented arcs and lines, .... 
 - Linux, can be run on Windows and Mac
 - <https://github.com/aersida/GCodeClean>

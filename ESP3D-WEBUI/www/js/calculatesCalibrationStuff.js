@@ -33,6 +33,38 @@ let result
  *------------------------------------------------------------------------------
  */
 
+/**
+ * Creates a task scheduler that works even when the browser tab is inactive.
+ * Uses MessageChannel API which is not throttled in background tabs, unlike setTimeout.
+ * Falls back to Promise.resolve() for immediate execution if MessageChannel is unavailable.
+ * @returns {Function} - A function that schedules a callback to run asynchronously.
+ */
+function createBackgroundTaskScheduler() {
+  // Try to use MessageChannel for immediate task scheduling (not throttled in background)
+  if (typeof MessageChannel !== 'undefined') {
+    return function(callback) {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = () => callback();
+      channel.port2.postMessage(null);
+    };
+  }
+  // Fallback to Promise.resolve() which also executes immediately
+  return function(callback) {
+    Promise.resolve().then(callback);
+  };
+}
+
+// Create the scheduler once at module load time
+const scheduleTask = createBackgroundTaskScheduler();
+
+/**
+ * Yields control to the browser event loop without being throttled in background tabs.
+ * This replaces setTimeout(..., 0) which is throttled to ~1 second in inactive tabs.
+ * @returns {Promise} - A promise that resolves on the next event loop tick.
+ */
+function yieldToEventLoop() {
+  return new Promise(resolve => scheduleTask(resolve));
+}
 
 /**
  * Computes the distance between two points.
@@ -576,8 +608,8 @@ async function findBestRectangularStart(measurements) {
       diagonalBestSize = rightResult.size;
     }
 
-    // Allow UI to update
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Allow UI to update (works even when tab is inactive)
+    await yieldToEventLoop();
 
     if (leftResult.fitness < rightResult.fitness) {
       rightSize = rightThird;
@@ -663,8 +695,8 @@ async function findBestRectangularStart(measurements) {
       bestGuess = JSON.parse(JSON.stringify(rightResult.result));
     }
 
-    // Allow UI to update
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Allow UI to update (works even when tab is inactive)
+    await yieldToEventLoop();
 
     // Narrow the search range based on which point has better fitness
     if (leftResult.fitness < rightResult.fitness) {
@@ -778,8 +810,8 @@ async function findMaxFitness(measurements) {
         messagesBox.scrollTop = messagesBox.scrollHeight;
       }
 
-      // Schedule the next iteration
-      setTimeout(iterate, 0);
+      // Schedule the next iteration (works even when tab is inactive)
+      scheduleTask(iterate);
 
     } else { //We have completed the calibration (success or timeout)
       // Track best guess across all retry attempts
@@ -899,8 +931,8 @@ async function findMaxFitness(measurements) {
         bestGuess = JSON.parse(JSON.stringify(initialGuess));
         currentGuess = JSON.parse(JSON.stringify(initialGuess));
 
-        //Restart the iteration
-        setTimeout(iterate, 0);
+        //Restart the iteration (works even when tab is inactive)
+        scheduleTask(iterate);
       }
     }
   }

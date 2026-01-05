@@ -74,8 +74,12 @@ function scheduleCallback(callback, delay = 0) {
   } else {
     // Use requestAnimationFrame polling to avoid setTimeout throttling in background tabs
     const startTime = performance.now();
+    let rafId = null;
+    
     const poll = () => {
-      const elapsed = performance.now() - startTime;
+      const now = performance.now();
+      const elapsed = now - startTime;
+      
       if (elapsed >= delay) {
         try {
           callback();
@@ -83,10 +87,19 @@ function scheduleCallback(callback, delay = 0) {
           console.error('Error executing scheduled callback:', error);
         }
       } else {
-        requestAnimationFrame(poll);
+        rafId = requestAnimationFrame(poll);
       }
     };
-    requestAnimationFrame(poll);
+    
+    rafId = requestAnimationFrame(poll);
+    
+    // Return a cancel function for cleanup if needed
+    return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
   }
 }
 

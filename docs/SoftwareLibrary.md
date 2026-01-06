@@ -1,5 +1,5 @@
 # Software Library
-**Click on the three bars in the top right corner for a table of contents outline>>>^**
+
 
 **QUICK START TIP: use Inkscape to draw something with no fill. Export as a regular .svg (not inkscape svg)  Upload that to Krabscam.com build paths for the tools that you have and then Export as a .nc Gcode file which can up uploaded to your Maslow.**
 
@@ -340,6 +340,12 @@ PICTURE
 
 
 ## Other useful programs
+
+### GCodeClean
+- Command line program to clean up simplify and shorten Gcode. Does lots of things including reducing travel time, simplifying tiny fragrmented arcs and lines, .... 
+- Linux, can be run on Windows and Mac
+- <https://github.com/aersida/GCodeClean>
+- Forum link about it: <https://forums.maslowcnc.com/t/and-the-travelling-salesman-arrives-at-gcodeclean-v1-3-0/19688>
 
 ### Pepakura Designer
 PICTURE

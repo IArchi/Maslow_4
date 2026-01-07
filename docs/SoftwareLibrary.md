@@ -355,6 +355,7 @@ A library and command line utility to do some ‘cleaning’ of a gcode (an .nc,
 
 
 We also have:
+
     - eliminating redundant lines (within tolerances),
     - converting very short arcs (G2, G3) to simple lines (G1), also within tolerances,
     - linear to arc deduplication, converting several simple lines to a single arc,

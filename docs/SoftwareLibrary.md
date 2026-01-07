@@ -354,7 +354,6 @@ As per the README.md in GitHub
 A library and command line utility to do some ‘cleaning’ of a gcode (an .nc, .gcode) file. The primary objective is to be a GCode Linter, as part of that per line linting of gcode is already done.
 
 We also have:
-
     eliminating redundant lines (within tolerances),
     converting very short arcs (G2, G3) to simple lines (G1), also within tolerances,
     linear to arc deduplication, converting several simple lines to a single arc,

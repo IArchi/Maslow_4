@@ -147,21 +147,7 @@ Keep an eye on the machine during this entire process, it may be tempting to wal
 
 Before you can cut anything with your Maslow, you'll need to create gcode files. Gcode is the language that tells the machine where to move and how to cut.
 
-There are many different CAM (Computer Aided Manufacturing) programs available to generate gcode. Some popular free options include:
-
-- **Easel** - Web-based, beginner-friendly
-- **Fusion 360** - Professional grade, free for hobbyists
-- **Carbide Create** - Simple and free
-- **FreeCAD** - Open source
-
-The specific steps will vary depending on which program you choose, but generally you'll:
-
-1. Create or import a 2D or 3D design
-2. Set up your tool paths (how the router will move)
-3. Set your cutting parameters (feed rate, depth of cut, etc.)
-4. Generate and save the gcode file
-
-Make sure your gcode file is configured for the correct units (mm or inches) and that the home position is set where you want it.
+There are many different CAM (Computer Aided Manufacturing) programs available to generate gcode. Some popular options can be found here: https://www.maslowcnc.com/software-guide
 
 
 ## Uploading to Maslow
@@ -170,7 +156,7 @@ Once you have a gcode file, you can upload it to your Maslow.
 
 To load your gcode file onto the machine press the **Load File** button in the interface.
 
-<img src="user-guide/images/guide-12.png" alt="Load File" width="600">
+<img src="user-guide/images/guide-23.png" alt="Load File" width="600">
 
 This will open a file browser where you can select your gcode file from your computer. The file will be uploaded to the Maslow and will be ready to run.
 
@@ -181,7 +167,7 @@ Once uploaded, you can select your file from the drop down menu to prepare it fo
 
 You can move your Maslow around using the arrow buttons on the right side of the screen.
 
-<img src="user-guide/images/guide-13.png" alt="Movement controls" width="600">
+<img src="user-guide/images/guide-16.png" alt="Movement controls" width="600">
 
 The distance that it will move can be set by clicking on a distance number.
 
@@ -196,7 +182,7 @@ Use these controls to position the machine where you want to start your cut or t
 
 When you create a gcode file it will have a "home" position. The home position is shown with a cross in a circle on the interface. When you created your gcode file, it was set up so your shape would be cut relative to this home position. The current position of the machine is shown with a purple dot.
 
-<img src="user-guide/images/guide-19.png" alt="Home position" width="600">
+<img src="user-guide/images/guide-34.png" alt="Home position" width="600">
 
 If you want to move where the file will be cut on the sheet of plywood you can press the **Define Home** button which will move the file's home position to the machine's current position. This lets you move the shape you want to cut anywhere on the sheet.
 
@@ -205,7 +191,7 @@ Similarly you can set where the home position is for the z-axis. This will set w
 1. Move the z-axis up or down with the **Up** and **Down** buttons until the router bit is just touching the surface of your material
 2. Press **Define Home** to set the z-axis home position
 
-<img src="user-guide/images/guide-20.png" alt="Z-axis home" width="600">
+<img src="user-guide/images/guide-15.png" alt="Z-axis home" width="600">
 
 This ensures that your cuts will be at the correct depth.
 
@@ -221,7 +207,7 @@ To run the file:
 3. Ensure your router is turned on and at the correct speed
 4. Press the green play button to start the cut
 
-<img src="user-guide/images/guide-21.png" alt="Run file" width="600">
+<img src="user-guide/images/guide-22.png" alt="Run file" width="600">
 
 The machine will begin following the toolpath in your gcode file. You can:
 

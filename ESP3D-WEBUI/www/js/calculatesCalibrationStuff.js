@@ -349,14 +349,43 @@ function computeLinesFitness(measurements, lastGuess, skipThetaUpdates = false) 
     allLines.push(lines)
   })
 
-  //Computes the average fitness of all of the measurements
-  const fitness = calculateAverage(fitnesses)
+  // Filter out worst performing measurements before computing average
+  // Remove at most 4 measurements or 10% of total measurements, whichever is smaller
+  const maxMeasurementsToRemove = Math.min(4, Math.floor(fitnesses.length * 0.1))
+  let filteredFitnesses = fitnesses
+  let filteredLines = allLines
+
+  if (maxMeasurementsToRemove > 0 && fitnesses.length > maxMeasurementsToRemove) {
+    // Create array of indices paired with their fitness values
+    const indexedFitnesses = fitnesses.map((fitness, index) => ({ fitness, index }))
+
+    // Sort by fitness (worst = highest value)
+    indexedFitnesses.sort((a, b) => Math.abs(b.fitness) - Math.abs(a.fitness))
+
+    // Identify indices to remove (worst performers)
+    const indicesToRemove = new Set(
+      indexedFitnesses.slice(0, maxMeasurementsToRemove).map(item => item.index)
+    )
+
+    // Log filtering information during first iteration for debugging
+    if (!skipThetaUpdates && typeof lastGuess.filteringLogged === 'undefined') {
+      console.log(`Filtering calibration measurements: Removing ${maxMeasurementsToRemove} worst out of ${fitnesses.length} measurements`)
+      lastGuess.filteringLogged = true
+    }
+
+    // Filter out the worst measurements
+    filteredFitnesses = fitnesses.filter((_, index) => !indicesToRemove.has(index))
+    filteredLines = allLines.filter((_, index) => !indicesToRemove.has(index))
+  }
+
+  //Computes the average fitness of the filtered measurements
+  const fitness = calculateAverage(filteredFitnesses)
 
   // console.log(fitnesses)
 
   //Here is where we need to do the calculation of which corner is the worst and which direction to move it
   if (!skipThetaUpdates) {
-    lastGuess = computeFurthestFromCenterOfMass(allLines, lastGuess)
+    lastGuess = computeFurthestFromCenterOfMass(filteredLines, lastGuess)
   }
   lastGuess.fitness = fitness
 

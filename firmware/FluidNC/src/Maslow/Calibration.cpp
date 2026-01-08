@@ -111,6 +111,8 @@ bool Calibration::requestStateChange(int newState) {
             if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
+                // Save belt positions now that belts are extended and at a known position
+                Maslow.saveBeltPositions();
                 success = true;
                 break;
             } else {

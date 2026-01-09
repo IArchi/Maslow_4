@@ -263,7 +263,7 @@ const saveMaslowYaml = () => {
   SendGetHttp(cmd, saveConfigSuccess, saveConfigFail);
 }
 
-const saveConfigClearMessage = () => setTimeout(() => { setHTML(configSaveResultId, ""); }, 5000)
+const saveConfigClearMessage = () => scheduleCallback(() => { setHTML(configSaveResultId, ""); }, 5000)
 
 const saveConfigSuccess = (response) => {
   const configFileName = getConfigFileName();

@@ -33,7 +33,6 @@ let result
  *------------------------------------------------------------------------------
  */
 
-
 /**
  * Computes the distance between two points.
  * @param {number} a - The x-coordinate of the first point.
@@ -605,8 +604,8 @@ async function findBestRectangularStart(measurements) {
       diagonalBestSize = rightResult.size;
     }
 
-    // Allow UI to update
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Allow UI to update (works even when tab is inactive)
+    await yieldToEventLoop();
 
     if (leftResult.fitness < rightResult.fitness) {
       rightSize = rightThird;
@@ -692,8 +691,8 @@ async function findBestRectangularStart(measurements) {
       bestGuess = JSON.parse(JSON.stringify(rightResult.result));
     }
 
-    // Allow UI to update
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Allow UI to update (works even when tab is inactive)
+    await yieldToEventLoop();
 
     // Narrow the search range based on which point has better fitness
     if (leftResult.fitness < rightResult.fitness) {
@@ -807,8 +806,8 @@ async function findMaxFitness(measurements) {
         messagesBox.scrollTop = messagesBox.scrollHeight;
       }
 
-      // Schedule the next iteration
-      setTimeout(iterate, 0);
+      // Schedule the next iteration (works even when tab is inactive)
+      scheduleTask(iterate);
 
     } else { //We have completed the calibration (success or timeout)
       // Track best guess across all retry attempts
@@ -902,7 +901,7 @@ async function findMaxFitness(measurements) {
         initialGuess.fitness = 100000000;
 
         // This restarts calibration process for the next stage
-        setTimeout(() => { onCalibrationButtonsClick('$CAL', 'Calibrate'); }, 2000);
+        scheduleCallback(() => { onCalibrationButtonsClick('$CAL', 'Calibrate'); }, 2000);
       } else {
 
         sendCalibrationEvent({
@@ -928,8 +927,8 @@ async function findMaxFitness(measurements) {
         bestGuess = JSON.parse(JSON.stringify(initialGuess));
         currentGuess = JSON.parse(JSON.stringify(initialGuess));
 
-        //Restart the iteration
-        setTimeout(iterate, 0);
+        //Restart the iteration (works even when tab is inactive)
+        scheduleTask(iterate);
       }
     }
   }

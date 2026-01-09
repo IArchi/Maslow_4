@@ -770,11 +770,11 @@ const tabletCalRetract = () => onCalibrationButtonsClick("$ALL", "Retract All");
 const tabletCalExtend = () => onCalibrationButtonsClick("$EXT", "Extend All");
 const tabletCalCalibrate = () => {
   onCalibrationButtonsClick("$CAL", "Calibrate");
-  setTimeout(() => { hideModal("calibration-popup"); }, 1000);
+  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
 };
 const tabletCalTense = () => {
   onCalibrationButtonsClick("$TKSLK", "Apply Tension");
-  setTimeout(() => { hideModal("calibration-popup"); }, 1000);
+  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
 };
 // const tabletCalZHome = () => onCalibrationButtonsClick("$TKSLK", "Home Z");
 const tabletCalOpenConfig = () => {
@@ -1051,7 +1051,7 @@ async function tabletLoadGCodeFileSequentially(path) {
         // Process in chunks of approximately 1000 lines for better UX
         if (lineCount % 1000 === 0) {
           // Add a small delay to allow UI to update and prevent blocking
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await yieldToEventLoop();
         }
       }
     }
@@ -1383,7 +1383,7 @@ const onCalibrationButtonsClick = async (command, msg = "") => {
   }
 
   if (command !== '$MINFO') {
-    setTimeout(() => { sendCommand('$MINFO'); }, 1000);
+    scheduleCallback(() => { sendCommand('$MINFO'); }, 1000);
   }
 }
 

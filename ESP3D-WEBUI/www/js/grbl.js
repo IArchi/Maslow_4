@@ -534,7 +534,7 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   }
 
   setHTML("grbl_status", stateName);
-  // Set systemStatus for tablet view (will be overridden by show_grbl_SD if SD file is running)
+  // Set systemStatus for tablet view (will be updated with progress by show_grbl_SD if file is running)
   setHTML("systemStatus", stateName);
 
   if (stateName === "Alarm") {

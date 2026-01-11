@@ -574,8 +574,7 @@ function show_grbl_SD(sdName, sdPercent) {
   setHTML('grbl_SD_status', status)
 
   // Also update systemStatus in tablet view with progress when file is running
-  const systemStatusEl = id('systemStatus')
-  if (systemStatusEl && sdName && sdPercent !== undefined) {
+  if (sdName && sdPercent != null && !isNaN(sdPercent)) {
     // Show progress when file is running
     const progressStatus = `Run: ${sdPercent.toFixed(1)}%`
     setHTML('systemStatus', progressStatus)

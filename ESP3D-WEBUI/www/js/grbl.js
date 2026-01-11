@@ -534,6 +534,7 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   }
 
   setHTML("grbl_status", stateName);
+  // Set systemStatus for tablet view (will be overridden by show_grbl_SD if SD file is running)
   setHTML("systemStatus", stateName);
 
   if (stateName === "Alarm") {
@@ -544,7 +545,7 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
 
   const clickable = clickableFromStateName(stateName, hasSD);
   updateUnifiedPlayPauseButton(stateName, clickable);
-  
+
   // Keep original GRBL panel button behavior for the GRBL tab
   setClickability("sd_resume_btn", clickable.resume);
   setClickability("sd_pause_btn", clickable.pause);
@@ -568,9 +569,17 @@ function finalize_probing() {
 
 function show_grbl_SD(sdName, sdPercent) {
   const status = sdName
-    ? `${sdName}&nbsp;<progress id="print_prg" value=${sdPercent} max="100"></progress>${sdPercent}%`
+    ? `${sdName}&nbsp;<progress id="print_prg" value=${sdPercent} max="100"></progress>${sdPercent.toFixed(1)}%`
     : ''
   setHTML('grbl_SD_status', status)
+
+  // Also update systemStatus in tablet view with progress when file is running
+  const systemStatusEl = id('systemStatus')
+  if (systemStatusEl && sdName && sdPercent !== undefined) {
+    // Show progress when file is running
+    const progressStatus = `Run: ${sdPercent.toFixed(1)}%`
+    setHTML('systemStatus', progressStatus)
+  }
 }
 
 function show_grbl_probe_status(probed) {

@@ -118,9 +118,15 @@ const build_text_for_setting_list = (i, j, actions) => {
   const defVal = sEntry.defaultvalue;
   const input_type = defVal.startsWith("******") ? "password" : "text";
 
+  // Add pattern validation for SSID fields
+  let patternAttr = '';
+  if (sEntry.pos === EP_STA_SSID || sEntry.pos === EP_AP_SSID) {
+    patternAttr = ` pattern="[A-Za-z0-9.\\-_#$%&\\[\\]+]*" title="Allowed characters: A-Z, a-z, 0-9, . - _ # $ % & [ ] +"`;
+  }
+
   const html = [
     "<form>",
-    `<input id='${sfId}' data-i="${i}" data-j="${j}" type='${input_type}' class='form-control input-min' value='${defVal}'>`,
+    `<input id='${sfId}' data-i="${i}" data-j="${j}" type='${input_type}' class='form-control input-min' value='${defVal}'${patternAttr}>`,
     "</form>"
   ];
 

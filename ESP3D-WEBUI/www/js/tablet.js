@@ -822,6 +822,28 @@ function tabletInit() {
     if (wifiSSIDInput) {
       wifiSSIDInput.setAttribute("pattern", SSID_PATTERN);
       wifiSSIDInput.setAttribute("title", SSID_PATTERN_TITLE);
+      
+      // Add input filter to restrict characters in real-time
+      wifiSSIDInput.addEventListener("input", function(e) {
+        const input = e.target;
+        const cursorPosition = input.selectionStart;
+        const oldValue = input.value;
+        // Create regex that matches valid characters (must match entire string)
+        const validPattern = new RegExp("^" + SSID_PATTERN + "$");
+        
+        // If the current value doesn't match the pattern, filter it
+        if (!validPattern.test(oldValue)) {
+          // Remove invalid characters
+          const newValue = oldValue.split('').filter(char => {
+            return new RegExp("^[A-Za-z0-9._#$%&\\[\\]+\\-]$").test(char);
+          }).join('');
+          
+          input.value = newValue;
+          // Restore cursor position (adjusted for removed characters)
+          const removedCount = oldValue.length - newValue.length;
+          input.setSelectionRange(cursorPosition - removedCount, cursorPosition - removedCount);
+        }
+      });
     }
 
     id("tablettablink").addEventListener("DOMActivate", tabletDOMActivate, false);

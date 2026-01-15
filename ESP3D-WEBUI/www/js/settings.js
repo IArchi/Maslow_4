@@ -122,6 +122,27 @@ const build_text_for_setting_list = (i, j, actions) => {
   let patternAttr = '';
   if (sEntry.pos === EP_STA_SSID || sEntry.pos === EP_AP_SSID) {
     patternAttr = ` pattern="${SSID_PATTERN}" title="${SSID_PATTERN_TITLE}"`;
+    // Add input event to filter characters in real-time
+    actions.push({ id: sfId, type: "input", method: function(e) {
+      const input = e.target;
+      const cursorPosition = input.selectionStart;
+      const oldValue = input.value;
+      // Create regex that matches valid characters (must match entire string)
+      const validPattern = new RegExp("^" + SSID_PATTERN + "$");
+      
+      // If the current value doesn't match the pattern, filter it
+      if (!validPattern.test(oldValue)) {
+        // Remove invalid characters
+        const newValue = oldValue.split('').filter(char => {
+          return /^[A-Za-z0-9._#$%&\[\]+\-]$/.test(char);
+        }).join('');
+        
+        input.value = newValue;
+        // Restore cursor position (adjusted for removed characters)
+        const removedCount = oldValue.length - newValue.length;
+        input.setSelectionRange(cursorPosition - removedCount, cursorPosition - removedCount);
+      }
+    }});
   }
 
   const html = [

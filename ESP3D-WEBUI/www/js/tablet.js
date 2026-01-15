@@ -817,6 +817,13 @@ function tabletInit() {
     setJogSelector('mm');
     loadJogDists();
 
+    // Set WiFi SSID pattern validation dynamically
+    const wifiSSIDInput = id("wifiSSID");
+    if (wifiSSIDInput) {
+      wifiSSIDInput.setAttribute("pattern", SSID_PATTERN);
+      wifiSSIDInput.setAttribute("title", SSID_PATTERN_TITLE);
+    }
+
     id("tablettablink").addEventListener("DOMActivate", tabletDOMActivate, false);
 
     // Buttons - First Row

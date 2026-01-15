@@ -121,7 +121,7 @@ const build_text_for_setting_list = (i, j, actions) => {
   // Add pattern validation for SSID fields
   let patternAttr = '';
   if (sEntry.pos === EP_STA_SSID || sEntry.pos === EP_AP_SSID) {
-    patternAttr = ` pattern="[A-Za-z0-9.\\-_#$%&\\[\\]+]*" title="Allowed characters: A-Z, a-z, 0-9, . - _ # $ % & [ ] +"`;
+    patternAttr = ` pattern="${SSID_PATTERN}" title="${SSID_PATTERN_TITLE}"`;
   }
 
   const html = [

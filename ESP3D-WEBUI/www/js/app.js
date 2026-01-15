@@ -28,6 +28,9 @@ var last_ping = 0;
 var enable_ping = true;
 var esp_error_message = '';
 var esp_error_code = 0;
+// WiFi SSID validation pattern - allows A-Z, a-z, 0-9, and special chars: . - _ # $ % & [ ] +
+var SSID_PATTERN = '[A-Za-z0-9.\\-_#$%&\\[\\]+]*';
+var SSID_PATTERN_TITLE = 'Allowed characters: A-Z, a-z, 0-9, . - _ # $ % & [ ] +';
 
 //Check for IE
 //Edge

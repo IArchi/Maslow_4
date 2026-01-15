@@ -127,14 +127,12 @@ const build_text_for_setting_list = (i, j, actions) => {
       const input = e.target;
       const cursorPosition = input.selectionStart;
       const oldValue = input.value;
-      // Create regex that matches valid characters (must match entire string)
-      const validPattern = new RegExp("^" + SSID_PATTERN + "$");
       
       // If the current value doesn't match the pattern, filter it
-      if (!validPattern.test(oldValue)) {
-        // Remove invalid characters
+      if (!getSSIDFullPatternRegex().test(oldValue)) {
+        // Remove invalid characters using the shared char pattern
         const newValue = oldValue.split('').filter(char => {
-          return /^[A-Za-z0-9._#$%&\[\]+\-]$/.test(char);
+          return getSSIDCharPatternRegex().test(char);
         }).join('');
         
         input.value = newValue;

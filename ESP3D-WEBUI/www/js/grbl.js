@@ -567,14 +567,15 @@ function finalize_probing() {
   setClickability('sd_reset_btn', false)
 }
 
-function show_grbl_SD(sdName, sdPercent) {
+function show_grbl_SD(sdName, sdPercent, stateName) {
   const status = sdName
     ? `${sdName}&nbsp;<progress id="print_prg" value=${sdPercent} max="100"></progress>${sdPercent.toFixed(1)}%`
     : ''
   setHTML('grbl_SD_status', status)
 
   // Also update systemStatus in tablet view with progress when file is running
-  if (sdName && sdPercent != null && !isNaN(sdPercent)) {
+  // Only show progress if the machine state is "Run" to avoid showing "Run: 100%" when state is "Idle"
+  if (sdName && sdPercent != null && !isNaN(sdPercent) && stateName === 'Run') {
     // Show progress when file is running
     const progressStatus = `Run: ${sdPercent.toFixed(1)}%`
     setHTML('systemStatus', progressStatus)
@@ -633,7 +634,7 @@ function grblProcessStatus(response) {
   }
   show_grbl_position(WPOS, MPOS);
   show_grbl_status(grbl.stateName, grbl.message, grbl.sdName);
-  show_grbl_SD(grbl.sdName, grbl.sdPercent);
+  show_grbl_SD(grbl.sdName, grbl.sdPercent, grbl.stateName);
   show_grbl_probe_status(grbl.pins && grbl.pins.indexOf('P') !== -1);
   tabletGrblState(grbl, response);
 }

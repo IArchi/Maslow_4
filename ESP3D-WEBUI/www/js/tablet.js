@@ -1240,6 +1240,13 @@ function handleKeyDown(event) {
   if (!tabletIsActive()) {
     return;
   }
+  
+  // Check if an input or textarea element has focus
+  const activeElement = document.activeElement;
+  if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+    return;
+  }
+  
   if (isInputFocused) {
     return;
   }

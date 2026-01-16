@@ -817,6 +817,33 @@ function tabletInit() {
     setJogSelector('mm');
     loadJogDists();
 
+    // Set WiFi SSID pattern validation dynamically
+    const wifiSSIDInput = id("wifiSSID");
+    if (wifiSSIDInput) {
+      wifiSSIDInput.setAttribute("pattern", SSID_PATTERN);
+      wifiSSIDInput.setAttribute("title", SSID_PATTERN_TITLE);
+      
+      // Add input filter to restrict characters in real-time
+      wifiSSIDInput.addEventListener("input", function(e) {
+        const input = e.target;
+        const cursorPosition = input.selectionStart;
+        const oldValue = input.value;
+        
+        // If the current value doesn't match the pattern, filter it
+        if (!getSSIDFullPatternRegex().test(oldValue)) {
+          // Remove invalid characters using the shared char pattern
+          const newValue = oldValue.split('').filter(char => {
+            return getSSIDCharPatternRegex().test(char);
+          }).join('');
+          
+          input.value = newValue;
+          // Restore cursor position (adjusted for removed characters)
+          const removedCount = oldValue.length - newValue.length;
+          input.setSelectionRange(cursorPosition - removedCount, cursorPosition - removedCount);
+        }
+      });
+    }
+
     id("tablettablink").addEventListener("DOMActivate", tabletDOMActivate, false);
 
     // Buttons - First Row
@@ -1213,6 +1240,13 @@ function handleKeyDown(event) {
   if (!tabletIsActive()) {
     return;
   }
+  
+  // Check if an input or textarea element has focus
+  const activeElement = document.activeElement;
+  if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+    return;
+  }
+  
   if (isInputFocused) {
     return;
   }

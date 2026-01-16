@@ -118,9 +118,34 @@ const build_text_for_setting_list = (i, j, actions) => {
   const defVal = sEntry.defaultvalue;
   const input_type = defVal.startsWith("******") ? "password" : "text";
 
+  // Add pattern validation for SSID fields
+  let patternAttr = '';
+  if (sEntry.pos === EP_STA_SSID || sEntry.pos === EP_AP_SSID) {
+    patternAttr = ` pattern="${SSID_PATTERN}" title="${SSID_PATTERN_TITLE}"`;
+    // Add input event to filter characters in real-time
+    actions.push({ id: sfId, type: "input", method: function(e) {
+      const input = e.target;
+      const cursorPosition = input.selectionStart;
+      const oldValue = input.value;
+      
+      // If the current value doesn't match the pattern, filter it
+      if (!getSSIDFullPatternRegex().test(oldValue)) {
+        // Remove invalid characters using the shared char pattern
+        const newValue = oldValue.split('').filter(char => {
+          return getSSIDCharPatternRegex().test(char);
+        }).join('');
+        
+        input.value = newValue;
+        // Restore cursor position (adjusted for removed characters)
+        const removedCount = oldValue.length - newValue.length;
+        input.setSelectionRange(cursorPosition - removedCount, cursorPosition - removedCount);
+      }
+    }});
+  }
+
   const html = [
     "<form>",
-    `<input id='${sfId}' data-i="${i}" data-j="${j}" type='${input_type}' class='form-control input-min' value='${defVal}'>`,
+    `<input id='${sfId}' data-i="${i}" data-j="${j}" type='${input_type}' class='form-control input-min' value='${defVal}'${patternAttr}>`,
     "</form>"
   ];
 

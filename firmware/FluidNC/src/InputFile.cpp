@@ -4,6 +4,7 @@
 #include "InputFile.h"
 
 #include "Report.h"
+#include "GCode.h"
 
 InputFile::InputFile(const char* defaultFs, const char* path, WebUI::AuthenticationLevel auth_level, Channel& out) :
     FileStream(path, "r", defaultFs), _auth_level(auth_level), _out(out), _line_num(0) {}
@@ -86,9 +87,17 @@ Channel* InputFile::pollLine(char* line) {
 
 void InputFile::stopJob() {
     //Report print stopped
-    _notifyf("File print canceled", "Reset during file job at line: %d", getLineNumber());
-    log_info("Reset during file job at line: " << getLineNumber());
+    _notifyf("File print canceled", "Reset during file job at line: %d (%.2f%% complete)", getLineNumber(), percent_complete());
+    log_info("Reset during file job at line: " << getLineNumber() << " (" << percent_complete() << "% complete)"
+             << " - Last G-code line number: N" << gc_state.line_number);
     allChannels.kill(this);
+}
+
+void InputFile::pauseJob() {
+    //Report print paused
+    _notifyf("File print paused", "Paused file job at line: %d (%.2f%% complete)", getLineNumber(), percent_complete());
+    log_info("Paused file job at line: " << getLineNumber() << " (" << percent_complete() << "% complete)"
+             << " - Last G-code line number: N" << gc_state.line_number);
 }
 
 InputFile::~InputFile() {

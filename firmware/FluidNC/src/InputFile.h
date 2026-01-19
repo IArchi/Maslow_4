@@ -68,6 +68,11 @@ public:
     void     ack(Error status) override;
     Channel* pollLine(char* line) override;
     void     stopJob() override;
+    void     pauseJob() override;
 
     ~InputFile();
+
+private:
+    // Helper method to format the current motion command as a string
+    const char* getMotionCommandString();
 };

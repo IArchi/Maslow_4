@@ -536,6 +536,7 @@ static void protocol_do_feedhold() {
 
         case State::Cycle:
             protocol_start_holding();
+            allChannels.pauseJob();  // Log file position when paused
             break;
 
         case State::Jog:

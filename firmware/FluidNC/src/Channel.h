@@ -86,6 +86,7 @@ public:
     }
 
     virtual void stopJob() {}
+    virtual void pauseJob() {}
 
     size_t timedReadBytes(uint8_t* buffer, size_t length, TickType_t timeout) { return timedReadBytes((char*)buffer, length, timeout); }
 

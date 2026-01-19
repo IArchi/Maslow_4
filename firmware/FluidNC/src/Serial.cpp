@@ -256,6 +256,14 @@ void AllChannels::stopJob() {
     _mutex.unlock();
 }
 
+void AllChannels::pauseJob() {
+    _mutex.lock();
+    for (auto channel : _channelq) {
+        channel->pauseJob();
+    }
+    _mutex.unlock();
+}
+
 size_t AllChannels::write(const uint8_t* buffer, size_t length) {
     _mutex.lock();
     for (auto channel : _channelq) {

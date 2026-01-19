@@ -100,6 +100,7 @@ public:
     Channel* pollLine(char* line) override;
 
     void stopJob() override;
+    void pauseJob() override;
 };
 
 extern AllChannels allChannels;

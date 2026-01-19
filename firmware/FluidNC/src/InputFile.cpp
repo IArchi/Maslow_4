@@ -85,49 +85,35 @@ Channel* InputFile::pollLine(char* line) {
     }
 }
 
+
 void InputFile::stopJob() {
     //Report print stopped
     _notifyf("File print canceled", "Reset during file job at line: %d (%.2f%% complete)", getLineNumber(), percent_complete());
-    
-    // Format the last motion command
-    const char* motionCmd = "unknown";
-    switch (gc_state.modal.motion) {
-        case Motion::None:        motionCmd = "G80"; break;
-        case Motion::Seek:        motionCmd = "G0"; break;
-        case Motion::Linear:      motionCmd = "G1"; break;
-        case Motion::CwArc:       motionCmd = "G2"; break;
-        case Motion::CcwArc:      motionCmd = "G3"; break;
-        case Motion::ProbeToward: motionCmd = "G38.2"; break;
-        case Motion::ProbeTowardNoError: motionCmd = "G38.3"; break;
-        case Motion::ProbeAway:   motionCmd = "G38.4"; break;
-        case Motion::ProbeAwayNoError: motionCmd = "G38.5"; break;
-    }
-    
     log_info("Reset during file job at line: " << getLineNumber() << " (" << percent_complete() << "% complete)"
-             << " - Last motion command: " << motionCmd);
+             << " - Last motion command: " << getMotionCommandString());
     allChannels.kill(this);
 }
 
 void InputFile::pauseJob() {
     //Report print paused
     _notifyf("File print paused", "Paused file job at line: %d (%.2f%% complete)", getLineNumber(), percent_complete());
-    
-    // Format the last motion command
-    const char* motionCmd = "unknown";
-    switch (gc_state.modal.motion) {
-        case Motion::None:        motionCmd = "G80"; break;
-        case Motion::Seek:        motionCmd = "G0"; break;
-        case Motion::Linear:      motionCmd = "G1"; break;
-        case Motion::CwArc:       motionCmd = "G2"; break;
-        case Motion::CcwArc:      motionCmd = "G3"; break;
-        case Motion::ProbeToward: motionCmd = "G38.2"; break;
-        case Motion::ProbeTowardNoError: motionCmd = "G38.3"; break;
-        case Motion::ProbeAway:   motionCmd = "G38.4"; break;
-        case Motion::ProbeAwayNoError: motionCmd = "G38.5"; break;
-    }
-    
     log_info("Paused file job at line: " << getLineNumber() << " (" << percent_complete() << "% complete)"
-             << " - Last motion command: " << motionCmd);
+             << " - Last motion command: " << getMotionCommandString());
+}
+
+const char* InputFile::getMotionCommandString() {
+    switch (gc_state.modal.motion) {
+        case Motion::None:        return "G80";
+        case Motion::Seek:        return "G0";
+        case Motion::Linear:      return "G1";
+        case Motion::CwArc:       return "G2";
+        case Motion::CcwArc:      return "G3";
+        case Motion::ProbeToward: return "G38.2";
+        case Motion::ProbeTowardNoError: return "G38.3";
+        case Motion::ProbeAway:   return "G38.4";
+        case Motion::ProbeAwayNoError: return "G38.5";
+        default: return "unknown";
+    }
 }
 
 InputFile::~InputFile() {

@@ -553,7 +553,7 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
         isActionable = true;
         break;
       case 7: // READY_TO_CUT
-        displayStatus = "Ready to Cut";
+        displayStatus = "Idle";
         break;
       default:
         displayStatus = stateName;

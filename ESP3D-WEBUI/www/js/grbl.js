@@ -566,11 +566,9 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   const statusElement = id("systemStatus");
   if (statusElement) {
     if (isActionable) {
-      statusElement.style.cursor = "pointer";
-      statusElement.style.fontWeight = "bold";
+      statusElement.classList.add("system-status-actionable");
     } else {
-      statusElement.style.cursor = "default";
-      statusElement.style.fontWeight = "normal";
+      statusElement.classList.remove("system-status-actionable");
     }
   }
 

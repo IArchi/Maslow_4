@@ -537,16 +537,20 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   // Set systemStatus for tablet view (will be updated with progress by show_grbl_SD if file is running)
   // Replace "Idle" with state-dependent text based on Maslow state
   let displayStatus = stateName;
+  let isActionable = false;
   if (stateName === "Idle" && typeof maslowStatus !== 'undefined') {
     switch (maslowStatus.state) {
       case 0: // UNKNOWN
         displayStatus = "Retract";
+        isActionable = true;
         break;
       case 2: // RETRACTED
         displayStatus = "Extend";
+        isActionable = true;
         break;
       case 4: // EXTENDEDOUT
         displayStatus = "Apply Tension";
+        isActionable = true;
         break;
       case 7: // READY_TO_CUT
         displayStatus = "Ready to Cut";
@@ -557,6 +561,18 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
     }
   }
   setHTML("systemStatus", displayStatus);
+
+  // Add visual feedback for clickable status button
+  const statusElement = id("systemStatus");
+  if (statusElement) {
+    if (isActionable) {
+      statusElement.style.cursor = "pointer";
+      statusElement.style.fontWeight = "bold";
+    } else {
+      statusElement.style.cursor = "default";
+      statusElement.style.fontWeight = "normal";
+    }
+  }
 
   if (stateName === "Alarm") {
     id("systemStatus").classList.add("system-status-alarm");

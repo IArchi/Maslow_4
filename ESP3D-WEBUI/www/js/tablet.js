@@ -429,10 +429,36 @@ function tabletShowMessage(msg, collecting) {
 
 function tabletShowResponse(response) { }
 
-function clearAlarm() {
-  if (getText('systemStatus') === 'Alarm') {
-    id('systemStatus').classList.remove('system-status-alarm')
-    SendPrinterCommand('$X', true, null, null, 114, 1)
+function handleSystemStatusClick() {
+  const statusText = getText('systemStatus');
+  
+  // Handle Alarm state
+  if (statusText === 'Alarm') {
+    id('systemStatus').classList.remove('system-status-alarm');
+    SendPrinterCommand('$X', true, null, null, 114, 1);
+    return;
+  }
+  
+  // Handle Maslow state-dependent actions when showing custom text
+  if (typeof maslowStatus !== 'undefined') {
+    switch (maslowStatus.state) {
+      case 0: // UNKNOWN - Retract
+        if (statusText === 'Retract') {
+          tabletCalRetract();
+        }
+        break;
+      case 2: // RETRACTED - Extend
+        if (statusText === 'Extend') {
+          tabletCalExtend();
+        }
+        break;
+      case 4: // EXTENDEDOUT - Apply Tension
+        if (statusText === 'Apply Tension') {
+          tabletCalTense();
+        }
+        break;
+      // State 7 (READY_TO_CUT) shows "Ready to Cut" but doesn't need a click action
+    }
   }
 }
 
@@ -881,7 +907,7 @@ function tabletInit() {
     id("tablettab_gcode_play").addEventListener("click", doPlayButton);
     // id("tablettab_gcode_pause").addEventListener("click", doPauseButton);
     id("tablettab_gcode_stop").addEventListener("click", tabletGCodeStop);
-    id("systemStatus").addEventListener("click", clearAlarm);
+    id("systemStatus").addEventListener("click", handleSystemStatusClick);
 
     id("tablettab_save_serial_msg").addEventListener("click", saveSerialMessages);
     

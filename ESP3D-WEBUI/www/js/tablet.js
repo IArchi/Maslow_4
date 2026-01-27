@@ -439,25 +439,19 @@ function handleSystemStatusClick() {
     return;
   }
   
-  // Handle Maslow state-dependent actions when showing custom text
+  // Handle Maslow state-dependent actions based on maslowStatus.state only
   if (typeof maslowStatus !== 'undefined') {
     switch (maslowStatus.state) {
       case 0: // UNKNOWN - Retract
-        if (statusText === 'Retract') {
-          tabletCalRetract();
-        }
+        tabletCalRetract();
         break;
       case 2: // RETRACTED - Extend
-        if (statusText === 'Extend') {
-          tabletCalExtend();
-        }
+        tabletCalExtend();
         break;
       case 4: // EXTENDEDOUT - Apply Tension
-        if (statusText === 'Apply Tension') {
-          tabletCalTense();
-        }
+        tabletCalTense();
         break;
-      // State 7 (READY_TO_CUT) shows "Ready to Cut" but doesn't need a click action
+      // State 7 (READY_TO_CUT) and others don't need a click action
     }
   }
 }

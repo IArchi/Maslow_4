@@ -236,6 +236,12 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 	}
+	
+	// Update systemStatus display when Maslow state changes
+	// This ensures the button shows the correct text immediately after state change
+	if (typeof updateSystemStatus === 'function') {
+		updateSystemStatus();
+	}
 }
 
 

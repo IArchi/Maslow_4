@@ -525,6 +525,55 @@ function show_grbl_position(wpos, mpos) {
   }
 }
 
+// Update systemStatus display based on current Maslow state
+// Can be called independently when Maslow state changes
+const updateSystemStatus = () => {
+  if (typeof maslowStatus === 'undefined') {
+    return;
+  }
+  
+  let displayStatus = "Idle"; // Default fallback
+  let isActionable = false;
+  
+  // Check Maslow state first - these states should always show specific text
+  switch (maslowStatus.state) {
+    case 0: // UNKNOWN
+      displayStatus = "Retract";
+      isActionable = true;
+      break;
+    case 2: // RETRACTED
+      displayStatus = "Extend";
+      isActionable = true;
+      break;
+    case 4: // EXTENDEDOUT
+      displayStatus = "Apply Tension";
+      isActionable = true;
+      break;
+    case 7: // READY_TO_CUT
+      displayStatus = "Idle";
+      break;
+    default:
+      // For other Maslow states, keep current display or use "Idle"
+      const currentStatus = getText("systemStatus");
+      if (currentStatus) {
+        displayStatus = currentStatus;
+      }
+      break;
+  }
+  
+  setHTML("systemStatus", displayStatus);
+  
+  // Add visual feedback for clickable status button
+  const statusElement = id("systemStatus");
+  if (statusElement) {
+    if (isActionable) {
+      statusElement.classList.add("system-status-actionable");
+    } else {
+      statusElement.classList.remove("system-status-actionable");
+    }
+  }
+};
+
 const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   setHTML("grbl_status_text", translate_text_item(message))
   setClickability("clear_status_btn", stateName === "Alarm");
@@ -534,6 +583,7 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   }
 
   setHTML("grbl_status", stateName);
+  
   // Set systemStatus for tablet view (will be updated with progress by show_grbl_SD if file is running)
   // Display state-dependent text based on Maslow state, falling back to GRBL state
   let displayStatus = stateName;

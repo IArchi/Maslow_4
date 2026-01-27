@@ -535,10 +535,12 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
 
   setHTML("grbl_status", stateName);
   // Set systemStatus for tablet view (will be updated with progress by show_grbl_SD if file is running)
-  // Replace "Idle" with state-dependent text based on Maslow state
+  // Display state-dependent text based on Maslow state, falling back to GRBL state
   let displayStatus = stateName;
   let isActionable = false;
-  if (stateName === "Idle" && typeof maslowStatus !== 'undefined') {
+  
+  // Check Maslow state first - these states should always show specific text
+  if (typeof maslowStatus !== 'undefined') {
     switch (maslowStatus.state) {
       case 0: // UNKNOWN
         displayStatus = "Retract";
@@ -553,9 +555,14 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
         isActionable = true;
         break;
       case 7: // READY_TO_CUT
-        displayStatus = "Idle";
+        // Show Idle for ready to cut state
+        if (stateName === "Idle") {
+          displayStatus = "Idle";
+        }
+        // Otherwise keep the GRBL state name (e.g., "Run", "Hold", etc.)
         break;
       default:
+        // For other Maslow states, use the GRBL state name
         displayStatus = stateName;
         break;
     }

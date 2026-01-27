@@ -535,7 +535,28 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
 
   setHTML("grbl_status", stateName);
   // Set systemStatus for tablet view (will be updated with progress by show_grbl_SD if file is running)
-  setHTML("systemStatus", stateName);
+  // Replace "Idle" with state-dependent text based on Maslow state
+  let displayStatus = stateName;
+  if (stateName === "Idle" && typeof maslowStatus !== 'undefined') {
+    switch (maslowStatus.state) {
+      case 0: // UNKNOWN
+        displayStatus = "Retract";
+        break;
+      case 2: // RETRACTED
+        displayStatus = "Extend";
+        break;
+      case 4: // EXTENDEDOUT
+        displayStatus = "Apply Tension";
+        break;
+      case 7: // READY_TO_CUT
+        displayStatus = "Ready to Cut";
+        break;
+      default:
+        displayStatus = stateName;
+        break;
+    }
+  }
+  setHTML("systemStatus", displayStatus);
 
   if (stateName === "Alarm") {
     id("systemStatus").classList.add("system-status-alarm");

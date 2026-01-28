@@ -24,7 +24,7 @@ We implemented a **shared computation library** approach:
    - All the "magnetically attracted lines" computation logic
    - Works in both browser and Node.js environments
 
-2. **Refactored `computation-simulator.js`** - Dramatically simplified from 269 to 32 lines:
+2. **Refactored `computation-simulator.js`** - Dramatically simplified from 269 to 33 lines:
    - Now just a thin wrapper around `CalibrationComputer`
    - Eliminates all duplicated computation code
    - Maintains the same interface for backward compatibility
@@ -38,7 +38,7 @@ We implemented a **shared computation library** approach:
 
 **Code Reduction:**
 - **Before**: 269 lines of duplicated computation logic in `computation-simulator.js`
-- **After**: 32 lines that delegate to shared library
+- **After**: 33 lines that delegate to shared library
 - **Reduction**: 88% reduction in duplicated code
 
 **Benefits:**

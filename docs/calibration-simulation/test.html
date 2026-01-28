@@ -33,7 +33,7 @@
 
             // Test 2: Endpoint calculation
             const end = getEndPoint(0, 0, 0, 10);
-            log('Test 2: getEndPoint(0,0,0,10) = {' + end.x.toFixed(2) + ', ' + end.y.toFixed(2) + '} (expected {10, 0})', Math.abs(end.x - 10) < 0.001 ? 'pass' : 'fail');
+            log('Test 2: getEndPoint(0,0,0,10) = {' + end.x.toFixed(2) + ', ' + end.y.toFixed(2) + '} (expected {10, 0})', (Math.abs(end.x - 10) < 0.001 && Math.abs(end.y) < 0.001) ? 'pass' : 'fail');
 
             // Test 3: CalibrationComputer initialization
             const computer = new CalibrationComputer({ tl: {x:0,y:2000}, tr: {x:3000,y:2000}, bl: {x:0,y:0}, br: {x:3000,y:0} });

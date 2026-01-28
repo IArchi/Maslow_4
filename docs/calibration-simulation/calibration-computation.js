@@ -97,7 +97,7 @@ function walkLines(tlLine, trLine, blLine, brLine, stepSize) {
         brLine = lines[3];
     }
 
-    return { tlLine, trLine, blLine, brLine, changeMade };
+    return { tlLine, trLine, blLine, brLine };
 }
 
 /**
@@ -138,12 +138,15 @@ function magneticallyAttractedLinesFitness(measurement, individual) {
         length: measurement.br
     });
 
-    // Walk the lines to minimize endpoint distances
-    const walkedResult = walkLines(tlLine, trLine, blLine, brLine, 0.05);
-    tlLine = walkedResult.tlLine;
-    trLine = walkedResult.trLine;
-    blLine = walkedResult.blLine;
-    brLine = walkedResult.brLine;
+    // Walk the lines with decreasing step sizes for progressive refinement
+    const stepSizes = [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001];
+    for (const stepSize of stepSizes) {
+        const walked = walkLines(tlLine, trLine, blLine, brLine, stepSize);
+        tlLine = walked.tlLine;
+        trLine = walked.trLine;
+        blLine = walked.blLine;
+        brLine = walked.brLine;
+    }
 
     // Store updated theta values back in measurement
     measurement.tlTheta = tlLine.theta;
@@ -163,65 +166,80 @@ function magneticallyAttractedLinesFitness(measurement, individual) {
  * Compute distance from center of mass for a line
  */
 function computeDistanceFromCenterOfMass(lineToCompare, line2, line3, line4) {
-    const centerX = (lineToCompare.xEnd + line2.xEnd + line3.xEnd + line4.xEnd) / 4;
-    const centerY = (lineToCompare.yEnd + line2.yEnd + line3.yEnd + line4.yEnd) / 4;
+    // Compute the center of mass from the OTHER three lines (not including lineToCompare)
+    const centerX = (line2.xEnd + line3.xEnd + line4.xEnd) / 3;
+    const centerY = (line2.yEnd + line3.yEnd + line4.yEnd) / 3;
 
-    return distanceBetweenPoints(lineToCompare.xBegin, lineToCompare.yBegin, centerX, centerY);
+    // Return the distance vector from lineToCompare's endpoint to the center
+    return {
+        x: lineToCompare.xEnd - centerX,
+        y: lineToCompare.yEnd - centerY
+    };
 }
 
 /**
- * Generate tweaks for anchor positions
+ * Generate tweaks for anchor positions based on distances from center of mass
  */
 function generateTweaks(lines) {
-    const tweakAmount = 5;
-    const tweaks = [];
-
-    for (let tl = -1; tl <= 1; tl++) {
-        for (let tr = -1; tr <= 1; tr++) {
-            for (let bl = -1; bl <= 1; bl++) {
-                for (let br = -1; br <= 1; br++) {
-                    tweaks.push({ tl, tr, bl, br });
-                }
-            }
-        }
-    }
-
-    return tweaks;
+    return {
+        tlX: computeDistanceFromCenterOfMass(lines.tlLine, lines.trLine, lines.blLine, lines.brLine).x,
+        tlY: computeDistanceFromCenterOfMass(lines.tlLine, lines.trLine, lines.blLine, lines.brLine).y,
+        trX: computeDistanceFromCenterOfMass(lines.trLine, lines.tlLine, lines.blLine, lines.brLine).x,
+        trY: computeDistanceFromCenterOfMass(lines.trLine, lines.tlLine, lines.blLine, lines.brLine).y,
+        brX: computeDistanceFromCenterOfMass(lines.brLine, lines.tlLine, lines.trLine, lines.blLine).x
+    };
 }
 
 /**
  * Compute furthest anchor from center of mass
  */
 function computeFurthestFromCenterOfMass(allLines, lastGuess) {
-    const tweaks = generateTweaks(allLines);
-    let bestGuess = JSON.parse(JSON.stringify(lastGuess));
-    let bestFitnessSum = Infinity;
+    let tlX = 0, tlY = 0, trX = 0, trY = 0, brX = 0;
 
-    tweaks.forEach(tweak => {
-        const guess = {
-            tl: { x: lastGuess.tl.x + tweak.tl, y: lastGuess.tl.y + tweak.tl },
-            tr: { x: lastGuess.tr.x + tweak.tr, y: lastGuess.tr.y + tweak.tr },
-            bl: { x: lastGuess.bl.x + tweak.bl, y: lastGuess.bl.y + tweak.bl },
-            br: { x: lastGuess.br.x + tweak.br, y: lastGuess.br.y + tweak.br }
-        };
-
-        let fitnessSum = 0;
-        allLines.forEach(lines => {
-            const tlDistance = computeDistanceFromCenterOfMass(lines.tlLine, lines.trLine, lines.blLine, lines.brLine);
-            const trDistance = computeDistanceFromCenterOfMass(lines.trLine, lines.tlLine, lines.blLine, lines.brLine);
-            const blDistance = computeDistanceFromCenterOfMass(lines.blLine, lines.tlLine, lines.trLine, lines.brLine);
-            const brDistance = computeDistanceFromCenterOfMass(lines.brLine, lines.tlLine, lines.trLine, lines.blLine);
-
-            fitnessSum += tlDistance + trDistance + blDistance + brDistance;
-        });
-
-        if (fitnessSum < bestFitnessSum) {
-            bestFitnessSum = fitnessSum;
-            bestGuess = guess;
-        }
+    // Accumulate tweaks from all lines
+    allLines.forEach(lines => {
+        const tweaks = generateTweaks(lines);
+        tlX += tweaks.tlX;
+        tlY += tweaks.tlY;
+        trX += tweaks.trX;
+        trY += tweaks.trY;
+        brX += tweaks.brX;
     });
 
-    return bestGuess;
+    // Average the tweaks
+    const n = allLines.length;
+    tlX /= n;
+    tlY /= n;
+    trX /= n;
+    trY /= n;
+    brX /= n;
+
+    // Find the largest error
+    const maxError = Math.max(
+        Math.abs(tlX),
+        Math.abs(tlY),
+        Math.abs(trX),
+        Math.abs(trY),
+        Math.abs(brX)
+    );
+
+    // Apply the largest error as a correction
+    const newGuess = JSON.parse(JSON.stringify(lastGuess));
+    const scalor = -1;  // Move in opposite direction of error
+
+    if (Math.abs(tlX) === maxError) {
+        newGuess.tl.x += tlX * scalor;
+    } else if (Math.abs(tlY) === maxError) {
+        newGuess.tl.y += tlY * scalor;
+    } else if (Math.abs(trX) === maxError) {
+        newGuess.tr.x += trX * scalor;
+    } else if (Math.abs(trY) === maxError) {
+        newGuess.tr.y += trY * scalor;
+    } else if (Math.abs(brX) === maxError) {
+        newGuess.br.x += brX * scalor;
+    }
+
+    return newGuess;
 }
 
 /**

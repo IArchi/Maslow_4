@@ -161,11 +161,38 @@ This "magnetically attracted lines" approach is robust to measurement errors and
 ## Files
 
 - `index.html`: Main simulator interface
+- `calibration-computation.js`: **Shared computation library** - Contains the core calibration algorithm used by both the simulator and ESP3D-WEBUI
 - `machine-simulator.js`: ESP32 firmware simulation
-- `computation-simulator.js`: Browser-side calibration algorithm
+- `computation-simulator.js`: Wrapper that uses the shared computation library
 - `visualization.js`: Canvas-based rendering
 - `main.js`: Orchestration and UI management
 - `README.md`: This documentation
+
+## Code Sharing and Architecture
+
+### Eliminating Duplication
+
+This simulator now uses a **shared computation library** (`calibration-computation.js`) instead of duplicating the calibration algorithm code. This is a key improvement that:
+
+1. **Eliminates code duplication** between the simulator and the actual implementation
+2. **Ensures consistency** - The simulator uses the exact same math as the real machine
+3. **Simplifies maintenance** - Algorithm improvements are automatically available in both places
+4. **Reduces bugs** - No risk of the simulator and real code getting out of sync
+
+### How It Works
+
+The shared library (`calibration-computation.js`) contains:
+- Core mathematical functions (`computeLinesFitness`, `magneticallyAttractedLinesFitness`, etc.)
+- `CalibrationComputer` class that manages the iterative optimization process
+- All the "magnetically attracted lines" algorithm logic
+
+The simulator simply wraps this library with a thin adapter (`ComputationSimulator` class) that provides the same interface as before, but delegates all computation to the shared code.
+
+### Relationship to ESP3D-WEBUI
+
+The computation logic in `calibration-computation.js` is extracted from and synchronized with `ESP3D-WEBUI/www/js/calculatesCalibrationStuff.js`. When the ESP3D-WEBUI code is updated, the shared library should be updated as well to maintain consistency.
+
+Future improvements could make `calibration-computation.js` the single source of truth by having ESP3D-WEBUI import it directly, but for now it serves as a bridge to eliminate simulator-specific duplication.
 
 ## Limitations
 

@@ -1,50 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Quick Simulation Test</title>
+    <meta charset="UTF-8">
+    <title>Calibration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+    </style>
 </head>
 <body>
-    <h1>Testing Calibration Simulation</h1>
-    <div id="output"></div>
-    
-    <script src="machine-simulator.js"></script>
-    <script src="computation-simulator.js"></script>
+    <h1>Calibration Computation Library Test</h1>
+    <button onclick="runTests()">Run Tests</button>
+    <div id="results"></div>
+    <script src="calibration-computation.js"></script>
     <script>
-        const output = document.getElementById('output');
-        
-        function log(msg) {
-            output.innerHTML += msg + '<br>';
+        function log(msg, type) {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = msg;
+            document.getElementById('results').appendChild(div);
         }
-        
-        // Test machine simulator
-        try {
-            const config = {
-                frameWidth: 3000,
-                frameHeight: 2000,
-                gridSize: 3,
-                measurementError: 0.5,
-                calibration_grid_width_mm_X: 0,
-                calibration_grid_height_mm_Y: 0,
-                calibrationMaxSpacingMm: 260
-            };
-            
-            const machine = new MachineSimulator(config);
-            log('✓ Machine simulator created');
-            
-            const gridInfo = machine.generateCalibrationGrid();
-            log(`✓ Grid generated: ${gridInfo.gridSize}x${gridInfo.gridSize} with ${gridInfo.pointCount} points`);
-            
-            const measurement = machine.takeMeasurement(0);
-            log(`✓ Measurement taken: TL=${measurement.tl.toFixed(2)}mm`);
-            
-            // Test computation simulator
-            const computation = new ComputationSimulator(machine.initialGuess);
-            log('✓ Computation simulator created');
-            
-            log('<br><strong>All tests passed!</strong>');
-        } catch (e) {
-            log(`<span style="color:red">✗ Error: ${e.message}</span>`);
-            console.error(e);
+
+        async function runTests() {
+            document.getElementById('results').innerHTML = '';
+            log('Testing calibration-computation.js...', 'info');
+
+            // Test 1: Distance calculation
+            const dist = distanceBetweenPoints(0, 0, 3, 4);
+            log('Test 1: distanceBetweenPoints(0,0,3,4) = ' + dist + ' (expected 5)', Math.abs(dist - 5) < 0.001 ? 'pass' : 'fail');
+
+            // Test 2: Endpoint calculation
+            const end = getEndPoint(0, 0, 0, 10);
+            log('Test 2: getEndPoint(0,0,0,10) = {' + end.x.toFixed(2) + ', ' + end.y.toFixed(2) + '} (expected {10, 0})', Math.abs(end.x - 10) < 0.001 ? 'pass' : 'fail');
+
+            // Test 3: CalibrationComputer initialization
+            const computer = new CalibrationComputer({ tl: {x:0,y:2000}, tr: {x:3000,y:2000}, bl: {x:0,y:0}, br: {x:3000,y:0} });
+            log('Test 3: CalibrationComputer created', computer ? 'pass' : 'fail');
+
+            // Test 4: Process sample data
+            const measurements = [{ tl: 1581, tr: 1581, bl: 1581, br: 1581 }];
+            try {
+                const result = await computer.processDataChunk(measurements, null);
+                log('Test 4: processDataChunk completed, fitness = ' + (1/result.fitness).toFixed(6), result ? 'pass' : 'fail');
+            } catch (e) {
+                log('Test 4: processDataChunk failed: ' + e.message, 'fail');
+            }
+
+            log('Tests complete!', 'info');
         }
     </script>
 </body>

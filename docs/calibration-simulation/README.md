@@ -1,8 +1,60 @@
-# Maslow CNC Calibration Simulator
+# Maslow CNC Calibration Simulators
 
-**[🚀 Launch the Interactive Simulator](index.html)**
+**[🚀 Launch the Machine Simulator](index.html)** | **[📊 Launch the Data Parser](data-parser.html)**
 
-This simulator provides an accurate representation of the Maslow CNC machine's calibration process. Unlike the previous simulation at https://github.com/BarbourSmith/Calibration-Simulation/, this implementation exactly mimics how data flows between the machine firmware and the browser-side computation.
+This directory contains two calibration simulators for the Maslow CNC machine, both using the shared calibration computation library to ensure identical behavior with the actual machine.
+
+## Two Simulators
+
+### 1. Machine Simulator (`index.html`)
+Provides an accurate simulation of the complete Maslow CNC machine calibration process with **synthetic data**. 
+
+**Use this for:**
+- Testing calibration algorithm changes
+- Understanding how calibration works
+- Developing new features
+- Validating algorithm behavior with controlled data
+
+[📖 Full Documentation](README.md#machine-simulator)
+
+### 2. Data Parser (`data-parser.html`)
+Processes **real calibration measurement data** pasted by the user to compute optimal anchor positions.
+
+**Use this for:**
+- Analyzing actual calibration data from your machine
+- Troubleshooting calibration issues
+- Testing different initial anchor guesses
+- Verifying calibration results
+
+[📖 Full Documentation](DATA-PARSER.md)
+
+## Quick Start
+
+**Machine Simulator:**
+1. Open `index.html`
+2. Configure machine parameters
+3. Click "Start Calibration Simulation"
+4. Watch the simulated calibration process
+
+**Data Parser:**
+1. Open `data-parser.html`
+2. Paste your measurement data
+3. Click "Parse and Validate"
+4. Click "Compute Anchor Positions"
+
+## Code Sharing
+
+Both simulators use the **exact same calibration computation code** as the ESP3D-WEBUI. The shared library (`../../ESP3D-WEBUI/www/js/calibration-computation.js`) ensures:
+- ✅ Identical behavior between simulators and real machine
+- ✅ Zero code duplication
+- ✅ Guaranteed consistency
+- ✅ Single source of truth
+
+---
+
+# Machine Simulator
+
+The machine simulator provides an accurate representation of the Maslow CNC machine's calibration process with synthetic measurement data.
 
 ## Key Features
 

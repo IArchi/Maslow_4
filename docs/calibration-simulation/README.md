@@ -161,38 +161,65 @@ This "magnetically attracted lines" approach is robust to measurement errors and
 ## Files
 
 - `index.html`: Main simulator interface
-- `calibration-computation.js`: **Shared computation library** - Contains the core calibration algorithm used by both the simulator and ESP3D-WEBUI
 - `machine-simulator.js`: ESP32 firmware simulation
 - `computation-simulator.js`: Wrapper that uses the shared computation library
 - `visualization.js`: Canvas-based rendering
 - `main.js`: Orchestration and UI management
+- `test.html`: Test page for verification
 - `README.md`: This documentation
+
+**Shared with ESP3D-WEBUI:**
+- `../../ESP3D-WEBUI/www/js/calibration-computation.js`: **Shared computation library** used by BOTH the simulator and ESP3D-WEBUI
 
 ## Code Sharing and Architecture
 
-### Eliminating Duplication
+### True Code Sharing
 
-This simulator now uses a **shared computation library** (`calibration-computation.js`) instead of duplicating the calibration algorithm code. This is a key improvement that:
+This simulator now shares the **exact same computation code** with the ESP3D-WEBUI. Both load `calibration-computation.js` from `ESP3D-WEBUI/www/js/`. This is a critical improvement that:
 
-1. **Eliminates code duplication** between the simulator and the actual implementation
-2. **Ensures consistency** - The simulator uses the exact same math as the real machine
-3. **Simplifies maintenance** - Algorithm improvements are automatically available in both places
-4. **Reduces bugs** - No risk of the simulator and real code getting out of sync
+1. **Eliminates ALL code duplication** - Single source of truth for calibration algorithm
+2. **Guarantees identical behavior** - Simulator and real machine use the exact same math
+3. **Simplifies maintenance** - Update one file, both implementations benefit automatically
+4. **Prevents divergence** - Impossible for simulator and real code to get out of sync
 
 ### How It Works
 
-The shared library (`calibration-computation.js`) contains:
+**Shared Library** (`ESP3D-WEBUI/www/js/calibration-computation.js`):
 - Core mathematical functions (`computeLinesFitness`, `magneticallyAttractedLinesFitness`, etc.)
 - `CalibrationComputer` class that manages the iterative optimization process
 - All the "magnetically attracted lines" algorithm logic
+- Loaded by BOTH the ESP3D-WEBUI and the simulator
 
-The simulator simply wraps this library with a thin adapter (`ComputationSimulator` class) that provides the same interface as before, but delegates all computation to the shared code.
+**ESP3D-WEBUI** (`ESP3D-WEBUI/www/js/calculatesCalibrationStuff.js`):
+- Loads the shared computation library
+- Contains only UI-specific code (messagesBox, sendCommand, etc.)
+- Helper functions for the web interface (projectMeasurements, etc.)
+- No duplicated computation code
 
-### Relationship to ESP3D-WEBUI
+**Simulator** (`docs/calibration-simulation/`):
+- Loads the shared computation library from ESP3D-WEBUI
+- `ComputationSimulator` wraps `CalibrationComputer` from shared library
+- Machine simulation and visualization are separate concerns
 
-The computation logic in `calibration-computation.js` is extracted from and synchronized with `ESP3D-WEBUI/www/js/calculatesCalibrationStuff.js`. When the ESP3D-WEBUI code is updated, the shared library should be updated as well to maintain consistency.
+### Architecture Diagram
 
-Future improvements could make `calibration-computation.js` the single source of truth by having ESP3D-WEBUI import it directly, but for now it serves as a bridge to eliminate simulator-specific duplication.
+```
+ESP3D-WEBUI/www/js/
+├── calibration-computation.js  ← SINGLE SOURCE OF TRUTH
+│   └── Used by both ↓
+│
+├── calculatesCalibrationStuff.js (UI-specific code)
+│   └── Loads calibration-computation.js
+│
+docs/calibration-simulation/
+├── index.html
+│   └── Loads ../../ESP3D-WEBUI/www/js/calibration-computation.js
+├── computation-simulator.js (thin wrapper)
+├── machine-simulator.js
+└── visualization.js
+```
+
+This is true code sharing - not just copying algorithms, but using the exact same file in both places.
 
 ## Limitations
 

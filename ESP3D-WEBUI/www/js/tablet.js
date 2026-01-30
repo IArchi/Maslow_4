@@ -806,7 +806,7 @@ const tabletCalSetZStop = () => {
 };
 const tabletCalTest = () => {
   onCalibrationButtonsClick("$TEST", "Test");
-  returnFocusToTablet();
+  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
 };
 const tabletCalRelax = () => {
   onCalibrationButtonsClick("$CMP", "Release Tension");

@@ -783,7 +783,14 @@ const tabletCalOpenConfig = () => {
 };
 const tabletCalStop = () => onCalibrationButtonsClick("$STOP", "Stop");
 const tabletCalSetZStop = () => onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
-const tabletCalTest = () => onCalibrationButtonsClick("$TEST", "Test");
+const tabletCalTest = () => {
+  onCalibrationButtonsClick("$TEST", "Test");
+  // Return focus to tablet view for keyboard shortcuts
+  const tabletListener = id("tablet-listener");
+  if (tabletListener) {
+    tabletListener.focus();
+  }
+};
 const tabletCalRelax = () => onCalibrationButtonsClick("$CMP", "Release Tension");
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");

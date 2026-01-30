@@ -1,8 +1,60 @@
-# Maslow CNC Calibration Simulator
+# Maslow CNC Calibration Simulators
 
-**[🚀 Launch the Interactive Simulator](index.html)**
+**[🚀 Launch the Machine Simulator](index.html)** | **[📊 Launch the Data Parser](data-parser.html)**
 
-This simulator provides an accurate representation of the Maslow CNC machine's calibration process. Unlike the previous simulation at https://github.com/BarbourSmith/Calibration-Simulation/, this implementation exactly mimics how data flows between the machine firmware and the browser-side computation.
+This directory contains two calibration simulators for the Maslow CNC machine, both using the shared calibration computation library to ensure identical behavior with the actual machine.
+
+## Two Simulators
+
+### 1. Machine Simulator (`index.html`)
+Provides an accurate simulation of the complete Maslow CNC machine calibration process with **synthetic data**. 
+
+**Use this for:**
+- Testing calibration algorithm changes
+- Understanding how calibration works
+- Developing new features
+- Validating algorithm behavior with controlled data
+
+[📖 Full Documentation](README.md#machine-simulator)
+
+### 2. Data Parser (`data-parser.html`)
+Processes **real calibration measurement data** pasted by the user to compute optimal anchor positions.
+
+**Use this for:**
+- Analyzing actual calibration data from your machine
+- Troubleshooting calibration issues
+- Testing different initial anchor guesses
+- Verifying calibration results
+
+[📖 Full Documentation](DATA-PARSER.md)
+
+## Quick Start
+
+**Machine Simulator:**
+1. Open `index.html`
+2. Configure machine parameters
+3. Click "Start Calibration Simulation"
+4. Watch the simulated calibration process
+
+**Data Parser:**
+1. Open `data-parser.html`
+2. Paste your measurement data
+3. Click "Parse and Validate"
+4. Click "Compute Anchor Positions"
+
+## Code Sharing
+
+Both simulators use the **exact same calibration computation code** as the ESP3D-WEBUI. The shared library (`../../ESP3D-WEBUI/www/js/calibration-computation.js`) ensures:
+- ✅ Identical behavior between simulators and real machine
+- ✅ Zero code duplication
+- ✅ Guaranteed consistency
+- ✅ Single source of truth
+
+---
+
+# Machine Simulator
+
+The machine simulator provides an accurate representation of the Maslow CNC machine's calibration process with synthetic measurement data.
 
 ## Key Features
 
@@ -162,10 +214,64 @@ This "magnetically attracted lines" approach is robust to measurement errors and
 
 - `index.html`: Main simulator interface
 - `machine-simulator.js`: ESP32 firmware simulation
-- `computation-simulator.js`: Browser-side calibration algorithm
+- `computation-simulator.js`: Wrapper that uses the shared computation library
 - `visualization.js`: Canvas-based rendering
 - `main.js`: Orchestration and UI management
+- `test.html`: Test page for verification
 - `README.md`: This documentation
+
+**Shared with ESP3D-WEBUI:**
+- `../../ESP3D-WEBUI/www/js/calibration-computation.js`: **Shared computation library** used by BOTH the simulator and ESP3D-WEBUI
+
+## Code Sharing and Architecture
+
+### True Code Sharing
+
+This simulator now shares the **exact same computation code** with the ESP3D-WEBUI. Both load `calibration-computation.js` from `ESP3D-WEBUI/www/js/`. This is a critical improvement that:
+
+1. **Eliminates ALL code duplication** - Single source of truth for calibration algorithm
+2. **Guarantees identical behavior** - Simulator and real machine use the exact same math
+3. **Simplifies maintenance** - Update one file, both implementations benefit automatically
+4. **Prevents divergence** - Impossible for simulator and real code to get out of sync
+
+### How It Works
+
+**Shared Library** (`ESP3D-WEBUI/www/js/calibration-computation.js`):
+- Core mathematical functions (`computeLinesFitness`, `magneticallyAttractedLinesFitness`, etc.)
+- `CalibrationComputer` class that manages the iterative optimization process
+- All the "magnetically attracted lines" algorithm logic
+- Loaded by BOTH the ESP3D-WEBUI and the simulator
+
+**ESP3D-WEBUI** (`ESP3D-WEBUI/www/js/calculatesCalibrationStuff.js`):
+- Loads the shared computation library
+- Contains only UI-specific code (messagesBox, sendCommand, etc.)
+- Helper functions for the web interface (projectMeasurements, etc.)
+- No duplicated computation code
+
+**Simulator** (`docs/calibration-simulation/`):
+- Loads the shared computation library from ESP3D-WEBUI
+- `ComputationSimulator` wraps `CalibrationComputer` from shared library
+- Machine simulation and visualization are separate concerns
+
+### Architecture Diagram
+
+```
+ESP3D-WEBUI/www/js/
+├── calibration-computation.js  ← SINGLE SOURCE OF TRUTH
+│   └── Used by both ↓
+│
+├── calculatesCalibrationStuff.js (UI-specific code)
+│   └── Loads calibration-computation.js
+│
+docs/calibration-simulation/
+├── index.html
+│   └── Loads ../../ESP3D-WEBUI/www/js/calibration-computation.js
+├── computation-simulator.js (thin wrapper)
+├── machine-simulator.js
+└── visualization.js
+```
+
+This is true code sharing - not just copying algorithms, but using the exact same file in both places.
 
 ## Limitations
 

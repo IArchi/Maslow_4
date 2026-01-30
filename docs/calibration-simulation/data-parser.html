@@ -224,10 +224,12 @@
         <div class="section">
             <h3>📥 Calibration Data Input</h3>
             <p style="color: #718096; font-size: 14px; margin-bottom: 10px;">
-                Paste measurement data from your Maslow machine. Format: <code>{tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85}</code> (comma-separated measurements)
+                Paste measurement data from your Maslow machine. Supports multiple formats:
+                <br>• Plain: <code>{tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85},...</code>
+                <br>• CLBM: <code>CLBM:[{bl:2960.58, br:3150.08, tr:3067.72, tl:3049.85},...]</code>
             </p>
             <label for="calibration-input">Measurement Data:</label>
-            <textarea id="calibration-input" rows="6" placeholder="Example: {tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85},{tl:2154.52, tr:1955.15, bl:2132.14, br:1584.18},..."></textarea>
+            <textarea id="calibration-input" rows="6" placeholder="Example: CLBM:[{bl:2960.58, br:3150.08, tr:3067.72, tl:3049.85},{bl:3066.96, br:3042.59, tr:2957.53, tl:3158.38},...]"></textarea>
             <div class="button-group">
                 <button id="parse-button">Parse and Validate</button>
                 <span id="parse-status" class="status-message"></span>
@@ -338,17 +340,36 @@
             }
 
             try {
-                // Parse the data - expect format like: {tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85}
-                // Can be multiple measurements separated by commas
+                // Parse the data - supports multiple formats:
+                // 1. Plain array: [{tl:123, tr:234, bl:345, br:456}, ...]
+                // 2. Comma-separated: {tl:123, tr:234, bl:345, br:456},{...}
+                // 3. CLBM format: CLBM:[{bl:123, br:234, tr:345, tl:456}, ...]
                 
-                // First, try to parse as JSON array
                 let measurements;
-                
-                // Wrap in array brackets if not already
                 let dataStr = input;
+                
+                // Check for CLBM: prefix and extract the array part
+                if (dataStr.includes('CLBM:')) {
+                    // Extract the array part after CLBM:
+                    const clbmMatch = dataStr.match(/CLBM:\s*(\[.*\])/);
+                    if (clbmMatch) {
+                        dataStr = clbmMatch[1];
+                    } else {
+                        throw new Error('Invalid CLBM format - expected CLBM:[...]');
+                    }
+                }
+                
+                // Remove trailing comma if present (before closing bracket)
+                dataStr = dataStr.replace(/,\s*\]/, ']');
+                
+                // Wrap in array brackets if not already present
                 if (!dataStr.trim().startsWith('[')) {
                     dataStr = '[' + dataStr + ']';
                 }
+                
+                // Convert JavaScript object notation to JSON by adding quotes around property names
+                // Match unquoted property names (tl, tr, bl, br) followed by colon
+                dataStr = dataStr.replace(/([{,]\s*)([a-z]+)\s*:/g, '$1"$2":');
                 
                 measurements = JSON.parse(dataStr);
                 

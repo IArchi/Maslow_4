@@ -22,10 +22,21 @@ This tool is designed for:
 
 ## Data Format
 
-The tool accepts measurement data in this format:
+The tool accepts measurement data in multiple formats:
 
+### Format 1: Plain comma-separated objects
 ```javascript
-{tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85},{tl:2154.52, tr:1955.15, bl:2132.14, br:1584.18},...
+{tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85},{tl:2154.52, tr:1955.15, bl:2132.14, br:1584.18}
+```
+
+### Format 2: Array notation
+```javascript
+[{tl:2051.76, tr:2053.05, bl:1942.31, br:1952.85},{tl:2154.52, tr:1955.15, bl:2132.14, br:1584.18}]
+```
+
+### Format 3: CLBM format (from machine output)
+```javascript
+CLBM:[{bl:2960.58, br:3150.08, tr:3067.72, tl:3049.85},{bl:3066.96, br:3042.59, tr:2957.53, tl:3158.38},]
 ```
 
 Each measurement object contains:
@@ -34,7 +45,12 @@ Each measurement object contains:
 - `bl`: Bottom-left belt length (mm)
 - `br`: Bottom-right belt length (mm)
 
-Multiple measurements should be comma-separated.
+The parser automatically handles:
+- CLBM: prefix (extracts the array)
+- Trailing commas in arrays
+- Unquoted property names (JavaScript object notation)
+- Multiple measurements
+
 
 ## How to Get Measurement Data
 

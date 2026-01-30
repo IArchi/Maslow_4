@@ -484,7 +484,10 @@ void Maslow_::setZStop() {
 
     // Also set Z home (G92 Z0) to establish work coordinate offset
     char gcode_line[] = "G92 Z0";
-    gc_execute_line(gcode_line);
+    Error result = gc_execute_line(gcode_line);
+    if (result != Error::Ok) {
+        log_error("Failed to set Z home: " << errorString(result));
+    }
 }
 
 //This function saves the current belt positions to non-volatile storage

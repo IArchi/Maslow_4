@@ -766,8 +766,23 @@ const tabletSetZHomeMUp = () => refreshGcode();
 const tabletGCodeStop = () => onCalibrationButtonsClick("$STOP", "Stop Maslow and Gcode");
 // Control event handlers - Calibration Popup
 const tabletCalPopupHide = () => hideModal("calibration-popup");
-const tabletCalRetract = () => onCalibrationButtonsClick("$ALL", "Retract All");
-const tabletCalExtend = () => onCalibrationButtonsClick("$EXT", "Extend All");
+
+// Helper function to set focus back to tablet view
+const returnFocusToTablet = () => {
+  const tabletListener = id("tablet-listener");
+  if (tabletListener) {
+    tabletListener.focus();
+  }
+};
+
+const tabletCalRetract = () => {
+  onCalibrationButtonsClick("$ALL", "Retract All");
+  returnFocusToTablet();
+};
+const tabletCalExtend = () => {
+  onCalibrationButtonsClick("$EXT", "Extend All");
+  returnFocusToTablet();
+};
 const tabletCalCalibrate = () => {
   onCalibrationButtonsClick("$CAL", "Calibrate");
   scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
@@ -781,10 +796,22 @@ const tabletCalOpenConfig = () => {
   loadConfigValues();
   openModal("configuration-popup");
 };
-const tabletCalStop = () => onCalibrationButtonsClick("$STOP", "Stop");
-const tabletCalSetZStop = () => onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
-const tabletCalTest = () => onCalibrationButtonsClick("$TEST", "Test");
-const tabletCalRelax = () => onCalibrationButtonsClick("$CMP", "Release Tension");
+const tabletCalStop = () => {
+  onCalibrationButtonsClick("$STOP", "Stop");
+  returnFocusToTablet();
+};
+const tabletCalSetZStop = () => {
+  onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
+  returnFocusToTablet();
+};
+const tabletCalTest = () => {
+  onCalibrationButtonsClick("$TEST", "Test");
+  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
+};
+const tabletCalRelax = () => {
+  onCalibrationButtonsClick("$CMP", "Release Tension");
+  returnFocusToTablet();
+};
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
 // Control event handlers - Common

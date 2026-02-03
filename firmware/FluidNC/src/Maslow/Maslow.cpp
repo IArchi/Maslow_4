@@ -156,8 +156,10 @@ void Maslow_::update() {
     int        currentMaslowState = calibration.getCurrentState();
     if (prevMaslowState != currentMaslowState) {
         // If we're leaving READY_TO_CUT, RETRACTED, or EXTENDEDOUT, mark positions as stale
+        // EXCEPT when transitioning to RELEASE_TENSION (temporary maintenance state that returns to EXTENDEDOUT)
         if ((prevMaslowState == READY_TO_CUT || prevMaslowState == RETRACTED || prevMaslowState == EXTENDEDOUT) &&
-            (currentMaslowState != READY_TO_CUT && currentMaslowState != RETRACTED && currentMaslowState != EXTENDEDOUT)) {
+            (currentMaslowState != READY_TO_CUT && currentMaslowState != RETRACTED && currentMaslowState != EXTENDEDOUT &&
+             currentMaslowState != RELEASE_TENSION)) {
             markBeltPositionsStale();
         }
         prevMaslowState = currentMaslowState;

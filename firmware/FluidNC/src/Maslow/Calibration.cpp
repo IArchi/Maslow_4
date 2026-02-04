@@ -381,12 +381,15 @@ void Calibration::home() {
                 for (int arm = _TL; arm < ARM_COUNT; arm++) {
                     Maslow.axis[arm].comply();
                 }
-            } else {
+            } else if (millis() - complyCallTimer < 1300) {
+                // Stop motors and let belt momentum dissipate before saving positions
+                // This 500ms settling period prevents encoder angle mismatch due to inertia
                 for (int arm = _TL; arm < ARM_COUNT; arm++) {
                     Maslow.axis[arm].stop();
                 }
                 sys.set_state(State::Idle);
-
+            } else {
+                // Belt momentum has dissipated, safe to save positions now
                 // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
                 // return to EXTENDEDOUT state, otherwise go to UNKNOWN
                 if (previousState == READY_TO_CUT || previousState == EXTENDEDOUT || previousState == CALIBRATION_COMPUTING) {

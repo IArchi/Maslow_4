@@ -525,52 +525,53 @@ function show_grbl_position(wpos, mpos) {
   }
 }
 
-// Update systemStatus display based on current Maslow state
-// Can be called independently when Maslow state changes
-const updateSystemStatus = () => {
+// Update Maslow action button display based on current Maslow state
+// This is the new state-dependent action button below Setup
+const updateMaslowActionButton = () => {
   if (typeof maslowStatus === 'undefined') {
     return;
   }
   
-  let displayStatus = "Idle"; // Default fallback
+  let displayText = "Idle";
   let isActionable = false;
+  let backgroundColor = "#f2f0e4"; // grey
   
-  // Check Maslow state first - these states should always show specific text
+  // Check Maslow state - these states show specific action text
   switch (maslowStatus.state) {
     case 0: // UNKNOWN
-      displayStatus = "Retract";
+      displayText = "Retract";
       isActionable = true;
+      backgroundColor = "#4aa85c"; // green
       break;
     case 2: // RETRACTED
-      displayStatus = "Extend";
+      displayText = "Extend";
       isActionable = true;
+      backgroundColor = "#4aa85c"; // green
       break;
     case 4: // EXTENDEDOUT
-      displayStatus = "Apply Tension";
+      displayText = "Apply Tension";
       isActionable = true;
+      backgroundColor = "#4aa85c"; // green
       break;
     case 7: // READY_TO_CUT
-      displayStatus = "Idle";
+      displayText = "Idle";
+      backgroundColor = "#f2f0e4"; // grey
       break;
     default:
-      // For other Maslow states, keep current display or use "Idle"
-      const currentStatus = getText("systemStatus");
-      if (currentStatus) {
-        displayStatus = currentStatus;
-      }
+      displayText = "Idle";
+      backgroundColor = "#f2f0e4"; // grey
       break;
   }
   
-  setHTML("systemStatus", displayStatus);
+  // Update button text
+  setHTML("maslowActionText", displayText);
   
-  // Add visual feedback for clickable status button
-  const statusElement = id("systemStatus");
-  if (statusElement) {
-    if (isActionable) {
-      statusElement.classList.add("system-status-actionable");
-    } else {
-      statusElement.classList.remove("system-status-actionable");
-    }
+  // Update button styling
+  const actionButton = id("maslowActionButton");
+  if (actionButton) {
+    actionButton.style.backgroundColor = backgroundColor;
+    actionButton.style.cursor = isActionable ? "pointer" : "default";
+    actionButton.style.fontWeight = isActionable ? "bold" : "normal";
   }
 };
 
@@ -583,51 +584,8 @@ const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   }
 
   setHTML("grbl_status", stateName);
-  
   // Set systemStatus for tablet view (will be updated with progress by show_grbl_SD if file is running)
-  // Display state-dependent text based on Maslow state, falling back to GRBL state
-  let displayStatus = stateName;
-  let isActionable = false;
-  
-  // Check Maslow state first - these states should always show specific text
-  if (typeof maslowStatus !== 'undefined') {
-    switch (maslowStatus.state) {
-      case 0: // UNKNOWN
-        displayStatus = "Retract";
-        isActionable = true;
-        break;
-      case 2: // RETRACTED
-        displayStatus = "Extend";
-        isActionable = true;
-        break;
-      case 4: // EXTENDEDOUT
-        displayStatus = "Apply Tension";
-        isActionable = true;
-        break;
-      case 7: // READY_TO_CUT
-        // Show Idle for ready to cut state
-        if (stateName === "Idle") {
-          displayStatus = "Idle";
-        }
-        // Otherwise keep the GRBL state name (e.g., "Run", "Hold", etc.)
-        break;
-      default:
-        // For other Maslow states, use the GRBL state name
-        displayStatus = stateName;
-        break;
-    }
-  }
-  setHTML("systemStatus", displayStatus);
-
-  // Add visual feedback for clickable status button
-  const statusElement = id("systemStatus");
-  if (statusElement) {
-    if (isActionable) {
-      statusElement.classList.add("system-status-actionable");
-    } else {
-      statusElement.classList.remove("system-status-actionable");
-    }
-  }
+  setHTML("systemStatus", stateName);
 
   if (stateName === "Alarm") {
     id("systemStatus").classList.add("system-status-alarm");

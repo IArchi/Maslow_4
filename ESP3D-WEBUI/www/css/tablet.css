@@ -770,10 +770,6 @@ font-size: 16px;
 background-color: #cd654c;
 cursor: pointer;
 }
-.system-status-actionable {
-cursor: pointer;
-font-weight: bold;
-}
 
 /* Calibration modal */
 .calibration-modal-container {

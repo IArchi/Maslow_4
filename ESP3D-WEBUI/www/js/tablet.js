@@ -429,30 +429,10 @@ function tabletShowMessage(msg, collecting) {
 
 function tabletShowResponse(response) { }
 
-function handleSystemStatusClick() {
-  const statusText = getText('systemStatus');
-  
-  // Handle Alarm state
-  if (statusText === 'Alarm') {
-    id('systemStatus').classList.remove('system-status-alarm');
-    SendPrinterCommand('$X', true, null, null, 114, 1);
-    return;
-  }
-  
-  // Handle Maslow state-dependent actions based on maslowStatus.state only
-  if (typeof maslowStatus !== 'undefined') {
-    switch (maslowStatus.state) {
-      case 0: // UNKNOWN - Retract
-        tabletCalRetract();
-        break;
-      case 2: // RETRACTED - Extend
-        tabletCalExtend();
-        break;
-      case 4: // EXTENDEDOUT - Apply Tension
-        tabletCalTense();
-        break;
-      // State 7 (READY_TO_CUT) and others don't need a click action
-    }
+function clearAlarm() {
+  if (getText('systemStatus') === 'Alarm') {
+    id('systemStatus').classList.remove('system-status-alarm')
+    SendPrinterCommand('$X', true, null, null, 114, 1)
   }
 }
 
@@ -805,6 +785,28 @@ const tabletCalStop = () => onCalibrationButtonsClick("$STOP", "Stop");
 const tabletCalSetZStop = () => onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
 const tabletCalTest = () => onCalibrationButtonsClick("$TEST", "Test");
 const tabletCalRelax = () => onCalibrationButtonsClick("$CMP", "Release Tension");
+
+// Handler for the new Maslow action button (below Setup button)
+const handleMaslowActionButtonClick = () => {
+  if (typeof maslowStatus === 'undefined') {
+    return;
+  }
+  
+  // Execute action based on Maslow state
+  switch (maslowStatus.state) {
+    case 0: // UNKNOWN - Retract
+      tabletCalRetract();
+      break;
+    case 2: // RETRACTED - Extend
+      tabletCalExtend();
+      break;
+    case 4: // EXTENDEDOUT - Apply Tension
+      tabletCalTense();
+      break;
+    // State 7 (READY_TO_CUT) and others don't need a click action
+  }
+};
+
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
 // Control event handlers - Common
@@ -901,7 +903,10 @@ function tabletInit() {
     id("tablettab_gcode_play").addEventListener("click", doPlayButton);
     // id("tablettab_gcode_pause").addEventListener("click", doPauseButton);
     id("tablettab_gcode_stop").addEventListener("click", tabletGCodeStop);
-    id("systemStatus").addEventListener("click", handleSystemStatusClick);
+    id("systemStatus").addEventListener("click", clearAlarm);
+    
+    // New Maslow action button (below Setup)
+    id("maslowActionButton").addEventListener("click", handleMaslowActionButtonClick);
 
     id("tablettab_save_serial_msg").addEventListener("click", saveSerialMessages);
     

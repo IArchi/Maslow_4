@@ -89,6 +89,10 @@ Click "Compute Anchor Positions" to run the optimization algorithm. The tool wil
 - Iteratively refine anchor positions
 - Display progress in the log
 - Show final results with fitness score
+- **Visualize the search process** with a 2D plot showing:
+  - **Red points**: Phase 1 diagonal search for optimal radius
+  - **Blue points**: Phase 2 arc search for best aspect ratio
+  - **Green star**: Final best configuration found
 
 ### 5. Interpret Results
 
@@ -97,6 +101,7 @@ The results show:
 - **Fitness score**: How well the solution matches the measurements
   - Above 0.5: Good result
   - Below 0.5: May need better initial guess or data quality issues
+- **Search visualization**: A 2D plot showing which points were tested during the rectangular optimization search
 
 ## Code Sharing
 
@@ -104,6 +109,23 @@ This tool uses the **exact same calibration computation code** as the ESP3D-WEBU
 - This data parser
 - The machine simulator (`index.html`)
 - The actual ESP3D-WEBUI calibration
+
+## Visualization
+
+When the tool runs rectangular optimization to find better starting positions (triggered when initial fitness is low or the frame is nearly square), it displays a **2D visualization** showing:
+
+- **Phase 1 - Diagonal Search** (Red points): Shows points tested along the diagonal to find the optimal radius. The search uses ternary search to efficiently narrow down the best radius between 100mm and 5000mm.
+
+- **Phase 2 - Arc Search** (Blue points): Shows points tested along an arc at the optimal radius to find the best width/height aspect ratio. The search uses ternary search to efficiently find the optimal angle.
+
+- **Best Configuration** (Green star): Marks the optimal rectangular configuration found by the search.
+
+- **Reference Lines**: A faint red diagonal line shows the Phase 1 search path, and a faint blue arc shows the Phase 2 search path.
+
+The visualization updates in real-time as the search progresses, providing visual feedback on how the algorithm explores the solution space. This helps understand:
+- How many points are tested (typically 24 for Phase 1, 26 for Phase 2)
+- The distribution of test points across the search space
+- The location of the optimal solution relative to tested points
 
 ## Differences from Machine Simulator
 

@@ -212,6 +212,25 @@
             font-weight: 600;
             color: #2d3748;
         }
+        
+        #visualization-canvas {
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            margin: 15px auto;
+            display: block;
+        }
+        
+        .visualization-section {
+            display: none;
+        }
+        
+        .visualization-section.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -273,6 +292,13 @@
                 <button id="compute-button" disabled>Compute Anchor Positions</button>
                 <span id="compute-status" class="status-message"></span>
             </div>
+            <div id="visualization-section" class="visualization-section">
+                <h4 style="color: #2d3748; margin-bottom: 10px;">📊 Search Visualization</h4>
+                <p style="color: #718096; font-size: 14px; margin-bottom: 10px;">
+                    Red points: Phase 1 diagonal search | Blue points: Phase 2 arc search | Green star: Best configuration found
+                </p>
+                <canvas id="visualization-canvas" width="800" height="600"></canvas>
+            </div>
             <div id="results-box" class="results-box">
                 <h4>✅ Optimized Anchor Positions</h4>
                 <div class="results-grid">
@@ -315,6 +341,10 @@
     
     <script>
         let parsedMeasurements = null;
+        let phase1Points = [];
+        let phase2Points = [];
+        let bestConfiguration = null;
+        let optimalRadius = null; // Store the radius from Phase 1 for visualization
 
         // Z-heights for belt anchor points (used in projection calculations)
         const tlZ = 100;
@@ -330,6 +360,257 @@
             const timestamp = new Date().toLocaleTimeString();
             output.value += `[${timestamp}] ${message}\n`;
             output.scrollTop = output.scrollHeight;
+        }
+
+        /**
+         * Draws the visualization canvas showing Phase 1 and Phase 2 search points
+         */
+        function drawVisualization() {
+            const canvas = document.getElementById('visualization-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Find max dimensions for scaling
+            let maxX = 0, maxY = 0;
+            
+            // Check Phase 1 points (diagonal search)
+            phase1Points.forEach(p => {
+                maxX = Math.max(maxX, p.size);
+                maxY = Math.max(maxY, p.size);
+            });
+            
+            // Check Phase 2 points (arc search)
+            phase2Points.forEach(p => {
+                maxX = Math.max(maxX, p.width);
+                maxY = Math.max(maxY, p.height);
+            });
+            
+            // Check best configuration
+            if (bestConfiguration) {
+                maxX = Math.max(maxX, bestConfiguration.width);
+                maxY = Math.max(maxY, bestConfiguration.height);
+            }
+            
+            // Add padding
+            const padding = 50;
+            const plotWidth = width - 2 * padding;
+            const plotHeight = height - 2 * padding;
+            
+            // Scale to fit canvas
+            const scale = Math.min(plotWidth / maxX, plotHeight / maxY) * 0.9;
+            
+            // Helper function to convert coordinates
+            function toCanvasX(x) {
+                return padding + x * scale;
+            }
+            
+            function toCanvasY(y) {
+                return height - padding - y * scale;
+            }
+            
+            // Draw axes
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+            
+            // Draw axis labels
+            ctx.fillStyle = '#4a5568';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Width (mm)', width / 2, height - 10);
+            
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Height (mm)', 0, 0);
+            ctx.restore();
+            
+            // Draw tick marks and values on axes
+            ctx.fillStyle = '#4a5568';
+            ctx.font = '11px sans-serif';
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 1;
+            
+            // X-axis ticks
+            const numTicksX = 5;
+            for (let i = 0; i <= numTicksX; i++) {
+                const value = (maxX * i) / numTicksX;
+                const x = toCanvasX(value);
+                const y = height - padding;
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + 5);
+                ctx.stroke();
+                
+                // Draw value
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.round(value).toString(), x, y + 18);
+            }
+            
+            // Y-axis ticks
+            const numTicksY = 5;
+            for (let i = 0; i <= numTicksY; i++) {
+                const value = (maxY * i) / numTicksY;
+                const x = padding;
+                const y = toCanvasY(value);
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.moveTo(x - 5, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                // Draw value
+                ctx.textAlign = 'right';
+                ctx.fillText(Math.round(value).toString(), x - 8, y + 4);
+            }
+            
+            // Draw Phase 1 points (diagonal search) in red
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+            phase1Points.forEach(p => {
+                const x = toCanvasX(p.size);
+                const y = toCanvasY(p.size);
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Draw Phase 2 points (arc search) in blue
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
+            phase2Points.forEach(p => {
+                const x = toCanvasX(p.width);
+                const y = toCanvasY(p.height);
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Draw the arc curve (for reference) - use the optimal radius from Phase 1
+            if (phase2Points.length > 0 && optimalRadius !== null) {
+                ctx.strokeStyle = 'rgba(59, 130, 246, 0.2)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const startAngle = 0.1;
+                const endAngle = Math.PI / 2 - 0.1;
+                const steps = 50;
+                for (let i = 0; i <= steps; i++) {
+                    const angle = startAngle + (endAngle - startAngle) * i / steps;
+                    const x = toCanvasX(optimalRadius * Math.cos(angle));
+                    const y = toCanvasY(optimalRadius * Math.sin(angle));
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // Draw diagonal line for Phase 1
+            if (phase1Points.length > 0) {
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.2)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(0), toCanvasY(0));
+                ctx.lineTo(toCanvasX(maxX), toCanvasY(maxX));
+                ctx.stroke();
+            }
+            
+            // Draw best configuration as a green star
+            if (bestConfiguration) {
+                const x = toCanvasX(bestConfiguration.width);
+                const y = toCanvasY(bestConfiguration.height);
+                
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
+                ctx.strokeStyle = 'rgba(22, 163, 74, 1)';
+                ctx.lineWidth = 2;
+                
+                // Draw star
+                const outerRadius = 12;
+                const innerRadius = 6;
+                const spikes = 5;
+                
+                ctx.beginPath();
+                for (let i = 0; i < spikes * 2; i++) {
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const angle = (i * Math.PI) / spikes - Math.PI / 2;
+                    const sx = x + Math.cos(angle) * radius;
+                    const sy = y + Math.sin(angle) * radius;
+                    if (i === 0) {
+                        ctx.moveTo(sx, sy);
+                    } else {
+                        ctx.lineTo(sx, sy);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+            
+            // Draw legend
+            const legendX = width - 200;
+            const legendY = padding + 20;
+            
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            
+            // Phase 1 legend
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+            ctx.beginPath();
+            ctx.arc(legendX, legendY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#4a5568';
+            ctx.fillText('Phase 1: Diagonal', legendX + 10, legendY + 4);
+            
+            // Phase 2 legend
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
+            ctx.beginPath();
+            ctx.arc(legendX, legendY + 20, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#4a5568';
+            ctx.fillText('Phase 2: Arc', legendX + 10, legendY + 24);
+            
+            // Best configuration legend - draw as a star for consistency
+            const legendStarX = legendX;
+            const legendStarY = legendY + 40;
+            const legendStarOuter = 5;
+            const legendStarInner = 2.5;
+            const legendStarSpikes = 5;
+            
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
+            ctx.strokeStyle = 'rgba(22, 163, 74, 1)';
+            ctx.lineWidth = 1;
+            
+            ctx.beginPath();
+            for (let i = 0; i < legendStarSpikes * 2; i++) {
+                const radius = i % 2 === 0 ? legendStarOuter : legendStarInner;
+                const angle = (i * Math.PI) / legendStarSpikes - Math.PI / 2;
+                const sx = legendStarX + Math.cos(angle) * radius;
+                const sy = legendStarY + Math.sin(angle) * radius;
+                if (i === 0) {
+                    ctx.moveTo(sx, sy);
+                } else {
+                    ctx.lineTo(sx, sy);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.fillStyle = '#4a5568';
+            ctx.fillText('Best Config', legendX + 10, legendY + 44);
         }
 
         function showStatus(elementId, message, type) {
@@ -367,6 +648,13 @@
         async function findBestRectangularStart(measurements) {
             log('Searching for best rectangular starting configuration...');
             log('Phase 1: Finding optimal radius along diagonal...');
+            
+            // Reset visualization data
+            phase1Points = [];
+            phase2Points = [];
+            bestConfiguration = null;
+            optimalRadius = null;
+            document.getElementById('visualization-section').classList.add('active');
 
             const measurementsCopy = JSON.parse(JSON.stringify(measurements));
 
@@ -387,6 +675,16 @@
 
                 const result = computeLinesFitness(testMeasurements, guess, true);
                 phase1TestCount++;
+                
+                // Store point for visualization
+                phase1Points.push({ size: size, fitness: result.fitness });
+                
+                // Update visualization periodically
+                if (phase1TestCount % 2 === 0) {
+                    drawVisualization();
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+                
                 return { fitness: result.fitness, size: size };
             }
 
@@ -419,11 +717,12 @@
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
 
-            const optimalRadius = diagonalBestSize;
-            log(`Phase 1 complete: Optimal radius ${diagonalBestSize.toFixed(0)}mm using ${phase1TestCount} evaluations`);
+            const optimalRadiusLocal = diagonalBestSize * Math.sqrt(2); // Diagonal point at (size, size) has radius size*sqrt(2)
+            optimalRadius = optimalRadiusLocal; // Store globally for visualization
+            log(`Phase 1 complete: Optimal diagonal size ${diagonalBestSize.toFixed(0)}mm (radius ${optimalRadiusLocal.toFixed(0)}mm) using ${phase1TestCount} evaluations`);
 
             // Phase 2: Search for best aspect ratio on arc at optimal radius
-            log(`Phase 2: Finding best aspect ratio on arc at ${optimalRadius.toFixed(0)}mm radius...`);
+            log(`Phase 2: Finding best aspect ratio on arc at ${optimalRadiusLocal.toFixed(0)}mm radius...`);
 
             let bestGuess = null;
             let bestFitnessOverall = Infinity;
@@ -431,8 +730,8 @@
 
             async function evaluateFitnessAtAngle(angleRad) {
                 const testMeasurements = JSON.parse(JSON.stringify(measurementsCopy));
-                const width = optimalRadius * Math.cos(angleRad);
-                const height = optimalRadius * Math.sin(angleRad);
+                const width = optimalRadiusLocal * Math.cos(angleRad);
+                const height = optimalRadiusLocal * Math.sin(angleRad);
 
                 const guess = {
                     tl: { x: 0, y: height },
@@ -444,6 +743,21 @@
 
                 const result = computeLinesFitness(testMeasurements, guess, true);
                 phase2TestCount++;
+                
+                // Store point for visualization
+                phase2Points.push({ 
+                    width: width, 
+                    height: height, 
+                    angle: angleRad,
+                    fitness: result.fitness 
+                });
+                
+                // Update visualization periodically
+                if (phase2TestCount % 2 === 0) {
+                    drawVisualization();
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+                
                 return { fitness: result.fitness, width: width, height: height, angle: angleRad };
             }
 
@@ -470,6 +784,12 @@
                             br: { x: result1.width, y: 0 },
                             fitness: result1.fitness
                         };
+                        // Update best configuration for visualization
+                        bestConfiguration = {
+                            width: result1.width,
+                            height: result1.height,
+                            fitness: result1.fitness
+                        };
                     }
                 } else {
                     leftAngle = mid1;
@@ -482,6 +802,12 @@
                             br: { x: result2.width, y: 0 },
                             fitness: result2.fitness
                         };
+                        // Update best configuration for visualization
+                        bestConfiguration = {
+                            width: result2.width,
+                            height: result2.height,
+                            fitness: result2.fitness
+                        };
                     }
                 }
 
@@ -491,6 +817,9 @@
             const testedCount = phase1TestCount + phase2TestCount;
             log(`Search complete! Tested ${testedCount} points.`);
             log(`Best rectangular start: Width=${bestGuess.tr.x.toFixed(1)}mm, Height=${bestGuess.tr.y.toFixed(1)}mm, Fitness=${(1/bestGuess.fitness).toFixed(4)}`);
+            
+            // Final visualization update
+            drawVisualization();
 
             return bestGuess;
         }

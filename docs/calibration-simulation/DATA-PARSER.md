@@ -110,6 +110,12 @@ This tool uses the **exact same calibration computation code** as the ESP3D-WEBU
 - The machine simulator (`index.html`)
 - The actual ESP3D-WEBUI calibration
 
+The data parser now includes the **retry logic with randomized starting positions**, matching the real machine behavior:
+- If fitness is below 0.5 threshold, the algorithm retries with random perturbations (±50mm) to anchor positions
+- Up to 10 retry attempts are made before giving up
+- The best result across all attempts is displayed if maximum retries are reached
+- This ensures offline testing behaves identically to the machine
+
 ## Visualization
 
 When the tool runs rectangular optimization to find better starting positions (triggered when initial fitness is low or the frame is nearly square), it displays a **2D visualization** showing:

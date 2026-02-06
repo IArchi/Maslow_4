@@ -352,6 +352,10 @@
         const blZ = 34;
         const brZ = 78;
 
+        // Maximum number of low-fitness retry attempts before giving up (matches ESP3D-WEBUI behavior)
+        const MAX_LOW_FITNESS_RETRIES = 10;
+        const acceptableCalibrationThreshold = 0.5;
+
         function log(message, clear = false) {
             const output = document.getElementById('output');
             if (clear) {
@@ -935,81 +939,143 @@
                 const projectedMeasurements = projectMeasurements(parsedMeasurements);
                 log(`Processing ${projectedMeasurements.length} projected measurements`);
 
-                // Calculate initial fitness
-                const initialFitness = 1 / computeLinesFitness(projectedMeasurements, initialGuess).fitness;
-                log(`Initial guess fitness: ${initialFitness.toFixed(7)}`);
+                // Track retry attempts (mimics ESP3D-WEBUI behavior)
+                let lowFitnessRetryCount = 0;
+                let bestGuessAcrossAllRetries = null;
+                let bestFitnessAcrossAllRetries = 0;
 
-                // Determine if we should do rectangular optimization
-                const frameWidth = initialGuess.tr.x - initialGuess.tl.x;
-                const frameHeight = initialGuess.tl.y - initialGuess.bl.y;
-                const aspectRatio = frameWidth / frameHeight;
+                // Retry loop - matches machine behavior
+                while (lowFitnessRetryCount <= MAX_LOW_FITNESS_RETRIES) {
+                    if (lowFitnessRetryCount > 0) {
+                        log(`\n=== Retry Attempt ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES} ===`);
+                    }
 
-                log(`Frame dimensions: ${frameWidth.toFixed(1)}mm x ${frameHeight.toFixed(1)}mm (aspect ratio: ${aspectRatio.toFixed(2)}:1)`);
+                    // Calculate initial fitness
+                    const initialFitness = 1 / computeLinesFitness(projectedMeasurements, initialGuess).fitness;
+                    log(`Initial guess fitness: ${initialFitness.toFixed(7)}`);
 
-                let startingGuess = JSON.parse(JSON.stringify(initialGuess));
+                    // Determine if we should do rectangular optimization
+                    const frameWidth = initialGuess.tr.x - initialGuess.tl.x;
+                    const frameHeight = initialGuess.tl.y - initialGuess.bl.y;
+                    const aspectRatio = frameWidth / frameHeight;
 
-                // Run rectangular optimization if needed (same logic as ESP3D-WEBUI)
-                if (initialFitness < 0.1 || (aspectRatio > 0.95 && aspectRatio < 1.05)) {
-                    if (initialFitness < 0.1) {
-                        log('Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.');
+                    log(`Frame dimensions: ${frameWidth.toFixed(1)}mm x ${frameHeight.toFixed(1)}mm (aspect ratio: ${aspectRatio.toFixed(2)}:1)`);
+
+                    let startingGuess = JSON.parse(JSON.stringify(initialGuess));
+
+                    // Run rectangular optimization if needed (same logic as ESP3D-WEBUI)
+                    if (initialFitness < 0.1 || (aspectRatio > 0.95 && aspectRatio < 1.05)) {
+                        if (initialFitness < 0.1) {
+                            log('Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.');
+                        } else {
+                            log(`Frame is nearly square (aspect ratio ${aspectRatio.toFixed(2)}:1), running rectangular optimization to find better dimensions.`);
+                        }
+                        
+                        startingGuess = await findBestRectangularStart(projectedMeasurements);
+                        
+                        // Update the input fields with computed values
+                        document.getElementById('tlx-input').value = startingGuess.tl.x.toFixed(1);
+                        document.getElementById('tly-input').value = startingGuess.tl.y.toFixed(1);
+                        document.getElementById('trx-input').value = startingGuess.tr.x.toFixed(1);
+                        document.getElementById('try-input').value = startingGuess.tr.y.toFixed(1);
+                        document.getElementById('brx-input').value = startingGuess.br.x.toFixed(1);
+                        
+                        log('Updated input fields with computed starting positions.');
+                        log('Starting optimization with computed positions...');
                     } else {
-                        log(`Frame is nearly square (aspect ratio ${aspectRatio.toFixed(2)}:1), running rectangular optimization to find better dimensions.`);
+                        log('Initial fitness >= 0.1 and frame is not square, skipping rectangular optimization and using initial guess directly.');
                     }
-                    
-                    startingGuess = await findBestRectangularStart(projectedMeasurements);
-                    
-                    // Update the input fields with computed values
-                    document.getElementById('tlx-input').value = startingGuess.tl.x.toFixed(1);
-                    document.getElementById('tly-input').value = startingGuess.tl.y.toFixed(1);
-                    document.getElementById('trx-input').value = startingGuess.tr.x.toFixed(1);
-                    document.getElementById('try-input').value = startingGuess.tr.y.toFixed(1);
-                    document.getElementById('brx-input').value = startingGuess.br.x.toFixed(1);
-                    
-                    log('Updated input fields with computed starting positions.');
-                    log('Starting optimization with computed positions...');
-                } else {
-                    log('Initial fitness >= 0.1 and frame is not square, skipping rectangular optimization and using initial guess directly.');
-                }
 
-                // Create CalibrationComputer instance with shared library
-                const computer = new CalibrationComputer(startingGuess, {
-                    maxIterations: 200000,
-                    maxStagnant: 1000
-                });
+                    // Create CalibrationComputer instance with shared library
+                    const computer = new CalibrationComputer(startingGuess, {
+                        maxIterations: 200000,
+                        maxStagnant: 1000
+                    });
 
-                // Run optimization
-                const result = await computer.processDataChunk(projectedMeasurements, (iterations, fitness) => {
-                    if (iterations % 500 === 0) {
-                        log(`  Iteration ${iterations}: Fitness = ${fitness.toFixed(6)}`);
+                    // Run optimization
+                    const result = await computer.processDataChunk(projectedMeasurements, (iterations, fitness) => {
+                        if (iterations % 500 === 0) {
+                            log(`  Iteration ${iterations}: Fitness = ${fitness.toFixed(6)}`);
+                        }
+                    });
+
+                    const status = computer.getStatus();
+                    const fitness = status.bestFitness;
+                    
+                    log(`\n=== Computation Complete ===`);
+                    log(`Total iterations: ${status.totalIterations}`);
+                    log(`Final fitness: ${fitness.toFixed(6)}`);
+
+                    // Track best across all retries
+                    if (fitness > bestFitnessAcrossAllRetries) {
+                        bestFitnessAcrossAllRetries = fitness;
+                        bestGuessAcrossAllRetries = JSON.parse(JSON.stringify(result));
                     }
-                });
 
-                const status = computer.getStatus();
-                const fitness = status.bestFitness;
-                
-                log(`\n=== Computation Complete ===`);
-                log(`Total iterations: ${status.totalIterations}`);
-                log(`Final fitness: ${fitness.toFixed(6)}`);
-                log(`\nOptimized Anchor Positions:`);
-                log(`  Top Left:     X = ${result.tl.x.toFixed(2)} mm, Y = ${result.tl.y.toFixed(2)} mm`);
-                log(`  Top Right:    X = ${result.tr.x.toFixed(2)} mm, Y = ${result.tr.y.toFixed(2)} mm`);
-                log(`  Bottom Left:  X = ${result.bl.x.toFixed(2)} mm, Y = ${result.bl.y.toFixed(2)} mm`);
-                log(`  Bottom Right: X = ${result.br.x.toFixed(2)} mm, Y = ${result.br.y.toFixed(2)} mm`);
+                    // Check if fitness is acceptable
+                    if (fitness >= acceptableCalibrationThreshold) {
+                        // Success! Display results
+                        log(`\nOptimized Anchor Positions:`);
+                        log(`  Top Left:     X = ${result.tl.x.toFixed(2)} mm, Y = ${result.tl.y.toFixed(2)} mm`);
+                        log(`  Top Right:    X = ${result.tr.x.toFixed(2)} mm, Y = ${result.tr.y.toFixed(2)} mm`);
+                        log(`  Bottom Left:  X = ${result.bl.x.toFixed(2)} mm, Y = ${result.bl.y.toFixed(2)} mm`);
+                        log(`  Bottom Right: X = ${result.br.x.toFixed(2)} mm, Y = ${result.br.y.toFixed(2)} mm`);
 
-                // Display results
-                document.getElementById('result-tlx').textContent = result.tl.x.toFixed(2) + ' mm';
-                document.getElementById('result-tly').textContent = result.tl.y.toFixed(2) + ' mm';
-                document.getElementById('result-trx').textContent = result.tr.x.toFixed(2) + ' mm';
-                document.getElementById('result-try').textContent = result.tr.y.toFixed(2) + ' mm';
-                document.getElementById('result-brx').textContent = result.br.x.toFixed(2) + ' mm';
-                document.getElementById('result-fitness').textContent = fitness.toFixed(6);
-                document.getElementById('results-box').style.display = 'block';
+                        // Display results
+                        document.getElementById('result-tlx').textContent = result.tl.x.toFixed(2) + ' mm';
+                        document.getElementById('result-tly').textContent = result.tl.y.toFixed(2) + ' mm';
+                        document.getElementById('result-trx').textContent = result.tr.x.toFixed(2) + ' mm';
+                        document.getElementById('result-try').textContent = result.tr.y.toFixed(2) + ' mm';
+                        document.getElementById('result-brx').textContent = result.br.x.toFixed(2) + ' mm';
+                        document.getElementById('result-fitness').textContent = fitness.toFixed(6);
+                        document.getElementById('results-box').style.display = 'block';
 
-                if (fitness > 0.5) {
-                    showStatus('compute-status', '✓ Computation successful!', 'success');
-                } else {
-                    showStatus('compute-status', '⚠ Low fitness - results may be inaccurate', 'error');
-                    log('\n⚠ Warning: Fitness below threshold (0.5). Results may not be reliable.');
+                        showStatus('compute-status', '✓ Computation successful!', 'success');
+                        break; // Exit retry loop on success
+                    } else {
+                        // Low fitness - need to retry or give up
+                        log(`\nCalculated Fitness Too Low (${fitness.toFixed(7)} < ${acceptableCalibrationThreshold}).`);
+                        
+                        if (lowFitnessRetryCount >= MAX_LOW_FITNESS_RETRIES) {
+                            // Maximum retries reached
+                            log(`\n⚠️ Maximum retry attempts (${MAX_LOW_FITNESS_RETRIES}) reached.`);
+                            log(`Best fitness achieved across all attempts: ${bestFitnessAcrossAllRetries.toFixed(7)}`);
+                            log('\n❌ Calibration stopped due to low fitness after maximum retries.');
+                            log('Displaying best result from all retry attempts.');
+                            
+                            // Display best result from all attempts
+                            const bestResult = bestGuessAcrossAllRetries;
+                            log(`\nBest Anchor Positions (from all attempts):`);
+                            log(`  Top Left:     X = ${bestResult.tl.x.toFixed(2)} mm, Y = ${bestResult.tl.y.toFixed(2)} mm`);
+                            log(`  Top Right:    X = ${bestResult.tr.x.toFixed(2)} mm, Y = ${bestResult.tr.y.toFixed(2)} mm`);
+                            log(`  Bottom Left:  X = ${bestResult.bl.x.toFixed(2)} mm, Y = ${bestResult.bl.y.toFixed(2)} mm`);
+                            log(`  Bottom Right: X = ${bestResult.br.x.toFixed(2)} mm, Y = ${bestResult.br.y.toFixed(2)} mm`);
+
+                            document.getElementById('result-tlx').textContent = bestResult.tl.x.toFixed(2) + ' mm';
+                            document.getElementById('result-tly').textContent = bestResult.tl.y.toFixed(2) + ' mm';
+                            document.getElementById('result-trx').textContent = bestResult.tr.x.toFixed(2) + ' mm';
+                            document.getElementById('result-try').textContent = bestResult.tr.y.toFixed(2) + ' mm';
+                            document.getElementById('result-brx').textContent = bestResult.br.x.toFixed(2) + ' mm';
+                            document.getElementById('result-fitness').textContent = bestFitnessAcrossAllRetries.toFixed(6);
+                            document.getElementById('results-box').style.display = 'block';
+
+                            showStatus('compute-status', '⚠ Low fitness after max retries - results may be inaccurate', 'error');
+                            break; // Exit retry loop
+                        } else {
+                            // Increment retry count and add random perturbation (matches ESP3D-WEBUI)
+                            lowFitnessRetryCount++;
+                            log(` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`);
+                            log('Adding random perturbation to anchor positions (±50mm)...');
+                            
+                            // Add random perturbation to initial guess (same as machine behavior)
+                            initialGuess.tl.x = result.tl.x + Math.random() * 100 - 50;
+                            initialGuess.tl.y = result.tl.y + Math.random() * 100 - 50;
+                            initialGuess.tr.x = result.tr.x + Math.random() * 100 - 50;
+                            initialGuess.tr.y = result.tr.y + Math.random() * 100 - 50;
+                            initialGuess.br.x = result.br.x + Math.random() * 100 - 50;
+                            // bl stays at (0, 0)
+                        }
+                    }
                 }
 
             } catch (error) {

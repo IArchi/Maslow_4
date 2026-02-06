@@ -781,10 +781,22 @@ const tabletCalOpenConfig = () => {
   loadConfigValues();
   openModal("configuration-popup");
 };
-const tabletCalStop = () => onCalibrationButtonsClick("$STOP", "Stop");
-const tabletCalSetZStop = () => onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
-const tabletCalTest = () => onCalibrationButtonsClick("$TEST", "Test");
-const tabletCalRelax = () => onCalibrationButtonsClick("$CMP", "Release Tension");
+const tabletCalStop = () => {
+  onCalibrationButtonsClick("$STOP", "Stop");
+  returnFocusToTablet();
+};
+const tabletCalSetZStop = () => {
+  onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
+  returnFocusToTablet();
+};
+const tabletCalTest = () => {
+  onCalibrationButtonsClick("$TEST", "Test");
+  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
+};
+const tabletCalRelax = () => {
+  onCalibrationButtonsClick("$CMP", "Release Tension");
+  returnFocusToTablet();
+};
 
 // Handler for the new Maslow action button (below Setup button)
 const handleMaslowActionButtonClick = () => {

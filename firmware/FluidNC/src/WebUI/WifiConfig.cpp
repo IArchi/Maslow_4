@@ -561,6 +561,12 @@ namespace WebUI {
             case SYSTEM_EVENT_STA_DISCONNECTED:
                 log_info("WiFi Disconnected");
                 break;
+            case SYSTEM_EVENT_AP_STACONNECTED:
+                log_debug("WiFi AP: Client connected");
+                break;
+            case SYSTEM_EVENT_AP_STADISCONNECTED:
+                log_debug("WiFi AP: Client disconnected");
+                break;
             default:
                 //log_info("WiFi event:" << event);
                 break;

@@ -525,6 +525,62 @@ function show_grbl_position(wpos, mpos) {
   }
 }
 
+// Update Maslow action button display based on current Maslow state
+// This is the new state-dependent action button in row 3, column 5
+const updateMaslowActionButton = () => {
+  if (typeof maslowStatus === 'undefined') {
+    return;
+  }
+  
+  const actionButton = id("maslowActionButton");
+  if (!actionButton) {
+    return;
+  }
+  
+  let displayText = "";
+  let isActionable = false;
+  let shouldShow = false;
+  const backgroundColor = "#4aa85c"; // green when shown
+  
+  // Only show button for states 0, 2, and 4
+  switch (maslowStatus.state) {
+    case 0: // UNKNOWN
+      displayText = "Retract";
+      isActionable = true;
+      shouldShow = true;
+      break;
+    case 2: // RETRACTED
+      displayText = "Extend";
+      isActionable = true;
+      shouldShow = true;
+      break;
+    case 4: // EXTENDEDOUT
+      displayText = "Apply Tension";
+      isActionable = true;
+      shouldShow = true;
+      break;
+    default:
+      // Hide button for all other states (including state 7 - READY_TO_CUT)
+      shouldShow = false;
+      break;
+  }
+  
+  // Update button text
+  setHTML("maslowActionText", displayText);
+  
+  // Show or hide button based on state
+  // Use visibility instead of display to maintain grid layout
+  if (shouldShow) {
+    actionButton.style.visibility = "visible";
+    actionButton.style.backgroundColor = backgroundColor;
+    actionButton.style.cursor = "pointer";
+    actionButton.style.fontWeight = "bold";
+  } else {
+    actionButton.style.visibility = "hidden";
+    actionButton.style.cursor = "default";
+  }
+};
+
 const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   setHTML("grbl_status_text", translate_text_item(message))
   setClickability("clear_status_btn", stateName === "Alarm");

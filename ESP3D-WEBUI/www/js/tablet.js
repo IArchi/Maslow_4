@@ -812,6 +812,28 @@ const tabletCalRelax = () => {
   onCalibrationButtonsClick("$CMP", "Release Tension");
   returnFocusToTablet();
 };
+
+// Handler for the new Maslow action button (below Setup button)
+const handleMaslowActionButtonClick = () => {
+  if (typeof maslowStatus === 'undefined') {
+    return;
+  }
+  
+  // Execute action based on Maslow state
+  switch (maslowStatus.state) {
+    case 0: // UNKNOWN - Retract
+      tabletCalRetract();
+      break;
+    case 2: // RETRACTED - Extend
+      tabletCalExtend();
+      break;
+    case 4: // EXTENDEDOUT - Apply Tension
+      tabletCalTense();
+      break;
+    // State 7 (READY_TO_CUT) and others don't need a click action
+  }
+};
+
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
 // Control event handlers - Common
@@ -909,6 +931,9 @@ function tabletInit() {
     // id("tablettab_gcode_pause").addEventListener("click", doPauseButton);
     id("tablettab_gcode_stop").addEventListener("click", tabletGCodeStop);
     id("systemStatus").addEventListener("click", clearAlarm);
+    
+    // New Maslow action button (below Setup)
+    id("maslowActionButton").addEventListener("click", handleMaslowActionButtonClick);
 
     id("tablettab_save_serial_msg").addEventListener("click", saveSerialMessages);
     

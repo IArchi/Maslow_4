@@ -236,6 +236,11 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 	}
+	
+	// Update the new Maslow action button when state changes
+	if (typeof updateMaslowActionButton === 'function') {
+		updateMaslowActionButton();
+	}
 }
 
 

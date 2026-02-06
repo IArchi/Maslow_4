@@ -717,9 +717,9 @@
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
 
-            const optimalRadiusLocal = diagonalBestSize;
+            const optimalRadiusLocal = diagonalBestSize * Math.sqrt(2); // Diagonal point at (size, size) has radius size*sqrt(2)
             optimalRadius = optimalRadiusLocal; // Store globally for visualization
-            log(`Phase 1 complete: Optimal radius ${diagonalBestSize.toFixed(0)}mm using ${phase1TestCount} evaluations`);
+            log(`Phase 1 complete: Optimal diagonal size ${diagonalBestSize.toFixed(0)}mm (radius ${optimalRadiusLocal.toFixed(0)}mm) using ${phase1TestCount} evaluations`);
 
             // Phase 2: Search for best aspect ratio on arc at optimal radius
             log(`Phase 2: Finding best aspect ratio on arc at ${optimalRadiusLocal.toFixed(0)}mm radius...`);

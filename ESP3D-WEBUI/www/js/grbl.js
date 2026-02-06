@@ -569,13 +569,15 @@ const updateMaslowActionButton = () => {
   setHTML("maslowActionText", displayText);
   
   // Show or hide button based on state
+  // Use visibility instead of display to maintain grid layout
   if (shouldShow) {
-    actionButton.style.display = "flex";
+    actionButton.style.visibility = "visible";
     actionButton.style.backgroundColor = backgroundColor;
     actionButton.style.cursor = "pointer";
     actionButton.style.fontWeight = "bold";
   } else {
-    actionButton.style.display = "none";
+    actionButton.style.visibility = "hidden";
+    actionButton.style.cursor = "default";
   }
 };
 

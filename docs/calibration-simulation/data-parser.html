@@ -8,7 +8,7 @@
         * {
             box-sizing: border-box;
         }
-        
+
         body {
             margin: 0;
             padding: 20px;
@@ -16,7 +16,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -25,27 +25,27 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             padding: 30px;
         }
-        
+
         header {
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 3px solid #667eea;
         }
-        
+
         h1 {
             margin: 0 0 10px 0;
             color: #2d3748;
             font-size: 32px;
             font-weight: 700;
         }
-        
+
         .subtitle {
             color: #718096;
             font-size: 16px;
             margin: 0;
         }
-        
+
         .section {
             margin-bottom: 30px;
             padding: 20px;
@@ -53,21 +53,21 @@
             border-radius: 8px;
             border-left: 4px solid #667eea;
         }
-        
+
         .section h3 {
             margin: 0 0 15px 0;
             color: #2d3748;
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .button-group {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin-top: 10px;
         }
-        
+
         button {
             padding: 12px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -80,22 +80,22 @@
             transition: all 0.3s ease;
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
-        
+
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
         }
-        
+
         button:active {
             transform: translateY(0);
         }
-        
+
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
-        
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -103,7 +103,7 @@
             font-weight: 500;
             font-size: 14px;
         }
-        
+
         textarea {
             width: 100%;
             padding: 12px;
@@ -113,12 +113,12 @@
             font-family: 'Courier New', monospace;
             transition: border-color 0.3s;
         }
-        
+
         textarea:focus {
             outline: none;
             border-color: #667eea;
         }
-        
+
         input[type="number"] {
             width: 100%;
             padding: 10px;
@@ -126,44 +126,44 @@
             border-radius: 6px;
             font-size: 14px;
         }
-        
+
         input[type="number"]:focus {
             outline: none;
             border-color: #667eea;
         }
-        
+
         .input-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 15px;
         }
-        
+
         .status-message {
             padding: 8px 12px;
             border-radius: 4px;
             font-size: 14px;
             display: none;
         }
-        
+
         .status-message.success {
             background: #c6f6d5;
             color: #22543d;
             display: inline-block;
         }
-        
+
         .status-message.error {
             background: #fed7d7;
             color: #742a2a;
             display: inline-block;
         }
-        
+
         .status-message.info {
             background: #bee3f8;
             color: #2c5282;
             display: inline-block;
         }
-        
+
         #output {
             font-family: 'Courier New', monospace;
             background: #1a202c;
@@ -173,7 +173,7 @@
             padding: 15px;
             min-height: 300px;
         }
-        
+
         .results-box {
             background: #f0fff4;
             border: 2px solid #48bb78;
@@ -182,37 +182,37 @@
             margin-top: 15px;
             display: none;
         }
-        
+
         .results-box h4 {
             margin: 0 0 10px 0;
             color: #22543d;
         }
-        
+
         .results-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 10px;
         }
-        
+
         .result-item {
             background: white;
             padding: 10px;
             border-radius: 4px;
             border-left: 3px solid #48bb78;
         }
-        
+
         .result-label {
             font-size: 12px;
             color: #718096;
             margin-bottom: 4px;
         }
-        
+
         .result-value {
             font-size: 18px;
             font-weight: 600;
             color: #2d3748;
         }
-        
+
         #visualization-canvas {
             width: 100%;
             max-width: 800px;
@@ -223,11 +223,11 @@
             margin: 15px auto;
             display: block;
         }
-        
+
         .visualization-section {
             display: none;
         }
-        
+
         .visualization-section.active {
             display: block;
         }
@@ -259,7 +259,7 @@
         <div class="section">
             <h3>⚓ Initial Anchor Positions</h3>
             <p style="color: #718096; font-size: 14px; margin-bottom: 10px;">
-                Starting estimates for anchor point positions. If the initial fitness is low or the frame is nearly square, 
+                Starting estimates for anchor point positions. If the initial fitness is low or the frame is nearly square,
                 the algorithm will automatically compute better starting positions using rectangular optimization (same as ESP3D-WEBUI).
             </p>
             <div class="input-grid">
@@ -338,7 +338,7 @@
 
     <!-- Load shared calibration computation library -->
     <script src="../../ESP3D-WEBUI/www/js/calibration-computation.js"></script>
-    
+
     <script>
         let parsedMeasurements = null;
         let phase1Points = [];
@@ -374,49 +374,49 @@
             const ctx = canvas.getContext('2d');
             const width = canvas.width;
             const height = canvas.height;
-            
+
             // Clear canvas
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, width, height);
-            
+
             // Find max dimensions for scaling
             let maxX = 0, maxY = 0;
-            
+
             // Check Phase 1 points (diagonal search)
             phase1Points.forEach(p => {
                 maxX = Math.max(maxX, p.size);
                 maxY = Math.max(maxY, p.size);
             });
-            
+
             // Check Phase 2 points (arc search)
             phase2Points.forEach(p => {
                 maxX = Math.max(maxX, p.width);
                 maxY = Math.max(maxY, p.height);
             });
-            
+
             // Check best configuration
             if (bestConfiguration) {
                 maxX = Math.max(maxX, bestConfiguration.width);
                 maxY = Math.max(maxY, bestConfiguration.height);
             }
-            
+
             // Add padding
             const padding = 50;
             const plotWidth = width - 2 * padding;
             const plotHeight = height - 2 * padding;
-            
+
             // Scale to fit canvas
             const scale = Math.min(plotWidth / maxX, plotHeight / maxY) * 0.9;
-            
+
             // Helper function to convert coordinates
             function toCanvasX(x) {
                 return padding + x * scale;
             }
-            
+
             function toCanvasY(y) {
                 return height - padding - y * scale;
             }
-            
+
             // Draw axes
             ctx.strokeStyle = '#cbd5e0';
             ctx.lineWidth = 2;
@@ -426,61 +426,61 @@
             ctx.moveTo(padding, height - padding);
             ctx.lineTo(padding, padding);
             ctx.stroke();
-            
+
             // Draw axis labels
             ctx.fillStyle = '#4a5568';
             ctx.font = '14px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('Width (mm)', width / 2, height - 10);
-            
+
             ctx.save();
             ctx.translate(15, height / 2);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText('Height (mm)', 0, 0);
             ctx.restore();
-            
+
             // Draw tick marks and values on axes
             ctx.fillStyle = '#4a5568';
             ctx.font = '11px sans-serif';
             ctx.strokeStyle = '#cbd5e0';
             ctx.lineWidth = 1;
-            
+
             // X-axis ticks
             const numTicksX = 5;
             for (let i = 0; i <= numTicksX; i++) {
                 const value = (maxX * i) / numTicksX;
                 const x = toCanvasX(value);
                 const y = height - padding;
-                
+
                 // Draw tick mark
                 ctx.beginPath();
                 ctx.moveTo(x, y);
                 ctx.lineTo(x, y + 5);
                 ctx.stroke();
-                
+
                 // Draw value
                 ctx.textAlign = 'center';
                 ctx.fillText(Math.round(value).toString(), x, y + 18);
             }
-            
+
             // Y-axis ticks
             const numTicksY = 5;
             for (let i = 0; i <= numTicksY; i++) {
                 const value = (maxY * i) / numTicksY;
                 const x = padding;
                 const y = toCanvasY(value);
-                
+
                 // Draw tick mark
                 ctx.beginPath();
                 ctx.moveTo(x - 5, y);
                 ctx.lineTo(x, y);
                 ctx.stroke();
-                
+
                 // Draw value
                 ctx.textAlign = 'right';
                 ctx.fillText(Math.round(value).toString(), x - 8, y + 4);
             }
-            
+
             // Draw Phase 1 points (diagonal search) in red
             ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
             phase1Points.forEach(p => {
@@ -490,7 +490,7 @@
                 ctx.arc(x, y, 4, 0, 2 * Math.PI);
                 ctx.fill();
             });
-            
+
             // Draw Phase 2 points (arc search) in blue
             ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
             phase2Points.forEach(p => {
@@ -500,7 +500,7 @@
                 ctx.arc(x, y, 5, 0, 2 * Math.PI);
                 ctx.fill();
             });
-            
+
             // Draw the arc curve (for reference) - use the optimal radius from Phase 1
             if (phase2Points.length > 0 && optimalRadius !== null) {
                 ctx.strokeStyle = 'rgba(59, 130, 246, 0.2)';
@@ -521,7 +521,7 @@
                 }
                 ctx.stroke();
             }
-            
+
             // Draw diagonal line for Phase 1
             if (phase1Points.length > 0) {
                 ctx.strokeStyle = 'rgba(239, 68, 68, 0.2)';
@@ -531,21 +531,21 @@
                 ctx.lineTo(toCanvasX(maxX), toCanvasY(maxX));
                 ctx.stroke();
             }
-            
+
             // Draw best configuration as a green star
             if (bestConfiguration) {
                 const x = toCanvasX(bestConfiguration.width);
                 const y = toCanvasY(bestConfiguration.height);
-                
+
                 ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
                 ctx.strokeStyle = 'rgba(22, 163, 74, 1)';
                 ctx.lineWidth = 2;
-                
+
                 // Draw star
                 const outerRadius = 12;
                 const innerRadius = 6;
                 const spikes = 5;
-                
+
                 ctx.beginPath();
                 for (let i = 0; i < spikes * 2; i++) {
                     const radius = i % 2 === 0 ? outerRadius : innerRadius;
@@ -562,14 +562,14 @@
                 ctx.fill();
                 ctx.stroke();
             }
-            
+
             // Draw legend
             const legendX = width - 200;
             const legendY = padding + 20;
-            
+
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'left';
-            
+
             // Phase 1 legend
             ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
             ctx.beginPath();
@@ -577,7 +577,7 @@
             ctx.fill();
             ctx.fillStyle = '#4a5568';
             ctx.fillText('Phase 1: Diagonal', legendX + 10, legendY + 4);
-            
+
             // Phase 2 legend
             ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
             ctx.beginPath();
@@ -585,18 +585,18 @@
             ctx.fill();
             ctx.fillStyle = '#4a5568';
             ctx.fillText('Phase 2: Arc', legendX + 10, legendY + 24);
-            
+
             // Best configuration legend - draw as a star for consistency
             const legendStarX = legendX;
             const legendStarY = legendY + 40;
             const legendStarOuter = 5;
             const legendStarInner = 2.5;
             const legendStarSpikes = 5;
-            
+
             ctx.fillStyle = 'rgba(34, 197, 94, 0.9)';
             ctx.strokeStyle = 'rgba(22, 163, 74, 1)';
             ctx.lineWidth = 1;
-            
+
             ctx.beginPath();
             for (let i = 0; i < legendStarSpikes * 2; i++) {
                 const radius = i % 2 === 0 ? legendStarOuter : legendStarInner;
@@ -612,7 +612,7 @@
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            
+
             ctx.fillStyle = '#4a5568';
             ctx.fillText('Best Config', legendX + 10, legendY + 44);
         }
@@ -652,7 +652,7 @@
         async function findBestRectangularStart(measurements) {
             log('Searching for best rectangular starting configuration...');
             log('Phase 1: Finding optimal radius along diagonal...');
-            
+
             // Reset visualization data
             phase1Points = [];
             phase2Points = [];
@@ -679,16 +679,16 @@
 
                 const result = computeLinesFitness(testMeasurements, guess, true);
                 phase1TestCount++;
-                
+
                 // Store point for visualization
                 phase1Points.push({ size: size, fitness: result.fitness });
-                
+
                 // Update visualization periodically
                 if (phase1TestCount % 2 === 0) {
                     drawVisualization();
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
-                
+
                 return { fitness: result.fitness, size: size };
             }
 
@@ -747,21 +747,21 @@
 
                 const result = computeLinesFitness(testMeasurements, guess, true);
                 phase2TestCount++;
-                
+
                 // Store point for visualization
-                phase2Points.push({ 
-                    width: width, 
-                    height: height, 
+                phase2Points.push({
+                    width: width,
+                    height: height,
                     angle: angleRad,
-                    fitness: result.fitness 
+                    fitness: result.fitness
                 });
-                
+
                 // Update visualization periodically
                 if (phase2TestCount % 2 === 0) {
                     drawVisualization();
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
-                
+
                 return { fitness: result.fitness, width: width, height: height, angle: angleRad };
             }
 
@@ -821,7 +821,7 @@
             const testedCount = phase1TestCount + phase2TestCount;
             log(`Search complete! Tested ${testedCount} points.`);
             log(`Best rectangular start: Width=${bestGuess.tr.x.toFixed(1)}mm, Height=${bestGuess.tr.y.toFixed(1)}mm, Fitness=${(1/bestGuess.fitness).toFixed(4)}`);
-            
+
             // Final visualization update
             drawVisualization();
 
@@ -830,7 +830,7 @@
 
         function parseCalibrationData() {
             const input = document.getElementById('calibration-input').value.trim();
-            
+
             if (!input) {
                 showStatus('parse-status', 'Please enter calibration data', 'error');
                 return;
@@ -841,10 +841,10 @@
                 // 1. Plain array: [{tl:123, tr:234, bl:345, br:456}, ...]
                 // 2. Comma-separated: {tl:123, tr:234, bl:345, br:456},{...}
                 // 3. CLBM format: CLBM:[{bl:123, br:234, tr:345, tl:456}, ...]
-                
+
                 let measurements;
                 let dataStr = input;
-                
+
                 // Check for CLBM: prefix and extract the array part
                 if (dataStr.includes('CLBM:')) {
                     // Extract the array part after CLBM:
@@ -855,21 +855,21 @@
                         throw new Error('Invalid CLBM format - expected CLBM:[...]');
                     }
                 }
-                
+
                 // Remove trailing comma if present (before closing bracket)
                 dataStr = dataStr.replace(/,\s*\]/, ']');
-                
+
                 // Wrap in array brackets if not already present
                 if (!dataStr.trim().startsWith('[')) {
                     dataStr = '[' + dataStr + ']';
                 }
-                
+
                 // Convert JavaScript object notation to JSON by adding quotes around property names
                 // Match unquoted property names (tl, tr, bl, br) followed by colon
                 dataStr = dataStr.replace(/([{,]\s*)([a-z]+)\s*:/g, '$1"$2":');
-                
+
                 measurements = JSON.parse(dataStr);
-                
+
                 // Validate measurements
                 if (!Array.isArray(measurements) || measurements.length === 0) {
                     throw new Error('No measurements found');
@@ -878,24 +878,24 @@
                 // Check each measurement has required fields
                 for (let i = 0; i < measurements.length; i++) {
                     const m = measurements[i];
-                    if (typeof m.tl !== 'number' || typeof m.tr !== 'number' || 
+                    if (typeof m.tl !== 'number' || typeof m.tr !== 'number' ||
                         typeof m.bl !== 'number' || typeof m.br !== 'number') {
                         throw new Error(`Measurement ${i + 1} missing required fields (tl, tr, bl, br)`);
                     }
                 }
 
                 parsedMeasurements = measurements;
-                
+
                 showStatus('parse-status', `✓ Parsed ${measurements.length} measurements`, 'success');
-                document.getElementById('parse-info').innerHTML = 
+                document.getElementById('parse-info').innerHTML =
                     `<strong>Measurements loaded:</strong> ${measurements.length} data points ready for processing`;
                 document.getElementById('compute-button').disabled = false;
-                
+
                 log(`Successfully parsed ${measurements.length} measurements`, true);
                 measurements.forEach((m, i) => {
                     log(`  Measurement ${i + 1}: TL=${m.tl.toFixed(2)}, TR=${m.tr.toFixed(2)}, BL=${m.bl.toFixed(2)}, BR=${m.br.toFixed(2)}`);
                 });
-                
+
             } catch (error) {
                 showStatus('parse-status', `Error: ${error.message}`, 'error');
                 log(`Error parsing data: ${error.message}`, true);
@@ -912,16 +912,16 @@
 
             // Get initial guess from inputs
             let initialGuess = {
-                tl: { 
+                tl: {
                     x: parseFloat(document.getElementById('tlx-input').value),
                     y: parseFloat(document.getElementById('tly-input').value)
                 },
-                tr: { 
+                tr: {
                     x: parseFloat(document.getElementById('trx-input').value),
                     y: parseFloat(document.getElementById('try-input').value)
                 },
                 bl: { x: 0, y: 0 },
-                br: { 
+                br: {
                     x: parseFloat(document.getElementById('brx-input').value),
                     y: 0
                 }
@@ -929,7 +929,7 @@
 
             log('\n=== Starting Calibration Computation ===');
             log(`Initial guess from inputs: TL(${initialGuess.tl.x}, ${initialGuess.tl.y}), TR(${initialGuess.tr.x}, ${initialGuess.tr.y}), BR(${initialGuess.br.x}, 0)`);
-            
+
             showStatus('compute-status', 'Computing...', 'info');
             document.getElementById('compute-button').disabled = true;
 
@@ -970,16 +970,16 @@
                         } else {
                             log(`Frame is nearly square (aspect ratio ${aspectRatio.toFixed(2)}:1), running rectangular optimization to find better dimensions.`);
                         }
-                        
+
                         startingGuess = await findBestRectangularStart(projectedMeasurements);
-                        
+
                         // Update the input fields with computed values
                         document.getElementById('tlx-input').value = startingGuess.tl.x.toFixed(1);
                         document.getElementById('tly-input').value = startingGuess.tl.y.toFixed(1);
                         document.getElementById('trx-input').value = startingGuess.tr.x.toFixed(1);
                         document.getElementById('try-input').value = startingGuess.tr.y.toFixed(1);
                         document.getElementById('brx-input').value = startingGuess.br.x.toFixed(1);
-                        
+
                         log('Updated input fields with computed starting positions.');
                         log('Starting optimization with computed positions...');
                     } else {
@@ -1001,7 +1001,7 @@
 
                     const status = computer.getStatus();
                     const fitness = status.bestFitness;
-                    
+
                     log(`\n=== Computation Complete ===`);
                     log(`Total iterations: ${status.totalIterations}`);
                     log(`Final fitness: ${fitness.toFixed(6)}`);
@@ -1035,14 +1035,14 @@
                     } else {
                         // Low fitness - need to retry or give up
                         log(`\nCalculated Fitness Too Low (${fitness.toFixed(7)} < ${acceptableCalibrationThreshold}).`);
-                        
+
                         if (lowFitnessRetryCount >= MAX_LOW_FITNESS_RETRIES) {
                             // Maximum retries reached
                             log(`\n⚠️ Maximum retry attempts (${MAX_LOW_FITNESS_RETRIES}) reached.`);
                             log(`Best fitness achieved across all attempts: ${bestFitnessAcrossAllRetries.toFixed(7)}`);
                             log('\n❌ Calibration stopped due to low fitness after maximum retries.');
                             log('Displaying best result from all retry attempts.');
-                            
+
                             // Display best result from all attempts
                             const bestResult = bestGuessAcrossAllRetries;
                             log(`\nBest Anchor Positions (from all attempts):`);
@@ -1066,7 +1066,7 @@
                             lowFitnessRetryCount++;
                             log(` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`);
                             log('Adding random perturbation to anchor positions (±50mm)...');
-                            
+
                             // Add random perturbation to initial guess (same as machine behavior)
                             initialGuess.tl.x = result.tl.x + Math.random() * 100 - 50;
                             initialGuess.tl.y = result.tl.y + Math.random() * 100 - 50;

@@ -79,6 +79,21 @@ If viewing online:
 https://github.com/MaslowCNC/Maslow_4/tree/main/docs/calibration-simulation
 ```
 
+## Code Architecture
+
+The simulator now uses a **shared computation library** (`calibration-computation.js`) that contains the core calibration algorithm. This eliminates code duplication and ensures the simulator uses the exact same math as the real machine.
+
+**Key files:**
+- `calibration-computation.js` - Shared computation library with core algorithm
+- `computation-simulator.js` - Thin wrapper around the shared library
+- `machine-simulator.js` - Simulates the ESP32 firmware behavior
+- `visualization.js` - Renders the calibration process visually
+- `main.js` - Orchestrates the simulation
+
+## Testing
+
+A test page is available at `test.html` to verify the shared computation library works correctly. Open it in a browser and click "Run Tests" to validate the mathematical functions.
+
 ## Support
 
 For questions or issues:

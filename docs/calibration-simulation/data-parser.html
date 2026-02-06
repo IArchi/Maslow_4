@@ -939,55 +939,58 @@
                 const projectedMeasurements = projectMeasurements(parsedMeasurements);
                 log(`Processing ${projectedMeasurements.length} projected measurements`);
 
+                // Calculate initial fitness (ONCE, before retry loop)
+                const initialFitness = 1 / computeLinesFitness(projectedMeasurements, initialGuess).fitness;
+                log(`Initial guess fitness: ${initialFitness.toFixed(7)}`);
+
+                // Determine if we should do rectangular optimization (ONCE, before retry loop)
+                const frameWidth = initialGuess.tr.x - initialGuess.tl.x;
+                const frameHeight = initialGuess.tl.y - initialGuess.bl.y;
+                const aspectRatio = frameWidth / frameHeight;
+
+                log(`Frame dimensions: ${frameWidth.toFixed(1)}mm x ${frameHeight.toFixed(1)}mm (aspect ratio: ${aspectRatio.toFixed(2)}:1)`);
+
+                let startingGuess = JSON.parse(JSON.stringify(initialGuess));
+
+                // Run rectangular optimization if needed (ONCE, before retry loop - same logic as ESP3D-WEBUI)
+                if (initialFitness < 0.1 || (aspectRatio > 0.95 && aspectRatio < 1.05)) {
+                    if (initialFitness < 0.1) {
+                        log('Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.');
+                    } else {
+                        log(`Frame is nearly square (aspect ratio ${aspectRatio.toFixed(2)}:1), running rectangular optimization to find better dimensions.`);
+                    }
+
+                    startingGuess = await findBestRectangularStart(projectedMeasurements);
+
+                    // Update the input fields with computed values
+                    document.getElementById('tlx-input').value = startingGuess.tl.x.toFixed(1);
+                    document.getElementById('tly-input').value = startingGuess.tl.y.toFixed(1);
+                    document.getElementById('trx-input').value = startingGuess.tr.x.toFixed(1);
+                    document.getElementById('try-input').value = startingGuess.tr.y.toFixed(1);
+                    document.getElementById('brx-input').value = startingGuess.br.x.toFixed(1);
+
+                    log('Updated input fields with computed starting positions.');
+                    log('Starting optimization with computed positions...');
+                } else {
+                    log('Initial fitness >= 0.1 and frame is not square, skipping rectangular optimization and using initial guess directly.');
+                }
+
                 // Track retry attempts (mimics ESP3D-WEBUI behavior)
                 let lowFitnessRetryCount = 0;
                 let bestGuessAcrossAllRetries = null;
                 let bestFitnessAcrossAllRetries = 0;
 
-                // Retry loop - matches machine behavior
+                // Current guess for optimization - starts with startingGuess, may be perturbed on retries
+                let currentStartingGuess = JSON.parse(JSON.stringify(startingGuess));
+
+                // Retry loop - ONLY the final optimization step is repeated (matches machine behavior)
                 while (lowFitnessRetryCount <= MAX_LOW_FITNESS_RETRIES) {
                     if (lowFitnessRetryCount > 0) {
                         log(`\n=== Retry Attempt ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES} ===`);
                     }
 
-                    // Calculate initial fitness
-                    const initialFitness = 1 / computeLinesFitness(projectedMeasurements, initialGuess).fitness;
-                    log(`Initial guess fitness: ${initialFitness.toFixed(7)}`);
-
-                    // Determine if we should do rectangular optimization
-                    const frameWidth = initialGuess.tr.x - initialGuess.tl.x;
-                    const frameHeight = initialGuess.tl.y - initialGuess.bl.y;
-                    const aspectRatio = frameWidth / frameHeight;
-
-                    log(`Frame dimensions: ${frameWidth.toFixed(1)}mm x ${frameHeight.toFixed(1)}mm (aspect ratio: ${aspectRatio.toFixed(2)}:1)`);
-
-                    let startingGuess = JSON.parse(JSON.stringify(initialGuess));
-
-                    // Run rectangular optimization if needed (same logic as ESP3D-WEBUI)
-                    if (initialFitness < 0.1 || (aspectRatio > 0.95 && aspectRatio < 1.05)) {
-                        if (initialFitness < 0.1) {
-                            log('Initial fitness < 0.1 (poor guess), running rectangular optimization to find better starting point.');
-                        } else {
-                            log(`Frame is nearly square (aspect ratio ${aspectRatio.toFixed(2)}:1), running rectangular optimization to find better dimensions.`);
-                        }
-
-                        startingGuess = await findBestRectangularStart(projectedMeasurements);
-
-                        // Update the input fields with computed values
-                        document.getElementById('tlx-input').value = startingGuess.tl.x.toFixed(1);
-                        document.getElementById('tly-input').value = startingGuess.tl.y.toFixed(1);
-                        document.getElementById('trx-input').value = startingGuess.tr.x.toFixed(1);
-                        document.getElementById('try-input').value = startingGuess.tr.y.toFixed(1);
-                        document.getElementById('brx-input').value = startingGuess.br.x.toFixed(1);
-
-                        log('Updated input fields with computed starting positions.');
-                        log('Starting optimization with computed positions...');
-                    } else {
-                        log('Initial fitness >= 0.1 and frame is not square, skipping rectangular optimization and using initial guess directly.');
-                    }
-
                     // Create CalibrationComputer instance with shared library
-                    const computer = new CalibrationComputer(startingGuess, {
+                    const computer = new CalibrationComputer(currentStartingGuess, {
                         maxIterations: 200000,
                         maxStagnant: 1000
                     });
@@ -1065,14 +1068,14 @@
                             // Increment retry count and add random perturbation (matches ESP3D-WEBUI)
                             lowFitnessRetryCount++;
                             log(` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`);
-                            log('Adding random perturbation to anchor positions (±50mm)...');
+                            log('Adding random perturbation to final optimization starting point (±50mm)...');
 
-                            // Add random perturbation to initial guess (same as machine behavior)
-                            initialGuess.tl.x = result.tl.x + Math.random() * 100 - 50;
-                            initialGuess.tl.y = result.tl.y + Math.random() * 100 - 50;
-                            initialGuess.tr.x = result.tr.x + Math.random() * 100 - 50;
-                            initialGuess.tr.y = result.tr.y + Math.random() * 100 - 50;
-                            initialGuess.br.x = result.br.x + Math.random() * 100 - 50;
+                            // Add random perturbation to the result for next iteration (same as machine behavior)
+                            currentStartingGuess.tl.x = result.tl.x + Math.random() * 100 - 50;
+                            currentStartingGuess.tl.y = result.tl.y + Math.random() * 100 - 50;
+                            currentStartingGuess.tr.x = result.tr.x + Math.random() * 100 - 50;
+                            currentStartingGuess.tr.y = result.tr.y + Math.random() * 100 - 50;
+                            currentStartingGuess.br.x = result.br.x + Math.random() * 100 - 50;
                             // bl stays at (0, 0)
                         }
                     }

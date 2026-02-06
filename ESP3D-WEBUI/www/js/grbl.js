@@ -526,52 +526,56 @@ function show_grbl_position(wpos, mpos) {
 }
 
 // Update Maslow action button display based on current Maslow state
-// This is the new state-dependent action button below Setup
+// This is the new state-dependent action button in row 3, column 5
 const updateMaslowActionButton = () => {
   if (typeof maslowStatus === 'undefined') {
     return;
   }
   
-  let displayText = "Idle";
-  let isActionable = false;
-  let backgroundColor = "#f2f0e4"; // grey
+  const actionButton = id("maslowActionButton");
+  if (!actionButton) {
+    return;
+  }
   
-  // Check Maslow state - these states show specific action text
+  let displayText = "";
+  let isActionable = false;
+  let shouldShow = false;
+  const backgroundColor = "#4aa85c"; // green when shown
+  
+  // Only show button for states 0, 2, and 4
   switch (maslowStatus.state) {
     case 0: // UNKNOWN
       displayText = "Retract";
       isActionable = true;
-      backgroundColor = "#4aa85c"; // green
+      shouldShow = true;
       break;
     case 2: // RETRACTED
       displayText = "Extend";
       isActionable = true;
-      backgroundColor = "#4aa85c"; // green
+      shouldShow = true;
       break;
     case 4: // EXTENDEDOUT
       displayText = "Apply Tension";
       isActionable = true;
-      backgroundColor = "#4aa85c"; // green
-      break;
-    case 7: // READY_TO_CUT
-      displayText = "Idle";
-      backgroundColor = "#f2f0e4"; // grey
+      shouldShow = true;
       break;
     default:
-      displayText = "Idle";
-      backgroundColor = "#f2f0e4"; // grey
+      // Hide button for all other states (including state 7 - READY_TO_CUT)
+      shouldShow = false;
       break;
   }
   
   // Update button text
   setHTML("maslowActionText", displayText);
   
-  // Update button styling
-  const actionButton = id("maslowActionButton");
-  if (actionButton) {
+  // Show or hide button based on state
+  if (shouldShow) {
+    actionButton.style.display = "flex";
     actionButton.style.backgroundColor = backgroundColor;
-    actionButton.style.cursor = isActionable ? "pointer" : "default";
-    actionButton.style.fontWeight = isActionable ? "bold" : "normal";
+    actionButton.style.cursor = "pointer";
+    actionButton.style.fontWeight = "bold";
+  } else {
+    actionButton.style.display = "none";
   }
 };
 

@@ -344,6 +344,7 @@
         let phase1Points = [];
         let phase2Points = [];
         let bestConfiguration = null;
+        let optimalRadius = null; // Store the radius from Phase 1 for visualization
 
         // Z-heights for belt anchor points (used in projection calculations)
         const tlZ = 100;
@@ -434,6 +435,48 @@
             ctx.fillText('Height (mm)', 0, 0);
             ctx.restore();
             
+            // Draw tick marks and values on axes
+            ctx.fillStyle = '#4a5568';
+            ctx.font = '11px sans-serif';
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 1;
+            
+            // X-axis ticks
+            const numTicksX = 5;
+            for (let i = 0; i <= numTicksX; i++) {
+                const value = (maxX * i) / numTicksX;
+                const x = toCanvasX(value);
+                const y = height - padding;
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + 5);
+                ctx.stroke();
+                
+                // Draw value
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.round(value).toString(), x, y + 18);
+            }
+            
+            // Y-axis ticks
+            const numTicksY = 5;
+            for (let i = 0; i <= numTicksY; i++) {
+                const value = (maxY * i) / numTicksY;
+                const x = padding;
+                const y = toCanvasY(value);
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.moveTo(x - 5, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                // Draw value
+                ctx.textAlign = 'right';
+                ctx.fillText(Math.round(value).toString(), x - 8, y + 4);
+            }
+            
             // Draw Phase 1 points (diagonal search) in red
             ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
             phase1Points.forEach(p => {
@@ -454,10 +497,8 @@
                 ctx.fill();
             });
             
-            // Draw the arc curve (for reference)
-            if (phase2Points.length > 0 && bestConfiguration) {
-                const radius = Math.sqrt(bestConfiguration.width * bestConfiguration.width + 
-                                        bestConfiguration.height * bestConfiguration.height);
+            // Draw the arc curve (for reference) - use the optimal radius from Phase 1
+            if (phase2Points.length > 0 && optimalRadius !== null) {
                 ctx.strokeStyle = 'rgba(59, 130, 246, 0.2)';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -466,8 +507,8 @@
                 const steps = 50;
                 for (let i = 0; i <= steps; i++) {
                     const angle = startAngle + (endAngle - startAngle) * i / steps;
-                    const x = toCanvasX(radius * Math.cos(angle));
-                    const y = toCanvasY(radius * Math.sin(angle));
+                    const x = toCanvasX(optimalRadius * Math.cos(angle));
+                    const y = toCanvasY(optimalRadius * Math.sin(angle));
                     if (i === 0) {
                         ctx.moveTo(x, y);
                     } else {
@@ -612,6 +653,7 @@
             phase1Points = [];
             phase2Points = [];
             bestConfiguration = null;
+            optimalRadius = null;
             document.getElementById('visualization-section').classList.add('active');
 
             const measurementsCopy = JSON.parse(JSON.stringify(measurements));
@@ -675,11 +717,12 @@
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
 
-            const optimalRadius = diagonalBestSize;
+            const optimalRadiusLocal = diagonalBestSize;
+            optimalRadius = optimalRadiusLocal; // Store globally for visualization
             log(`Phase 1 complete: Optimal radius ${diagonalBestSize.toFixed(0)}mm using ${phase1TestCount} evaluations`);
 
             // Phase 2: Search for best aspect ratio on arc at optimal radius
-            log(`Phase 2: Finding best aspect ratio on arc at ${optimalRadius.toFixed(0)}mm radius...`);
+            log(`Phase 2: Finding best aspect ratio on arc at ${optimalRadiusLocal.toFixed(0)}mm radius...`);
 
             let bestGuess = null;
             let bestFitnessOverall = Infinity;
@@ -687,8 +730,8 @@
 
             async function evaluateFitnessAtAngle(angleRad) {
                 const testMeasurements = JSON.parse(JSON.stringify(measurementsCopy));
-                const width = optimalRadius * Math.cos(angleRad);
-                const height = optimalRadius * Math.sin(angleRad);
+                const width = optimalRadiusLocal * Math.cos(angleRad);
+                const height = optimalRadiusLocal * Math.sin(angleRad);
 
                 const guess = {
                     tl: { x: 0, y: height },

@@ -387,9 +387,14 @@ void Calibration::home() {
                 for (int arm = _TL; arm < ARM_COUNT; arm++) {
                     Maslow.axis[arm].stop();
                 }
-                sys.set_state(State::Idle);
+                // Don't repeatedly call sys.set_state - it may already be Idle from previous iterations
             } else {
                 // Belt momentum has dissipated, safe to save positions now
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    Maslow.axis[arm].stop();
+                }
+                sys.set_state(State::Idle);
+
                 // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
                 // return to EXTENDEDOUT state, otherwise go to UNKNOWN
                 if (previousState == READY_TO_CUT || previousState == EXTENDEDOUT || previousState == CALIBRATION_COMPUTING) {

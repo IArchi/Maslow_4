@@ -14,6 +14,89 @@ var acceptableCalibrationThreshold = 0.5
 // Maximum number of low-fitness retry attempts before giving up
 const MAX_LOW_FITNESS_RETRIES = 10;
 
+// Aspect ratios to test as retry points (width:height)
+const RETRY_ASPECT_RATIOS = [2.0, 1.5, 1.0, 1.0/1.5, 1.0/2.0];
+
+/**
+ * Calculate a rectangular frame configuration from aspect ratio on an arc
+ * @param {number} aspectRatio - Width:height ratio (e.g., 2.0 for 2:1)
+ * @param {number} radius - Optimal radius from phase 2
+ * @returns {Object} Frame configuration with tl, tr, bl, br coordinates
+ */
+function calculateAspectRatioFrame(aspectRatio, radius) {
+  const angle = Math.atan(1.0 / aspectRatio);
+  const width = radius * Math.cos(angle);
+  const height = radius * Math.sin(angle);
+
+  return {
+    tl: { x: 0, y: height },
+    tr: { x: width, y: height },
+    bl: { x: 0, y: 0 },
+    br: { x: width, y: 0 }
+  };
+}
+
+/**
+ * Apply retry strategy to update guess coordinates
+ * @param {Object} targetGuess - The guess object to update
+ * @param {Object} params - Strategy parameters
+ * @param {number|null} params.optimalRadiusForRetry - Optimal radius from phase 1&2, or null if skipped
+ * @param {number} params.lowFitnessRetryCount - Current retry count (1-based)
+ * @param {Object} params.bestGuess - Best guess so far (for random perturbations)
+ * @param {Object} params.startingGuess - Original starting guess (for fallback)
+ * @returns {Object} Info about the strategy used: { strategy: 'aspectRatio'|'random'|'fallback', description: string }
+ */
+function applyRetryStrategy(targetGuess, params) {
+  const { optimalRadiusForRetry, lowFitnessRetryCount, bestGuess, startingGuess } = params;
+
+  if (optimalRadiusForRetry !== null && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
+    // Use aspect ratio points on the arc from phase 2
+    const aspectRatio = RETRY_ASPECT_RATIOS[lowFitnessRetryCount - 1];
+    const frame = calculateAspectRatioFrame(aspectRatio, optimalRadiusForRetry);
+
+    targetGuess.tl.x = frame.tl.x;
+    targetGuess.tl.y = frame.tl.y;
+    targetGuess.tr.x = frame.tr.x;
+    targetGuess.tr.y = frame.tr.y;
+    targetGuess.bl.x = frame.bl.x;
+    targetGuess.bl.y = frame.bl.y;
+    targetGuess.br.x = frame.br.x;
+    targetGuess.br.y = frame.br.y;
+
+    return {
+      strategy: 'aspectRatio',
+      description: `with aspect ratio ${aspectRatio.toFixed(2)}:1 (Width: ${frame.tr.x.toFixed(1)}mm, Height: ${frame.tr.y.toFixed(1)}mm)`
+    };
+  } else if (optimalRadiusForRetry === null) {
+    // Random perturbations when phase 1&2 were skipped
+    targetGuess.tl.x = bestGuess.tl.x + Math.random() * 100 - 50;
+    targetGuess.tl.y = bestGuess.tl.y + Math.random() * 100 - 50;
+    targetGuess.tr.x = bestGuess.tr.x + Math.random() * 100 - 50;
+    targetGuess.tr.y = bestGuess.tr.y + Math.random() * 100 - 50;
+    targetGuess.br.x = bestGuess.br.x + Math.random() * 100 - 50;
+
+    return {
+      strategy: 'random',
+      description: 'with random perturbations (±50mm)'
+    };
+  } else {
+    // Fallback to original guess if exceeded retry attempts with aspect ratios
+    targetGuess.tl.x = startingGuess.tl.x;
+    targetGuess.tl.y = startingGuess.tl.y;
+    targetGuess.tr.x = startingGuess.tr.x;
+    targetGuess.tr.y = startingGuess.tr.y;
+    targetGuess.bl.x = startingGuess.bl.x;
+    targetGuess.bl.y = startingGuess.bl.y;
+    targetGuess.br.x = startingGuess.br.x;
+    targetGuess.br.y = startingGuess.br.y;
+
+    return {
+      strategy: 'fallback',
+      description: 'with original starting guess'
+    };
+  }
+}
+
 //Establish initial guesses for the corners
 var initialGuess = {
   tl: { x: 0, y: 2000 },
@@ -334,6 +417,9 @@ async function findBestRectangularStart(measurements) {
   messagesBox.textContent += "Starting optimization...\n";
   messagesBox.scrollTop = messagesBox.scrollHeight;
 
+  // Store the optimal radius for retry point calculations
+  bestGuess.optimalRadius = optimalRadius;
+
   return bestGuess;
 }
 
@@ -387,6 +473,9 @@ async function findMaxFitness(measurements) {
   let lowFitnessRetryCount = 0;
   let bestGuessAcrossAllRetries = JSON.parse(JSON.stringify(startingGuess));
   let bestFitnessAcrossAllRetries = 1 / bestGuess.fitness;
+
+  // Store optimal radius from rectangular optimization for retry point calculations
+  let optimalRadiusForRetry = startingGuess.optimalRadius || null;
 
   function iterate() {
     if (stagnantCounter < 1000 && totalCounter < 200000) {
@@ -515,12 +604,14 @@ async function findMaxFitness(measurements) {
 
         messagesBox.textContent += '\n Restarting';
 
-        // Add random perturbation and retry
-        initialGuess.tl.x = bestGuess.tl.x + Math.random() * 100 - 50;
-        initialGuess.tl.y = bestGuess.tl.y + Math.random() * 100 - 50;
-        initialGuess.tr.x = bestGuess.tr.x + Math.random() * 100 - 50;
-        initialGuess.tr.y = bestGuess.tr.y + Math.random() * 100 - 50;
-        initialGuess.br.x = bestGuess.br.x + Math.random() * 100 - 50;
+        const retryInfo = applyRetryStrategy(initialGuess, {
+          optimalRadiusForRetry,
+          lowFitnessRetryCount,
+          bestGuess,
+          startingGuess
+        });
+
+        messagesBox.textContent += ` ${retryInfo.description}`;
 
         stagnantCounter = 0;
         totalCounter = 0;

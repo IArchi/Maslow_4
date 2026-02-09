@@ -338,6 +338,8 @@
 
     <!-- Load shared calibration computation library -->
     <script src="../../ESP3D-WEBUI/www/js/calibration-computation.js"></script>
+    <!-- Load calibration utilities including aspect ratio calculations -->
+    <script src="../../ESP3D-WEBUI/www/js/calculatesCalibrationStuff.js"></script>
 
     <script>
         let parsedMeasurements = null;
@@ -346,15 +348,9 @@
         let bestConfiguration = null;
         let optimalRadius = null; // Store the radius from Phase 1 for visualization
 
-        // Z-heights for belt anchor points (used in projection calculations)
-        const tlZ = 100;
-        const trZ = 56;
-        const blZ = 34;
-        const brZ = 78;
-
-        // Maximum number of low-fitness retry attempts before giving up (matches ESP3D-WEBUI behavior)
-        const MAX_LOW_FITNESS_RETRIES = 10;
-        const acceptableCalibrationThreshold = 0.5;
+        // Note: MAX_LOW_FITNESS_RETRIES, RETRY_ASPECT_RATIOS, calculateAspectRatioFrame,
+        // and applyRetryStrategy are loaded from calculatesCalibrationStuff.js to avoid code duplication
+        // Also using tlZ, trZ, blZ, brZ, and acceptableCalibrationThreshold from that file
 
         function log(message, clear = false) {
             const output = document.getElementById('output');
@@ -825,6 +821,9 @@
             // Final visualization update
             drawVisualization();
 
+            // Store the optimal radius for retry point calculations
+            bestGuess.optimalRadius = optimalRadiusLocal;
+
             return bestGuess;
         }
 
@@ -983,6 +982,9 @@
                 // Current guess for optimization - starts with startingGuess, may be perturbed on retries
                 let currentStartingGuess = JSON.parse(JSON.stringify(startingGuess));
 
+                // Store optimal radius from rectangular optimization for retry point calculations
+                let optimalRadiusForRetry = startingGuess.optimalRadius || null;
+
                 // Retry loop - ONLY the final optimization step is repeated (matches machine behavior)
                 while (lowFitnessRetryCount <= MAX_LOW_FITNESS_RETRIES) {
                     if (lowFitnessRetryCount > 0) {
@@ -1065,18 +1067,18 @@
                             showStatus('compute-status', '⚠ Low fitness after max retries - results may be inaccurate', 'error');
                             break; // Exit retry loop
                         } else {
-                            // Increment retry count and add random perturbation (matches ESP3D-WEBUI)
+                            // Increment retry count and use appropriate retry strategy
                             lowFitnessRetryCount++;
                             log(` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`);
-                            log('Adding random perturbation to final optimization starting point (±50mm)...');
 
-                            // Add random perturbation to the result for next iteration (same as machine behavior)
-                            currentStartingGuess.tl.x = result.tl.x + Math.random() * 100 - 50;
-                            currentStartingGuess.tl.y = result.tl.y + Math.random() * 100 - 50;
-                            currentStartingGuess.tr.x = result.tr.x + Math.random() * 100 - 50;
-                            currentStartingGuess.tr.y = result.tr.y + Math.random() * 100 - 50;
-                            currentStartingGuess.br.x = result.br.x + Math.random() * 100 - 50;
-                            // bl stays at (0, 0)
+                            const retryInfo = applyRetryStrategy(currentStartingGuess, {
+                                optimalRadiusForRetry,
+                                lowFitnessRetryCount,
+                                bestGuess: result,
+                                startingGuess
+                            });
+
+                            log(retryInfo.description.charAt(0).toUpperCase() + retryInfo.description.slice(1) + '.');
                         }
                     }
                 }

@@ -545,7 +545,7 @@ async function findMaxFitness(measurements) {
 
         // Use aspect ratio-based retry points if phase 1&2 ran (optimalRadius available)
         // Otherwise fall back to random perturbations (old behavior)
-        if (optimalRadiusForRetry !== null && lowFitnessRetryCount > 0 && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
+        if (optimalRadiusForRetry !== null && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
           // New behavior: Use aspect ratio points on the arc from phase 2
           const aspectRatio = RETRY_ASPECT_RATIOS[lowFitnessRetryCount - 1];
           const frame = calculateAspectRatioFrame(aspectRatio, optimalRadiusForRetry);

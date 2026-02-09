@@ -36,6 +36,67 @@ function calculateAspectRatioFrame(aspectRatio, radius) {
   };
 }
 
+/**
+ * Apply retry strategy to update guess coordinates
+ * @param {Object} targetGuess - The guess object to update
+ * @param {Object} params - Strategy parameters
+ * @param {number|null} params.optimalRadiusForRetry - Optimal radius from phase 1&2, or null if skipped
+ * @param {number} params.lowFitnessRetryCount - Current retry count (1-based)
+ * @param {Object} params.bestGuess - Best guess so far (for random perturbations)
+ * @param {Object} params.startingGuess - Original starting guess (for fallback)
+ * @returns {Object} Info about the strategy used: { strategy: 'aspectRatio'|'random'|'fallback', description: string }
+ */
+function applyRetryStrategy(targetGuess, params) {
+  const { optimalRadiusForRetry, lowFitnessRetryCount, bestGuess, startingGuess } = params;
+
+  if (optimalRadiusForRetry !== null && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
+    // Use aspect ratio points on the arc from phase 2
+    const aspectRatio = RETRY_ASPECT_RATIOS[lowFitnessRetryCount - 1];
+    const frame = calculateAspectRatioFrame(aspectRatio, optimalRadiusForRetry);
+
+    targetGuess.tl.x = frame.tl.x;
+    targetGuess.tl.y = frame.tl.y;
+    targetGuess.tr.x = frame.tr.x;
+    targetGuess.tr.y = frame.tr.y;
+    targetGuess.bl.x = frame.bl.x;
+    targetGuess.bl.y = frame.bl.y;
+    targetGuess.br.x = frame.br.x;
+    targetGuess.br.y = frame.br.y;
+
+    return {
+      strategy: 'aspectRatio',
+      description: `with aspect ratio ${aspectRatio.toFixed(2)}:1 (Width: ${frame.tr.x.toFixed(1)}mm, Height: ${frame.tr.y.toFixed(1)}mm)`
+    };
+  } else if (optimalRadiusForRetry === null) {
+    // Random perturbations when phase 1&2 were skipped
+    targetGuess.tl.x = bestGuess.tl.x + Math.random() * 100 - 50;
+    targetGuess.tl.y = bestGuess.tl.y + Math.random() * 100 - 50;
+    targetGuess.tr.x = bestGuess.tr.x + Math.random() * 100 - 50;
+    targetGuess.tr.y = bestGuess.tr.y + Math.random() * 100 - 50;
+    targetGuess.br.x = bestGuess.br.x + Math.random() * 100 - 50;
+
+    return {
+      strategy: 'random',
+      description: 'with random perturbations (±50mm)'
+    };
+  } else {
+    // Fallback to original guess if exceeded retry attempts with aspect ratios
+    targetGuess.tl.x = startingGuess.tl.x;
+    targetGuess.tl.y = startingGuess.tl.y;
+    targetGuess.tr.x = startingGuess.tr.x;
+    targetGuess.tr.y = startingGuess.tr.y;
+    targetGuess.bl.x = startingGuess.bl.x;
+    targetGuess.bl.y = startingGuess.bl.y;
+    targetGuess.br.x = startingGuess.br.x;
+    targetGuess.br.y = startingGuess.br.y;
+
+    return {
+      strategy: 'fallback',
+      description: 'with original starting guess'
+    };
+  }
+}
+
 //Establish initial guesses for the corners
 var initialGuess = {
   tl: { x: 0, y: 2000 },
@@ -543,45 +604,14 @@ async function findMaxFitness(measurements) {
 
         messagesBox.textContent += '\n Restarting';
 
-        // Use aspect ratio-based retry points if phase 1&2 ran (optimalRadius available)
-        // Otherwise fall back to random perturbations (old behavior)
-        if (optimalRadiusForRetry !== null && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
-          // New behavior: Use aspect ratio points on the arc from phase 2
-          const aspectRatio = RETRY_ASPECT_RATIOS[lowFitnessRetryCount - 1];
-          const frame = calculateAspectRatioFrame(aspectRatio, optimalRadiusForRetry);
+        const retryInfo = applyRetryStrategy(initialGuess, {
+          optimalRadiusForRetry,
+          lowFitnessRetryCount,
+          bestGuess,
+          startingGuess
+        });
 
-          initialGuess.tl.x = frame.tl.x;
-          initialGuess.tl.y = frame.tl.y;
-          initialGuess.tr.x = frame.tr.x;
-          initialGuess.tr.y = frame.tr.y;
-          initialGuess.bl.x = frame.bl.x;
-          initialGuess.bl.y = frame.bl.y;
-          initialGuess.br.x = frame.br.x;
-          initialGuess.br.y = frame.br.y;
-
-          messagesBox.textContent += ` with aspect ratio ${aspectRatio.toFixed(2)}:1 (Width: ${frame.tr.x.toFixed(1)}mm, Height: ${frame.tr.y.toFixed(1)}mm)`;
-        } else if (optimalRadiusForRetry === null) {
-          // Old behavior: Random perturbations when phase 1&2 were skipped
-          initialGuess.tl.x = bestGuess.tl.x + Math.random() * 100 - 50;
-          initialGuess.tl.y = bestGuess.tl.y + Math.random() * 100 - 50;
-          initialGuess.tr.x = bestGuess.tr.x + Math.random() * 100 - 50;
-          initialGuess.tr.y = bestGuess.tr.y + Math.random() * 100 - 50;
-          initialGuess.br.x = bestGuess.br.x + Math.random() * 100 - 50;
-
-          messagesBox.textContent += ' with random perturbations (±50mm)';
-        } else {
-          // Fallback to original guess if exceeded retry attempts with aspect ratios
-          initialGuess.tl.x = startingGuess.tl.x;
-          initialGuess.tl.y = startingGuess.tl.y;
-          initialGuess.tr.x = startingGuess.tr.x;
-          initialGuess.tr.y = startingGuess.tr.y;
-          initialGuess.bl.x = startingGuess.bl.x;
-          initialGuess.bl.y = startingGuess.bl.y;
-          initialGuess.br.x = startingGuess.br.x;
-          initialGuess.br.y = startingGuess.br.y;
-
-          messagesBox.textContent += ' with original starting guess';
-        }
+        messagesBox.textContent += ` ${retryInfo.description}`;
 
         stagnantCounter = 0;
         totalCounter = 0;

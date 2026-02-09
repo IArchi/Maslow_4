@@ -348,8 +348,8 @@
         let bestConfiguration = null;
         let optimalRadius = null; // Store the radius from Phase 1 for visualization
 
-        // Note: MAX_LOW_FITNESS_RETRIES, RETRY_ASPECT_RATIOS, and calculateAspectRatioFrame
-        // are loaded from calculatesCalibrationStuff.js to avoid code duplication
+        // Note: MAX_LOW_FITNESS_RETRIES, RETRY_ASPECT_RATIOS, calculateAspectRatioFrame,
+        // and applyRetryStrategy are loaded from calculatesCalibrationStuff.js to avoid code duplication
         // Also using tlZ, trZ, blZ, brZ, and acceptableCalibrationThreshold from that file
 
         function log(message, clear = false) {
@@ -1071,45 +1071,14 @@
                             lowFitnessRetryCount++;
                             log(` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`);
 
-                            // Use aspect ratio-based retry points if phase 1&2 ran (optimalRadius available)
-                            // Otherwise fall back to random perturbations (old behavior)
-                            if (optimalRadiusForRetry !== null && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
-                                // New behavior: Use aspect ratio points on the arc from phase 2
-                                const aspectRatio = RETRY_ASPECT_RATIOS[lowFitnessRetryCount - 1];
-                                const frame = calculateAspectRatioFrame(aspectRatio, optimalRadiusForRetry);
+                            const retryInfo = applyRetryStrategy(currentStartingGuess, {
+                                optimalRadiusForRetry,
+                                lowFitnessRetryCount,
+                                bestGuess: result,
+                                startingGuess
+                            });
 
-                                currentStartingGuess.tl.x = frame.tl.x;
-                                currentStartingGuess.tl.y = frame.tl.y;
-                                currentStartingGuess.tr.x = frame.tr.x;
-                                currentStartingGuess.tr.y = frame.tr.y;
-                                currentStartingGuess.bl.x = frame.bl.x;
-                                currentStartingGuess.bl.y = frame.bl.y;
-                                currentStartingGuess.br.x = frame.br.x;
-                                currentStartingGuess.br.y = frame.br.y;
-
-                                log(`Using aspect ratio ${aspectRatio.toFixed(2)}:1 retry point (Width: ${frame.tr.x.toFixed(1)}mm, Height: ${frame.tr.y.toFixed(1)}mm)`);
-                            } else if (optimalRadiusForRetry === null) {
-                                // Old behavior: Random perturbations when phase 1&2 were skipped
-                                currentStartingGuess.tl.x = result.tl.x + Math.random() * 100 - 50;
-                                currentStartingGuess.tl.y = result.tl.y + Math.random() * 100 - 50;
-                                currentStartingGuess.tr.x = result.tr.x + Math.random() * 100 - 50;
-                                currentStartingGuess.tr.y = result.tr.y + Math.random() * 100 - 50;
-                                currentStartingGuess.br.x = result.br.x + Math.random() * 100 - 50;
-
-                                log('Using random perturbations (±50mm) for retry.');
-                            } else {
-                                // Fallback to original guess if we don't have optimal radius or exceeded aspect ratio retries
-                                currentStartingGuess.tl.x = startingGuess.tl.x;
-                                currentStartingGuess.tl.y = startingGuess.tl.y;
-                                currentStartingGuess.tr.x = startingGuess.tr.x;
-                                currentStartingGuess.tr.y = startingGuess.tr.y;
-                                currentStartingGuess.bl.x = startingGuess.bl.x;
-                                currentStartingGuess.bl.y = startingGuess.bl.y;
-                                currentStartingGuess.br.x = startingGuess.br.x;
-                                currentStartingGuess.br.y = startingGuess.br.y;
-
-                                log('Falling back to original starting guess for retry.');
-                            }
+                            log(retryInfo.description.charAt(0).toUpperCase() + retryInfo.description.slice(1) + '.');
                         }
                     }
                 }

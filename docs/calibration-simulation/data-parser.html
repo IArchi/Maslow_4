@@ -348,9 +348,9 @@
         let bestConfiguration = null;
         let optimalRadius = null; // Store the radius from Phase 1 for visualization
 
-        // Note: tlZ, trZ, blZ, brZ, acceptableCalibrationThreshold, MAX_LOW_FITNESS_RETRIES,
-        // RETRY_ASPECT_RATIOS, and calculateAspectRatioFrame are loaded from
-        // calculatesCalibrationStuff.js to avoid code duplication
+        // Note: MAX_LOW_FITNESS_RETRIES, RETRY_ASPECT_RATIOS, and calculateAspectRatioFrame
+        // are loaded from calculatesCalibrationStuff.js to avoid code duplication
+        // Also using tlZ, trZ, blZ, brZ, and acceptableCalibrationThreshold from that file
 
         function log(message, clear = false) {
             const output = document.getElementById('output');

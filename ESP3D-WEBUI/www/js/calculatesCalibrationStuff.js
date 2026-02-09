@@ -14,6 +14,28 @@ var acceptableCalibrationThreshold = 0.5
 // Maximum number of low-fitness retry attempts before giving up
 const MAX_LOW_FITNESS_RETRIES = 10;
 
+// Aspect ratios to test as retry points (width:height)
+const RETRY_ASPECT_RATIOS = [2.0, 1.5, 1.0, 1.0/1.5, 1.0/2.0];
+
+/**
+ * Calculate a rectangular frame configuration from aspect ratio on an arc
+ * @param {number} aspectRatio - Width:height ratio (e.g., 2.0 for 2:1)
+ * @param {number} radius - Optimal radius from phase 2
+ * @returns {Object} Frame configuration with tl, tr, bl, br coordinates
+ */
+function calculateAspectRatioFrame(aspectRatio, radius) {
+  const angle = Math.atan(1.0 / aspectRatio);
+  const width = radius * Math.cos(angle);
+  const height = radius * Math.sin(angle);
+
+  return {
+    tl: { x: 0, y: height },
+    tr: { x: width, y: height },
+    bl: { x: 0, y: 0 },
+    br: { x: width, y: 0 }
+  };
+}
+
 //Establish initial guesses for the corners
 var initialGuess = {
   tl: { x: 0, y: 2000 },
@@ -334,6 +356,9 @@ async function findBestRectangularStart(measurements) {
   messagesBox.textContent += "Starting optimization...\n";
   messagesBox.scrollTop = messagesBox.scrollHeight;
 
+  // Store the optimal radius for retry point calculations
+  bestGuess.optimalRadius = optimalRadius;
+
   return bestGuess;
 }
 
@@ -387,6 +412,9 @@ async function findMaxFitness(measurements) {
   let lowFitnessRetryCount = 0;
   let bestGuessAcrossAllRetries = JSON.parse(JSON.stringify(startingGuess));
   let bestFitnessAcrossAllRetries = 1 / bestGuess.fitness;
+
+  // Store optimal radius from rectangular optimization for retry point calculations
+  let optimalRadiusForRetry = startingGuess.optimalRadius || null;
 
   function iterate() {
     if (stagnantCounter < 1000 && totalCounter < 200000) {
@@ -515,12 +543,43 @@ async function findMaxFitness(measurements) {
 
         messagesBox.textContent += '\n Restarting';
 
-        // Add random perturbation and retry
-        initialGuess.tl.x = bestGuess.tl.x + Math.random() * 100 - 50;
-        initialGuess.tl.y = bestGuess.tl.y + Math.random() * 100 - 50;
-        initialGuess.tr.x = bestGuess.tr.x + Math.random() * 100 - 50;
-        initialGuess.tr.y = bestGuess.tr.y + Math.random() * 100 - 50;
-        initialGuess.br.x = bestGuess.br.x + Math.random() * 100 - 50;
+        // Use aspect ratio-based retry points if phase 1&2 ran (optimalRadius available)
+        // Otherwise fall back to random perturbations (old behavior)
+        if (optimalRadiusForRetry !== null && lowFitnessRetryCount > 0 && lowFitnessRetryCount <= RETRY_ASPECT_RATIOS.length) {
+          // New behavior: Use aspect ratio points on the arc from phase 2
+          const aspectRatio = RETRY_ASPECT_RATIOS[lowFitnessRetryCount - 1];
+          const frame = calculateAspectRatioFrame(aspectRatio, optimalRadiusForRetry);
+
+          initialGuess.tl.x = frame.tl.x;
+          initialGuess.tl.y = frame.tl.y;
+          initialGuess.tr.x = frame.tr.x;
+          initialGuess.tr.y = frame.tr.y;
+          initialGuess.bl.x = frame.bl.x;
+          initialGuess.bl.y = frame.bl.y;
+          initialGuess.br.x = frame.br.x;
+          initialGuess.br.y = frame.br.y;
+
+          messagesBox.textContent += ` with aspect ratio ${aspectRatio.toFixed(2)}:1 (Width: ${frame.tr.x.toFixed(1)}mm, Height: ${frame.tr.y.toFixed(1)}mm)`;
+        } else if (optimalRadiusForRetry === null) {
+          // Old behavior: Random perturbations when phase 1&2 were skipped
+          initialGuess.tl.x = bestGuess.tl.x + Math.random() * 100 - 50;
+          initialGuess.tl.y = bestGuess.tl.y + Math.random() * 100 - 50;
+          initialGuess.tr.x = bestGuess.tr.x + Math.random() * 100 - 50;
+          initialGuess.tr.y = bestGuess.tr.y + Math.random() * 100 - 50;
+          initialGuess.br.x = bestGuess.br.x + Math.random() * 100 - 50;
+
+          messagesBox.textContent += ' with random perturbations (±50mm)';
+        } else {
+          // Fallback to original guess if exceeded retry attempts with aspect ratios
+          initialGuess.tl.x = startingGuess.tl.x;
+          initialGuess.tl.y = startingGuess.tl.y;
+          initialGuess.tr.x = startingGuess.tr.x;
+          initialGuess.tr.y = startingGuess.tr.y;
+          initialGuess.bl.x = startingGuess.bl.x;
+          initialGuess.bl.y = startingGuess.bl.y;
+          initialGuess.br.x = startingGuess.br.x;
+          initialGuess.br.y = startingGuess.br.y;
+        }
 
         stagnantCounter = 0;
         totalCounter = 0;

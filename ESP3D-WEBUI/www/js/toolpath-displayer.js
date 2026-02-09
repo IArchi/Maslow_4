@@ -1841,11 +1841,15 @@ var updateJobBoundsDisplay = function() {
 
         boundsText.innerHTML = `Size: ${width} × ${height} mm<br>Z: ${bbox.min.z.toFixed(1)} to ${bbox.max.z.toFixed(1)} mm (${zRange}mm range)`;
         boundsInfo.style.display = "block";
-        traceButton.style.display = "block";
+        traceButton.style.opacity = "1";
+        traceButton.style.pointerEvents = "auto";
+        traceButton.style.cursor = "pointer";
     } else {
         boundsText.innerHTML = "No file loaded";
         boundsInfo.style.display = "none";
-        traceButton.style.display = "none";
+        traceButton.style.opacity = "0.5";
+        traceButton.style.pointerEvents = "none";
+        traceButton.style.cursor = "not-allowed";
     }
 }
 

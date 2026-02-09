@@ -579,6 +579,8 @@ async function findMaxFitness(measurements) {
           initialGuess.bl.y = startingGuess.bl.y;
           initialGuess.br.x = startingGuess.br.x;
           initialGuess.br.y = startingGuess.br.y;
+
+          messagesBox.textContent += ' with original starting guess';
         }
 
         stagnantCounter = 0;

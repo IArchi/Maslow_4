@@ -5,7 +5,6 @@
 #include "Maslow.h"
 #include "../Report.h"
 #include "../WebUI/WifiConfig.h"
-#include "../WebUI/AutoUpdate.h"
 #include "../Protocol.h"
 #include "../System.h"
 #include "../FileStream.h"
@@ -483,8 +482,8 @@ void Maslow_::setZStop() {
     plan_sync_position();
 
     // Also set Z home (G92 Z0) to establish work coordinate offset
-    char gcode_line[] = "G92 Z0";
-    Error result = gc_execute_line(gcode_line);
+    char  gcode_line[] = "G92 Z0";
+    Error result       = gc_execute_line(gcode_line);
     if (result != Error::Ok) {
         log_error("Failed to set Z home: " << errorString(result));
     }
@@ -907,11 +906,6 @@ void Maslow_::test_() {
     for (int arm = _TL; arm < ARM_COUNT; arm++) {
         axis[arm].test();
     }
-
-#ifdef ENABLE_WIFI
-    // Check for firmware updates after all tests complete
-    WebUI::AutoUpdate::checkForUpdate();
-#endif
 }
 
 //Blinks out the IP address of the machine on the blue LED

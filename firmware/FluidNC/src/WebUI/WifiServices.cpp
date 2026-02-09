@@ -26,7 +26,6 @@ namespace WebUI {
 #    include "TelnetServer.h"
 #    include "NotificationsService.h"
 #    include "Commands.h"
-#    include "AutoUpdate.h"
 
 #    include <WiFi.h>
 #    include "Driver/localfs.h"

@@ -114,10 +114,6 @@ namespace Machine {
         handler.item(M + "_Work_Area_Center_Offset_X", Maslow.workAreaCenterOffsetX, -5000.0, 5000.0);
         handler.item(M + "_Work_Area_Center_Offset_Y", Maslow.workAreaCenterOffsetY, -5000.0, 5000.0);
 
-        // Auto-update configuration
-        handler.item(M + "AutoUpdate", _maslowAutoUpdate);
-        handler.item((M + "UpdateURL").c_str(), _maslowUpdateURL);
-
         // Material thickness parameters - temporary storage for machine-level config
         handler.item(M + "_spoilboardThickness", _tempSpoilboardThickness, 0.0, 50.0);
         handler.item(M + "_workThickness", _tempWorkThickness, 0.0, 50.0);
@@ -222,8 +218,7 @@ namespace Machine {
                                     "_blX: 0\n" + M + "_blY: 0\n" + M + "_brX: 2953.2\n" + M + "_brY: 0\n";
     const std::string dcM4ZAxis = M + "_tlZ: 100\n" + M + "_trZ: 56\n" + M + "_blZ: 34\n" + M + "_brZ: 78\n";
 
-    const std::string dcM4CurrentThreshold = M + "_Retract_Current_Threshold: 1300\n" + M +
-                                             "_Acceptable_Calibration_Threshold: 0.5\n";
+    const std::string dcM4CurrentThreshold = M + "_Retract_Current_Threshold: 1300\n" + M + "_Acceptable_Calibration_Threshold: 0.5\n";
 
     const std::string dcM4Thickness = M + "_spoilboardThickness: 0.0\n" + M + "_workThickness: 0.0\n";
 

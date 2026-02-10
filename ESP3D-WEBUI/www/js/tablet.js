@@ -802,13 +802,16 @@ const tabletDOMActivate = () => {
   setBottomHeight();
   // Restore GCode state when tablet tab is activated
   // This handles the case where the page was loaded but user navigates to tablet tab later
-  // Delay is needed to ensure file list has been populated by files_refreshFiles()
-  setTimeout(() => {
-    // Only restore if there's no file currently loaded
-    if (!gCodeFilename) {
-      restoreGCodeState();
-    }
-  }, FILE_LIST_LOAD_DELAY_MS);
+  // Only attempt restoration if no file is currently loaded and not already restoring
+  if (!gCodeFilename && !restoringGCodeState) {
+    // Delay is needed to ensure file list has been populated by files_refreshFiles()
+    setTimeout(() => {
+      // Check again after delay in case state changed
+      if (!gCodeFilename) {
+        restoreGCodeState();
+      }
+    }, FILE_LIST_LOAD_DELAY_MS);
+  }
 }
 
 // Button event handlers - First Row

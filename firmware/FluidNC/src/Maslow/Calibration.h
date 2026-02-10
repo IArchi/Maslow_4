@@ -158,8 +158,8 @@ private:
                                  { EXTENDING, "Extending Belts" },
                                  { EXTENDEDOUT, "Belts Extended" },
                                  { TAKING_SLACK, "Taking Slack" },
-                                 { CALIBRATION_IN_PROGRESS, "Calibrating" },
+                                 { CALIBRATION_IN_PROGRESS, "Finding Anchor" },
                                  { READY_TO_CUT, "Ready To Cut" },
                                  { RELEASE_TENSION, "Releasing Tension" },
-                                 { CALIBRATION_COMPUTING, "Calibration Computing" } };
+                                 { CALIBRATION_COMPUTING, "Find Anchors Computing" } };
 };

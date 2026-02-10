@@ -527,9 +527,9 @@ async function findMaxFitness(measurements) {
           initialGuess = JSON.parse(JSON.stringify(bestGuessAcrossAllRetries));
           initialGuess.fitness = 100000000;
 
-          messagesBox.textContent += '\n\n❌ Calibration stopped due to low fitness after maximum retries.';
+          messagesBox.textContent += '\n\n❌ Find Anchors stopped due to low fitness after maximum retries.';
           messagesBox.textContent += '\nOptions:';
-          messagesBox.textContent += '\n  1. Click "Calibrate" to restart with updated frame size estimate';
+          messagesBox.textContent += '\n  1. Click "Find Anchors" to restart with updated frame size estimate';
           messagesBox.textContent += '\n  2. Manually check belt tension and frame measurements';
           messagesBox.textContent += '\n  3. Verify measurements are accurate';
           messagesBox.scrollTop = messagesBox.scrollHeight;
@@ -551,7 +551,7 @@ async function findMaxFitness(measurements) {
         messagesBox.textContent += ` Retry ${lowFitnessRetryCount}/${MAX_LOW_FITNESS_RETRIES}...`;
       }
 
-      messagesBox.textContent += '\nCalibration values:';
+      messagesBox.textContent += '\nFind Anchor Values:';
       messagesBox.textContent += `\nFitness: ${currentFitness.toFixed(7)}`;
 
       const tlxStr = bestGuess.tl.x.toFixed(1), tlyStr = bestGuess.tl.y.toFixed(1);
@@ -594,7 +594,7 @@ async function findMaxFitness(measurements) {
         initialGuess = bestGuess;
         initialGuess.fitness = 100000000;
 
-        scheduleCallback(() => { onCalibrationButtonsClick('$CAL', 'Calibrate'); }, 2000);
+        scheduleCallback(() => { onCalibrationButtonsClick('$CAL', 'Find Anchors'); }, 2000);
       } else {
         sendCalibrationEvent({
           good: false,

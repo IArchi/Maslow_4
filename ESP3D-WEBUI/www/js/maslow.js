@@ -167,9 +167,9 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 6:
-			stateLabel.innerHTML = "State: Calibrating";
+			stateLabel.innerHTML = "State: Finding Anchors";
 			if (mainStateLabel) {
-				mainStateLabel.innerHTML = "State: Calibrating";
+				mainStateLabel.innerHTML = "State: Finding Anchors";
 				if (mainStateLabelContainer) mainStateLabelContainer.style.backgroundColor = blueBackground;
 			}
 
@@ -210,9 +210,9 @@ const updateDynamicButtons = () => {
 			// No buttons are active in this state
 			break;
 		case 9:
-			stateLabel.innerHTML = "State: Calibration Computing";
+			stateLabel.innerHTML = "State: Find Anchors Computing";
 			if (mainStateLabel) {
-				mainStateLabel.innerHTML = "State: Calibration Computing";
+				mainStateLabel.innerHTML = "State: Find Anchors Computing";
 				if (mainStateLabelContainer) mainStateLabelContainer.style.backgroundColor = blueBackground;
 			}
 			// No buttons are active in this state

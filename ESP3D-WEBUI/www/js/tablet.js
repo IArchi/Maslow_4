@@ -781,6 +781,19 @@ const restoreGCodeState = () => {
 const tabletDOMActivate = () => {
   fullscreenIfMobile();
   setBottomHeight();
+  // Restore GCode state when tablet tab is activated
+  // This handles the case where the page was loaded but user navigates to tablet tab later
+  if (typeof restoreGCodeState === 'function') {
+    // Use a short timeout to ensure UI is fully ready
+    setTimeout(() => {
+      const savedFilename = get_localdata('gCodeFilename');
+      const savedLoaded = get_localdata('gCodeLoaded');
+      // Only restore if there's state and no file is currently loaded
+      if (savedFilename && savedLoaded === 'true' && !gCodeFilename) {
+        restoreGCodeState();
+      }
+    }, 500);
+  }
 }
 
 // Button event handlers - First Row

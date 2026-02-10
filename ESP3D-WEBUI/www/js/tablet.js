@@ -746,9 +746,9 @@ const saveGCodeState = () => {
     store_localdata('gCodeFilename', gCodeFilename);
     store_localdata('gCodeLoaded', 'true');
     console.log(`GCode state saved: ${gCodeFilename}`);
-  } else {
-    clearGCodeState();
   }
+  // Note: We don't automatically clear state here if conditions aren't met
+  // State should only be cleared explicitly via clearGCodeState()
 };
 
 const clearGCodeState = () => {

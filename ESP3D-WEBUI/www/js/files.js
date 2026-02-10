@@ -428,10 +428,17 @@ const populateTabletFileSelector = (files, path) => {
 			addOption(selector, file.name, index, false, found);
 		}
 	});
-	if (!gCodeFileFound) {
-		gCodeFilename = "";
-		gCodeDisplayable = false;
-		showGCode("");
+	// Only clear the loaded file if it's supposed to be in this directory
+	// Check if gCodeFilename's directory matches the current path
+	if (!gCodeFileFound && gCodeFilename) {
+		const fileDirectory = gCodeFilename.substring(0, gCodeFilename.lastIndexOf('/') + 1) || '/';
+		const normalizedPath = path.endsWith('/') ? path : path + '/';
+		// Only clear if the file should be in this directory
+		if (fileDirectory === normalizedPath) {
+			gCodeFilename = "";
+			gCodeDisplayable = false;
+			showGCode("");
+		}
 	}
 
 	files.forEach((file, index) => {

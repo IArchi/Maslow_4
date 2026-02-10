@@ -1,6 +1,9 @@
 // When we can change to proper ESM - uncomment this
 // import { checkHomed, maslowErrorMsgHandling, maslowInfoMsgHandling, maslowMsgHandling, sendCommand } from "maslow";
 
+// Constants
+const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded before restoration
+
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
 
@@ -769,6 +772,8 @@ const restoreGCodeState = () => {
     restoringGCodeState = true;
 
     // Check if the file still exists by trying to load it
+    // Note: encodeURIComponent encodes the entire SD path, matching the pattern used in
+    // tabletLoadGCodeFile (lines 1105, 1130) for consistency with existing code
     fetch(encodeURIComponent(`SD${savedFilename}`), { method: 'HEAD' })
       .then((response) => {
         if (response.ok) {
@@ -803,7 +808,7 @@ const tabletDOMActivate = () => {
     if (!gCodeFilename) {
       restoreGCodeState();
     }
-  }, 500);
+  }, FILE_LIST_LOAD_DELAY_MS);
 }
 
 // Button event handlers - First Row

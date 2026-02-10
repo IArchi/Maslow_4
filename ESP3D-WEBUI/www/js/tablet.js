@@ -734,6 +734,9 @@ function tabletGrblState(grbl, response) {
 
 let gCodeFilename = '';
 
+// Flag to prevent concurrent GCode state restoration attempts
+let restoringGCodeState = false;
+
 // GCode state persistence functions
 const saveGCodeState = () => {
   if (gCodeFilename && gCodeLoaded) {
@@ -752,13 +755,21 @@ const clearGCodeState = () => {
 };
 
 const restoreGCodeState = () => {
+  // Prevent concurrent restoration attempts
+  if (restoringGCodeState) {
+    console.log('GCode restoration already in progress, skipping');
+    return;
+  }
+
   const savedFilename = get_localdata('gCodeFilename');
   const savedLoaded = get_localdata('gCodeLoaded');
 
   if (savedFilename && savedLoaded === 'true') {
     console.log(`Restoring GCode state: ${savedFilename}`);
+    restoringGCodeState = true;
+
     // Check if the file still exists by trying to load it
-    fetch('SD' + encodeURIComponent(savedFilename), { method: 'HEAD' })
+    fetch(encodeURIComponent(`SD${savedFilename}`), { method: 'HEAD' })
       .then((response) => {
         if (response.ok) {
           // File exists, load it
@@ -774,6 +785,9 @@ const restoreGCodeState = () => {
       .catch((error) => {
         console.log('Error checking GCode file, clearing state:', error);
         clearGCodeState();
+      })
+      .finally(() => {
+        restoringGCodeState = false;
       });
   }
 };
@@ -785,10 +799,8 @@ const tabletDOMActivate = () => {
   // This handles the case where the page was loaded but user navigates to tablet tab later
   // Delay is needed to ensure file list has been populated by files_refreshFiles()
   setTimeout(() => {
-    const savedFilename = get_localdata('gCodeFilename');
-    const savedLoaded = get_localdata('gCodeLoaded');
-    // Only restore if there's state and no file is currently loaded
-    if (savedFilename && savedLoaded === 'true' && !gCodeFilename) {
+    // Only restore if there's no file currently loaded
+    if (!gCodeFilename) {
       restoreGCodeState();
     }
   }, 500);

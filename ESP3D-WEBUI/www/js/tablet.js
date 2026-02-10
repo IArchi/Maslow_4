@@ -758,7 +758,7 @@ const restoreGCodeState = () => {
   if (savedFilename && savedLoaded === 'true') {
     console.log(`Restoring GCode state: ${savedFilename}`);
     // Check if the file still exists by trying to load it
-    fetch(encodeURIComponent(`SD${savedFilename}`), { method: 'HEAD' })
+    fetch('SD' + encodeURIComponent(savedFilename), { method: 'HEAD' })
       .then((response) => {
         if (response.ok) {
           // File exists, load it
@@ -783,17 +783,15 @@ const tabletDOMActivate = () => {
   setBottomHeight();
   // Restore GCode state when tablet tab is activated
   // This handles the case where the page was loaded but user navigates to tablet tab later
-  if (typeof restoreGCodeState === 'function') {
-    // Use a short timeout to ensure UI is fully ready
-    setTimeout(() => {
-      const savedFilename = get_localdata('gCodeFilename');
-      const savedLoaded = get_localdata('gCodeLoaded');
-      // Only restore if there's state and no file is currently loaded
-      if (savedFilename && savedLoaded === 'true' && !gCodeFilename) {
-        restoreGCodeState();
-      }
-    }, 500);
-  }
+  // Delay is needed to ensure file list has been populated by files_refreshFiles()
+  setTimeout(() => {
+    const savedFilename = get_localdata('gCodeFilename');
+    const savedLoaded = get_localdata('gCodeLoaded');
+    // Only restore if there's state and no file is currently loaded
+    if (savedFilename && savedLoaded === 'true' && !gCodeFilename) {
+      restoreGCodeState();
+    }
+  }, 500);
 }
 
 // Button event handlers - First Row

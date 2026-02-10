@@ -594,7 +594,7 @@ async function findMaxFitness(measurements) {
         initialGuess = bestGuess;
         initialGuess.fitness = 100000000;
 
-        scheduleCallback(() => { onCalibrationButtonsClick('$CAL', 'Calibrate'); }, 2000);
+        scheduleCallback(() => { onCalibrationButtonsClick('$CAL', 'Find Anchors'); }, 2000);
       } else {
         sendCalibrationEvent({
           good: false,

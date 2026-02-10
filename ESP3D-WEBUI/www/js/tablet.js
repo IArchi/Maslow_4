@@ -784,7 +784,7 @@ const tabletCalExtend = () => {
   returnFocusToTablet();
 };
 const tabletCalCalibrate = () => {
-  onCalibrationButtonsClick("$CAL", "Calibrate");
+  onCalibrationButtonsClick("$CAL", "Find Anchors");
   scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
 };
 const tabletCalTense = () => {

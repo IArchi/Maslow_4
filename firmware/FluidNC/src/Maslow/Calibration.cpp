@@ -1672,7 +1672,7 @@ void Calibration::resetCalibrationState() {
     // Deallocate memory if allocated
     deallocateCalibrationMemory();
 
-    log_info("Calibration state reset");
+    log_info("Find Anchors state reset");
 }
 
 //Takes a raw measurement, projects it into the XY plane, then adds the belt end extension and arm length to get the actual distance.

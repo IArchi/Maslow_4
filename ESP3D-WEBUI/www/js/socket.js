@@ -160,6 +160,10 @@ const startSocket = () => {
 	ws_source.binaryType = "arraybuffer";
 	ws_source.onopen = (e) => {
 		console.log("Connected");
+		// Restore GCode state if any exists from previous session
+		if (typeof restoreGCodeState === 'function') {
+			restoreGCodeState();
+		}
 	};
 	ws_source.onclose = (e) => {
 		console.log("Disconnected");

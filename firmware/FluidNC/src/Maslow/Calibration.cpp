@@ -1144,7 +1144,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();
     static bool          decompress     = true;
-    float                stepSize       = 0.06;
+    float                stepSize       = 0.078;  // Increased by 30% from 0.06 for faster calibration movement
 
     static int direction = UP;
 

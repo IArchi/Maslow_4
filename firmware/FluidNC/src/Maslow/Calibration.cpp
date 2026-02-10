@@ -714,9 +714,6 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             if (Maslow.axis[_BR].pull_tight(current)) {
                 BR_tight = true;
             }
-            if (!BL_tight || !BR_tight) {
-                return false;
-            }
         }
 
         //once both belts are pulled, take a measurement

@@ -430,14 +430,19 @@ const populateTabletFileSelector = (files, path) => {
 	});
 	// Only clear the loaded file if it's supposed to be in this directory
 	// Check if gCodeFilename's directory matches the current path
+	// Don't clear if restoration is currently in progress
 	if (!gCodeFileFound && gCodeFilename) {
-		const fileDirectory = gCodeFilename.substring(0, gCodeFilename.lastIndexOf('/') + 1) || '/';
-		const normalizedPath = path.endsWith('/') ? path : path + '/';
-		// Only clear if the file should be in this directory
-		if (fileDirectory === normalizedPath) {
-			gCodeFilename = "";
-			gCodeDisplayable = false;
-			showGCode("");
+		// Check if restoration is in progress (if the variable exists)
+		const isRestoring = (typeof restoringGCodeState !== 'undefined') && restoringGCodeState;
+		if (!isRestoring) {
+			const fileDirectory = gCodeFilename.substring(0, gCodeFilename.lastIndexOf('/') + 1) || '/';
+			const normalizedPath = path.endsWith('/') ? path : path + '/';
+			// Only clear if the file should be in this directory
+			if (fileDirectory === normalizedPath) {
+				gCodeFilename = "";
+				gCodeDisplayable = false;
+				showGCode("");
+			}
 		}
 	}
 

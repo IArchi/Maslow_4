@@ -458,7 +458,7 @@ void Calibration::calibration_loop() {
                 sys.set_state(State::Idle);
                 recomputeCountIndex++;
             } else {
-                hold(250);
+                hold(150);  // Reduced from 250ms to 150ms for faster calibration
             }
         }
     }
@@ -477,7 +477,7 @@ void Calibration::calibration_loop() {
                 calibrationGrid[waypoint][1]);  //This is used to set the order that the belts are pulled tight in the following measurement
             Maslow.x = calibrationGrid[waypoint][0];  //Are these ever used anywhere?
             Maslow.y = calibrationGrid[waypoint][1];
-            hold(250);
+            hold(150);  // Reduced from 250ms to 150ms for faster calibration
         }
     }
 }
@@ -1144,7 +1144,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();
     static bool          decompress     = true;
-    float                stepSize       = 0.078;  // Increased by 30% from 0.06 for faster calibration movement
+    float                stepSize       = 0.09;  // Increased by 50% from 0.06 for faster calibration movement
 
     static int direction = UP;
 
@@ -1265,7 +1265,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
             stabilizeTimer = millis();
             return false;  // Continue stabilizing
         }
-        if (millis() - stabilizeTimer < 50) {  // 50ms stabilization period
+        if (millis() - stabilizeTimer < 30) {  // 30ms stabilization period (reduced from 50ms)
             return false;                      // Continue stabilizing
         }
         stabilizeTimer = 0;  // Reset for next waypoint

@@ -180,11 +180,12 @@ namespace WebUI {
             // Android (Google) - All versions
             // ----------------------------------------------------------------------------
             // Modern Android (5.0+): http://connectivitycheck.gstatic.com/generate_204
+            // Legacy Android (4.x and earlier): http://clients3.google.com/gen_204
             // Expected: HTTP 204 No Content (empty body)
             _webserver->on("/generate_204", HTTP_ANY, handle_generate_204);
             _webserver->on("/gen_204", HTTP_ANY, handle_generate_204);
 
-            // Older Android versions (4.x and earlier): http://clients3.google.com/generate_204
+            // Older Android versions also check: http://clients3.google.com/generate_204
             // Expected: HTTP 204 No Content (empty body)
             // Note: DNS server redirects all hosts to our IP, so path matching is sufficient
 
@@ -259,6 +260,7 @@ namespace WebUI {
             // ----------------------------------------------------------------------------
             // Kindle: http://spectrum.s3.amazonaws.com/kindle-wifi/wifistub.html
             // Expected: HTTP 200 OK with HTML content
+            // Note: Kindle accepts the same simple "Success" HTML structure as Apple devices
             _webserver->on("/kindle-wifi/wifistub.html", HTTP_ANY, handle_hotspot_detect);
 
             // ----------------------------------------------------------------------------
@@ -485,7 +487,7 @@ namespace WebUI {
     // Used by: Firefox, Firefox Mobile
     // Expected response: HTTP 200 with minimal HTML
     void Web_Server::handle_firefox_detect() {
-        const char* response = "<HTML><HEAD><META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=success.txt\"></HEAD><BODY></BODY></HTML>";
+        const char* response = "<HTML><HEAD><META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=/success.txt\"></HEAD><BODY></BODY></HTML>";
         _webserver->send(200, "text/html", response);
     }
 

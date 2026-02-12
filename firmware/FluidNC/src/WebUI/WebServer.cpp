@@ -157,29 +157,116 @@ namespace WebUI {
             dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
             log_info("Captive Portal Started");
 
-            // Captive Portal Detection URLs
-            // These URLs are checked by various operating systems to detect captive portals.
-            // By responding to them correctly, we can prevent the device from being treated
-            // as a captive portal, which would cause limited browser access and disconnections.
+            // ============================================================================
+            // Captive Portal Detection URL Handlers
+            // ============================================================================
+            // When devices connect to the Maslow's WiFi Access Point, they automatically
+            // check specific URLs to determine if internet access is available. If these
+            // URLs don't respond correctly, the device treats the network as a "captive
+            // portal" (like a hotel/airport WiFi requiring login), which triggers:
+            //   - Limited browser functionality
+            //   - Automatic disconnection after timeout
+            //   - Poor user experience
+            //
+            // By responding to these URLs with the expected content, we "trick" devices
+            // into thinking they have full internet access, allowing normal web browsing
+            // of the Maslow's interface.
+            //
+            // Each handler below serves the specific HTTP response that the requesting
+            // OS/browser expects. Full URLs are documented for reference.
+            // ============================================================================
 
-            // Android (Google) - Returns HTTP 204 (No Content) to indicate no captive portal
-            _webserver->on("/generate_204", HTTP_ANY, handle_root);
-            _webserver->on("/gen_204", HTTP_ANY, handle_root);
-            _webserver->on("/gconnectivitycheck.gstatic.com", HTTP_ANY, handle_root);
+            // ----------------------------------------------------------------------------
+            // Android (Google) - All versions
+            // ----------------------------------------------------------------------------
+            // Modern Android (5.0+): http://connectivitycheck.gstatic.com/generate_204
+            // Expected: HTTP 204 No Content (empty body)
+            _webserver->on("/generate_204", HTTP_ANY, handle_generate_204);
+            _webserver->on("/gen_204", HTTP_ANY, handle_generate_204);
 
-            // iOS/macOS (Apple) - Returns specific HTML content
-            _webserver->on("/hotspot-detect.html", HTTP_ANY, handle_root);
-            _webserver->on("/library/test/success.html", HTTP_ANY, handle_root);
+            // Older Android versions (4.x and earlier): http://clients3.google.com/generate_204
+            // Expected: HTTP 204 No Content (empty body)
+            // Note: DNS server redirects all hosts to our IP, so path matching is sufficient
 
-            // Windows (Microsoft) - Returns specific text content
-            _webserver->on("/connecttest.txt", HTTP_ANY, handle_root);
-            _webserver->on("/ncsi.txt", HTTP_ANY, handle_root);
-            //do not forget the / at the end
+            // ----------------------------------------------------------------------------
+            // Chrome, Chromium, Brave (all platforms)
+            // ----------------------------------------------------------------------------
+            // Chrome/Chromium: http://clients3.google.com/generate_204
+            // Brave: http://detectportal.brave-http-only.com (uses same 204 response)
+            // Expected: HTTP 204 No Content (empty body)
+            // Already handled by /generate_204 above
+
+            // ----------------------------------------------------------------------------
+            // iOS and macOS (Apple) - All versions
+            // ----------------------------------------------------------------------------
+            // iOS 7+, macOS 10.10+: http://captive.apple.com/hotspot-detect.html
+            // Expected: HTTP 200 OK with HTML containing "Success"
+            _webserver->on("/hotspot-detect.html", HTTP_ANY, handle_hotspot_detect);
+
+            // Legacy iOS (6.x and earlier): http://www.apple.com/ and http://www.appleiphonecell.com/
+            // Expected: HTTP 200 OK with HTML content
+            // Note: DNS redirects these to our IP, generic 200 response acceptable
+
+            // Alternative Apple URLs (various iOS versions)
+            // http://captive.apple.com/
+            // http://www.itools.info/
+            // http://www.ibook.info/
+            // http://www.airport.us/
+            // http://www.thinkdifferent.us/
+            // These are also redirected by DNS and handled by our 404/root handlers
+
+            // ----------------------------------------------------------------------------
+            // Windows - All versions
+            // ----------------------------------------------------------------------------
+            // Windows 8.1, 10, 11: http://www.msftconnecttest.com/connecttest.txt
+            // Expected: HTTP 200 OK with text "Microsoft Connect Test"
+            _webserver->on("/connecttest.txt", HTTP_ANY, handle_connecttest);
+
+            // Windows Vista, 7, 8: http://www.msftncsi.com/ncsi.txt
+            // Expected: HTTP 200 OK with text "Microsoft NCSI"
+            _webserver->on("/ncsi.txt", HTTP_ANY, handle_ncsi);
+
+            // Windows 10 alternative: http://edge-http.microsoft.com/captiveportal/generate_204
+            // Expected: HTTP 204 No Content (empty body)
+            // Already handled by /generate_204 above
+
+            // Microsoft legacy redirect: http://www.msftconnecttest.com/redirect
+            // http://www.msftconnecttest.com/fwlink/
+            _webserver->on("/fwlink", HTTP_ANY, handle_root);
             _webserver->on("/fwlink/", HTTP_ANY, handle_root);
+            _webserver->on("/redirect", HTTP_ANY, handle_root);
 
-            // Firefox (Mozilla)
-            _webserver->on("/canonical.html", HTTP_ANY, handle_root);
-            _webserver->on("/success.txt", HTTP_ANY, handle_root);
+            // ----------------------------------------------------------------------------
+            // Firefox (Mozilla) - All versions
+            // ----------------------------------------------------------------------------
+            // Firefox: http://detectportal.firefox.com/canonical.html
+            // Expected: HTTP 200 OK with minimal HTML (meta refresh or simple content)
+            _webserver->on("/canonical.html", HTTP_ANY, handle_firefox_detect);
+
+            // Firefox also checks: http://detectportal.firefox.com/success.txt
+            // Expected: HTTP 200 OK with text "success"
+            _webserver->on("/success.txt", HTTP_ANY, handle_success);
+
+            // ----------------------------------------------------------------------------
+            // Linux NetworkManager (GNOME, KDE, most desktop Linux distributions)
+            // ----------------------------------------------------------------------------
+            // NetworkManager: http://nmcheck.gnome.org/check_network_status.txt
+            // Expected: HTTP 200 OK with text "NetworkManager is online"
+            _webserver->on("/check_network_status.txt", HTTP_ANY, handle_nm_check);
+
+            // ----------------------------------------------------------------------------
+            // Amazon Kindle and Fire devices
+            // ----------------------------------------------------------------------------
+            // Kindle: http://spectrum.s3.amazonaws.com/kindle-wifi/wifistub.html
+            // Expected: HTTP 200 OK with HTML content
+            _webserver->on("/kindle-wifi/wifistub.html", HTTP_ANY, handle_hotspot_detect);
+
+            // ----------------------------------------------------------------------------
+            // Legacy and additional paths
+            // ----------------------------------------------------------------------------
+            // Some older devices may check these paths
+            _webserver->on("/library/test/success.html", HTTP_ANY, handle_hotspot_detect);
+            _webserver->on("/mobile/status.php", HTTP_ANY, handle_success);
         }
 
         //SSDP service presentation
@@ -360,6 +447,60 @@ namespace WebUI {
 
     void Web_Server::send404Page() {
         sendWithOurAddress(PAGE_404, 404);
+    }
+
+    // Captive Portal Detection Handlers
+    // These handlers provide proper responses to various operating systems and browsers
+    // to prevent the device from being detected as a captive portal
+
+    // Handler for HTTP 204 No Content responses
+    // Used by: Chrome, Chromium, Brave, Android (all versions)
+    void Web_Server::handle_generate_204() {
+        _webserver->send(204, "text/plain", "");
+    }
+
+    // Handler for Apple captive portal detection
+    // Used by: iOS, macOS (all versions)
+    // Expected response: HTTP 200 with HTML containing "Success"
+    void Web_Server::handle_hotspot_detect() {
+        const char* response = "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>";
+        _webserver->send(200, "text/html", response);
+    }
+
+    // Handler for Windows captive portal detection
+    // Used by: Windows Vista, 7, 8, 8.1, 10, 11
+    // Expected response: HTTP 200 with text "Microsoft Connect Test"
+    void Web_Server::handle_connecttest() {
+        _webserver->send(200, "text/plain", "Microsoft Connect Test");
+    }
+
+    // Handler for Windows NCSI (Network Connectivity Status Indicator)
+    // Used by: Windows Vista, 7, 8
+    // Expected response: HTTP 200 with text "Microsoft NCSI"
+    void Web_Server::handle_ncsi() {
+        _webserver->send(200, "text/plain", "Microsoft NCSI");
+    }
+
+    // Handler for Firefox captive portal detection
+    // Used by: Firefox, Firefox Mobile
+    // Expected response: HTTP 200 with minimal HTML
+    void Web_Server::handle_firefox_detect() {
+        const char* response = "<HTML><HEAD><META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=success.txt\"></HEAD><BODY></BODY></HTML>";
+        _webserver->send(200, "text/html", response);
+    }
+
+    // Handler for Firefox success check
+    // Used by: Firefox
+    // Expected response: HTTP 200 with text "success"
+    void Web_Server::handle_success() {
+        _webserver->send(200, "text/plain", "success");
+    }
+
+    // Handler for Linux NetworkManager (GNOME, KDE)
+    // Used by: NetworkManager on Linux distributions
+    // Expected response: HTTP 200 with text "NetworkManager is online"
+    void Web_Server::handle_nm_check() {
+        _webserver->send(200, "text/plain", "NetworkManager is online");
     }
 
     void Web_Server::handle_root() {

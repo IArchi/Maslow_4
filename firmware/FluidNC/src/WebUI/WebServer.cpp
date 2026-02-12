@@ -22,7 +22,7 @@
 #    include <esp_wifi_types.h>
 #    include <ESPmDNS.h>
 #    include <ESP32SSDP.h>
-#    include <DNSServer.h>
+#    include <WiFiUdp.h>
 #    include "WebSettings.h"
 
 #    include "WSChannel.h"
@@ -37,9 +37,134 @@
 #    include "src/HashFS.h"
 #    include <list>
 
+#    include <WiFiUdp.h>
+
 namespace WebUI {
     const byte DNS_PORT = 53;
-    DNSServer  dnsServer;
+    
+    // Custom DNS Server with logging capabilities
+    class LoggingDNSServer {
+    private:
+        WiFiUDP _udp;
+        uint16_t _port;
+        String _domainName;
+        IPAddress _resolvedIP;
+        bool _started = false;
+        
+        String parseDNSRequest(uint8_t* buffer, int len) {
+            if (len < 13) return "";  // Too short
+            
+            String domain;
+            int pos = 12;  // Skip DNS header
+            
+            while (pos < len && buffer[pos] != 0) {
+                int labelLen = buffer[pos];
+                if (labelLen == 0 || labelLen > 63 || pos + labelLen >= len) break;
+                
+                if (domain.length() > 0) domain += ".";
+                for (int i = 0; i < labelLen; i++) {
+                    domain += (char)buffer[pos + 1 + i];
+                }
+                pos += labelLen + 1;
+            }
+            
+            return domain;
+        }
+        
+        void sendDNSResponse(IPAddress clientIP, uint16_t clientPort, uint8_t* requestBuffer, int requestLen) {
+            if (requestLen < 12) return;
+            
+            uint8_t response[512];
+            // Copy request header
+            memcpy(response, requestBuffer, requestLen);
+            
+            // Modify flags for response
+            response[2] = 0x81;  // Response, no error
+            response[3] = 0x80;
+            
+            // Answer count = 1
+            response[6] = 0;
+            response[7] = 1;
+            
+            int pos = requestLen;
+            
+            // Answer: pointer to domain name
+            response[pos++] = 0xC0;
+            response[pos++] = 0x0C;
+            
+            // Type A
+            response[pos++] = 0x00;
+            response[pos++] = 0x01;
+            
+            // Class IN
+            response[pos++] = 0x00;
+            response[pos++] = 0x01;
+            
+            // TTL
+            response[pos++] = 0x00;
+            response[pos++] = 0x00;
+            response[pos++] = 0x00;
+            response[pos++] = 0x3C;
+            
+            // Data length
+            response[pos++] = 0x00;
+            response[pos++] = 0x04;
+            
+            // IP address
+            response[pos++] = _resolvedIP[0];
+            response[pos++] = _resolvedIP[1];
+            response[pos++] = _resolvedIP[2];
+            response[pos++] = _resolvedIP[3];
+            
+            _udp.beginPacket(clientIP, clientPort);
+            _udp.write(response, pos);
+            _udp.endPacket();
+        }
+        
+    public:
+        bool start(uint16_t port, const String& domainName, const IPAddress& resolvedIP) {
+            _port = port;
+            _domainName = domainName;
+            _resolvedIP = resolvedIP;
+            
+            if (_udp.begin(port)) {
+                _started = true;
+                log_info("DNS Server started on port " << port << ", resolving all domains to " << IP_string(resolvedIP));
+                return true;
+            }
+            return false;
+        }
+        
+        void processNextRequest() {
+            if (!_started) return;
+            
+            int packetSize = _udp.parsePacket();
+            if (packetSize > 0) {
+                uint8_t buffer[512];
+                int len = _udp.read(buffer, sizeof(buffer));
+                
+                if (len >= 12) {
+                    IPAddress clientIP = _udp.remoteIP();
+                    uint16_t clientPort = _udp.remotePort();
+                    
+                    String domain = parseDNSRequest(buffer, len);
+                    if (domain.length() > 0) {
+                        log_info("DNS query from " << IP_string(clientIP) << ": " << domain.c_str() << " -> " << IP_string(_resolvedIP));
+                    }
+                    
+                    // Send response
+                    sendDNSResponse(clientIP, clientPort, buffer, len);
+                }
+            }
+        }
+        
+        void stop() {
+            _udp.stop();
+            _started = false;
+        }
+    };
+    
+    LoggingDNSServer dnsServer;
 }
 
 #    include <esp_ota_ops.h>

@@ -241,7 +241,8 @@ namespace WebUI {
             // Firefox (Mozilla) - All versions
             // ----------------------------------------------------------------------------
             // Firefox: http://detectportal.firefox.com/canonical.html
-            // Expected: HTTP 200 OK with minimal HTML (meta refresh or simple content)
+            // Expected: HTTP 200 OK with exact meta tag (no changes allowed)
+            // Response: <meta http-equiv="refresh" content="0;url=https://support.mozilla.org/kb/captive-portal"/>
             _webserver->on("/canonical.html", HTTP_ANY, handle_firefox_detect);
 
             // Firefox also checks: http://detectportal.firefox.com/success.txt
@@ -495,10 +496,12 @@ namespace WebUI {
 
     // Handler for Firefox captive portal detection
     // Used by: Firefox, Firefox Mobile
-    // Expected response: HTTP 200 with minimal HTML
+    // Expected response: HTTP 200 with exact meta tag (no newlines/whitespace)
+    // Firefox checks if the response matches exactly - any change triggers captive portal detection
     void Web_Server::handle_firefox_detect() {
         log_debug(("Captive portal: Firefox from " + IP_string(_webserver->client().remoteIP())).c_str());
-        const char* response = "<HTML><HEAD><META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=/success.txt\"></HEAD><BODY></BODY></HTML>";
+        // Must match exactly what Firefox expects (no trailing newline)
+        const char* response = "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>";
         _webserver->send(200, "text/html", response);
     }
 

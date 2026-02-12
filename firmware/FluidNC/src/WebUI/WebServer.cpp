@@ -461,6 +461,9 @@ namespace WebUI {
     // Used by: Chrome, Chromium, Brave, Android (all versions)
     void Web_Server::handle_generate_204() {
         log_debug("Captive portal check: HTTP 204 response for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str());
+        // Send headers that match Google's actual response
+        _webserver->sendHeader("Content-Length", "0");
+        _webserver->sendHeader("Cross-Origin-Resource-Policy", "cross-origin");
         _webserver->send(204, "text/plain", "");
     }
 

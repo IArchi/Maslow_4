@@ -1,6 +1,90 @@
 # Captive Portal URL Response Verification
 
-This document traces each captive portal detection URL to verify it returns the correct HTTP response when the Maslow CNC operates in AP mode.
+## Instructions for Regenerating This Documentation
+
+This section contains instructions for AI agents or developers to regenerate this documentation to match the current code implementation.
+
+### Files to Analyze
+
+1. **Main Implementation**: `firmware/FluidNC/src/WebUI/WebServer.cpp`
+   - Locate the `Web_Server::begin()` function
+   - Find the section: `if (WiFi.getMode() == WIFI_AP)`
+   - Extract all `_webserver->on()` route registrations within this block
+   - Note any Host header checks in `handle_root()`
+
+2. **Handler Declarations**: `firmware/FluidNC/src/WebUI/WebServer.h`
+   - Find all captive portal handler function declarations (search for "captive portal" comment)
+   - List: `handle_generate_204`, `handle_hotspot_detect`, `handle_connecttest`, `handle_ncsi`, `handle_firefox_detect`, `handle_success`, `handle_nm_check`, `handle_kde_ok`
+
+3. **Handler Implementations**: `firmware/FluidNC/src/WebUI/WebServer.cpp`
+   - Locate each handler function implementation
+   - Extract the exact `_webserver->send()` call including:
+     - HTTP status code
+     - Content type
+     - Response body
+
+### Regeneration Steps
+
+1. **Create URL inventory**:
+   - For each route registered with `_webserver->on()` in AP mode
+   - Note: path, HTTP method, handler function name
+   - Include inline documentation comments above each route
+
+2. **Document Host header checks**:
+   - Scan `handle_root()` for `_webserver->hostHeader()` comparisons
+   - Document which domains trigger special handling
+   - Note which handler gets called for each domain
+
+3. **Verify each URL**:
+   - For each path or Host header pattern:
+     - Full URL (reconstruct from inline comments)
+     - Path or Host header pattern
+     - Handler function called
+     - HTTP response code and content-type
+     - Response body content
+     - Which platforms/OS/browsers use this URL
+   
+4. **Trace response flow**:
+   - If handler is `handle_root()`, determine if it has Host header checks
+   - If URL not explicitly registered, trace through `handle_not_found()`
+   - Document that in AP mode, `handle_not_found()` calls `sendCaptivePortal()` which returns HTTP 200
+
+5. **Group by platform**:
+   - Android/Chrome/Brave (HTTP 204 responses)
+   - iOS/macOS (HTTP 200 with HTML "Success")
+   - Windows (HTTP 200 with specific text)
+   - Firefox (HTTP 200 with HTML or "success" text)
+   - Linux (GNOME, KDE, Ubuntu)
+   - Other devices (Kindle, legacy)
+
+6. **Verify correctness**:
+   - Each URL must return the response expected by its platform
+   - HTTP 204 = no captive portal for Android/Chrome
+   - HTTP 200 with "Success" = no captive portal for Apple
+   - HTTP 200 with specific text = no captive portal for Windows/Linux
+
+### Expected Output Format
+
+For each URL, include:
+```markdown
+#### N. `http://full-url-here/path`
+- **Path**: `/path` or **Host Header**: `domain.com`
+- **Handler**: `handler_function_name()`
+- **Response**: HTTP STATUS with description
+- **Code**: `_webserver->send(code, "type", "body");`
+- **Status**: ✅ CORRECT
+```
+
+### Validation
+
+After regeneration, verify:
+- All routes in `Web_Server::begin()` under `WIFI_AP` are documented
+- All Host header checks in `handle_root()` are documented
+- Response codes match platform expectations
+- Handler function code snippets are accurate
+- Total URL count matches implementation (currently 19 patterns)
+
+---
 
 ## Overview
 

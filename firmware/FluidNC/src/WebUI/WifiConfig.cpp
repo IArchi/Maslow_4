@@ -562,10 +562,11 @@ namespace WebUI {
                 log_info("WiFi Disconnected");
                 break;
             case SYSTEM_EVENT_AP_STACONNECTED:
-                log_info("WiFi AP: Client connected (total: " << WiFi.softAPgetStationNum() << ")");
+                // Memory optimized - avoid << operator
+                log_info(("WiFi AP: Client connected (total: " + std::to_string(WiFi.softAPgetStationNum()) + ")").c_str());
                 break;
             case SYSTEM_EVENT_AP_STADISCONNECTED:
-                log_info("WiFi AP: Client disconnected (remaining: " << WiFi.softAPgetStationNum() << ")");
+                log_info(("WiFi AP: Client disconnected (remaining: " + std::to_string(WiFi.softAPgetStationNum()) + ")").c_str());
                 break;
             case SYSTEM_EVENT_AP_START:
                 log_info("WiFi AP: Access Point started");
@@ -574,8 +575,8 @@ namespace WebUI {
                 log_info("WiFi AP: Access Point stopped");
                 break;
             default:
-                // Log all events for debugging
-                log_debug("WiFi event: " << event);
+                // Log all events for debugging - memory optimized
+                log_debug(("WiFi event: " + std::to_string(event)).c_str());
                 break;
         }
     }

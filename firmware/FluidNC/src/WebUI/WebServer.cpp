@@ -284,6 +284,9 @@ namespace WebUI {
                 isGzip = true;
             } catch (const Error err) {
                 std::string host(_webserver->header("Host").c_str());
+                if (host.empty()) {
+                    host = "[unknown]";
+                }
                 log_debug("http://" << host << spath << " not found, please report this to forums.maslowcnc.com");
                 return false;
             }

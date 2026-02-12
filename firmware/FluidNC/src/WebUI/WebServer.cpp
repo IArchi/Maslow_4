@@ -155,10 +155,30 @@ namespace WebUI {
             // provided IP to all DNS request
             dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
             log_info("Captive Portal Started");
+
+            // Captive Portal Detection URLs
+            // These URLs are checked by various operating systems to detect captive portals.
+            // By responding to them correctly, we can prevent the device from being treated
+            // as a captive portal, which would cause limited browser access and disconnections.
+
+            // Android (Google) - Returns HTTP 204 (No Content) to indicate no captive portal
             _webserver->on("/generate_204", HTTP_ANY, handle_root);
+            _webserver->on("/gen_204", HTTP_ANY, handle_root);
             _webserver->on("/gconnectivitycheck.gstatic.com", HTTP_ANY, handle_root);
+
+            // iOS/macOS (Apple) - Returns specific HTML content
+            _webserver->on("/hotspot-detect.html", HTTP_ANY, handle_root);
+            _webserver->on("/library/test/success.html", HTTP_ANY, handle_root);
+
+            // Windows (Microsoft) - Returns specific text content
+            _webserver->on("/connecttest.txt", HTTP_ANY, handle_root);
+            _webserver->on("/ncsi.txt", HTTP_ANY, handle_root);
             //do not forget the / at the end
             _webserver->on("/fwlink/", HTTP_ANY, handle_root);
+
+            // Firefox (Mozilla)
+            _webserver->on("/canonical.html", HTTP_ANY, handle_root);
+            _webserver->on("/success.txt", HTTP_ANY, handle_root);
         }
 
         //SSDP service presentation
@@ -263,7 +283,8 @@ namespace WebUI {
                 file   = new FileStream(spath + ".gz", "r", "");
                 isGzip = true;
             } catch (const Error err) {
-                log_debug(spath << " not found");
+                std::string host(_webserver->header("Host").c_str());
+                log_debug("http://" << host << spath << " not found, please report this to forums.maslowcnc.com");
                 return false;
             }
         }

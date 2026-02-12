@@ -36,6 +36,7 @@
 
 #    include "src/HashFS.h"
 #    include <list>
+#    include <algorithm>
 
 namespace WebUI {
     const byte DNS_PORT = 53;
@@ -286,6 +287,14 @@ namespace WebUI {
                 std::string host(_webserver->header("Host").c_str());
                 if (host.empty()) {
                     host = "[unknown]";
+                } else {
+                    // Sanitize host header to prevent log injection - remove newlines and control characters
+                    host.erase(std::remove_if(host.begin(), host.end(), [](char c) {
+                        return c < 32 || c == 127;  // Remove control characters including newlines
+                    }), host.end());
+                    if (host.length() > 100) {  // Limit length to prevent log spam
+                        host = host.substr(0, 100) + "...";
+                    }
                 }
                 log_debug("http://" << host << spath << " not found, please report this to forums.maslowcnc.com");
                 return false;

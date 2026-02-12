@@ -147,10 +147,8 @@ namespace WebUI {
                     IPAddress clientIP = _udp.remoteIP();
                     uint16_t clientPort = _udp.remotePort();
                     
-                    String domain = parseDNSRequest(buffer, len);
-                    if (domain.length() > 0) {
-                        log_info("DNS query from " << IP_string(clientIP) << ": " << domain.c_str() << " -> " << IP_string(_resolvedIP));
-                    }
+                    // Parse domain for response, but don't log every query to save memory
+                    // DNS queries are very frequent and logging creates many temp String objects
                     
                     // Send response
                     sendDNSResponse(clientIP, clientPort, buffer, len);
@@ -585,9 +583,8 @@ namespace WebUI {
     // Handler for HTTP 204 No Content responses
     // Used by: Chrome, Chromium, Brave, Android (all versions)
     void Web_Server::handle_generate_204() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: HTTP 204 response for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str() 
-                  << " from client " << clientIP.toString().c_str());
+        // Reduced logging to save memory - log only client IP
+        log_debug("Captive portal: 204 from " << IP_string(_webserver->client().remoteIP()));
         // Send headers that match Google's actual response
         _webserver->sendHeader("Content-Length", "0");
         _webserver->sendHeader("Cross-Origin-Resource-Policy", "cross-origin");
@@ -598,9 +595,7 @@ namespace WebUI {
     // Used by: iOS, macOS (all versions)
     // Expected response: HTTP 200 with HTML containing "Success"
     void Web_Server::handle_hotspot_detect() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: Apple Success HTML for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: Apple from " << IP_string(_webserver->client().remoteIP()));
         const char* response = "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>";
         _webserver->send(200, "text/html", response);
     }
@@ -609,9 +604,7 @@ namespace WebUI {
     // Used by: Windows Vista, 7, 8, 8.1, 10, 11
     // Expected response: HTTP 200 with text "Microsoft Connect Test"
     void Web_Server::handle_connecttest() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: Windows connecttest for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: Windows from " << IP_string(_webserver->client().remoteIP()));
         _webserver->send(200, "text/plain", "Microsoft Connect Test");
     }
 
@@ -619,9 +612,7 @@ namespace WebUI {
     // Used by: Windows Vista, 7, 8
     // Expected response: HTTP 200 with text "Microsoft NCSI"
     void Web_Server::handle_ncsi() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: Windows NCSI for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: Win NCSI from " << IP_string(_webserver->client().remoteIP()));
         _webserver->send(200, "text/plain", "Microsoft NCSI");
     }
 
@@ -629,9 +620,7 @@ namespace WebUI {
     // Used by: Firefox, Firefox Mobile
     // Expected response: HTTP 200 with minimal HTML
     void Web_Server::handle_firefox_detect() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: Firefox canonical.html for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: Firefox from " << IP_string(_webserver->client().remoteIP()));
         const char* response = "<HTML><HEAD><META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=/success.txt\"></HEAD><BODY></BODY></HTML>";
         _webserver->send(200, "text/html", response);
     }
@@ -640,9 +629,7 @@ namespace WebUI {
     // Used by: Firefox
     // Expected response: HTTP 200 with text "success"
     void Web_Server::handle_success() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: Firefox/generic success for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: Firefox success from " << IP_string(_webserver->client().remoteIP()));
         _webserver->send(200, "text/plain", "success");
     }
 
@@ -650,9 +637,7 @@ namespace WebUI {
     // Used by: NetworkManager on Linux distributions
     // Expected response: HTTP 200 with text "NetworkManager is online"
     void Web_Server::handle_nm_check() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: NetworkManager for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: NetworkManager from " << IP_string(_webserver->client().remoteIP()));
         _webserver->send(200, "text/plain", "NetworkManager is online");
     }
 
@@ -660,9 +645,7 @@ namespace WebUI {
     // Used by: KDE Plasma desktop environment
     // Expected response: HTTP 200 with text "OK"
     void Web_Server::handle_kde_ok() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: KDE OK for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: KDE from " << IP_string(_webserver->client().remoteIP()));
         _webserver->send(200, "text/plain", "OK");
     }
 
@@ -673,9 +656,7 @@ namespace WebUI {
     //   HTTP/1.1 204 No Content
     //   x-networkmanager-status: online
     void Web_Server::handle_ubuntu_connectivity() {
-        IPAddress clientIP = _webserver->client().remoteIP();
-        log_debug("Captive portal check: Ubuntu NetworkManager for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                  << " from client " << clientIP.toString().c_str());
+        log_debug("Captive portal: Ubuntu from " << IP_string(_webserver->client().remoteIP()));
         // NetworkManager specifically checks for this header to determine online status
         _webserver->sendHeader("x-networkmanager-status", "online");
         _webserver->sendHeader("Content-Length", "0");
@@ -683,12 +664,6 @@ namespace WebUI {
     }
 
     void Web_Server::handle_root() {
-        // Log all root requests in AP mode to help debug captive portal issues
-        if (WiFi.getMode() == WIFI_AP) {
-            IPAddress clientIP = _webserver->client().remoteIP();
-            log_debug("Root request from client " << clientIP.toString().c_str() << ": " << _webserver->hostHeader().c_str() << _webserver->uri().c_str());
-        }
-        
         // Special handling for Android/Chrome connectivity checks via Host header
         // Android/Chrome checks: http://connectivitycheck.gstatic.com/generate_204
         //                        http://connectivitycheck.gstatic.com/ (root)
@@ -697,9 +672,6 @@ namespace WebUI {
             (_webserver->hostHeader().indexOf("gstatic.com") >= 0 || 
              _webserver->hostHeader().indexOf("google.com") >= 0 ||
              _webserver->hostHeader().indexOf("connectivitycheck") >= 0)) {
-            IPAddress clientIP = _webserver->client().remoteIP();
-            log_debug("Captive portal check: Android/Chrome via Host header " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                      << " from client " << clientIP.toString().c_str());
             handle_generate_204();
             return;
         }
@@ -707,9 +679,6 @@ namespace WebUI {
         // Special handling for KDE Plasma network check via Host header
         // KDE checks: http://networkcheck.kde.org/
         if (WiFi.getMode() == WIFI_AP && _webserver->hostHeader() == "networkcheck.kde.org") {
-            IPAddress clientIP = _webserver->client().remoteIP();
-            log_debug("Captive portal check: KDE via Host header " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                      << " from client " << clientIP.toString().c_str());
             handle_kde_ok();
             return;
         }
@@ -718,9 +687,6 @@ namespace WebUI {
         // Ubuntu checks: http://connectivity-check.ubuntu.com/
         if (WiFi.getMode() == WIFI_AP && (_webserver->hostHeader() == "connectivity-check.ubuntu.com" || 
                                           _webserver->hostHeader() == "connectivity-check.ubuntu.com.")) {
-            IPAddress clientIP = _webserver->client().remoteIP();
-            log_debug("Captive portal check: Ubuntu via Host header " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
-                      << " from client " << clientIP.toString().c_str());
             handle_ubuntu_connectivity();
             return;
         }

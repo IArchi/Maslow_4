@@ -562,12 +562,10 @@ namespace WebUI {
                 log_info("WiFi Disconnected");
                 break;
             case SYSTEM_EVENT_AP_STACONNECTED:
-                log_info("WiFi AP: Client connected to SSID");
-                log_info("WiFi AP: Total clients connected: " << WiFi.softAPgetStationNum());
+                log_info("WiFi AP: Client connected (total: " << WiFi.softAPgetStationNum() << ")");
                 break;
             case SYSTEM_EVENT_AP_STADISCONNECTED:
-                log_info("WiFi AP: Client disconnected from SSID");
-                log_info("WiFi AP: Total clients remaining: " << WiFi.softAPgetStationNum());
+                log_info("WiFi AP: Client disconnected (remaining: " << WiFi.softAPgetStationNum() << ")");
                 break;
             case SYSTEM_EVENT_AP_START:
                 log_info("WiFi AP: Access Point started");

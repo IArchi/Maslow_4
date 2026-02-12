@@ -122,6 +122,7 @@ namespace WebUI {
         static void handle_firefox_detect();
         static void handle_success();
         static void handle_nm_check();
+        static void handle_kde_ok();
 
         static int getPageid();
     };

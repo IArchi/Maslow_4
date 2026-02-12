@@ -214,7 +214,8 @@ namespace WebUI {
             // http://www.ibook.info/
             // http://www.airport.us/
             // http://www.thinkdifferent.us/
-            // These are also redirected by DNS and handled by our 404/root handlers
+            // These are redirected by DNS to our IP. When not found, handle_not_found()
+            // calls sendCaptivePortal() in AP mode, which returns HTTP 200 with HTML.
 
             // ----------------------------------------------------------------------------
             // Windows - All versions
@@ -249,11 +250,19 @@ namespace WebUI {
             _webserver->on("/success.txt", HTTP_ANY, handle_success);
 
             // ----------------------------------------------------------------------------
-            // Linux NetworkManager (GNOME, KDE, most desktop Linux distributions)
+            // Linux NetworkManager (GNOME, KDE, Ubuntu, most desktop Linux distributions)
             // ----------------------------------------------------------------------------
-            // NetworkManager: http://nmcheck.gnome.org/check_network_status.txt
+            // GNOME NetworkManager: http://nmcheck.gnome.org/check_network_status.txt
             // Expected: HTTP 200 OK with text "NetworkManager is online"
             _webserver->on("/check_network_status.txt", HTTP_ANY, handle_nm_check);
+
+            // KDE Plasma: http://networkcheck.kde.org/ (any path, detected via Host header)
+            // Expected: HTTP 200 OK with text "OK"
+            // Handled in handle_root() via Host header check
+
+            // Ubuntu: http://connectivity-check.ubuntu.com/ (any path, detected via Host header)
+            // Expected: HTTP 204 No Content (empty body)
+            // Handled in handle_root() via Host header check
 
             // ----------------------------------------------------------------------------
             // Amazon Kindle and Fire devices
@@ -505,7 +514,29 @@ namespace WebUI {
         _webserver->send(200, "text/plain", "NetworkManager is online");
     }
 
+    // Handler for KDE networkcheck (via Host header)
+    // Used by: KDE Plasma desktop environment
+    // Expected response: HTTP 200 with text "OK"
+    void Web_Server::handle_kde_ok() {
+        _webserver->send(200, "text/plain", "OK");
+    }
+
     void Web_Server::handle_root() {
+        // Special handling for KDE Plasma network check via Host header
+        // KDE checks: http://networkcheck.kde.org/
+        if (WiFi.getMode() == WIFI_AP && _webserver->hostHeader() == "networkcheck.kde.org") {
+            handle_kde_ok();
+            return;
+        }
+        
+        // Special handling for Ubuntu connectivity check via Host header
+        // Ubuntu checks: http://connectivity-check.ubuntu.com/
+        if (WiFi.getMode() == WIFI_AP && (_webserver->hostHeader() == "connectivity-check.ubuntu.com" || 
+                                          _webserver->hostHeader() == "connectivity-check.ubuntu.com.")) {
+            handle_generate_204();
+            return;
+        }
+
         if (!(_webserver->hasArg("forcefallback") && _webserver->arg("forcefallback") == "yes")) {
             if (myStreamFile("/index.html")) {
                 return;

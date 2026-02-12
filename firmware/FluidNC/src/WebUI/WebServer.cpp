@@ -567,6 +567,14 @@ namespace WebUI {
             handle_ubuntu_connectivity();
             return;
         }
+        
+        // Special handling for legacy iOS captive portal check via Host header
+        // Legacy iOS (6.x and earlier) checks: http://www.appleiphonecell.com/
+        // Real server returns HTTP 200 with just "Success" (matching current iOS behavior)
+        if (WiFi.getMode() == WIFI_AP && _webserver->hostHeader() == "www.appleiphonecell.com") {
+            handle_hotspot_detect();
+            return;
+        }
 
         if (!(_webserver->hasArg("forcefallback") && _webserver->arg("forcefallback") == "yes")) {
             if (myStreamFile("/index.html")) {

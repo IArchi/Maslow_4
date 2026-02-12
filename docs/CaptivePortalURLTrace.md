@@ -13,8 +13,8 @@ This section contains instructions for AI agents or developers to regenerate thi
    - Note any Host header checks in `handle_root()`
 
 2. **Handler Declarations**: `firmware/FluidNC/src/WebUI/WebServer.h`
-   - Find all captive portal handler function declarations (search for "captive portal" comment)
-   - List: `handle_generate_204`, `handle_hotspot_detect`, `handle_connecttest`, `handle_ncsi`, `handle_firefox_detect`, `handle_success`, `handle_nm_check`, `handle_kde_ok`
+   - Find all captive portal handler function declarations (search for "Captive portal detection handlers" comment)
+   - List: `handle_generate_204`, `handle_hotspot_detect`, `handle_connecttest`, `handle_ncsi`, `handle_firefox_detect`, `handle_success`, `handle_nm_check`, `handle_kde_ok`, `handle_ubuntu_connectivity`
 
 3. **Handler Implementations**: `firmware/FluidNC/src/WebUI/WebServer.cpp`
    - Locate each handler function implementation
@@ -82,7 +82,7 @@ After regeneration, verify:
 - All Host header checks in `handle_root()` are documented
 - Response codes match platform expectations
 - Handler function code snippets are accurate
-- Total URL count matches implementation (currently 19 patterns)
+- Total URL count matches implementation (currently 20 patterns: 15 path routes + 5 Host header checks)
 
 ---
 
@@ -102,22 +102,46 @@ By responding to these URLs with the expected content, we "trick" devices into t
 #### 1. `http://connectivitycheck.gstatic.com/generate_204`
 - **Path**: `/generate_204`
 - **Handler**: `handle_generate_204()`
-- **Response**: HTTP 204 No Content (empty body)
-- **Code**: `_webserver->send(204, "text/plain", "");`
+- **Response**: HTTP 204 No Content with Google-compatible headers
+- **Code**: 
+  ```cpp
+  _webserver->sendHeader("Content-Length", "0");
+  _webserver->sendHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  _webserver->send(204, "text/plain", "");
+  ```
 - **Status**: ✅ CORRECT
 
 #### 2. `http://clients3.google.com/gen_204`
 - **Path**: `/gen_204`
 - **Handler**: `handle_generate_204()`
-- **Response**: HTTP 204 No Content (empty body)
-- **Code**: `_webserver->send(204, "text/plain", "");`
+- **Response**: HTTP 204 No Content with Google-compatible headers
+- **Code**: 
+  ```cpp
+  _webserver->sendHeader("Content-Length", "0");
+  _webserver->sendHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  _webserver->send(204, "text/plain", "");
+  ```
 - **Status**: ✅ CORRECT
 
 #### 3. `http://clients3.google.com/generate_204`
 - **Path**: `/generate_204`
 - **Handler**: `handle_generate_204()`
-- **Response**: HTTP 204 No Content (empty body)
-- **Code**: `_webserver->send(204, "text/plain", "");`
+- **Response**: HTTP 204 No Content with Google-compatible headers
+- **Code**: 
+  ```cpp
+  _webserver->sendHeader("Content-Length", "0");
+  _webserver->sendHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  _webserver->send(204, "text/plain", "");
+  ```
+- **Status**: ✅ CORRECT
+
+#### 3a. Google/Android Host Header Detection (root path)
+- **URLs**: `http://connectivitycheck.gstatic.com/`, `http://clients3.google.com/`, or any path with Google domain
+- **Detection**: Host header contains `gstatic.com`, `google.com`, or `connectivitycheck`
+- **Handler**: `handle_root()` → checks Host header → `handle_generate_204()`
+- **Response**: HTTP 204 No Content with Google-compatible headers
+- **Code**: Same as above
+- **Note**: Handles cases where Android/Chrome requests root path with Google Host header
 - **Status**: ✅ CORRECT
 
 ### iOS / macOS (Apple)
@@ -137,10 +161,15 @@ By responding to these URLs with the expected content, we "trick" devices into t
 - **Status**: ✅ CORRECT
 
 #### 6. Legacy Apple URLs (iOS 6.x and earlier)
-- **URLs**: `http://www.apple.com/`, `http://www.appleiphonecell.com/`, `http://captive.apple.com/`, `http://www.itools.info/`, `http://www.ibook.info/`, `http://www.airport.us/`, `http://www.thinkdifferent.us/`
-- **Handler**: DNS redirects to ESP32 IP → `handle_not_found()` → `sendCaptivePortal()`
-- **Response**: HTTP 200 OK with HTML (captive portal redirect page)
-- **Status**: ✅ CORRECT (200 with HTML is acceptable for legacy devices)
+- **URL**: `http://www.appleiphonecell.com/`
+- **Detection**: Host header equals `www.appleiphonecell.com`
+- **Handler**: `handle_root()` → checks Host header → `handle_hotspot_detect()`
+- **Response**: HTTP 200 OK with HTML containing "Success"
+- **Code**: `_webserver->send(200, "text/html", "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");`
+- **Note**: Legacy iOS devices use this URL for captive portal detection
+- **Status**: ✅ CORRECT
+
+Other legacy URLs (`http://www.apple.com/`, `http://captive.apple.com/`, `http://www.itools.info/`, `http://www.ibook.info/`, `http://www.airport.us/`, `http://www.thinkdifferent.us/`) are redirected by DNS to ESP32 IP. When paths not found, `handle_not_found()` calls `sendCaptivePortal()` in AP mode which returns HTTP 200 with HTML.
 
 ### Windows (Microsoft)
 
@@ -161,8 +190,13 @@ By responding to these URLs with the expected content, we "trick" devices into t
 #### 9. `http://edge-http.microsoft.com/captiveportal/generate_204`
 - **Path**: `/generate_204`
 - **Handler**: `handle_generate_204()`
-- **Response**: HTTP 204 No Content (empty body)
-- **Code**: `_webserver->send(204, "text/plain", "");`
+- **Response**: HTTP 204 No Content with Google-compatible headers
+- **Code**: 
+  ```cpp
+  _webserver->sendHeader("Content-Length", "0");
+  _webserver->sendHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  _webserver->send(204, "text/plain", "");
+  ```
 - **Status**: ✅ CORRECT
 
 #### 10. `http://www.msftconnecttest.com/fwlink/`
@@ -188,8 +222,9 @@ By responding to these URLs with the expected content, we "trick" devices into t
 #### 13. `http://detectportal.firefox.com/canonical.html`
 - **Path**: `/canonical.html`
 - **Handler**: `handle_firefox_detect()`
-- **Response**: HTTP 200 OK with minimal HTML (meta refresh to /success.txt)
-- **Code**: `_webserver->send(200, "text/html", "<HTML><HEAD><META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=/success.txt\"></HEAD><BODY></BODY></HTML>");`
+- **Response**: HTTP 200 OK with exact meta tag (no whitespace/newlines, matches Mozilla's canonical server)
+- **Code**: `_webserver->send(200, "text/html", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");`
+- **Note**: Firefox requires EXACT match - any deviation triggers captive portal detection
 - **Status**: ✅ CORRECT
 
 #### 14. `http://detectportal.firefox.com/success.txt`
@@ -221,9 +256,15 @@ By responding to these URLs with the expected content, we "trick" devices into t
 
 #### 17. `http://connectivity-check.ubuntu.com/` (any path)
 - **Detection**: Host header equals `connectivity-check.ubuntu.com` or `connectivity-check.ubuntu.com.`
-- **Handler**: `handle_root()` → checks Host header → `handle_generate_204()`
-- **Response**: HTTP 204 No Content (empty body)
-- **Code**: `_webserver->send(204, "text/plain", "");`
+- **Handler**: `handle_root()` → checks Host header → `handle_ubuntu_connectivity()`
+- **Response**: HTTP 204 No Content with `x-networkmanager-status: online` header
+- **Code**: 
+  ```cpp
+  _webserver->sendHeader("x-networkmanager-status", "online");
+  _webserver->sendHeader("Content-Length", "0");
+  _webserver->send(204, "text/plain", "");
+  ```
+- **Note**: NetworkManager specifically checks for x-networkmanager-status header to determine online status
 - **Status**: ✅ CORRECT
 
 ### Amazon Kindle and Fire Devices
@@ -250,10 +291,15 @@ By responding to these URLs with the expected content, we "trick" devices into t
 ### HTTP 204 No Content
 Used by Android, Chrome, Chromium, Brave, Windows 10 (alternative), and Ubuntu.
 
-**Handler**: `handle_generate_204()`
+**Handler for Google/Android/Chrome/Brave**: `handle_generate_204()`
 - `/generate_204`
 - `/gen_204`
-- Host: `connectivity-check.ubuntu.com`
+- Host headers: `gstatic.com`, `google.com`, `connectivitycheck`
+- Headers sent: `Content-Length: 0`, `Cross-Origin-Resource-Policy: cross-origin`
+
+**Handler for Ubuntu**: `handle_ubuntu_connectivity()`
+- Host: `connectivity-check.ubuntu.com` or `connectivity-check.ubuntu.com.`
+- Headers sent: `x-networkmanager-status: online`, `Content-Length: 0`
 
 ### HTTP 200 with HTML "Success"
 Used by iOS, macOS, and Kindle devices.
@@ -321,10 +367,26 @@ Special handling in `handle_root()` checks the HTTP Host header for:
 
 ✅ **ALL CAPTIVE PORTAL DETECTION URLs RETURN CORRECT RESPONSES**
 
-All 19 documented captive portal detection URLs/patterns have been verified to return the appropriate HTTP response codes and content that indicate the network has full internet access (even though it's a local AP without internet).
+All 20 documented captive portal detection URL patterns (15 path-based routes + 5 Host header checks) have been verified to return the appropriate HTTP response codes and content that indicate the network has full internet access (even though it's a local AP without internet).
 
 This prevents devices from:
 - Showing captive portal login prompts
 - Opening limited browsers
 - Disconnecting after timeout
 - Restricting network functionality
+
+### Handler Summary
+
+**9 Dedicated Handler Functions:**
+1. `handle_generate_204()` - HTTP 204 with Google-compatible headers (Android/Chrome/Brave)
+2. `handle_hotspot_detect()` - HTTP 200 with HTML "Success" (iOS/macOS/Kindle)
+3. `handle_connecttest()` - HTTP 200 with "Microsoft Connect Test" (Windows)
+4. `handle_ncsi()` - HTTP 200 with "Microsoft NCSI" (Windows legacy)
+5. `handle_firefox_detect()` - HTTP 200 with exact meta tag (Firefox)
+6. `handle_success()` - HTTP 200 with "success" text (Firefox/legacy)
+7. `handle_nm_check()` - HTTP 200 with "NetworkManager is online" (GNOME)
+8. `handle_kde_ok()` - HTTP 200 with "OK" (KDE Plasma)
+9. `handle_ubuntu_connectivity()` - HTTP 204 with x-networkmanager-status header (Ubuntu)
+
+**15 Path-Based Routes** registered in `Web_Server::begin()` under AP mode
+**5 Host Header Checks** in `handle_root()` for special domain handling

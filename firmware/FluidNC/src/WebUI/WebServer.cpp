@@ -523,6 +523,24 @@ namespace WebUI {
     }
 
     void Web_Server::handle_root() {
+        // Log all root requests in AP mode to help debug captive portal issues
+        if (WiFi.getMode() == WIFI_AP) {
+            log_debug("Root request from: " << _webserver->hostHeader().c_str() << _webserver->uri().c_str());
+        }
+        
+        // Special handling for Android/Chrome connectivity checks via Host header
+        // Android/Chrome checks: http://connectivitycheck.gstatic.com/generate_204
+        //                        http://connectivitycheck.gstatic.com/ (root)
+        //                        http://clients3.google.com/generate_204
+        if (WiFi.getMode() == WIFI_AP && 
+            (_webserver->hostHeader().indexOf("gstatic.com") >= 0 || 
+             _webserver->hostHeader().indexOf("google.com") >= 0 ||
+             _webserver->hostHeader().indexOf("connectivitycheck") >= 0)) {
+            log_debug("Captive portal check: Android/Chrome via Host header " << _webserver->hostHeader().c_str() << _webserver->uri().c_str());
+            handle_generate_204();
+            return;
+        }
+        
         // Special handling for KDE Plasma network check via Host header
         // KDE checks: http://networkcheck.kde.org/
         if (WiFi.getMode() == WIFI_AP && _webserver->hostHeader() == "networkcheck.kde.org") {

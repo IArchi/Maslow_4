@@ -385,8 +385,8 @@ namespace WebUI {
             // Handled in handle_root() via Host header check
 
             // Ubuntu: http://connectivity-check.ubuntu.com/ (any path, detected via Host header)
-            // Expected: HTTP 204 No Content (empty body)
-            // Handled in handle_root() via Host header check
+            // Expected: HTTP 204 No Content with x-networkmanager-status: online header
+            // Handled in handle_root() via Host header check -> handle_ubuntu_connectivity()
 
             // ----------------------------------------------------------------------------
             // Amazon Kindle and Fire devices
@@ -666,6 +666,22 @@ namespace WebUI {
         _webserver->send(200, "text/plain", "OK");
     }
 
+    // Handler for Ubuntu NetworkManager connectivity check (via Host header)
+    // Used by: Ubuntu and derivatives with NetworkManager
+    // Expected response: HTTP 204 No Content with x-networkmanager-status header
+    // Real Ubuntu server: http://connectivity-check.ubuntu.com/ returns:
+    //   HTTP/1.1 204 No Content
+    //   x-networkmanager-status: online
+    void Web_Server::handle_ubuntu_connectivity() {
+        IPAddress clientIP = _webserver->client().remoteIP();
+        log_debug("Captive portal check: Ubuntu NetworkManager for " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
+                  << " from client " << clientIP.toString().c_str());
+        // NetworkManager specifically checks for this header to determine online status
+        _webserver->sendHeader("x-networkmanager-status", "online");
+        _webserver->sendHeader("Content-Length", "0");
+        _webserver->send(204, "text/plain", "");
+    }
+
     void Web_Server::handle_root() {
         // Log all root requests in AP mode to help debug captive portal issues
         if (WiFi.getMode() == WIFI_AP) {
@@ -705,7 +721,7 @@ namespace WebUI {
             IPAddress clientIP = _webserver->client().remoteIP();
             log_debug("Captive portal check: Ubuntu via Host header " << _webserver->hostHeader().c_str() << _webserver->uri().c_str()
                       << " from client " << clientIP.toString().c_str());
-            handle_generate_204();
+            handle_ubuntu_connectivity();
             return;
         }
 

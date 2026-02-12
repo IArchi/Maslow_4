@@ -123,6 +123,7 @@ namespace WebUI {
         static void handle_success();
         static void handle_nm_check();
         static void handle_kde_ok();
+        static void handle_ubuntu_connectivity();
 
         static int getPageid();
     };

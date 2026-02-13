@@ -946,8 +946,59 @@ var transformCanvas = function() {
         return;
     }
 
-    var imageWidth = tpBbox.max.x - tpBbox.min.x;
-    var imageHeight = tpBbox.max.y - tpBbox.min.y;
+    // Prefer jobBbox (actual cutting paths) over tpBbox (includes machine bounds and full arc extents)
+    // This prevents the display from zooming out to show large theoretical circle extents
+    var useBbox;
+    if (jobBboxExists()) {
+        // jobBbox is in world coordinates, need to project to screen coordinates
+        // Project all 8 corners of the bounding box and find the projected bbox
+        const wco = WCO;
+        let corners = [];
+
+        if (wco && Array.isArray(wco) && wco.length >= 2) {
+            // Convert from work to machine coordinates before projecting
+            corners = [
+                projection({x: jobBbox.min.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
+                projection({x: jobBbox.max.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
+                projection({x: jobBbox.max.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
+                projection({x: jobBbox.min.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
+                projection({x: jobBbox.min.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)}),
+                projection({x: jobBbox.max.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)}),
+                projection({x: jobBbox.max.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)}),
+                projection({x: jobBbox.min.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)})
+            ];
+        } else {
+            // No WCO, project work coordinates directly
+            corners = [
+                projection({x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.min.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.min.x, y: jobBbox.max.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.max.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.min.y, z: jobBbox.max.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.max.z}),
+                projection({x: jobBbox.min.x, y: jobBbox.max.y, z: jobBbox.max.z})
+            ];
+        }
+
+        // Find min/max of projected corners
+        useBbox = {
+            min: {
+                x: Math.min(...corners.map(c => c.x)),
+                y: Math.min(...corners.map(c => c.y))
+            },
+            max: {
+                x: Math.max(...corners.map(c => c.x)),
+                y: Math.max(...corners.map(c => c.y))
+            }
+        };
+    } else {
+        // Fall back to tpBbox which is already in projected coordinates
+        useBbox = tpBbox;
+    }
+
+    var imageWidth = useBbox.max.x - useBbox.min.x;
+    var imageHeight = useBbox.max.y - useBbox.min.y;
     if (imageWidth == 0) {
         imageWidth = 1;
     }
@@ -964,8 +1015,8 @@ var transformCanvas = function() {
     if (scaler < 0) {
         scaler = -scaler;
     }
-    xOffset = inset - tpBbox.min.x * scaler;
-    yOffset = (canvas.height-inset) - tpBbox.min.y * (-scaler);
+    xOffset = inset - useBbox.min.x * scaler;
+    yOffset = (canvas.height-inset) - useBbox.min.y * (-scaler);
 
     // Canvas coordinates of image bounding box top and right
     var imageTop = scaler * imageHeight;

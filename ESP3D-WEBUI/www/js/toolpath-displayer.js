@@ -948,7 +948,7 @@ var transformCanvas = function() {
 
     // Prefer jobBbox (actual cutting paths) over tpBbox (includes machine bounds and full arc extents)
     // This prevents the display from zooming out to show large theoretical circle extents
-    var useBbox;
+    var displayBbox;
     if (jobBboxExists()) {
         // jobBbox is in world coordinates, need to project to screen coordinates
         // Project all 8 corners of the bounding box and find the projected bbox
@@ -989,17 +989,17 @@ var transformCanvas = function() {
             maxX = Math.max(maxX, corners[i].x);
             maxY = Math.max(maxY, corners[i].y);
         }
-        useBbox = {
+        displayBbox = {
             min: { x: minX, y: minY },
             max: { x: maxX, y: maxY }
         };
     } else {
         // Fall back to tpBbox which is already in projected coordinates
-        useBbox = tpBbox;
+        displayBbox = tpBbox;
     }
 
-    var imageWidth = useBbox.max.x - useBbox.min.x;
-    var imageHeight = useBbox.max.y - useBbox.min.y;
+    var imageWidth = displayBbox.max.x - displayBbox.min.x;
+    var imageHeight = displayBbox.max.y - displayBbox.min.y;
     if (imageWidth == 0) {
         imageWidth = 1;
     }
@@ -1016,8 +1016,8 @@ var transformCanvas = function() {
     if (scaler < 0) {
         scaler = -scaler;
     }
-    xOffset = inset - useBbox.min.x * scaler;
-    yOffset = (canvas.height-inset) - useBbox.min.y * (-scaler);
+    xOffset = inset - displayBbox.min.x * scaler;
+    yOffset = (canvas.height-inset) - displayBbox.min.y * (-scaler);
 
     // Canvas coordinates of image bounding box top and right
     var imageTop = scaler * imageHeight;

@@ -1347,7 +1347,15 @@ var bboxHandlers = {
 	}
 
 	// Now calculate world coordinate bounding box for job bounds
-	// Use both start and end positions when axis is not crossed
+	// For job bbox, we want to show only the actual arc path, not theoretical extents
+	// So we use start and end points, ignoring axis crossings
+	var world_maxX_job = Math.max(start.x, end.x);
+	var world_maxY_job = Math.max(start.y, end.y);
+	var world_minX_job = Math.min(start.x, end.x);
+	var world_minY_job = Math.min(start.y, end.y);
+
+	// For display bbox (tpBbox), use the full extent with axis crossings
+	// This ensures accurate rendering of the arc shape
 	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
 	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
 	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
@@ -1396,13 +1404,14 @@ var bboxHandlers = {
         initialMovesForBbox = false;
 
         // Update job bounding box in world coordinates for arc
+        // Use simplified bounds (start/end points only) to avoid zoom-out for large radius arcs
         // Only add bounds if we were already past initial moves (to exclude arc starting from rapid position)
         if (!wasInitialMoves) {
-            jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
-            jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
+            jobBbox.min.x = Math.min(jobBbox.min.x, world_minX_job);
+            jobBbox.min.y = Math.min(jobBbox.min.y, world_minY_job);
             jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
-            jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
-            jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
+            jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX_job);
+            jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY_job);
             jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
             jobBboxIsSet = true;
         } else {

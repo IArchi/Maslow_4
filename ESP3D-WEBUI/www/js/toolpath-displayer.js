@@ -952,20 +952,20 @@ var transformCanvas = function() {
     if (jobBboxExists()) {
         // jobBbox is in world coordinates, need to project to screen coordinates
         // Project all 8 corners of the bounding box and find the projected bbox
-        const wco = WCO;
+        const workCoordinateOffset = WCO;
         let corners = [];
 
-        if (wco && Array.isArray(wco) && wco.length >= 2) {
+        if (workCoordinateOffset && Array.isArray(workCoordinateOffset) && workCoordinateOffset.length >= 2) {
             // Convert from work to machine coordinates before projecting
             corners = [
-                projection({x: jobBbox.min.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
-                projection({x: jobBbox.max.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
-                projection({x: jobBbox.max.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
-                projection({x: jobBbox.min.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.min.z + (wco[2] || 0)}),
-                projection({x: jobBbox.min.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)}),
-                projection({x: jobBbox.max.x + wco[0], y: jobBbox.min.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)}),
-                projection({x: jobBbox.max.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)}),
-                projection({x: jobBbox.min.x + wco[0], y: jobBbox.max.y + wco[1], z: jobBbox.max.z + (wco[2] || 0)})
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)})
             ];
         } else {
             // No WCO, project work coordinates directly
@@ -981,16 +981,17 @@ var transformCanvas = function() {
             ];
         }
 
-        // Find min/max of projected corners
+        // Find min/max of projected corners in a single pass
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (let i = 0; i < corners.length; i++) {
+            minX = Math.min(minX, corners[i].x);
+            minY = Math.min(minY, corners[i].y);
+            maxX = Math.max(maxX, corners[i].x);
+            maxY = Math.max(maxY, corners[i].y);
+        }
         useBbox = {
-            min: {
-                x: Math.min(...corners.map(c => c.x)),
-                y: Math.min(...corners.map(c => c.y))
-            },
-            max: {
-                x: Math.max(...corners.map(c => c.x)),
-                y: Math.max(...corners.map(c => c.y))
-            }
+            min: { x: minX, y: minY },
+            max: { x: maxX, y: maxY }
         };
     } else {
         // Fall back to tpBbox which is already in projected coordinates

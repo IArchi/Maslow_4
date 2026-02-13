@@ -18,6 +18,10 @@ tp.strokeStyle = 'black';
 // See firmware/FluidNC/src/Config.h:179 and MotionControl.cpp:142-160
 var ARC_ANGULAR_TRAVEL_EPSILON = 5e-7;
 
+// Constants for arc calculations
+const TWO_PI = Math.PI * 2;
+const CARDINAL_ANGLES = [0, Math.PI/2, Math.PI, 3*Math.PI/2]; // 0°, 90°, 180°, 270°
+
 var cameraAngle = 2; // Default to top-down view
 
 // Default fallback values (will be replaced by actual configuration values)
@@ -1368,27 +1372,26 @@ var bboxHandlers = {
 		var cw = modal.motion === "G2";
 
 		if (!cw && theta2 < theta1) {
-			theta2 += Math.PI * 2;
+			theta2 += TWO_PI;
 		} else if (cw && theta2 > theta1) {
-			theta2 -= Math.PI * 2;
+			theta2 -= TWO_PI;
 		}
 
 		// Check if cardinal directions (0, 90, 180, 270 deg) are within the arc
-		var cardinals = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
-		for (var ci = 0; ci < cardinals.length; ci++) {
-			var angle = cardinals[ci];
+		for (var ci = 0; ci < CARDINAL_ANGLES.length; ci++) {
+			var angle = CARDINAL_ANGLES[ci];
 			// Check if this angle is within the arc span
 			var inSpan = false;
 			if (!cw) {
 				// CCW arc
 				if (angle >= theta1 && angle <= theta2) inSpan = true;
 				// Handle wraparound
-				if (theta2 > Math.PI*2 && angle + Math.PI*2 >= theta1 && angle + Math.PI*2 <= theta2) inSpan = true;
+				if (theta2 > TWO_PI && angle + TWO_PI >= theta1 && angle + TWO_PI <= theta2) inSpan = true;
 			} else {
 				// CW arc (theta2 < theta1)
 				if (angle <= theta1 && angle >= theta2) inSpan = true;
 				// Handle wraparound
-				if (theta2 < 0 && angle - Math.PI*2 <= theta1 && angle - Math.PI*2 >= theta2) inSpan = true;
+				if (theta2 < 0 && angle - TWO_PI <= theta1 && angle - TWO_PI >= theta2) inSpan = true;
 			}
 
 			if (inSpan) {
@@ -1486,9 +1489,9 @@ var bboxHandlers = {
             var cw = modal.motion === "G2";
 
         if (!cw && theta2 < theta1) {
-            theta2 += Math.PI * 2;
+            theta2 += TWO_PI;
         } else if (cw && theta2 > theta1) {
-            theta2 -= Math.PI * 2;
+            theta2 -= TWO_PI;
         }
 
             // Sample arc with enough points to capture its shape (start at i=1 to skip start point)

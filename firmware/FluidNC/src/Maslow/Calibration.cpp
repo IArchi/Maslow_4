@@ -446,9 +446,6 @@ void Calibration::home() {
             break;
         case CALIBRATION_COMPUTING:
             // In CALIBRATION_COMPUTING state, we're waiting for the computer to acknowledge
-            // calibration data. The calibrationDataRecieved() function will handle the
-            // transition back to CALIBRATION_IN_PROGRESS if needed.
-            // For now, just ensure motors are stopped to prevent drift.
             for (int arm = _TL; arm < ARM_COUNT; arm++) {
                 Maslow.axis[arm].stop();
             }

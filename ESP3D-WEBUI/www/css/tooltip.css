@@ -8,9 +8,10 @@
   opacity: 0;
   transition: opacity 1s;
   width: 140px;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   margin-left: -70px;
+  margin-bottom: 5px;
   background-color: white;
   color: black;
   text-align: center;

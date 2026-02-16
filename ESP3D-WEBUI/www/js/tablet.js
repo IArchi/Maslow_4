@@ -1,6 +1,9 @@
 // When we can change to proper ESM - uncomment this
 // import { checkHomed, maslowErrorMsgHandling, maslowInfoMsgHandling, maslowMsgHandling, sendCommand } from "maslow";
 
+// Constants
+const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded before restoration
+
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
 
@@ -734,11 +737,81 @@ function tabletGrblState(grbl, response) {
 
 let gCodeFilename = '';
 
+// Flag to prevent concurrent GCode state restoration attempts
+let restoringGCodeState = false;
 
+// GCode state persistence functions
+const saveGCodeState = () => {
+  if (gCodeFilename && gCodeLoaded) {
+    store_localdata('gCodeFilename', gCodeFilename);
+    store_localdata('gCodeLoaded', 'true');
+    console.log(`GCode state saved: ${gCodeFilename}`);
+  }
+  // Note: We don't automatically clear state here if conditions aren't met
+  // State should only be cleared explicitly via clearGCodeState()
+};
+
+const clearGCodeState = () => {
+  delete_localdata('gCodeFilename');
+  delete_localdata('gCodeLoaded');
+  console.log('GCode state cleared');
+};
+
+const restoreGCodeState = () => {
+  // Prevent concurrent restoration attempts
+  if (restoringGCodeState) {
+    console.log('GCode restoration already in progress, skipping');
+    return;
+  }
+
+  const savedFilename = get_localdata('gCodeFilename');
+  const savedLoaded = get_localdata('gCodeLoaded');
+
+  if (savedFilename && savedLoaded === 'true') {
+    console.log(`Restoring GCode state: ${savedFilename}`);
+    restoringGCodeState = true;
+
+    // Check if the file still exists by trying to load it
+    // Note: encodeURIComponent encodes the entire SD path, matching the pattern used in
+    // tabletLoadGCodeFile (lines 1105, 1130) for consistency with existing code
+    fetch(encodeURIComponent(`SD${savedFilename}`), { method: 'HEAD' })
+      .then((response) => {
+        if (response.ok) {
+          // File exists, load it
+          const contentLength = response.headers.get('Content-Length');
+          const size = contentLength ? parseInt(contentLength, 10) : 0;
+          tabletLoadGCodeFile(savedFilename, size);
+        } else {
+          // File doesn't exist anymore, clear state
+          console.log('Saved GCode file no longer exists, clearing state');
+          clearGCodeState();
+        }
+      })
+      .catch((error) => {
+        console.log('Error checking GCode file, clearing state:', error);
+        clearGCodeState();
+      })
+      .finally(() => {
+        restoringGCodeState = false;
+      });
+  }
+};
 
 const tabletDOMActivate = () => {
   fullscreenIfMobile();
   setBottomHeight();
+  // Restore GCode state when tablet tab is activated
+  // This handles the case where the page was loaded but user navigates to tablet tab later
+  // Only attempt restoration if no file is currently loaded and not already restoring
+  if (!gCodeFilename && !restoringGCodeState) {
+    // Delay is needed to ensure file list has been populated by files_refreshFiles()
+    setTimeout(() => {
+      // Check again after delay in case state changed
+      if (!gCodeFilename) {
+        restoreGCodeState();
+      }
+    }, FILE_LIST_LOAD_DELAY_MS);
+  }
 }
 
 // Button event handlers - First Row
@@ -1053,6 +1126,8 @@ function tabletLoadGCodeFile(path, size) {
         .then((response) => response.text())
         .then((gcode) => {
           showGCode(gcode);
+          // Save GCode state after successful load
+          saveGCodeState();
           // Restore ping monitoring after preview completes
           restorePingAfterUpload();
           Monitor_output_Update("[Preview] GCode preview loaded successfully\n");
@@ -1141,7 +1216,9 @@ async function tabletLoadGCodeFileSequentially(path) {
       tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
-    
+
+    // Save GCode state after successful load
+    saveGCodeState();
     // Restore ping monitoring after preview completes
     restorePingAfterUpload();
     Monitor_output_Update("[Preview] GCode preview loaded successfully\n");
@@ -1173,6 +1250,7 @@ function selectFile() {
   if (index === -1) {
     // Go up
     gCodeFilename = "";
+    clearGCodeState();
     files_go_levelup()
     updateDeleteButtonState();
     return
@@ -1181,6 +1259,7 @@ function selectFile() {
   const filename = file.name;
   if (file.isdir) {
     gCodeFilename = "";
+    clearGCodeState();
     files_enter_dir(filename);
   } else {
     tabletLoadGCodeFile(`${files_currentPath()}${filename}`, file.size);
@@ -1524,11 +1603,14 @@ function processTabletFileDelete(answer) {
 function tabletFileDeleteSuccess(response) {
   // Remember the deleted file name for logging
   const deletedFile = gCodeFilename;
-  
+
   // Clear the selected file and reset dropdown
   gCodeFilename = "";
   showGCode(""); // Clear the GCode display
-  
+
+  // Clear the saved GCode state
+  clearGCodeState();
+
   // Reset the dropdown to the first option immediately
   const filelist = id("filelist");
   if (filelist) {

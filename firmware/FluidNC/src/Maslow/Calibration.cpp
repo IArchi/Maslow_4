@@ -148,6 +148,15 @@ bool Calibration::requestStateChange(int newState) {
             }
         case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
             if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
+                // If we're coming from CALIBRATION_COMPUTING and calibration is already complete,
+                // go directly to READY_TO_CUT instead of cycling through CALIBRATION_IN_PROGRESS
+                if (currentState == CALIBRATION_COMPUTING && waypoint > pointCount && pointCount > 0) {
+                    log_info("Calibration already complete (waypoint " << waypoint << " > pointCount " << pointCount 
+                             << "), transitioning directly to READY_TO_CUT");
+                    resetCalibrationState();
+                    return requestStateChange(READY_TO_CUT);
+                }
+                
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration
@@ -256,6 +265,29 @@ bool Calibration::requestStateChange(int newState) {
         case READY_TO_CUT:  //We can enter ready to cut from calibration in progress, calibration computing or taking slack
             if (currentState == CALIBRATION_IN_PROGRESS || currentState == CALIBRATION_COMPUTING || currentState == TAKING_SLACK) {
                 currentState = READY_TO_CUT;
+                
+                // Synchronize motor positions with actual belt positions to prevent jogging issues
+                // This is especially critical when transitioning from CALIBRATION_COMPUTING
+                float beltLength[ARM_COUNT];
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    beltLength[arm] = Maslow.axis[arm].getPosition();  // Actual belt position from hardware
+                }
+
+                log_info("Synchronizing motor positions for READY_TO_CUT:");
+                log_info("TL: " << beltLength[_TL] << " TR: " << beltLength[_TR] << " BL: " << beltLength[_BL]
+                                << " BR: " << beltLength[_BR]);
+
+                // Set motor positions directly from hardware readings to ensure motion system accuracy
+                // Axis mapping: A=TL(0), B=TR(1), C=BL(2), D=BR(3), Z=router(4)
+                set_motor_steps(0, mpos_to_steps(beltLength[_TL], 0));  // A axis = TL belt
+                set_motor_steps(1, mpos_to_steps(beltLength[_TR], 1));  // B axis = TR belt
+                set_motor_steps(2, mpos_to_steps(beltLength[_BL], 2));  // C axis = BL belt
+                set_motor_steps(3, mpos_to_steps(beltLength[_BR], 3));  // D axis = BR belt
+                // Z axis position is preserved during transition to READY_TO_CUT
+
+                gc_sync_position();   // Update GCode engine with synchronized position
+                plan_sync_position(); // Update motion planner with synchronized position
+                
                 sys.set_state(State::Idle);
                 // Explicitly save belt positions now that calibration/take-slack is complete and belts are tight
                 Maslow.saveBeltPositions();
@@ -412,12 +444,27 @@ void Calibration::home() {
         case CALIBRATION_IN_PROGRESS:
             calibration_loop();
             break;
+        case CALIBRATION_COMPUTING:
+            // In CALIBRATION_COMPUTING state, we're waiting for the computer to acknowledge
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                Maslow.axis[arm].stop();
+            }
+            break;
+        case READY_TO_CUT:
+            // When calibration is complete and we're ready to cut, ensure we're in Idle state
+            // and stop any residual motor activity
+            sys.set_state(State::Idle);
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                Maslow.axis[arm].stop();
+            }
+            break;
     }
 
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && !calibrationInProgress &&
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
+        currentState != CALIBRATION_COMPUTING && currentState != READY_TO_CUT && !calibrationInProgress && 
         !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }

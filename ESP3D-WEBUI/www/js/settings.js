@@ -330,14 +330,17 @@ const build_HTML_setting_list = (filter) => {
 
   for (let i = 0; i < scl.length; i++) {
     const fname = scl[i].F.trim().toLowerCase();
+    // Debug logging for ALL settings to help diagnose tooltip issues
+    let tooltipKey = scl[i].label.trim();
+    if (tooltipKey.startsWith('/')) {
+      tooltipKey = tooltipKey.substring(1);
+    }
+    const tooltip = CONFIG_TOOLTIPS[tooltipKey];
+    if (tooltipKey.includes('Maslow') || tooltipKey.includes('Scale') || tooltipKey.includes('Extend')) {
+      console.log(`[Tooltip Debug ALL] Index=${i}, F="${fname}", Filter="${filter}", Label="${scl[i].label}", Key="${tooltipKey}", Found=${!!tooltip}, Match=${fname === "network" || fname === filter || filter === "all"}`);
+    }
     if (fname === "network" || fname === filter || filter === "all") {
       let tr = `<tr><td style='vertical-align:middle'>${translate_text_item(scl[i].label, true)}`;
-      let tooltipKey = scl[i].label.trim();
-      if (tooltipKey.startsWith('/')) {
-        tooltipKey = tooltipKey.substring(1);
-      }
-      const tooltip = CONFIG_TOOLTIPS[tooltipKey];
-      console.log(`[Tooltip Debug] Index=${i}, Label="${scl[i].label}", Key="${tooltipKey}", Found=${!!tooltip}, Text="${tooltip ? tooltip.substring(0, 30) : 'N/A'}"`);
       if (tooltip) {
         tr += '<div class="tooltip" style="padding-left: 20px; margin-top: 10px;">';
         tr += '<svg width="16" height="16" fill="#3276c3" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 416.979 416.979" xml:space="preserve" stroke="#3276c3">';

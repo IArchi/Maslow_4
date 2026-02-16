@@ -726,13 +726,16 @@ function tabletGrblState(grbl, response) {
 
   if (WPOS) {
     WPOS.forEach((pos, index) => {
-      setTextContent(`mpos-${axisNames[index]}`, Number(pos * factor).toFixed(index > 2 ? 2 : digits));
+      setTextContent(`wpos-${axisNames[index]}`, Number(pos * factor).toFixed(index > 2 ? 2 : digits));
     })
   }
 
-  MPOS.forEach((pos, index) => {
-    //setTextContent('mpos-'+axisNames[index], Number(pos*factor).toFixed(index > 2 ? 2 : digits));
-  })
+  if (MPOS) {
+    MPOS.forEach((pos, index) => {
+      const axisName = axisNames[index].toUpperCase();
+      setTextContent(`mpos-${axisNames[index]}`, `(${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)})`);
+    })
+  }
 }
 
 let gCodeFilename = '';

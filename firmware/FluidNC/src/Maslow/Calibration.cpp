@@ -458,7 +458,7 @@ void Calibration::calibration_loop() {
                 sys.set_state(State::Idle);
                 recomputeCountIndex++;
             } else {
-                hold(250);
+                hold(150);  // Reduced from 250ms to 150ms for faster calibration
             }
         }
     }
@@ -477,7 +477,7 @@ void Calibration::calibration_loop() {
                 calibrationGrid[waypoint][1]);  //This is used to set the order that the belts are pulled tight in the following measurement
             Maslow.x = calibrationGrid[waypoint][0];  //Are these ever used anywhere?
             Maslow.y = calibrationGrid[waypoint][1];
-            hold(250);
+            hold(150);  // Reduced from 250ms to 150ms for faster calibration
         }
     }
 }
@@ -667,39 +667,52 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
         Maslow.axis[_TL].recomputePID();
         Maslow.axis[_TR].recomputePID();
 
-        //On the left side of the sheet we want to pull the left belt tight first
-        if (Maslow.x < 0) {
-            if (!BL_tight) {
-                if (Maslow.axis[_BL].pull_tight(current)) {
-                    BL_tight = true;
-                    //log_info("Pulled BL tight");
+        // For the first six measurement points (waypoints 0-5), pull belts sequentially
+        // After that, pull belts simultaneously for speed
+        if (waypoint <= 5) {
+            //On the left side of the sheet we want to pull the left belt tight first
+            if (Maslow.x < 0) {
+                if (!BL_tight) {
+                    if (Maslow.axis[_BL].pull_tight(current)) {
+                        BL_tight = true;
+                        //log_info("Pulled BL tight");
+                    }
+                    return false;
                 }
-                return false;
+                if (!BR_tight) {
+                    if (Maslow.axis[_BR].pull_tight(current)) {
+                        BR_tight = true;
+                        //log_info("Pulled BR tight");
+                    }
+                    return false;
+                }
             }
-            if (!BR_tight) {
-                if (Maslow.axis[_BR].pull_tight(current)) {
-                    BR_tight = true;
-                    //log_info("Pulled BR tight");
+
+            //On the right side of the sheet we want to pull the right belt tight first
+            else {
+                if (!BR_tight) {
+                    if (Maslow.axis[_BR].pull_tight(current)) {
+                        BR_tight = true;
+                        //log_info("Pulled BR tight");
+                    }
+                    return false;
                 }
-                return false;
+                if (!BL_tight) {
+                    if (Maslow.axis[_BL].pull_tight(current)) {
+                        BL_tight = true;
+                        //log_info("Pulled BL tight");
+                    }
+                    return false;
+                }
             }
         }
-
-        //On the right side of the sheet we want to pull the right belt tight first
+        // For subsequent waypoints (6+), pull both belts simultaneously
         else {
-            if (!BR_tight) {
-                if (Maslow.axis[_BR].pull_tight(current)) {
-                    BR_tight = true;
-                    //log_info("Pulled BR tight");
-                }
-                return false;
+            if (Maslow.axis[_BL].pull_tight(current)) {
+                BL_tight = true;
             }
-            if (!BL_tight) {
-                if (Maslow.axis[_BL].pull_tight(current)) {
-                    BL_tight = true;
-                    //log_info("Pulled BL tight");
-                }
-                return false;
+            if (Maslow.axis[_BR].pull_tight(current)) {
+                BR_tight = true;
             }
         }
 
@@ -732,8 +745,8 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
     }
     // in HoRIZONTAL orientation we pull on the belts depending on the direction of the last move. This is important because the other two belts are likely slack
     else if (orientation == HORIZONTAL) {
-        // For the first waypoint (waypoint == 0), use a two-phase approach to ensure proper tension
-        if (waypoint == 0) {
+        // For the first six waypoints (waypoints 0-5), use sequential pulling to handle slack belts properly
+        if (waypoint <= 5) {
             static bool tight[ARM_COUNT]         = { false, false, false, false };
             static bool initial_tension_complete = false;
 
@@ -832,7 +845,7 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             }
             return false;
         }
-        // For subsequent waypoints, use directional logic to pull only relevant belts
+        // For subsequent waypoints (6+), pull belts simultaneously for faster measurements
         else {
             static MotorUnit* pullAxis1;
             static MotorUnit* pullAxis2;
@@ -1131,7 +1144,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();
     static bool          decompress     = true;
-    float                stepSize       = 0.06;
+    float                stepSize       = 0.09;  // Increased by 50% from 0.06 for faster calibration movement
 
     static int direction = UP;
 
@@ -1252,7 +1265,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
             stabilizeTimer = millis();
             return false;  // Continue stabilizing
         }
-        if (millis() - stabilizeTimer < 50) {  // 50ms stabilization period
+        if (millis() - stabilizeTimer < 30) {  // 30ms stabilization period (reduced from 50ms)
             return false;                      // Continue stabilizing
         }
         stabilizeTimer = 0;  // Reset for next waypoint

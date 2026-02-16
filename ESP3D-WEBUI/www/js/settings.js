@@ -342,6 +342,10 @@ const build_HTML_setting_list = (filter) => {
     if (fname === "network" || fname === filter || filter === "all") {
       let tr = `<tr><td style='vertical-align:middle'>${translate_text_item(scl[i].label, true)}`;
       if (tooltip) {
+        // Debug: Log when tooltip HTML is actually added
+        if (tooltipKey.includes('Scale') || tooltipKey.includes('Extend')) {
+          console.log(`[Tooltip RENDER] Index=${i}, Label="${scl[i].label}", Adding tooltip: "${tooltip.substring(0, 50)}..."`);
+        }
         tr += '<div class="tooltip" style="padding-left: 20px; margin-top: 10px;">';
         tr += '<svg width="16" height="16" fill="#3276c3" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 416.979 416.979" xml:space="preserve" stroke="#3276c3">';
         tr += '<g id="SVGRepo_bgCarrier" stroke-width="0"></g>';

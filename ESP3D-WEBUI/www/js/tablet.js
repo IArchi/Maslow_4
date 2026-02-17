@@ -1250,6 +1250,18 @@ function selectFile() {
     updateDeleteButtonState();
     return;
   }
+  if (index === -4) {
+    // Clear GCode from memory
+    gCodeFilename = "";
+    gCodeDisplayable = false;
+    showGCode("");
+    clearGCodeState();
+    // Reset dropdown to the first option (legend)
+    filelist.selectedIndex = 0;
+    updateDeleteButtonState();
+    addMessage("GCode cleared from memory");
+    return;
+  }
   if (index === -1) {
     // Go up
     gCodeFilename = "";

@@ -355,9 +355,16 @@ const moveHome = () => {
     return;
   }
 
-  //We want to move to the opposite of the machine's current X,Y cordinates
-  const x = Number.parseFloat(getText('mpos-x'));
-  const y = Number.parseFloat(getText('mpos-y'));
+  // Use the MPOS global array which contains the current machine position.
+  // Note: getText('mpos-x') returns formatted text like "(Xm: 150.000)" which
+  // parseFloat cannot handle, so we use the MPOS array directly.
+  if (!MPOS || MPOS.some(isNaN)) {
+    addMessage("Cannot move to XY Home: machine position is unknown.");
+    return;
+  }
+
+  const x = MPOS[0];
+  const y = MPOS[1];
 
   jog({ X: -1 * x, Y: -1 * y })
 }

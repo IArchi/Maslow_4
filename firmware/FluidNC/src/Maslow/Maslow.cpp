@@ -169,7 +169,7 @@ void Maslow_::update() {
         unsigned long now = millis();
         //if the update function is not being called enough, stop everything to prevent damage
         if (now - lastCallToUpdate > 100) {
-            unsigned long elapsedTime = now - lastCallToUpdate;
+            unsigned int elapsedTime = now - lastCallToUpdate;
             log_error("Emergency stop. Update function not being called enough. " << elapsedTime << "ms since last call");
             Maslow.panic();
         }

@@ -56,6 +56,9 @@ extern const char* VERSION_NUMBER;
 #define WIFILED 35
 #define REDLED 14
 
+// Maximum allowed interval between Maslow.update() calls before triggering emergency stop
+#define UPDATE_WATCHDOG_MS 100
+
 int ENCODER_READ_FREQUENCY_HZ = 1000;  //max frequency for polling the encoders
 
 //------------------------------------------------------
@@ -168,7 +171,7 @@ void Maslow_::update() {
     if (!Maslow.using_default_config) {
         unsigned long now = millis();
         //if the update function is not being called enough, stop everything to prevent damage
-        if (now - lastCallToUpdate > 100) {
+        if (now - lastCallToUpdate > UPDATE_WATCHDOG_MS) {
             unsigned int elapsedTime = now - lastCallToUpdate;
             log_error("Emergency stop. Update function not being called enough. " << elapsedTime << "ms since last call");
             Maslow.panic();

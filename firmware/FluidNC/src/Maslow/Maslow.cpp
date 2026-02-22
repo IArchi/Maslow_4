@@ -133,6 +133,24 @@ void Maslow_::update() {
 
     static State prevState = sys.state();
 
+    //If the watchdog fired, show a rapid double-blink on both RED and WiFi LEDs.
+    // This is distinct from the slow 300ms single-blink used for eStop/error state.
+    // Pattern: 100ms ON, 100ms OFF, 100ms ON, 800ms pause (repeating)
+    if (watchdogFired) {
+        stopMotors();
+        static unsigned long wdTimer  = millis();
+        static int           wdPhase  = 0;  // 0=on1, 1=off1, 2=on2, 3=pause
+        static const int     wdMS[]   = { 100, 100, 100, 800 };
+        if (millis() - wdTimer >= (unsigned long)wdMS[wdPhase]) {
+            wdPhase = (wdPhase + 1) % 4;
+            bool ledsOn = (wdPhase == 0 || wdPhase == 2);
+            digitalWrite(REDLED, ledsOn ? HIGH : LOW);
+            digitalWrite(WIFILED, ledsOn ? HIGH : LOW);
+            wdTimer = millis();
+        }
+        return;
+    }
+
     //If we are in an error state, blink the LED and stop the motors
     if (error) {
         static unsigned long timer = millis();
@@ -189,6 +207,7 @@ void Maslow_::update() {
         if (now - lastCallToUpdate > UPDATE_WATCHDOG_MS) {
             unsigned int elapsedTime = now - lastCallToUpdate;
             log_error("Emergency stop. Update function not being called enough. " << elapsedTime << "ms since last call");
+            watchdogFired = true;
             Maslow.panic();
         }
         lastCallToUpdate = now;

@@ -171,6 +171,7 @@ private:
     unsigned long extendCallTimer  = millis();
     unsigned long complyCallTimer  = millis();
     unsigned int  panicCount       = 0;
+    bool          watchdogFired    = false;
 
     //Stores a reference to the global system runtime function to be called when blocking operations are needed
     void (*_sys_rt)() = nullptr;

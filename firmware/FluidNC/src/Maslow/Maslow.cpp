@@ -166,7 +166,14 @@ void Maslow_::update() {
 
     //Make sure we're running maslow config file
     if (!Maslow.using_default_config) {
-        lastCallToUpdate = millis();
+        unsigned long now = millis();
+        //if the update function is not being called enough, stop everything to prevent damage
+        if (now - lastCallToUpdate > 100) {
+            unsigned long elapsedTime = now - lastCallToUpdate;
+            log_error("Emergency stop. Update function not being called enough. " << elapsedTime << "ms since last call");
+            Maslow.panic();
+        }
+        lastCallToUpdate = now;
 
         Maslow.updateEncoderPositions();  //We always update encoder positions in any state,
 
@@ -253,13 +260,6 @@ void Maslow_::update() {
         calibration.checkCalibrationData();
 
         //------------------------ End of Maslow State Machine
-
-        //if the update function is not being called enough, stop everything to prevent damage
-        if (millis() - lastCallToUpdate > 100) {
-            Maslow.panic();
-            int elapsedTime = millis() - lastCallToUpdate;
-            log_error("Emergency stop. Update function not being called enough." << elapsedTime << "ms since last call");
-        }
 
         print_motor_currents();
     }

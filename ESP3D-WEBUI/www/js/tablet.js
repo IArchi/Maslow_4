@@ -355,18 +355,7 @@ const moveHome = () => {
     return;
   }
 
-  // Use the MPOS global array which contains the current machine position.
-  // Note: getText('mpos-x') returns formatted text like "(Xm: 150.000)" which
-  // parseFloat cannot handle, so we use the MPOS array directly.
-  if (!MPOS || MPOS.some(isNaN)) {
-    addMessage("Cannot move to XY Home: machine position is unknown.");
-    return;
-  }
-
-  const x = MPOS[0];
-  const y = MPOS[1];
-
-  jog({ X: -1 * x, Y: -1 * y })
+  move({ X: 0, Y: 0 });
 }
 
 function saveSerialMessages() {

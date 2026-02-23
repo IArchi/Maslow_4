@@ -1681,7 +1681,9 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
     bboxHandlers.position = initialPosition;
     bboxHandlers.modal = modal;
 
-    drawMachineBounds(); //Adds the machine bounds to the bounding box...this does not draw
+    if(drawBounds){
+        drawMachineBounds(); //Adds the machine bounds to the bounding box...this does not draw
+    }
     if(drawBelts){
         drawMachineBelts(); //Adds the belts to the bounding box...does not draw yet
     }
@@ -1711,7 +1713,9 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
     // Draw job bounding box if available
     drawJobBoundingBox();
 
-    drawMachineBounds(); //Actually draws the bounding box
+    if(drawBounds){
+        drawMachineBounds(); //Actually draws the bounding box
+    }
     if(drawBelts){
         drawMachineBelts(); //Actually draws the belts
     }

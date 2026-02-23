@@ -1693,8 +1693,10 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
     }
 
     // Draw the work origin (cross and circle) after transform is set up
-    var imageWidth = tpBbox.max.x - tpBbox.min.x;
-    drawOrigin(imageWidth * 0.04);
+    // Use canvas.width / scaler to get the effective world-space width of the visible area.
+    // This avoids huge crosshairs when transformCanvas() zoomed in on a small jobBbox
+    // while tpBbox (which includes full machine bounds) is much larger.
+    drawOrigin(canvas.width / scaler * 0.04);
 
     initialMoves = true;
     displayHandlers.position = initialPosition;
@@ -1770,12 +1772,6 @@ ToolpathDisplayer.prototype.showToolPosition = function(modal, position) {
 
     // Only draw if we have a valid bounding box
     if (bboxIsSet) {
-        // Calculate image dimensions for proper origin size
-        var imageWidth = tpBbox.max.x - tpBbox.min.x;
-        if (imageWidth == 0) {
-            imageWidth = 1;
-        }
-
         // Draw visible elements based on camera angle
         if(drawBounds){
             drawMachineBounds();
@@ -1785,7 +1781,9 @@ ToolpathDisplayer.prototype.showToolPosition = function(modal, position) {
         }
 
         // Draw the work origin (cross and circle)
-        drawOrigin(imageWidth * 0.04);
+        // Use canvas.width / scaler so the crosshair is proportional to the visible area,
+        // not to tpBbox which may be much larger than the displayed jobBbox.
+        drawOrigin(canvas.width / scaler * 0.04);
 
         // Draw job bounding box if available (updates with WCO changes)
         drawJobBoundingBox();

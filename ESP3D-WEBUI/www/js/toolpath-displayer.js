@@ -318,6 +318,12 @@ var tpBbox = {
     }
 };
 
+// Bounding box for the work area rectangle only (excludes belt anchor points)
+var workAreaBbox = {
+    min: { x: Infinity, y: Infinity },
+    max: { x: -Infinity, y: -Infinity }
+};
+
 // Separate tracking for just the job/gcode bounding box (excluding machine bounds)
 var jobBbox = {
     min: {
@@ -348,6 +354,12 @@ var resetBbox = function() {
     tpBbox.max.y = -Infinity;
     tpBbox.max.z = -Infinity;
     bboxIsSet = false;
+
+    // Reset work area bbox
+    workAreaBbox.min.x = Infinity;
+    workAreaBbox.min.y = Infinity;
+    workAreaBbox.max.x = -Infinity;
+    workAreaBbox.max.y = -Infinity;
 
     // Also reset job bounding box
     jobBbox.min.x = Infinity;
@@ -749,6 +761,12 @@ var drawMachineBounds = function() {
     tpBbox.max.y = Math.max(tpBbox.max.y, p2.y);
     bboxIsSet = true;
 
+    // Track the work area bounds separately (excludes belt anchor points)
+    workAreaBbox.min.x = Math.min(workAreaBbox.min.x, p0.x);
+    workAreaBbox.min.y = Math.min(workAreaBbox.min.y, p0.y);
+    workAreaBbox.max.x = Math.max(workAreaBbox.max.x, p2.x);
+    workAreaBbox.max.y = Math.max(workAreaBbox.max.y, p2.y);
+
     // Draw the work area rectangle
     tp.beginPath();
     tp.moveTo(p0.x, p0.y);
@@ -999,12 +1017,12 @@ var transformCanvas = function() {
             min: { x: minX, y: minY },
             max: { x: maxX, y: maxY }
         };
-        // Also include machine bounds (tpBbox) so the full work area is always visible
-        if (isFinite(tpBbox.min.x) && isFinite(tpBbox.min.y) && isFinite(tpBbox.max.x) && isFinite(tpBbox.max.y)) {
-            displayBbox.min.x = Math.min(displayBbox.min.x, tpBbox.min.x);
-            displayBbox.min.y = Math.min(displayBbox.min.y, tpBbox.min.y);
-            displayBbox.max.x = Math.max(displayBbox.max.x, tpBbox.max.x);
-            displayBbox.max.y = Math.max(displayBbox.max.y, tpBbox.max.y);
+        // Also include machine work area bounds so the border rectangle is always fully visible
+        if (isFinite(workAreaBbox.min.x) && isFinite(workAreaBbox.min.y) && isFinite(workAreaBbox.max.x) && isFinite(workAreaBbox.max.y)) {
+            displayBbox.min.x = Math.min(displayBbox.min.x, workAreaBbox.min.x);
+            displayBbox.min.y = Math.min(displayBbox.min.y, workAreaBbox.min.y);
+            displayBbox.max.x = Math.max(displayBbox.max.x, workAreaBbox.max.x);
+            displayBbox.max.y = Math.max(displayBbox.max.y, workAreaBbox.max.y);
         }
     } else {
         // Fall back to tpBbox which is already in projected coordinates

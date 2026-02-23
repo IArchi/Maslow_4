@@ -67,6 +67,7 @@ struct TelemetryData {
     unsigned long lastCallToUpdate;
     unsigned long extendCallTimer;
     unsigned long complyCallTimer;
+    unsigned int  panicCount;
 };
 
 class Maslow_ {
@@ -169,6 +170,8 @@ private:
     unsigned long lastCallToUpdate = millis();
     unsigned long extendCallTimer  = millis();
     unsigned long complyCallTimer  = millis();
+    unsigned int  panicCount       = 0;
+    bool          watchdogFired    = false;
 
     //Stores a reference to the global system runtime function to be called when blocking operations are needed
     void (*_sys_rt)() = nullptr;

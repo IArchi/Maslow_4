@@ -922,11 +922,13 @@ var clearCanvas = function() {
     // Reset the transform and clear the canvas
     tp.setTransform(1,0,0,1,0,0);
 
-//    if (tpRect == undefined) {
-        var tpRect = canvas.parentNode.getBoundingClientRect();
-        // canvas.width = tpRect.width ? tpRect.width : 400;
-        // canvas.height = tpRect.height ? tpRect.height : 400;
-//    }
+    // Resize the canvas pixel buffer to match the actual rendered display size.
+    // Without this the browser stretches the buffer non-uniformly, distorting the aspect ratio.
+    var tpRect = canvas.getBoundingClientRect();
+    if (tpRect.width > 0 && tpRect.height > 0) {
+        canvas.width = tpRect.width * scale;
+        canvas.height = tpRect.height * scale;
+    }
 
     tp.fillStyle = "white";
     tp.fillRect(0, 0, canvas.width, canvas.height);

@@ -997,6 +997,13 @@ var transformCanvas = function() {
             min: { x: minX, y: minY },
             max: { x: maxX, y: maxY }
         };
+        // Also include machine bounds (tpBbox) so the full work area is always visible
+        if (isFinite(tpBbox.min.x) && isFinite(tpBbox.min.y) && isFinite(tpBbox.max.x) && isFinite(tpBbox.max.y)) {
+            displayBbox.min.x = Math.min(displayBbox.min.x, tpBbox.min.x);
+            displayBbox.min.y = Math.min(displayBbox.min.y, tpBbox.min.y);
+            displayBbox.max.x = Math.max(displayBbox.max.x, tpBbox.max.x);
+            displayBbox.max.y = Math.max(displayBbox.max.y, tpBbox.max.y);
+        }
     } else {
         // Fall back to tpBbox which is already in projected coordinates
         displayBbox = tpBbox;
@@ -1674,9 +1681,7 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
     bboxHandlers.position = initialPosition;
     bboxHandlers.modal = modal;
 
-    if(drawBounds){
-        drawMachineBounds(); //Adds the machine bounds to the bounding box...this does not draw
-    }
+    drawMachineBounds(); //Adds the machine bounds to the bounding box...this does not draw
     if(drawBelts){
         drawMachineBelts(); //Adds the belts to the bounding box...does not draw yet
     }
@@ -1706,9 +1711,7 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
     // Draw job bounding box if available
     drawJobBoundingBox();
 
-    if(drawBounds){
-        drawMachineBounds(); //Actually draws the bounding box
-    }
+    drawMachineBounds(); //Actually draws the bounding box
     if(drawBelts){
         drawMachineBelts(); //Actually draws the belts
     }

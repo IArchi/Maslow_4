@@ -1047,8 +1047,24 @@ var transformCanvas = function() {
     if (scaler < 0) {
         scaler = -scaler;
     }
-    xOffset = inset - displayBbox.min.x * scaler;
-    yOffset = (canvas.height-inset) - displayBbox.min.y * (-scaler);
+
+    // Determine what should be centered in the canvas:
+    // - Border views (workAreaBbox is valid): center the work area border
+    // - Zoomed-in views: center the displayBbox content
+    var centerX, centerY;
+    if (isFinite(workAreaBbox.min.x) && isFinite(workAreaBbox.min.y) && isFinite(workAreaBbox.max.x) && isFinite(workAreaBbox.max.y)) {
+        centerX = (workAreaBbox.min.x + workAreaBbox.max.x) / 2;
+        centerY = (workAreaBbox.min.y + workAreaBbox.max.y) / 2;
+    } else {
+        centerX = (displayBbox.min.x + displayBbox.max.x) / 2;
+        centerY = (displayBbox.min.y + displayBbox.max.y) / 2;
+    }
+    // The transform is: x' = scaler*x + xOffset, y' = -scaler*y + yOffset
+    // We want the center of the chosen bbox to map to the canvas center:
+    //   scaler*centerX + xOffset = canvas.width/2  => xOffset = canvas.width/2 - scaler*centerX
+    //  -scaler*centerY + yOffset = canvas.height/2 => yOffset = canvas.height/2 + scaler*centerY
+    xOffset = canvas.width / 2 - scaler * centerX;
+    yOffset = canvas.height / 2 + scaler * centerY;
 
     // Canvas coordinates of image bounding box top and right
     var imageTop = scaler * imageHeight;

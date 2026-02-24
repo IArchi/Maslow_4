@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 git fetch --tags -a `grep -A 1 '^\[branch \"Maslow-Main\"\]' .git/config  |grep remote |cut -f 3 -d ' '`
 b=`git branch |grep "^\*"|sed -e s/'\* .HEAD detached at '// -e s/'.$'//`
 git checkout Maslow-Main

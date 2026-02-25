@@ -201,17 +201,19 @@ const getWorkAreaBounds = () => {
 const openSetHomePopup = () => {
   tabletClick();
   const bounds = getWorkAreaBounds();
-  // Pre-fill with the current machine position of the GCode origin (WCO values)
+  // Pre-fill with current machine position so jogging to a spot and opening
+  // the popup defaults to "set home here" (confirming without changes sets
+  // GCode origin at the current machine position)
   const xInput = id("setHomeX");
   const yInput = id("setHomeY");
   if (xInput) {
-    xInput.value = WCO ? WCO[0].toFixed(3) : "0";
+    xInput.value = MPOS ? MPOS[0].toFixed(3) : "0";
     xInput.min = bounds.minX;
     xInput.max = bounds.maxX;
     xInput.title = `X: ${bounds.minX} to ${bounds.maxX} mm`;
   }
   if (yInput) {
-    yInput.value = WCO ? WCO[1].toFixed(3) : "0";
+    yInput.value = MPOS ? MPOS[1].toFixed(3) : "0";
     yInput.min = bounds.minY;
     yInput.max = bounds.maxY;
     yInput.title = `Y: ${bounds.minY} to ${bounds.maxY} mm`;

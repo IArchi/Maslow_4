@@ -816,7 +816,7 @@ function tabletGrblState(grbl, response) {
   if (MPOS) {
     MPOS.forEach((pos, index) => {
       const axisName = axisNames[index].toUpperCase();
-      setTextContent(`mpos-${axisNames[index]}`, `(${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)})`);
+      setTextContent(`mpos-${axisNames[index]}`, `|${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)}|`);
     })
   }
 }

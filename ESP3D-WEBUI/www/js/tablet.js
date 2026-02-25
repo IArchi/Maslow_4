@@ -184,6 +184,52 @@ const zeroAxis = (axis) => {
   addMessage(`Home pos set for: ${axis}`);
 }
 
+const openSetHomePopup = () => {
+  tabletClick();
+  // Pre-fill with current work position
+  const xInput = id("setHomeX");
+  const yInput = id("setHomeY");
+  if (xInput) xInput.value = getText("wpos-x") || "0";
+  if (yInput) yInput.value = getText("wpos-y") || "0";
+  openModal("set-home-popup");
+}
+
+const confirmSetHome = () => {
+  const xVal = parseFloat(id("setHomeX").value) || 0;
+  const yVal = parseFloat(id("setHomeY").value) || 0;
+  hideModal("set-home-popup");
+
+  // Capture initial WCO values before setting
+  const oldWCO = WCO ? [WCO[0], WCO[1]] : null;
+
+  const cmd = `G10 L20 P0 X${xVal} Y${yVal}`;
+  sendCommand(cmd);
+  addMessage(`Home pos set: X=${xVal} Y=${yVal}`);
+  setXYHomeBtnText(xyHomeLabelRedefined);
+  setTimeout(setXYHomeBtnText, 1000);
+
+  // Set up one-time callback to refresh display when BOTH X and Y WCO values update
+  const originalCallback = onWCOUpdateCallback;
+  let timeoutId = null;
+
+  onWCOUpdateCallback = (newWCO, prevWCO) => {
+    if (oldWCO && newWCO &&
+        (newWCO[0] !== oldWCO[0] || newWCO[1] !== oldWCO[1])) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      onWCOUpdateCallback = originalCallback;
+      refreshGcode();
+    }
+  };
+
+  timeoutId = setTimeout(() => {
+    onWCOUpdateCallback = originalCallback;
+    refreshGcode();
+  }, 2000);
+}
+
 const toggleUnits = () => {
   tabletClick()
   sendCommand(gCodeModal.units === 'G21' ? 'G20' : 'G21');
@@ -989,9 +1035,13 @@ function tabletInit() {
     id("tablettab_set_z_home").addEventListener("mouseup", tabletSetZHomeMUp);
     id("tablettab_move_to_xy_home").addEventListener("click", moveHome);
     id("tablettab_toggle_units").addEventListener("click", toggleUnits);
-    id("tablettab_set_xy_home").addEventListener("mousedown", setHomeClickDown);
-    id("tablettab_set_xy_home").addEventListener("mouseup", setHomeClickUp);
-    id("tablettab_set_xy_home").addEventListener("dblclick", setXYHome);
+    id("tablettab_set_xy_home").addEventListener("click", openSetHomePopup);
+
+    // Buttons - Set Home Pop-up
+    id("set-home-popup").addEventListener("click", () => hideModal("set-home-popup"));
+    id("set_home_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_set_home_cancel").addEventListener("click", () => hideModal("set-home-popup"));
+    id("tablettab_set_home_confirm").addEventListener("click", confirmSetHome);
 
     // Controls - Fifth Row
     id("filelist").addEventListener("change", selectFile);

@@ -87,7 +87,7 @@
           <div id="tablettab_toggle_units" class="maslow-grid-item maslow-grid-item-btn"
             style="background-color: #f2f0e4;" title="Toggle Units">mm</div>
           <div id="tablettab_set_xy_home" class="maslow-grid-item maslow-grid-item-btn"
-            style="background-color: #f2f0e4;" title="Press and hold, or tap twice">Define XY Home</div>
+            style="background-color: #f2f0e4;" title="Set XY home position">Define XY Home</div>
           <div id="dynamic_button_3" class="maslow-grid-item maslow-grid-item-btn" style="background-color: #f2f0e4;">
             <div id="tablettab_trace_boundary" class="maslow-grid-item maslow-grid-item-btn"
                  style="background-color: #f2f0e4; cursor: pointer;"
@@ -190,6 +190,38 @@
           <button id="tablettab_cal_test" class="calibration-modal-button">Test</button>
           <button id="tablettab_cal_zstop" class="calibration-modal-button"
             title="Record the 'bottom' limit for Z-axis movement">Set Z-Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="set-home-popup" class="calibration-modal-container">
+    <div id="set_home_popup_content" class="calibration-modal-content">
+      <div class="calibration-modal-button-container">
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label style="text-align: center;">Set Home Position</label>
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="grid-container">
+          <div class="input-row">
+            <label for="setHomeX" class="input-label">X</label>
+          </div>
+          <div class="input-row">
+            <input id="setHomeX" type="number" step="any" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="setHomeY" class="input-label">Y</label>
+          </div>
+          <div class="input-row">
+            <input id="setHomeY" type="number" step="any" class="calibration-modal-input" placeholder="0">
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
+          <button id="tablettab_set_home_cancel" class="calibration-modal-button stop-button">Cancel</button>
+          <button id="tablettab_set_home_confirm" class="calibration-modal-button">Set Home</button>
         </div>
       </div>
     </div>

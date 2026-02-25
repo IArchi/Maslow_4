@@ -248,10 +248,24 @@ const confirmSetHome = () => {
   setXYHomeBtnText(xyHomeLabelRedefined);
   setTimeout(setXYHomeBtnText, 1000);
 
-  // Refresh canvas after firmware updates WCO. Use two timeouts to handle
-  // both fast and slow status polling intervals.
-  setTimeout(refreshGcode, 300);
-  setTimeout(refreshGcode, 1000);
+  // Refresh the canvas once firmware confirms the WCO change.
+  // The WCO callback in grbl.js fires synchronously inside grblProcessStatus,
+  // before MPOS/WPOS are recalculated with the new WCO.  Using setTimeout(fn,0)
+  // defers refreshGcode until after grblProcessStatus finishes, ensuring WPOS
+  // is already updated when the canvas redraws.
+  // A fallback timeout handles slow connections or cases where WCO value is
+  // unchanged (callback won't fire).
+  const originalCallback = onWCOUpdateCallback;
+  let fallbackId = setTimeout(() => {
+    onWCOUpdateCallback = originalCallback;
+    refreshGcode();
+  }, 3000);
+
+  onWCOUpdateCallback = (newWCO, prevWCO) => {
+    clearTimeout(fallbackId);
+    onWCOUpdateCallback = originalCallback;
+    setTimeout(refreshGcode, 0);
+  };
 }
 
 const toggleUnits = () => {

@@ -668,9 +668,9 @@ function grblProcessStatus(response) {
   const oldWCO = WCO ? [WCO[0], WCO[1], WCO[2]] : null;
   if (grbl.wco && !grbl.wco.some(isNaN)) {
     WCO = grbl.wco;
-    // Check if WCO has changed and trigger callback if set
-    if (onWCOUpdateCallback && oldWCO &&
-        (WCO[0] !== oldWCO[0] || WCO[1] !== oldWCO[1] || WCO[2] !== oldWCO[2])) {
+    // Check if WCO has changed (or arrived for the first time) and trigger callback if set
+    if (onWCOUpdateCallback &&
+        (!oldWCO || WCO[0] !== oldWCO[0] || WCO[1] !== oldWCO[1] || WCO[2] !== oldWCO[2])) {
       onWCOUpdateCallback(WCO, oldWCO);
     }
   }

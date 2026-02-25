@@ -220,19 +220,19 @@ const openSetHomePopup = () => {
 }
 
 const confirmSetHome = () => {
-  const xVal = parseFloat(id("setHomeX").value) || 0;
-  const yVal = parseFloat(id("setHomeY").value) || 0;
-
   const bounds = getWorkAreaBounds();
-  if (xVal < bounds.minX || xVal > bounds.maxX || yVal < bounds.minY || yVal > bounds.maxY) {
-    addMessage(`Home position out of work area bounds. X: [${bounds.minX}, ${bounds.maxX}], Y: [${bounds.minY}, ${bounds.maxY}]`);
-    return;
+
+  // Clamp entered values to work area boundary
+  const rawX = parseFloat(id("setHomeX").value);
+  const rawY = parseFloat(id("setHomeY").value);
+  const xVal = isNaN(rawX) ? 0 : Math.max(bounds.minX, Math.min(bounds.maxX, rawX));
+  const yVal = isNaN(rawY) ? 0 : Math.max(bounds.minY, Math.min(bounds.maxY, rawY));
+
+  if (xVal !== rawX || yVal !== rawY) {
+    addMessage(`Home position clamped to work area: X=${xVal} Y=${yVal}`);
   }
 
   hideModal("set-home-popup");
-
-  // Capture initial WCO values before setting
-  const oldWCO = WCO ? [WCO[0], WCO[1]] : null;
 
   // xVal, yVal are the desired machine coordinates for the GCode origin (WPOS=0).
   // G10 L20 P0 X{v} sets the current machine position as WPOS=v, so WCO = MPOS - v.
@@ -246,28 +246,10 @@ const confirmSetHome = () => {
   setXYHomeBtnText(xyHomeLabelRedefined);
   setTimeout(setXYHomeBtnText, 1000);
 
-  // Set up one-time callback to refresh display when WCO updates.
-  // Use setTimeout to defer refreshGcode so that MPOS/WPOS are recalculated
-  // after grblProcessStatus finishes updating them post-WCO change.
-  const originalCallback = onWCOUpdateCallback;
-  let timeoutId = null;
-
-  onWCOUpdateCallback = (newWCO, prevWCO) => {
-    if (oldWCO && newWCO &&
-        (newWCO[0] !== oldWCO[0] || newWCO[1] !== oldWCO[1])) {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      onWCOUpdateCallback = originalCallback;
-      setTimeout(refreshGcode, 0);
-    }
-  };
-
-  timeoutId = setTimeout(() => {
-    onWCOUpdateCallback = originalCallback;
-    refreshGcode();
-  }, 2000);
+  // Refresh canvas after firmware updates WCO. Use two timeouts to handle
+  // both fast and slow status polling intervals.
+  setTimeout(refreshGcode, 300);
+  setTimeout(refreshGcode, 1000);
 }
 
 const toggleUnits = () => {

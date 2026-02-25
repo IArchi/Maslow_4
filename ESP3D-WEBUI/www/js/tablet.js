@@ -184,6 +184,90 @@ const zeroAxis = (axis) => {
   addMessage(`Home pos set for: ${axis}`);
 }
 
+const getWorkAreaBounds = () => {
+  const lv = globalThis.loadedValues || {};
+  const areaX = parseFloat(lv.workAreaX) || 2440;
+  const areaY = parseFloat(lv.workAreaY) || 1220;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  return {
+    minX: offX - areaX / 2,
+    maxX: offX + areaX / 2,
+    minY: offY - areaY / 2,
+    maxY: offY + areaY / 2,
+  };
+}
+
+const openSetHomePopup = () => {
+  tabletClick();
+  const bounds = getWorkAreaBounds();
+  // Pre-fill with current machine position so jogging to a spot and opening
+  // the popup defaults to "set home here" (confirming without changes sets
+  // GCode origin at the current machine position)
+  const xInput = id("setHomeX");
+  const yInput = id("setHomeY");
+  if (xInput) {
+    xInput.value = MPOS ? MPOS[0].toFixed(3) : "0";
+    xInput.min = bounds.minX;
+    xInput.max = bounds.maxX;
+    xInput.title = `X: ${bounds.minX} to ${bounds.maxX} mm`;
+  }
+  if (yInput) {
+    yInput.value = MPOS ? MPOS[1].toFixed(3) : "0";
+    yInput.min = bounds.minY;
+    yInput.max = bounds.maxY;
+    yInput.title = `Y: ${bounds.minY} to ${bounds.maxY} mm`;
+  }
+  openModal("set-home-popup");
+}
+
+const confirmSetHome = () => {
+  const bounds = getWorkAreaBounds();
+
+  // Clamp entered values to work area boundary
+  const rawX = parseFloat(id("setHomeX").value);
+  const rawY = parseFloat(id("setHomeY").value);
+  const xVal = isNaN(rawX) ? 0 : Math.max(bounds.minX, Math.min(bounds.maxX, rawX));
+  const yVal = isNaN(rawY) ? 0 : Math.max(bounds.minY, Math.min(bounds.maxY, rawY));
+
+  if (xVal !== rawX || yVal !== rawY) {
+    addMessage(`Home position clamped to work area: X=${xVal} Y=${yVal}`);
+  }
+
+  hideModal("set-home-popup");
+
+  // xVal, yVal are the desired machine coordinates for the GCode origin (WPOS=0).
+  // G10 L20 P0 X{v} sets the current machine position as WPOS=v, so WCO = MPOS - v.
+  // To place origin at machine (xVal, yVal), we need WCO = (xVal, yVal),
+  // which means we set current WPOS = MPOS - xVal.
+  const mposX = MPOS ? MPOS[0] : 0;
+  const mposY = MPOS ? MPOS[1] : 0;
+  const cmd = `G10 L20 P0 X${mposX - xVal} Y${mposY - yVal}`;
+  sendCommand(cmd);
+  addMessage(`Home pos set: X=${xVal} Y=${yVal}`);
+  setXYHomeBtnText(xyHomeLabelRedefined);
+  setTimeout(setXYHomeBtnText, 1000);
+
+  // Refresh the canvas once firmware confirms the WCO change.
+  // The WCO callback in grbl.js fires synchronously inside grblProcessStatus,
+  // before MPOS/WPOS are recalculated with the new WCO.  Using setTimeout(fn,0)
+  // defers refreshGcode until after grblProcessStatus finishes, ensuring WPOS
+  // is already updated when the canvas redraws.
+  // A fallback timeout handles slow connections or cases where WCO value is
+  // unchanged (callback won't fire).
+  const originalCallback = onWCOUpdateCallback;
+  let fallbackId = setTimeout(() => {
+    onWCOUpdateCallback = originalCallback;
+    refreshGcode();
+  }, 3000);
+
+  onWCOUpdateCallback = (newWCO, prevWCO) => {
+    clearTimeout(fallbackId);
+    onWCOUpdateCallback = originalCallback;
+    setTimeout(refreshGcode, 0);
+  };
+}
+
 const toggleUnits = () => {
   tabletClick()
   sendCommand(gCodeModal.units === 'G21' ? 'G20' : 'G21');
@@ -992,9 +1076,13 @@ function tabletInit() {
     id("tablettab_set_z_home").addEventListener("mouseup", tabletSetZHomeMUp);
     id("tablettab_move_to_xy_home").addEventListener("click", moveHome);
     id("tablettab_toggle_units").addEventListener("click", toggleUnits);
-    id("tablettab_set_xy_home").addEventListener("mousedown", setHomeClickDown);
-    id("tablettab_set_xy_home").addEventListener("mouseup", setHomeClickUp);
-    id("tablettab_set_xy_home").addEventListener("dblclick", setXYHome);
+    id("tablettab_set_xy_home").addEventListener("click", openSetHomePopup);
+
+    // Buttons - Set Home Pop-up
+    id("set-home-popup").addEventListener("click", () => hideModal("set-home-popup"));
+    id("set_home_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_set_home_cancel").addEventListener("click", () => hideModal("set-home-popup"));
+    id("tablettab_set_home_confirm").addEventListener("click", confirmSetHome);
 
     // Controls - Fifth Row
     id("filelist").addEventListener("change", selectFile);

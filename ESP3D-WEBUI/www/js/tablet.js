@@ -201,17 +201,17 @@ const getWorkAreaBounds = () => {
 const openSetHomePopup = () => {
   tabletClick();
   const bounds = getWorkAreaBounds();
-  // Pre-fill with current work position and set input limits to work area bounds
+  // Pre-fill with the current machine position of the GCode origin (WCO values)
   const xInput = id("setHomeX");
   const yInput = id("setHomeY");
   if (xInput) {
-    xInput.value = getText("wpos-x") || "0";
+    xInput.value = WCO ? WCO[0].toFixed(3) : "0";
     xInput.min = bounds.minX;
     xInput.max = bounds.maxX;
     xInput.title = `X: ${bounds.minX} to ${bounds.maxX} mm`;
   }
   if (yInput) {
-    yInput.value = getText("wpos-y") || "0";
+    yInput.value = WCO ? WCO[1].toFixed(3) : "0";
     yInput.min = bounds.minY;
     yInput.max = bounds.maxY;
     yInput.title = `Y: ${bounds.minY} to ${bounds.maxY} mm`;
@@ -234,13 +234,21 @@ const confirmSetHome = () => {
   // Capture initial WCO values before setting
   const oldWCO = WCO ? [WCO[0], WCO[1]] : null;
 
-  const cmd = `G10 L20 P0 X${xVal} Y${yVal}`;
+  // xVal, yVal are the desired machine coordinates for the GCode origin (WPOS=0).
+  // G10 L20 P0 X{v} sets the current machine position as WPOS=v, so WCO = MPOS - v.
+  // To place origin at machine (xVal, yVal), we need WCO = (xVal, yVal),
+  // which means we set current WPOS = MPOS - xVal.
+  const mposX = MPOS ? MPOS[0] : 0;
+  const mposY = MPOS ? MPOS[1] : 0;
+  const cmd = `G10 L20 P0 X${mposX - xVal} Y${mposY - yVal}`;
   sendCommand(cmd);
   addMessage(`Home pos set: X=${xVal} Y=${yVal}`);
   setXYHomeBtnText(xyHomeLabelRedefined);
   setTimeout(setXYHomeBtnText, 1000);
 
-  // Set up one-time callback to refresh display when BOTH X and Y WCO values update
+  // Set up one-time callback to refresh display when WCO updates.
+  // Use setTimeout to defer refreshGcode so that MPOS/WPOS are recalculated
+  // after grblProcessStatus finishes updating them post-WCO change.
   const originalCallback = onWCOUpdateCallback;
   let timeoutId = null;
 
@@ -252,7 +260,7 @@ const confirmSetHome = () => {
         timeoutId = null;
       }
       onWCOUpdateCallback = originalCallback;
-      refreshGcode();
+      setTimeout(refreshGcode, 0);
     }
   };
 

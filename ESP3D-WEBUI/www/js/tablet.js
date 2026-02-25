@@ -663,7 +663,7 @@ function scaleUnits(target) {
 function tabletUpdateModal() {
   const newUnits = gCodeModal.units === "G21" ? "mm" : "Inch";
   const isInch = gCodeModal.units === "G20";
-  id("tablettab_toggle_units").style.backgroundColor = isInch ? "yellow" : "#f2f0e4";
+  id("tablettab_toggle_units").style.backgroundColor = isInch ? "#e6c800" : "#f2f0e4";
 
   if (getValue("tablettab_toggle_units") === newUnits) {
     return;

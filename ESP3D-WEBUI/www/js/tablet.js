@@ -184,19 +184,51 @@ const zeroAxis = (axis) => {
   addMessage(`Home pos set for: ${axis}`);
 }
 
+const getWorkAreaBounds = () => {
+  const lv = globalThis.loadedValues || {};
+  const areaX = parseFloat(lv.workAreaX) || 2440;
+  const areaY = parseFloat(lv.workAreaY) || 1220;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  return {
+    minX: offX - areaX / 2,
+    maxX: offX + areaX / 2,
+    minY: offY - areaY / 2,
+    maxY: offY + areaY / 2,
+  };
+}
+
 const openSetHomePopup = () => {
   tabletClick();
-  // Pre-fill with current work position
+  const bounds = getWorkAreaBounds();
+  // Pre-fill with current work position and set input limits to work area bounds
   const xInput = id("setHomeX");
   const yInput = id("setHomeY");
-  if (xInput) xInput.value = getText("wpos-x") || "0";
-  if (yInput) yInput.value = getText("wpos-y") || "0";
+  if (xInput) {
+    xInput.value = getText("wpos-x") || "0";
+    xInput.min = bounds.minX;
+    xInput.max = bounds.maxX;
+    xInput.title = `X: ${bounds.minX} to ${bounds.maxX} mm`;
+  }
+  if (yInput) {
+    yInput.value = getText("wpos-y") || "0";
+    yInput.min = bounds.minY;
+    yInput.max = bounds.maxY;
+    yInput.title = `Y: ${bounds.minY} to ${bounds.maxY} mm`;
+  }
   openModal("set-home-popup");
 }
 
 const confirmSetHome = () => {
   const xVal = parseFloat(id("setHomeX").value) || 0;
   const yVal = parseFloat(id("setHomeY").value) || 0;
+
+  const bounds = getWorkAreaBounds();
+  if (xVal < bounds.minX || xVal > bounds.maxX || yVal < bounds.minY || yVal > bounds.maxY) {
+    addMessage(`Home position out of work area bounds. X: [${bounds.minX}, ${bounds.maxX}], Y: [${bounds.minY}, ${bounds.maxY}]`);
+    return;
+  }
+
   hideModal("set-home-popup");
 
   // Capture initial WCO values before setting

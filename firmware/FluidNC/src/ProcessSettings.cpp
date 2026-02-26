@@ -892,8 +892,12 @@ static Error overwrite_config(const char* value, WebUI::AuthenticationLevel auth
     if (Maslow.using_default_config) {
         return Error::ConfigurationInvalid;
     }
-    // value will be ignored, we will use the config_filename value instead
-    return dump_config(config_filename->get(), auth_level, out);
+    // Writing to LittleFS can block the main loop for hundreds of milliseconds.
+    // Reset the update watchdog before and after to prevent a false emergency stop.
+    Maslow.resetUpdateWatchdog();
+    Error result = dump_config(config_filename->get(), auth_level, out);
+    Maslow.resetUpdateWatchdog();
+    return result;
 }
 
 static Error maslow_TLO(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
@@ -1184,9 +1188,13 @@ Error do_command_or_setting(const char* key, char* value, WebUI::AuthenticationL
                     return Error::ConfigurationInvalid;
                 }
 
+                // Traversing the full config tree for afterParse can take significant time.
+                // Reset the update watchdog before and after to prevent a false emergency stop.
+                Maslow.resetUpdateWatchdog();
                 Configuration::AfterParse afterParseHandler;
                 config->afterParse();
                 config->group(afterParseHandler);
+                Maslow.resetUpdateWatchdog();
             }
             return Error::Ok;
         }

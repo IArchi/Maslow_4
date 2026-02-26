@@ -109,6 +109,7 @@ public:
     void   stop();
     void   eStop(String message = "Emergency stop triggered.");
     void   panic();
+    void   resetUpdateWatchdog();
     String axis_id_to_label(int axis_id);
     void   safety_control();
     bool   axis_homed[4] = { false, false, false, false };

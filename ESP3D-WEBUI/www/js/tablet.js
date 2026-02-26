@@ -184,6 +184,16 @@ const zeroAxis = (axis) => {
   addMessage(`Home pos set for: ${axis}`);
 }
 
+const getUnitInfo = () => {
+  const isInchMode = gCodeModal.units === 'G20';
+  const mmPerInch = 25.4;
+  return {
+    unitLabel: isInchMode ? 'in' : 'mm',
+    decimals: isInchMode ? 4 : 3,
+    toDisplay: (mm) => isInchMode ? mm / mmPerInch : mm,
+  };
+}
+
 const getWorkAreaBounds = () => {
   const lv = globalThis.loadedValues || {};
   const areaX = parseFloat(lv.workAreaX) || 2440;
@@ -204,37 +214,51 @@ const openSetHomePopup = () => {
   // Pre-fill with current machine position so jogging to a spot and opening
   // the popup defaults to "set home here" (confirming without changes sets
   // GCode origin at the current machine position)
+  const { unitLabel, decimals, toDisplay } = getUnitInfo();
+  const dispMinX = toDisplay(bounds.minX);
+  const dispMaxX = toDisplay(bounds.maxX);
+  const dispMinY = toDisplay(bounds.minY);
+  const dispMaxY = toDisplay(bounds.maxY);
   const xInput = id("setHomeX");
   const yInput = id("setHomeY");
   if (xInput) {
-    xInput.value = MPOS ? MPOS[0].toFixed(3) : "0";
-    xInput.min = bounds.minX;
-    xInput.max = bounds.maxX;
-    xInput.title = `X: ${bounds.minX} to ${bounds.maxX} mm`;
+    xInput.value = MPOS ? toDisplay(MPOS[0]).toFixed(decimals) : "0";
+    xInput.min = dispMinX;
+    xInput.max = dispMaxX;
+    xInput.title = `X: ${dispMinX.toFixed(decimals)} to ${dispMaxX.toFixed(decimals)} ${unitLabel}`;
   }
   if (yInput) {
-    yInput.value = MPOS ? MPOS[1].toFixed(3) : "0";
-    yInput.min = bounds.minY;
-    yInput.max = bounds.maxY;
-    yInput.title = `Y: ${bounds.minY} to ${bounds.maxY} mm`;
+    yInput.value = MPOS ? toDisplay(MPOS[1]).toFixed(decimals) : "0";
+    yInput.min = dispMinY;
+    yInput.max = dispMaxY;
+    yInput.title = `Y: ${dispMinY.toFixed(decimals)} to ${dispMaxY.toFixed(decimals)} ${unitLabel}`;
   }
+  const xUnit = id("setHomeXUnit");
+  if (xUnit) xUnit.textContent = `(${unitLabel})`;
+  const yUnit = id("setHomeYUnit");
+  if (yUnit) yUnit.textContent = `(${unitLabel})`;
   const homeLabel = id("currentHomePositionLabel");
   if (homeLabel) {
-    const hx = (WCO && WCO.length >= 2) ? WCO[0].toFixed(1) : "0";
-    const hy = (WCO && WCO.length >= 2) ? WCO[1].toFixed(1) : "0";
-    homeLabel.textContent = `Current: (${hx}, ${hy})`;
+    const hx = (WCO && WCO.length >= 2) ? toDisplay(WCO[0]).toFixed(decimals) : "0";
+    const hy = (WCO && WCO.length >= 2) ? toDisplay(WCO[1]).toFixed(decimals) : "0";
+    homeLabel.textContent = `Current: (${hx}, ${hy}) ${unitLabel}`;
   }
   openModal("set-home-popup");
 }
 
 const confirmSetHome = () => {
   const bounds = getWorkAreaBounds();
+  const { toDisplay } = getUnitInfo();
 
-  // Clamp entered values to work area boundary
+  // Clamp entered values to work area boundary (values are in current display units)
   const rawX = parseFloat(id("setHomeX").value);
   const rawY = parseFloat(id("setHomeY").value);
-  const xVal = isNaN(rawX) ? 0 : Math.max(bounds.minX, Math.min(bounds.maxX, rawX));
-  const yVal = isNaN(rawY) ? 0 : Math.max(bounds.minY, Math.min(bounds.maxY, rawY));
+  const dispMinX = toDisplay(bounds.minX);
+  const dispMaxX = toDisplay(bounds.maxX);
+  const dispMinY = toDisplay(bounds.minY);
+  const dispMaxY = toDisplay(bounds.maxY);
+  const xVal = isNaN(rawX) ? 0 : Math.max(dispMinX, Math.min(dispMaxX, rawX));
+  const yVal = isNaN(rawY) ? 0 : Math.max(dispMinY, Math.min(dispMaxY, rawY));
 
   if (xVal !== rawX || yVal !== rawY) {
     addMessage(`Home position clamped to work area: X=${xVal} Y=${yVal}`);
@@ -246,8 +270,9 @@ const confirmSetHome = () => {
   // G10 L20 P0 X{v} sets the current machine position as WPOS=v, so WCO = MPOS - v.
   // To place origin at machine (xVal, yVal), we need WCO = (xVal, yVal),
   // which means we set current WPOS = MPOS - xVal.
-  const mposX = MPOS ? MPOS[0] : 0;
-  const mposY = MPOS ? MPOS[1] : 0;
+  // MPOS is always in mm; convert to current display units for the G10 command.
+  const mposX = toDisplay(MPOS ? MPOS[0] : 0);
+  const mposY = toDisplay(MPOS ? MPOS[1] : 0);
   const cmd = `G10 L20 P0 X${mposX - xVal} Y${mposY - yVal}`;
   sendCommand(cmd);
   addMessage(`Home pos set: X=${xVal} Y=${yVal}`);

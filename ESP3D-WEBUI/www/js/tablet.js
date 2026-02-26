@@ -827,10 +827,9 @@ function tabletGrblState(grbl, response) {
 
   // var modeText = `${gCodeModal.distance} ${gCodeModal.wcs} ${gCodeModal.units} T${gCodeModal.tool} F${gCodeModal.feedrate} S${gCodeModal.spindle}`;
 
-  if (grbl.lineNumber && ["Run", "Hold", "Stop"].includes(stateName)) {
-    //setText('line', grbl.lineNumber);
+  if (grbl.sdLineNumber && ["Run", "Hold"].includes(stateName)) {
     if (gCodeDisplayable) {
-      scrollToLine(grbl.lineNumber);
+      scrollToLine(grbl.sdLineNumber);
     }
   }
   // Always update tool position, even without GCode loaded
@@ -1199,7 +1198,7 @@ function scrollToLine(lineNumber) {
   const lineHeight = Number.parseFloat(getComputedStyle(gCodeLines).getPropertyValue('line-height'));
   const gCodeText = gCodeLines.value;
 
-  gCodeLines.scrollTop = lineNumber * lineHeight
+  gCodeLines.scrollTop = Math.max(0, (lineNumber - 1) * lineHeight - (gCodeLines.clientHeight / 2) + (lineHeight / 2))
 
   let start;
   let end;
@@ -1207,7 +1206,7 @@ function scrollToLine(lineNumber) {
     start = 0;
     end = 1;
   } else {
-    start = lineNumber === 1 ? 0 : nthLineEnd(gCodeText, lineNumber) + 1;
+    start = lineNumber <= 1 ? 0 : nthLineEnd(gCodeText, lineNumber - 1) + 1;
     end = gCodeText.indexOf("\n", start);
   }
 

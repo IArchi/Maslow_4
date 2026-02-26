@@ -283,6 +283,7 @@ function parseGrblStatus(response) {
     spindleSpeed: undefined,
     ovr: undefined,
     lineNumber: undefined,
+    sdLineNumber: undefined,
     flood: undefined,
     mist: undefined,
     pins: undefined,
@@ -366,6 +367,7 @@ function parseGrblStatus(response) {
         var sdinfo = value.split(',')
         grbl.sdPercent = parseFloat(sdinfo[0])
         grbl.sdName = sdinfo[1]
+        grbl.sdLineNumber = sdinfo[2] ? parseInt(sdinfo[2], 10) : undefined
         break
       case 'Pn':
         // pin status

@@ -1058,7 +1058,13 @@ void Maslow_::panic() {
     stopEverything();
 }
 
-//Emergecy Stop
+// Reset the update watchdog timer to prevent false emergency stops during
+// intentional blocking operations (e.g. writing config to LittleFS).
+void Maslow_::resetUpdateWatchdog() {
+    lastCallToUpdate = millis();
+}
+
+//Emergency Stop
 void Maslow_::eStop(String message) {
     log_error("Emergency stop! Stopping all motors");
     log_warn("The machine will not respond until turned off and back on again");

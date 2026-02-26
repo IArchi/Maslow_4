@@ -218,6 +218,12 @@ const openSetHomePopup = () => {
     yInput.max = bounds.maxY;
     yInput.title = `Y: ${bounds.minY} to ${bounds.maxY} mm`;
   }
+  const homeLabel = id("currentHomePositionLabel");
+  if (homeLabel) {
+    const hx = (WCO && WCO.length >= 2) ? WCO[0].toFixed(1) : "0";
+    const hy = (WCO && WCO.length >= 2) ? WCO[1].toFixed(1) : "0";
+    homeLabel.textContent = `Current: (${hx}, ${hy})`;
+  }
   openModal("set-home-popup");
 }
 

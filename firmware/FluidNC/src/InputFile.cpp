@@ -67,7 +67,7 @@ Channel* InputFile::pollLine(char* line) {
     switch (auto err = readLine(line, Channel::maxLine)) {
         case Error::Ok: {
             std::ostringstream s;
-            s << "SD:" << std::fixed << std::setprecision(2) << percent_complete() << "," << path().c_str() << "," << _line_num;
+            s << "SD:" << std::fixed << std::setprecision(2) << percent_complete() << "," << path().c_str() << "," << (_line_num - 1);
             _progress = s.str();
         }
             return &allChannels;

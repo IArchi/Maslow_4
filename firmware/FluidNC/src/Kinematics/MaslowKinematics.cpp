@@ -261,8 +261,11 @@ namespace Kinematics {
             // This can happen if belt lengths are inconsistent or zero
             cartesian[X_AXIS] = 0.0f;
             cartesian[Y_AXIS] = 0.0f;
-            // Don't spam the console when belts are at zero length - this is expected behavior
-            if (!(tlBeltLength == 0.0f || trBeltLength == 0.0f)) {
+            // Don't spam the console when belts are at zero length or during non-operational states
+            // (extending, retracting, or unknown) - this is expected behavior in those states
+            int calibState = Maslow.calibration.currentState;
+            if (!(tlBeltLength == 0.0f || trBeltLength == 0.0f) &&
+                calibState != EXTENDING && calibState != RETRACTING && calibState != UNKNOWN) {
                 log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
             }
         }

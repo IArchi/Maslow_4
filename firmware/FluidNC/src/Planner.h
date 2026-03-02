@@ -37,7 +37,8 @@ struct plan_block_t {
     PlMotion     motion;       // Block bitflag motion conditions. Copied from pl_line_data.
     SpindleState spindle;      // Spindle enable state
     CoolantState coolant;      // Coolant state
-    int32_t      line_number;  // Block line number for real-time reporting. Copied from pl_line_data.
+    int32_t      line_number;       // Block line number for real-time reporting. Copied from pl_line_data.
+    int32_t      file_line_number;  // SD file line number for accurate progress highlighting.
 
     // Fields used by the motion planner to manage acceleration. Some of these values may be updated
     // by the stepper module during execution of special motion cases for replanning purposes.
@@ -67,6 +68,7 @@ struct plan_line_data_t {
     SpindleState spindle;        // Spindle enable state
     CoolantState coolant;        // Coolant state
     int32_t      line_number;    // Desired line number to report when executing.
+    int32_t      file_line_number;  // SD file line number for accurate progress highlighting.
     bool         is_jog;         // true if this was generated due to a jog command
 };
 

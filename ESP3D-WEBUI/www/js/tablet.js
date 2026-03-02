@@ -1152,6 +1152,12 @@ function tabletInit() {
     id("configuration_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_config_save").addEventListener("click", saveConfigValues);
 
+    // Sync line numbers scroll with GCode textarea
+    id("tablettab_gcode").addEventListener("scroll", function() {
+      const lineNumEl = id("tablettab_gcode_linenum");
+      if (lineNumEl) lineNumEl.scrollTop = this.scrollTop;
+    });
+
   }, 1000);
 }
 
@@ -1173,8 +1179,24 @@ const showGCode = (gcode, append = false, updateToolpath = true) => {
     }
   }
 
+  updateLineNumbers();
+
   // TODO: this needs to take into account error states
   setRunControls();
+}
+
+function updateLineNumbers() {
+  const lineNumEl = id("tablettab_gcode_linenum");
+  if (!lineNumEl) return;
+  const gCodeEl = id("tablettab_gcode");
+  const text = gCodeEl ? gCodeEl.value : "";
+  const count = text ? text.split("\n").length : 0;
+  const prev = lineNumEl.dataset.lineCount ? parseInt(lineNumEl.dataset.lineCount, 10) : -1;
+  if (count !== prev) {
+    lineNumEl.textContent = count > 0 ? Array.from({length: count}, (_, i) => i + 1).join("\n") : "";
+    lineNumEl.dataset.lineCount = count;
+  }
+  lineNumEl.scrollTop = gCodeEl ? gCodeEl.scrollTop : 0;
 }
 
 function nthLineEnd(str, n) {

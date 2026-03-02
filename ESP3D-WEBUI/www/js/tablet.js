@@ -1158,6 +1158,9 @@ function tabletInit() {
       if (lineNumEl) lineNumEl.scrollTop = this.scrollTop;
     });
 
+    // Re-sync line number styles when viewport size changes (responsive font-size breakpoints)
+    window.addEventListener("resize", updateLineNumbers);
+
   }, 1000);
 }
 
@@ -1189,6 +1192,17 @@ function updateLineNumbers() {
   const lineNumEl = id("tablettab_gcode_linenum");
   if (!lineNumEl) return;
   const gCodeEl = id("tablettab_gcode");
+
+  // Sync exact font metrics from textarea so line heights align for scrollTop sync
+  if (gCodeEl) {
+    const cs = getComputedStyle(gCodeEl);
+    lineNumEl.style.fontFamily = cs.fontFamily;
+    lineNumEl.style.fontSize = cs.fontSize;
+    lineNumEl.style.lineHeight = cs.lineHeight;
+    lineNumEl.style.paddingTop = cs.paddingTop;
+    lineNumEl.style.paddingBottom = cs.paddingBottom;
+  }
+
   const text = gCodeEl ? gCodeEl.value : "";
   const count = text ? text.split("\n").length : 0;
   const prev = lineNumEl.dataset.lineCount ? parseInt(lineNumEl.dataset.lineCount, 10) : -1;

@@ -884,6 +884,10 @@ static Error maslow_start_calibration(const char* value, WebUI::AuthenticationLe
         return Error::ConfigurationInvalid;
     }
     sys.set_state(State::Homing);
+    // requestStateChange(CALIBRATION_IN_PROGRESS) performs significant initialization work
+    // (memory allocation, grid generation, position computation). Reset the update watchdog
+    // before calling it to prevent a false emergency stop.
+    Maslow.resetUpdateWatchdog();
     Maslow.calibration.requestStateChange(CALIBRATION_IN_PROGRESS);
     return Error::Ok;
 }
@@ -1179,6 +1183,9 @@ Error do_command_or_setting(const char* key, char* value, WebUI::AuthenticationL
         if (rts.isHandled_) {
             if (value) {
                 // Validate only if something changed, not for display
+                // Traversing the full config tree for validation can take significant time.
+                // Reset the update watchdog before validation to prevent a false emergency stop.
+                Maslow.resetUpdateWatchdog();
                 try {
                     Configuration::Validator validator;
                     config->validate();
@@ -1190,6 +1197,7 @@ Error do_command_or_setting(const char* key, char* value, WebUI::AuthenticationL
 
                 // Traversing the full config tree for afterParse can take significant time.
                 // Reset the update watchdog before and after to prevent a false emergency stop.
+                // This also serves as the post-validation watchdog reset.
                 Maslow.resetUpdateWatchdog();
                 Configuration::AfterParse afterParseHandler;
                 config->afterParse();

@@ -6,6 +6,7 @@ const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded befo
 
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
+var _gcodeRaw = "";
 
 var snd = null;
 var sndok = true;
@@ -1152,65 +1153,41 @@ function tabletInit() {
     id("configuration_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_config_save").addEventListener("click", saveConfigValues);
 
-    // Sync line numbers scroll with GCode textarea
-    id("tablettab_gcode").addEventListener("scroll", function() {
-      const lineNumEl = id("tablettab_gcode_linenum");
-      if (lineNumEl) lineNumEl.scrollTop = this.scrollTop;
-    });
-
-    // Re-sync line number styles when viewport size changes (responsive font-size breakpoints)
-    window.addEventListener("resize", updateLineNumbers);
-
   }, 1000);
 }
 
 const showGCode = (gcode, append = false, updateToolpath = true) => {
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
+    _gcodeRaw = "";
     setValue("tablettab_gcode", "(No GCode loaded)");
     tpDisplayer().clear();
   } else {
+    let startLine;
     if (append) {
-      const currentContent = getValue("tablettab_gcode") || "";
-      setValue("tablettab_gcode", currentContent + gcode);
+      startLine = (_gcodeRaw.match(/\n/g) || []).length + 1;
+      _gcodeRaw += gcode;
     } else {
-      setValue("tablettab_gcode", gcode);
+      startLine = 1;
+      _gcodeRaw = gcode;
+    }
+    const lines = gcode.split("\n");
+    const endsWithNewline = lines.length > 0 && lines[lines.length - 1] === "";
+    if (endsWithNewline) lines.pop();
+    const numbered = lines.map((line, i) => `(${startLine + i}) ${line}`).join("\n") + (endsWithNewline ? "\n" : "");
+    if (append) {
+      setValue("tablettab_gcode", (getValue("tablettab_gcode") || "") + numbered);
+    } else {
+      setValue("tablettab_gcode", numbered);
     }
     if (gCodeDisplayable && updateToolpath) {
-      tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(_gcodeRaw, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
   }
 
-  updateLineNumbers();
-
   // TODO: this needs to take into account error states
   setRunControls();
-}
-
-function updateLineNumbers() {
-  const lineNumEl = id("tablettab_gcode_linenum");
-  if (!lineNumEl) return;
-  const gCodeEl = id("tablettab_gcode");
-
-  // Sync exact font metrics from textarea so line heights align for scrollTop sync
-  if (gCodeEl) {
-    const cs = getComputedStyle(gCodeEl);
-    lineNumEl.style.fontFamily = cs.fontFamily;
-    lineNumEl.style.fontSize = cs.fontSize;
-    lineNumEl.style.lineHeight = cs.lineHeight;
-    lineNumEl.style.paddingTop = cs.paddingTop;
-    lineNumEl.style.paddingBottom = cs.paddingBottom;
-  }
-
-  const text = gCodeEl ? gCodeEl.value : "";
-  const count = text ? text.split("\n").length : 0;
-  const prev = lineNumEl.dataset.lineCount ? parseInt(lineNumEl.dataset.lineCount, 10) : -1;
-  if (count !== prev) {
-    lineNumEl.textContent = count > 0 ? Array.from({length: count}, (_, i) => i + 1).join("\n") : "";
-    lineNumEl.dataset.lineCount = count;
-  }
-  lineNumEl.scrollTop = gCodeEl ? gCodeEl.scrollTop : 0;
 }
 
 function nthLineEnd(str, n) {
@@ -1368,8 +1345,7 @@ async function tabletLoadGCodeFileSequentially(path) {
     
     // Final toolpath update to ensure everything is displayed
     if (gCodeDisplayable) {
-      const finalContent = getValue("tablettab_gcode");
-      tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(_gcodeRaw, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
 

@@ -111,31 +111,8 @@ border: 1px solid black;
 margin: 10px 0px;
 }
 
-.gcode-wrapper {
-  display: flex;
-  overflow: hidden;
+.gcode {
   margin-top: 2px;
-}
-
-.gcode-linenum {
-  background: #f0f0f0;
-  color: #555;
-  text-align: right;
-  padding: 0 6px;
-  margin: 0;
-  border: none;
-  border-right: 1px solid #ccc;
-  border-radius: 5px 0 0 5px;
-  overflow: hidden;
-  user-select: none;
-  white-space: pre;
-  min-width: 2.5em;
-}
-
-.gcode-wrapper textarea {
-  border-radius: 0 5px 5px 0;
-  margin-top: 0;
-  flex: 1;
 }
 
 .tablettab-canvas-wrapper {

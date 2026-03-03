@@ -111,6 +111,9 @@ border: 1px solid black;
 margin: 10px 0px;
 }
 
+.gcode {
+  margin-top: 2px;
+}
 
 .tablettab-canvas-wrapper {
 display: grid;

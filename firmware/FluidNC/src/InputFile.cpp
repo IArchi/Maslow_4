@@ -53,7 +53,8 @@ void InputFile::ack(Error status) {
     _readyNext = true;
 }
 
-std::string InputFile::_progress = "";
+std::string InputFile::_progress      = "";
+int32_t     InputFile::_current_line_num = 0;
 
 #include <sstream>
 #include <iomanip>
@@ -66,19 +67,22 @@ Channel* InputFile::pollLine(char* line) {
     }
     switch (auto err = readLine(line, Channel::maxLine)) {
         case Error::Ok: {
+            _current_line_num = _line_num;
             std::ostringstream s;
             s << "SD:" << std::fixed << std::setprecision(2) << percent_complete() << "," << path().c_str();
             _progress = s.str();
         }
             return &allChannels;
         case Error::Eof:
-            _progress = "";
+            _progress         = "";
+            _current_line_num = 0;
             _notifyf("File job done", "%s file job succeeded", path());
             log_msg(path() << " file job succeeded");
             allChannels.kill(this);
             return nullptr;
         default:
-            _progress = "";
+            _progress         = "";
+            _current_line_num = 0;
             log_error(static_cast<int>(err) << " (" << errorString(err) << ") in " << path() << " at line " << getLineNumber());
             allChannels.kill(this);
             return nullptr;
@@ -117,5 +121,6 @@ const char* InputFile::getMotionCommandString() {
 }
 
 InputFile::~InputFile() {
-    _progress = "";
+    _progress         = "";
+    _current_line_num = 0;
 }

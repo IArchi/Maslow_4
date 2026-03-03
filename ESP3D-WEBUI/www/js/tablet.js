@@ -6,6 +6,7 @@ const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded befo
 
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
+var _gcodeRaw = "";
 
 var snd = null;
 var sndok = true;
@@ -827,10 +828,9 @@ function tabletGrblState(grbl, response) {
 
   // var modeText = `${gCodeModal.distance} ${gCodeModal.wcs} ${gCodeModal.units} T${gCodeModal.tool} F${gCodeModal.feedrate} S${gCodeModal.spindle}`;
 
-  if (grbl.lineNumber && ["Run", "Hold", "Stop"].includes(stateName)) {
-    //setText('line', grbl.lineNumber);
+  if (grbl.sdLineNumber && ["Run", "Hold"].includes(stateName)) {
     if (gCodeDisplayable) {
-      scrollToLine(grbl.lineNumber);
+      scrollToLine(grbl.sdLineNumber);
     }
   }
   // Always update tool position, even without GCode loaded
@@ -1159,17 +1159,29 @@ function tabletInit() {
 const showGCode = (gcode, append = false, updateToolpath = true) => {
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
+    _gcodeRaw = "";
     setValue("tablettab_gcode", "(No GCode loaded)");
     tpDisplayer().clear();
   } else {
+    let startLine;
     if (append) {
-      const currentContent = getValue("tablettab_gcode") || "";
-      setValue("tablettab_gcode", currentContent + gcode);
+      startLine = (_gcodeRaw.match(/\n/g) || []).length + 1;
+      _gcodeRaw += gcode;
     } else {
-      setValue("tablettab_gcode", gcode);
+      startLine = 1;
+      _gcodeRaw = gcode;
+    }
+    const lines = gcode.split("\n");
+    const endsWithNewline = lines.length > 0 && lines[lines.length - 1] === "";
+    if (endsWithNewline) lines.pop();
+    const numbered = lines.map((line, i) => `(${startLine + i}) ${line}`).join("\n") + (endsWithNewline ? "\n" : "");
+    if (append) {
+      setValue("tablettab_gcode", (getValue("tablettab_gcode") || "") + numbered);
+    } else {
+      setValue("tablettab_gcode", numbered);
     }
     if (gCodeDisplayable && updateToolpath) {
-      tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(_gcodeRaw, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
   }
@@ -1199,7 +1211,7 @@ function scrollToLine(lineNumber) {
   const lineHeight = Number.parseFloat(getComputedStyle(gCodeLines).getPropertyValue('line-height'));
   const gCodeText = gCodeLines.value;
 
-  gCodeLines.scrollTop = lineNumber * lineHeight
+  gCodeLines.scrollTop = Math.max(0, (lineNumber - 1) * lineHeight - (gCodeLines.clientHeight / 2) + (lineHeight / 2))
 
   let start;
   let end;
@@ -1207,7 +1219,7 @@ function scrollToLine(lineNumber) {
     start = 0;
     end = 1;
   } else {
-    start = lineNumber === 1 ? 0 : nthLineEnd(gCodeText, lineNumber) + 1;
+    start = lineNumber <= 1 ? 0 : nthLineEnd(gCodeText, lineNumber - 1) + 1;
     end = gCodeText.indexOf("\n", start);
   }
 
@@ -1333,8 +1345,7 @@ async function tabletLoadGCodeFileSequentially(path) {
     
     // Final toolpath update to ensure everything is displayed
     if (gCodeDisplayable) {
-      const finalContent = getValue("tablettab_gcode");
-      tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(_gcodeRaw, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
 

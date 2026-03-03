@@ -14,6 +14,7 @@
 #include "MotionControl.h"        // mc_override_ctrl_update
 #include "Machine/UserOutputs.h"  // setAnalogPercent
 #include "Platform.h"             // WEAK_LINK
+#include "InputFile.h"            // InputFile::_current_line_num
 
 #include "Machine/MachineConfig.h"
 
@@ -1396,8 +1397,9 @@ Error gc_execute_line(char* line) {
     }
     // [0. Non-specific/common error-checks and miscellaneous setup]:
     // NOTE: If no line number is present, the value is zero.
-    gc_state.line_number = gc_block.values.n;
-    pl_data->line_number = gc_state.line_number;  // Record data for planner use.
+    gc_state.line_number      = gc_block.values.n;
+    pl_data->line_number      = gc_state.line_number;  // Record data for planner use.
+    pl_data->file_line_number = InputFile::_current_line_num;  // SD file line for accurate progress highlighting.
 
     // [1. Comments feedback ]:  NOT SUPPORTED
     // [2. Set feed rate mode ]:

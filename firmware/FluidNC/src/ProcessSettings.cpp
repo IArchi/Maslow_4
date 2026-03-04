@@ -841,8 +841,10 @@ static Error maslow_stop(const char* value, WebUI::AuthenticationLevel auth_leve
     if (Maslow.using_default_config) {
         return Error::ConfigurationInvalid;
     }
+    Maslow.stopMotors();  // Stop XY belt motors immediately
+    Maslow.raiseZ();      // Raise Z to Z home + 2mm to prevent workpiece damage
     sys.set_state(State::Alarm);
-    Maslow.stop();
+    Maslow.stop();  // Complete cleanup (calibration state, arm reset, etc.)
     return Error::Ok;
 }
 static Error maslow_telemetry_dump(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {

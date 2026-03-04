@@ -105,6 +105,8 @@ public:
     void markBeltPositionsStale();
 
     void stopMotors();
+    /** Raises Z axis to Z home + 2mm to prevent workpiece damage after stop */
+    void raiseZ();
 
     void   stop();
     void   eStop(String message = "Emergency stop triggered.");

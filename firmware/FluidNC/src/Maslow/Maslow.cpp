@@ -1046,6 +1046,41 @@ void Maslow_::stopMotors() {
     axis[_TL].stop();
 }
 
+// Safe Z height in mm above Z home to raise to after stop (prevents workpiece damage)
+static constexpr float Z_SAFE_HEIGHT_MM = 2.0f;
+
+// Raises Z axis to Z home + Z_SAFE_HEIGHT_MM to prevent workpiece damage after stop
+void Maslow_::raiseZ() {
+    float* mpos     = get_mpos();
+    float  currentZ = mpos[Z_AXIS];
+    if (currentZ >= Z_SAFE_HEIGHT_MM) {
+        return;  // Z is already at or above Z home + Z_SAFE_HEIGHT_MM
+    }
+    log_info("Raising Z from " << currentZ << "mm to " << Z_SAFE_HEIGHT_MM << "mm (Z home + " << Z_SAFE_HEIGHT_MM << "mm)");
+
+    // Stop any running job to prevent new cutting moves from being queued
+    allChannels.stopJob();
+
+    // Clear remaining planner moves and sync positions with current machine state
+    plan_reset_buffer();
+    gc_sync_position();
+    plan_sync_position();
+
+    // Set state to Idle to allow stepper motion execution for the Z raise.
+    // This briefly allows new cycles to start; Alarm state is restored by the caller.
+    sys.set_state(State::Idle);
+
+    // Command Z to raise to Z_SAFE_HEIGHT_MM using absolute coordinates
+    char zRaise[20];
+    snprintf(zRaise, sizeof(zRaise), "G90 G0 Z%.1f", Z_SAFE_HEIGHT_MM);
+    Error result = gc_execute_line(zRaise);
+    if (result == Error::Ok) {
+        protocol_buffer_synchronize();  // Wait for Z to reach target
+    } else {
+        log_error("Failed to raise Z: " << errorString(result));
+    }
+}
+
 static void stopEverything() {
     sys.set_state(State::Alarm);
     protocol_disable_steppers();

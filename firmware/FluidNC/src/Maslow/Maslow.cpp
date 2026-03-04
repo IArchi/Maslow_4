@@ -7,6 +7,7 @@
 #include "../WebUI/WifiConfig.h"
 #include "../Protocol.h"
 #include "../System.h"
+#include "../Stepper.h"
 #include "../FileStream.h"
 #include "../Kinematics/MaslowKinematics.h"
 #include "../GCode.h"
@@ -1051,18 +1052,22 @@ static constexpr float Z_SAFE_HEIGHT_MM = 2.0f;
 
 // Raises Z axis to Z home + Z_SAFE_HEIGHT_MM to prevent workpiece damage after stop
 void Maslow_::raiseZ() {
-    float* mpos     = get_mpos();
-    float  currentZ = mpos[Z_AXIS];
-    if (currentZ >= Z_SAFE_HEIGHT_MM) {
-        return;  // Z is already at or above Z home + Z_SAFE_HEIGHT_MM
+    float* mpos  = get_mpos();
+    float* wco   = get_wco();
+    float  workZ = mpos[Z_AXIS] - wco[Z_AXIS];  // Work Z = machine Z minus WCO
+    if (workZ >= Z_SAFE_HEIGHT_MM) {
+        return;  // Z is already at or above safe height in work coordinates
     }
-    log_info("Raising Z from " << currentZ << "mm to " << Z_SAFE_HEIGHT_MM << "mm (Z home + " << Z_SAFE_HEIGHT_MM << "mm)");
+    log_info("Raising Z from work Z " << workZ << "mm to " << Z_SAFE_HEIGHT_MM << "mm (Z home + " << Z_SAFE_HEIGHT_MM << "mm)");
 
     // Stop any running job to prevent new cutting moves from being queued
     allChannels.stopJob();
 
-    // Clear remaining planner moves and sync positions with current machine state
-    plan_reset_buffer();
+    // Stop the stepper and reset the planner, then sync positions with current state.
+    // This matches the jog-cancel sequence and ensures no stale segments are executed.
+    sys.step_control = {};
+    plan_reset();
+    Stepper::reset();
     gc_sync_position();
     plan_sync_position();
 
@@ -1070,7 +1075,7 @@ void Maslow_::raiseZ() {
     // This briefly allows new cycles to start; Alarm state is restored by the caller.
     sys.set_state(State::Idle);
 
-    // Command Z to raise to Z_SAFE_HEIGHT_MM using absolute coordinates
+    // Command Z to raise to Z_SAFE_HEIGHT_MM in work coordinates
     char zRaise[20];
     snprintf(zRaise, sizeof(zRaise), "G90 G0 Z%.1f", Z_SAFE_HEIGHT_MM);
     Error result = gc_execute_line(zRaise);

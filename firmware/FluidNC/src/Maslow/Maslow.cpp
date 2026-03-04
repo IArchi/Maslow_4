@@ -1072,7 +1072,6 @@ void Maslow_::raiseZ() {
     plan_sync_position();
 
     // Set state to Idle to allow stepper motion execution for the Z raise.
-    // This briefly allows new cycles to start; Alarm state is restored by the caller.
     sys.set_state(State::Idle);
 
     // Command Z to raise to Z_SAFE_HEIGHT_MM in work coordinates

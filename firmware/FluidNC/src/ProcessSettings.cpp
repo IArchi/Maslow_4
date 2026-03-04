@@ -843,7 +843,7 @@ static Error maslow_stop(const char* value, WebUI::AuthenticationLevel auth_leve
     }
     Maslow.stopMotors();  // Stop XY belt motors immediately
     Maslow.raiseZ();      // Raise Z to Z home + 2mm to prevent workpiece damage
-    sys.set_state(State::Alarm);
+    sys.set_state(State::Idle);
     Maslow.stop();  // Complete cleanup (calibration state, arm reset, etc.)
     return Error::Ok;
 }

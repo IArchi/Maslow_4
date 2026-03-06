@@ -1059,6 +1059,19 @@ void Maslow_::raiseZ() {
     sys.step_control = {};
     plan_reset();
     Stepper::reset();
+
+    // Sync belt motor step positions to actual encoder positions.
+    // Maslow.update() uses get_axis_motor_steps() as belt PID targets.  If the
+    // commanded step position is ahead of the encoder position when stop is pressed
+    // (i.e. the PID had not finished tracking the last move), the PID would continue
+    // driving the belt motors after the stop to close that error — effectively
+    // completing one last motion segment.  Updating _steps to the encoder-derived
+    // position ensures the PID target equals the current physical position so the
+    // error is immediately zero and no further belt motion occurs.
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        set_motor_steps(arm, mpos_to_steps((float)axis[arm].getPosition(), arm));
+    }
+
     gc_sync_position();
     plan_sync_position();
 

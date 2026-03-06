@@ -1061,6 +1061,13 @@ void Maslow_::raiseZ() {
     Stepper::reset();
     gc_sync_position();
     plan_sync_position();
+
+    // Clear any pending suspend bits (e.g. holdComplete from a prior feed hold) before
+    // transitioning to Idle.  If left set, protocol_exec_rt_suspend() would loop indefinitely
+    // after maslow_stop() returns, preventing any further commands from being processed.
+    auto suspend  = sys.suspend();
+    suspend.value = 0;
+    sys.set_suspend(suspend);
     sys.set_state(State::Idle);
 
     float* mpos  = get_mpos();

@@ -1070,6 +1070,9 @@ void Maslow_::raiseZ() {
     // error is immediately zero and no further belt motion occurs.
     for (int arm = _TL; arm < ARM_COUNT; arm++) {
         set_motor_steps(arm, mpos_to_steps((float)axis[arm].getPosition(), arm));
+        // Also reset the PID integral accumulator.  Even with target == position (zero
+        // P-error), the I-term built up during cutting would still drive the motors.
+        axis[arm].resetPID();
     }
 
     gc_sync_position();

@@ -1052,6 +1052,17 @@ static constexpr float Z_SAFE_HEIGHT_MM = 2.0f;
 
 // Raises Z axis to Z home + Z_SAFE_HEIGHT_MM to prevent workpiece damage after stop
 void Maslow_::raiseZ() {
+    // Always stop streaming and clear the planner/stepper immediately, regardless of Z height.
+    // If we only stop the job without clearing, any moves already in the planner buffer
+    // will resume executing after maslow_stop() returns, causing the machine to keep moving.
+    allChannels.stopJob();
+    sys.step_control = {};
+    plan_reset();
+    Stepper::reset();
+    gc_sync_position();
+    plan_sync_position();
+    sys.set_state(State::Idle);
+
     float* mpos  = get_mpos();
     float* wco   = get_wco();
     float  workZ = mpos[Z_AXIS] - wco[Z_AXIS];  // Work Z = machine Z minus WCO
@@ -1059,20 +1070,6 @@ void Maslow_::raiseZ() {
         return;  // Z is already at or above safe height in work coordinates
     }
     log_info("Raising Z from work Z " << workZ << "mm to " << Z_SAFE_HEIGHT_MM << "mm (Z home + " << Z_SAFE_HEIGHT_MM << "mm)");
-
-    // Stop any running job to prevent new cutting moves from being queued
-    allChannels.stopJob();
-
-    // Stop the stepper and reset the planner, then sync positions with current state.
-    // This matches the jog-cancel sequence and ensures no stale segments are executed.
-    sys.step_control = {};
-    plan_reset();
-    Stepper::reset();
-    gc_sync_position();
-    plan_sync_position();
-
-    // Set state to Idle to allow stepper motion execution for the Z raise.
-    sys.set_state(State::Idle);
 
     // Command Z to raise to Z_SAFE_HEIGHT_MM in work coordinates
     char zRaise[20];

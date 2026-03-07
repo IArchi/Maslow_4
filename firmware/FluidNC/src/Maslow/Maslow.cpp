@@ -7,6 +7,7 @@
 #include "../WebUI/WifiConfig.h"
 #include "../Protocol.h"
 #include "../System.h"
+#include "../Stepper.h"
 #include "../FileStream.h"
 #include "../Kinematics/MaslowKinematics.h"
 #include "../GCode.h"
@@ -1044,6 +1045,64 @@ void Maslow_::stopMotors() {
     axis[_BR].stop();
     axis[_TR].stop();
     axis[_TL].stop();
+}
+
+// Safe Z height in mm above Z home to raise to after stop (prevents workpiece damage)
+static constexpr float Z_SAFE_HEIGHT_MM = 2.0f;
+
+// Raises Z axis to Z home + Z_SAFE_HEIGHT_MM to prevent workpiece damage after stop
+void Maslow_::raiseZ() {
+    // Always stop streaming and clear the planner/stepper immediately, regardless of Z height.
+    // If we only stop the job without clearing, any moves already in the planner buffer
+    // will resume executing after maslow_stop() returns, causing the machine to keep moving.
+    allChannels.stopJob();
+    sys.step_control = {};
+    plan_reset();
+    Stepper::reset();
+
+    // Sync belt motor step positions to actual encoder positions.
+    // Maslow.update() uses get_axis_motor_steps() as belt PID targets.  If the
+    // commanded step position is ahead of the encoder position when stop is pressed
+    // (i.e. the PID had not finished tracking the last move), the PID would continue
+    // driving the belt motors after the stop to close that error — effectively
+    // completing one last motion segment.  Updating _steps to the encoder-derived
+    // position ensures the PID target equals the current physical position so the
+    // error is immediately zero and no further belt motion occurs.
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        set_motor_steps(arm, mpos_to_steps((float)axis[arm].getPosition(), arm));
+        // Also reset the PID integral accumulator.  Even with target == position (zero
+        // P-error), the I-term built up during cutting would still drive the motors.
+        axis[arm].resetPID();
+    }
+
+    gc_sync_position();
+    plan_sync_position();
+
+    // Clear any pending suspend bits (e.g. holdComplete from a prior feed hold) before
+    // transitioning to Idle.  If left set, protocol_exec_rt_suspend() would loop indefinitely
+    // after maslow_stop() returns, preventing any further commands from being processed.
+    auto suspend  = sys.suspend();
+    suspend.value = 0;
+    sys.set_suspend(suspend);
+    sys.set_state(State::Idle);
+
+    float* mpos  = get_mpos();
+    float* wco   = get_wco();
+    float  workZ = mpos[Z_AXIS] - wco[Z_AXIS];  // Work Z = machine Z minus WCO
+    if (workZ >= Z_SAFE_HEIGHT_MM) {
+        return;  // Z is already at or above safe height in work coordinates
+    }
+    log_info("Raising Z from work Z " << workZ << "mm to " << Z_SAFE_HEIGHT_MM << "mm (Z home + " << Z_SAFE_HEIGHT_MM << "mm)");
+
+    // Command Z to raise to Z_SAFE_HEIGHT_MM in work coordinates
+    char zRaise[20];
+    snprintf(zRaise, sizeof(zRaise), "G90 G0 Z%.1f", Z_SAFE_HEIGHT_MM);
+    Error result = gc_execute_line(zRaise);
+    if (result == Error::Ok) {
+        protocol_buffer_synchronize();  // Wait for Z to reach target
+    } else {
+        log_error("Failed to raise Z: " << errorString(result));
+    }
 }
 
 static void stopEverything() {

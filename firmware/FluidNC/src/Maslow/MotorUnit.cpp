@@ -360,6 +360,12 @@ void MotorUnit::reset() {
     beltSpeedTimer           = millis();
 }
 
+// Resets PID state to clear any accumulated integral term.
+// Call this after a hard stop to prevent residual I-term motion.
+void MotorUnit::resetPID() {
+    positionPID.reset();
+}
+
 //sets the encoder position to 0
 void MotorUnit::zero() {
     Maslow.I2CMux.setPort(_encoderAddress);

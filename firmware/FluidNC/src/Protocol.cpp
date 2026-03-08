@@ -65,6 +65,7 @@ static std::atomic<bool> feedHoldPending { false };
 
 static void protocol_exec_rt_suspend();
 static void protocol_do_initiate_cycle();  // Forward declaration for auto cycle start handler
+static void protocol_do_feedhold();        // Forward declaration for double-check guard in auto cycle start
 
 static char line[LINE_BUFFER_SIZE];     // Line to be executed. Zero-terminated.
 static char comment[LINE_BUFFER_SIZE];  // Line to be executed. Zero-terminated.
@@ -390,9 +391,22 @@ void protocol_buffer_synchronize() {
 // there is no pending feedHold request.  Unlike protocol_do_cycle_start(), this
 // does NOT resume from Hold state, which prevents an auto-queued start from
 // overriding a user-requested feedHold regardless of event-queue ordering.
+//
+// After calling protocol_do_initiate_cycle() a second feedHoldPending check
+// closes the narrow TOCTOU window on dual-core ESP32-S3 where a feedHold can
+// arrive between the first check and Stepper::wake_up().  If the flag is set at
+// that point, protocol_do_feedhold() is called immediately so that the very next
+// Maslow.update() call (in the same protocol_exec_rt_system() invocation) already
+// sees state==Hold and drives the motors to hold position rather than forward.
 static void protocol_do_auto_cycle_start() {
     if (!feedHoldPending.load(std::memory_order_acquire) && sys.state() == State::Idle) {
         protocol_do_initiate_cycle();
+        // Double-check: if a feedHold arrived concurrently during cycle initiation
+        // (the TOCTOU window), apply the hold now rather than waiting for the next
+        // event-queue drain so Maslow.update() sees Hold state in this same call.
+        if (feedHoldPending.load(std::memory_order_acquire)) {
+            protocol_do_feedhold();
+        }
     }
 }
 
@@ -530,7 +544,6 @@ static void protocol_do_motion_cancel() {
 
 static void protocol_do_feedhold() {
     feedHoldPending.store(false, std::memory_order_release);  // Clear the pending flag now that we are processing the hold
-    Serial.println("protocol do feedhold");
     if (runLimitLoop) {
         runLimitLoop = false;  // Hack to stop show_limits()
         return;

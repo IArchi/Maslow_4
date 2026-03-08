@@ -325,9 +325,9 @@ void     protocol_main_loop() {
             activeChannel = nullptr;
         }
 
+        protocol_execute_realtime();  // Runtime command check point.
         // Auto-cycle start any queued moves.
         protocol_auto_cycle_start();
-        protocol_execute_realtime();  // Runtime command check point.
         sys.process_changes();
 
         if (sys.abort()) {
@@ -367,9 +367,9 @@ void     protocol_main_loop() {
 // during a synchronize call, if it should happen. Also, waits for clean cycle end.
 void protocol_buffer_synchronize() {
     do {
+        protocol_execute_realtime();  // Check and execute run-time commands
         // Restart motion if there are blocks in the planner queue
         protocol_auto_cycle_start();
-        protocol_execute_realtime();  // Check and execute run-time commands
         if (sys.abort()) {
             return;  // Check for system abort
         }

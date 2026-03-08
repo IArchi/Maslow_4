@@ -55,6 +55,7 @@ static volatile bool rtSafetyDoor;
 volatile bool runLimitLoop;  // Interface to show_limits()
 
 static void protocol_exec_rt_suspend();
+static void protocol_do_initiate_cycle();  // Forward declaration for auto cycle start handler
 
 static char line[LINE_BUFFER_SIZE];     // Line to be executed. Zero-terminated.
 static char comment[LINE_BUFFER_SIZE];  // Line to be executed. Zero-terminated.
@@ -376,6 +377,17 @@ void protocol_buffer_synchronize() {
     } while (plan_get_current_block() || (sys.state() == State::Cycle));
 }
 
+// Auto-cycle start handler: only starts a cycle from Idle state.
+// Unlike protocol_do_cycle_start(), this does NOT resume from Hold state,
+// which prevents an auto-queued start from overriding a user-requested feedHold.
+static void protocol_do_auto_cycle_start() {
+    if (sys.state() == State::Idle) {
+        protocol_do_initiate_cycle();
+    }
+}
+
+static NoArgEvent autoCycleStartEvent { protocol_do_auto_cycle_start };
+
 // Auto-cycle start triggers when there is a motion ready to execute and if the main program is not
 // actively parsing commands.
 // NOTE: This function is called from the main loop, buffer sync, and mc_move_motors() only and executes
@@ -385,7 +397,7 @@ void protocol_buffer_synchronize() {
 void protocol_auto_cycle_start() {
     if (plan_get_current_block() != NULL && sys.state() != State::Cycle &&
         sys.state() != State::Hold) {           // Check if there are any blocks in the buffer.
-        protocol_send_event(&cycleStartEvent);  // If so, execute them
+        protocol_send_event(&autoCycleStartEvent);  // If so, execute them
     }
 }
 

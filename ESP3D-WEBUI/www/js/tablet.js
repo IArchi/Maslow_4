@@ -645,6 +645,7 @@ const green = "#86f686";
 const red = "#f64646";
 const gray = "#f6f6f6";
 const orange = "#ff9500";
+const stopRed = "#ce654c";
 
 function setRunControls() {
   if (gCodeLoaded) {
@@ -953,7 +954,27 @@ const tabletSetZHomeMDown = () => zeroAxis("Z");
 const tabletSetZHomeMUp = () => refreshGcode();
 // Button event handlers - Fifth Row - nothing special here, move on
 // Button event handlers - Sixth Row
-const tabletGCodeStop = () => onCalibrationButtonsClick("$STOP", "Stop Maslow and Gcode");
+const tabletGCodeStop = () => {
+  const stopBtn = id("tablettab_gcode_stop");
+  if (stopBtn) {
+    stopBtn.style.backgroundColor = orange;
+  }
+  onCalibrationButtonsClick("$STOP", "Stop Maslow and Gcode");
+};
+
+const resetStopButtonColors = () => {
+  // tablettab_gcode_stop uses an inline style so we must set it explicitly
+  const gcodeStopBtn = id("tablettab_gcode_stop");
+  if (gcodeStopBtn) {
+    gcodeStopBtn.style.backgroundColor = stopRed;
+  }
+  // tablettab_cal_stop uses the .stop-button CSS class with !important, so
+  // removing the inline style lets the class rule take effect again
+  const calStopBtn = id("tablettab_cal_stop");
+  if (calStopBtn) {
+    calStopBtn.style.removeProperty('background-color');
+  }
+};
 // Control event handlers - Calibration Popup
 const tabletCalPopupHide = () => hideModal("calibration-popup");
 
@@ -987,6 +1008,10 @@ const tabletCalOpenConfig = () => {
   openModal("configuration-popup");
 };
 const tabletCalStop = () => {
+  const stopBtn = id("tablettab_cal_stop");
+  if (stopBtn) {
+    stopBtn.style.setProperty('background-color', orange, 'important');
+  }
   onCalibrationButtonsClick("$STOP", "Stop");
   returnFocusToTablet();
 };

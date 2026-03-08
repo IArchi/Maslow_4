@@ -10,6 +10,8 @@
 #include "Protocol.h"
 #include "Event.h"
 
+#include <atomic>
+
 #include "Machine/MachineConfig.h"
 #include "Machine/Homing.h"
 #include "Report.h"         // report_feedback_message
@@ -53,6 +55,13 @@ volatile bool rtReset;
 static volatile bool rtSafetyDoor;
 
 volatile bool runLimitLoop;  // Interface to show_limits()
+
+// Set to true the moment a feedHold is requested (from any task or ISR),
+// cleared when protocol_do_feedhold() processes the request.  The auto-cycle-
+// start handler checks this flag so that a pending feedHold can never be
+// overridden by an auto-queued cycle start, regardless of event-queue ordering.
+// Uses acquire/release semantics to guarantee visibility on dual-core ESP32-S3.
+static std::atomic<bool> feedHoldPending { false };
 
 static void protocol_exec_rt_suspend();
 static void protocol_do_initiate_cycle();  // Forward declaration for auto cycle start handler
@@ -377,11 +386,12 @@ void protocol_buffer_synchronize() {
     } while (plan_get_current_block() || (sys.state() == State::Cycle));
 }
 
-// Auto-cycle start handler: only starts a cycle from Idle state.
-// Unlike protocol_do_cycle_start(), this does NOT resume from Hold state,
-// which prevents an auto-queued start from overriding a user-requested feedHold.
+// Auto-cycle start handler: only starts a cycle from Idle state and only when
+// there is no pending feedHold request.  Unlike protocol_do_cycle_start(), this
+// does NOT resume from Hold state, which prevents an auto-queued start from
+// overriding a user-requested feedHold regardless of event-queue ordering.
 static void protocol_do_auto_cycle_start() {
-    if (sys.state() == State::Idle) {
+    if (!feedHoldPending.load(std::memory_order_acquire) && sys.state() == State::Idle) {
         protocol_do_initiate_cycle();
     }
 }
@@ -519,6 +529,7 @@ static void protocol_do_motion_cancel() {
 }
 
 static void protocol_do_feedhold() {
+    feedHoldPending.store(false, std::memory_order_release);  // Clear the pending flag now that we are processing the hold
     Serial.println("protocol do feedhold");
     if (runLimitLoop) {
         runLimitLoop = false;  // Hack to stop show_limits()
@@ -1161,10 +1172,16 @@ void protocol_init() {
 }
 
 void IRAM_ATTR protocol_send_event_from_ISR(Event* evt, void* arg) {
+    if (evt == &feedHoldEvent) {
+        feedHoldPending.store(true, std::memory_order_release);
+    }
     EventItem item { evt, arg };
     xQueueSendFromISR(event_queue, &item, NULL);
 }
 void protocol_send_event(Event* evt, void* arg) {
+    if (evt == &feedHoldEvent) {
+        feedHoldPending.store(true, std::memory_order_release);
+    }
     EventItem item { evt, arg };
     xQueueSend(event_queue, &item, 0);
 }

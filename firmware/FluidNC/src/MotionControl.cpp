@@ -71,11 +71,10 @@ bool mc_move_motors(float* target, plan_line_data_t* pl_data) {
     // Remain in this loop until there is room in the buffer.
 
     while (plan_check_full_buffer()) {
-        protocol_auto_cycle_start();  // Auto-cycle start when buffer is full.
-
         // While we are waiting for room in the buffer, look for realtime
         // commands and other situations that could cause state changes.
         protocol_execute_realtime();
+        protocol_auto_cycle_start();  // Auto-cycle start when buffer is full.
         if (sys.abort()) {
             mc_pl_data_inflight = NULL;
             return submitted_result;  // Bail, if system abort.

@@ -241,6 +241,11 @@ const updateDynamicButtons = () => {
 	if (typeof updateMaslowActionButton === 'function') {
 		updateMaslowActionButton();
 	}
+
+	// Reset stop button colors when action completes (state update received)
+	if (typeof resetStopButtonColors === 'function') {
+		resetStopButtonColors();
+	}
 }
 
 
@@ -263,6 +268,11 @@ const maslowInfoMsgHandling = (msg) => {
 			}
 		} catch (error) {
 			console.error("Parsing the 'MINFO' message failed, the maslow status has not been changed. This is probably a programmer error.");
+		}
+
+		// Reset stop button colors when firmware responds to our command
+		if (typeof resetStopButtonColors === 'function') {
+			resetStopButtonColors();
 		}
 		return true;
 	}

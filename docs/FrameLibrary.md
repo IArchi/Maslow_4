@@ -31,7 +31,7 @@ Bar's Calibration point tester:
 These show areas where the Maslow can move accurately and areas where it will start to have trouble. These are determined partly by small angles and high tension near the edges (top edge especially in vertical mode) and partly by the arms carrying the motors of the Maslow bumping into the upright pilars of the maslow when the angle between them gets too small. Belts generally can't be closer than 130 degrees or farther apart than 140 degrees. 
 
 ## Frame requirements:
-- The Four anchor points have to fit within a 5 meter by 5 meter square.  It is possible to go bigger with belt extensions which are sticks that attach to the ends of the belts. 
+- The Four anchor points have to fit within a 5.5 meter by 5.5 meter square.  It is possible to go bigger with belt extensions which are sticks that attach to the ends of the belts.
 - Belts are 14.5 feet long when they are shipped When planning your frame and cutting area . It is also important to make sure for your planned cutting area that the belts have enough length to go all the way across the planned moving space.
 - Calibration starts by assuming a rectagular frame with all anchors in the same plane.  Your frame does not have to be a perfect rectangle but if you are having calibration issues this might be a place to adjust. 
 - The anchors need to have free space in front of them. The belts and belt ends need to be able to swing freely back and forth without hitting things as the maslow moves around.

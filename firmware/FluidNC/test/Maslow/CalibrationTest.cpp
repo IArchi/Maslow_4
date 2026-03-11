@@ -265,7 +265,7 @@ Test(MaslowKinematicsSideLengthValidationTooLarge, CalibrationTest) {
     // Create a MaslowKinematics instance
     MaslowKinematics kinematics;
 
-    // Test with side lengths that are too large (> 5000mm)
+    // Test with side lengths that are too large (> 5500mm)
     kinematics.updateAnchorCoordinates(0.0f,
                                        6000.0f,
                                        100.0f,  // tlX, tlY, tlZ (top/left sides will be 6000mm - too large)
@@ -314,7 +314,7 @@ Test(GeneralSquareFindingAlgorithm, CalibrationTest) {
     float bestL     = -1;
     float bestError = 1e6;
 
-    for (float L = 500.0f; L <= 5000.0f; L += 1.0f) {
+    for (float L = 500.0f; L <= 5500.0f; L += 1.0f) {
         float x = (L * L + blLen * blLen - brLen * brLen) / (2.0f * L);
         float y = (L * L + blLen * blLen - tlLen * tlLen) / (2.0f * L);
 
@@ -346,7 +346,7 @@ Test(GeneralSquareFindingAlgorithm, CalibrationTest) {
     bestL     = -1;
     bestError = 1e6;
 
-    for (float L = 500.0f; L <= 5000.0f; L += 1.0f) {
+    for (float L = 500.0f; L <= 5500.0f; L += 1.0f) {
         float x = (L * L + blLen * blLen - brLen * brLen) / (2.0f * L);
         float y = (L * L + blLen * blLen - tlLen * tlLen) / (2.0f * L);
 

@@ -10,6 +10,8 @@
 #include "Protocol.h"
 #include "Event.h"
 
+#include <atomic>
+
 #include "Machine/MachineConfig.h"
 #include "Machine/Homing.h"
 #include "Report.h"         // report_feedback_message
@@ -54,7 +56,16 @@ static volatile bool rtSafetyDoor;
 
 volatile bool runLimitLoop;  // Interface to show_limits()
 
+// Set to true the moment a feedHold is requested (from any task or ISR),
+// cleared when protocol_do_feedhold() processes the request.  The auto-cycle-
+// start handler checks this flag so that a pending feedHold can never be
+// overridden by an auto-queued cycle start, regardless of event-queue ordering.
+// Uses acquire/release semantics to guarantee visibility on dual-core ESP32-S3.
+static std::atomic<bool> feedHoldPending { false };
+
 static void protocol_exec_rt_suspend();
+static void protocol_do_initiate_cycle();  // Forward declaration for auto cycle start handler
+static void protocol_do_feedhold();        // Forward declaration for double-check guard in auto cycle start
 
 static char line[LINE_BUFFER_SIZE];     // Line to be executed. Zero-terminated.
 static char comment[LINE_BUFFER_SIZE];  // Line to be executed. Zero-terminated.
@@ -325,9 +336,9 @@ void     protocol_main_loop() {
             activeChannel = nullptr;
         }
 
+        protocol_execute_realtime();  // Runtime command check point.
         // Auto-cycle start any queued moves.
         protocol_auto_cycle_start();
-        protocol_execute_realtime();  // Runtime command check point.
         sys.process_changes();
 
         if (sys.abort()) {
@@ -367,14 +378,39 @@ void     protocol_main_loop() {
 // during a synchronize call, if it should happen. Also, waits for clean cycle end.
 void protocol_buffer_synchronize() {
     do {
+        protocol_execute_realtime();  // Check and execute run-time commands
         // Restart motion if there are blocks in the planner queue
         protocol_auto_cycle_start();
-        protocol_execute_realtime();  // Check and execute run-time commands
         if (sys.abort()) {
             return;  // Check for system abort
         }
     } while (plan_get_current_block() || (sys.state() == State::Cycle));
 }
+
+// Auto-cycle start handler: only starts a cycle from Idle state and only when
+// there is no pending feedHold request.  Unlike protocol_do_cycle_start(), this
+// does NOT resume from Hold state, which prevents an auto-queued start from
+// overriding a user-requested feedHold regardless of event-queue ordering.
+//
+// After calling protocol_do_initiate_cycle() a second feedHoldPending check
+// closes the narrow TOCTOU window on dual-core ESP32-S3 where a feedHold can
+// arrive between the first check and Stepper::wake_up().  If the flag is set at
+// that point, protocol_do_feedhold() is called immediately so that the very next
+// Maslow.update() call (in the same protocol_exec_rt_system() invocation) already
+// sees state==Hold and drives the motors to hold position rather than forward.
+static void protocol_do_auto_cycle_start() {
+    if (!feedHoldPending.load(std::memory_order_acquire) && sys.state() == State::Idle) {
+        protocol_do_initiate_cycle();
+        // Double-check: if a feedHold arrived concurrently during cycle initiation
+        // (the TOCTOU window), apply the hold now rather than waiting for the next
+        // event-queue drain so Maslow.update() sees Hold state in this same call.
+        if (feedHoldPending.load(std::memory_order_acquire)) {
+            protocol_do_feedhold();
+        }
+    }
+}
+
+static NoArgEvent autoCycleStartEvent { protocol_do_auto_cycle_start };
 
 // Auto-cycle start triggers when there is a motion ready to execute and if the main program is not
 // actively parsing commands.
@@ -385,7 +421,7 @@ void protocol_buffer_synchronize() {
 void protocol_auto_cycle_start() {
     if (plan_get_current_block() != NULL && sys.state() != State::Cycle &&
         sys.state() != State::Hold) {           // Check if there are any blocks in the buffer.
-        protocol_send_event(&cycleStartEvent);  // If so, execute them
+        protocol_send_event(&autoCycleStartEvent);  // If so, execute them
     }
 }
 
@@ -507,7 +543,7 @@ static void protocol_do_motion_cancel() {
 }
 
 static void protocol_do_feedhold() {
-    Serial.println("protocol do feedhold");
+    feedHoldPending.store(false, std::memory_order_release);  // Clear the pending flag now that we are processing the hold
     if (runLimitLoop) {
         runLimitLoop = false;  // Hack to stop show_limits()
         return;
@@ -1149,10 +1185,16 @@ void protocol_init() {
 }
 
 void IRAM_ATTR protocol_send_event_from_ISR(Event* evt, void* arg) {
+    if (evt == &feedHoldEvent) {
+        feedHoldPending.store(true, std::memory_order_release);
+    }
     EventItem item { evt, arg };
     xQueueSendFromISR(event_queue, &item, NULL);
 }
 void protocol_send_event(Event* evt, void* arg) {
+    if (evt == &feedHoldEvent) {
+        feedHoldPending.store(true, std::memory_order_release);
+    }
     EventItem item { evt, arg };
     xQueueSend(event_queue, &item, 0);
 }

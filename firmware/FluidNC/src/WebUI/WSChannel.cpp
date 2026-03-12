@@ -263,6 +263,10 @@ namespace WebUI {
                         s = "ACTIVE_ID:";
                         s += std::to_string(wsChannel->id());
                         wsChannel->sendTXT(s);
+                        // Start auto-reporting immediately so position data is visible in new
+                        // browser windows even while GCode is running.  The browser will
+                        // override this default with its own $Report/Interval preference.
+                        wsChannel->setReportInterval(200);
                     }
                 }
             } break;

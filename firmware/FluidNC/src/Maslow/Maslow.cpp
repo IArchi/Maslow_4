@@ -1094,9 +1094,12 @@ void Maslow_::raiseZ() {
     }
     log_info("Raising Z from work Z " << workZ << "mm to " << Z_SAFE_HEIGHT_MM << "mm (Z home + " << Z_SAFE_HEIGHT_MM << "mm)");
 
-    // Command Z to raise to Z_SAFE_HEIGHT_MM in work coordinates
-    char zRaise[20];
-    snprintf(zRaise, sizeof(zRaise), "G90 G0 Z%.1f", Z_SAFE_HEIGHT_MM);
+    // Command Z to raise to Z_SAFE_HEIGHT_MM in work coordinates.
+    // Convert to the current unit system so the G-code interpreter moves the
+    // correct distance regardless of whether G20 (inches) or G21 (mm) is active.
+    char  zRaise[20];
+    float safeHeight = (gc_state.modal.units == Units::Inches) ? Z_SAFE_HEIGHT_MM / MM_PER_INCH : Z_SAFE_HEIGHT_MM;
+    snprintf(zRaise, sizeof(zRaise), "G90 G0 Z%.4f", safeHeight);
     Error result = gc_execute_line(zRaise);
     if (result == Error::Ok) {
         protocol_buffer_synchronize();  // Wait for Z to reach target

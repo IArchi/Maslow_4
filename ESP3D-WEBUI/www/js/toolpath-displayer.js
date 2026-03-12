@@ -2017,7 +2017,8 @@ var traceBoundary = function() {
     const currentPos = arrayToXYZ(WPOS);
 
     // Create the boundary tracing commands
-    var commands = [`G90`]; // Absolute positioning
+    var originalUnits = (gCodeModal && gCodeModal.units) ? gCodeModal.units : 'G21'; // Save current unit mode to restore later
+    var commands = [`G21`, `G90`]; // Switch to mm, absolute positioning
 
     // Use envelope points if available (shaped boundary), otherwise fall back to rectangle
     if (jobEnvelopePoints.length > 0) {
@@ -2038,6 +2039,9 @@ var traceBoundary = function() {
 
     // Return to original position
     commands.push(`G0 X${currentPos.x.toFixed(3)} Y${currentPos.y.toFixed(3)}`);
+
+    // Restore original unit mode
+    commands.push(originalUnits === 'G20' ? `G20` : `G21`);
 
     // Confirm before starting
     var pointCount = jobEnvelopePoints.length > 0 ? jobEnvelopePoints.length : 4;

@@ -953,13 +953,32 @@ const tabletMoveBottomRight = () => sendMove("X+Y-");
 const tabletSetZHomeMDown = () => zeroAxis("Z");
 const tabletSetZHomeMUp = () => refreshGcode();
 // Button event handlers - Fifth Row - nothing special here, move on
+
+// Send $STOP directly via WebSocket to bypass PAGEID routing.
+// This ensures stop works immediately after a browser reconnect, before
+// the CURRENT_ID message arrives to update page_id.
+const sendStopCommand = () => {
+  if (ws_source && ws_source.readyState === WebSocket.OPEN) {
+    try {
+      ws_source.send("$STOP\n");
+    } catch (e) {
+      console.warn("WebSocket send failed, falling back to HTTP:", e);
+      sendCommand("$STOP");
+    }
+  } else {
+    sendCommand("$STOP");
+  }
+  scheduleCallback(() => { sendCommand('$MINFO'); }, 1000);
+};
+
 // Button event handlers - Sixth Row
 const tabletGCodeStop = () => {
   const stopBtn = id("tablettab_gcode_stop");
   if (stopBtn) {
     stopBtn.style.backgroundColor = orange;
   }
-  onCalibrationButtonsClick("$STOP", "Stop Maslow and Gcode");
+  addMessage("Stop Maslow and Gcode");
+  sendStopCommand();
 };
 
 const resetStopButtonColors = () => {
@@ -1012,7 +1031,8 @@ const tabletCalStop = () => {
   if (stopBtn) {
     stopBtn.style.setProperty('background-color', orange, 'important');
   }
-  onCalibrationButtonsClick("$STOP", "Stop");
+  addMessage("Stop");
+  sendStopCommand();
   returnFocusToTablet();
 };
 const tabletCalSetZStop = () => {

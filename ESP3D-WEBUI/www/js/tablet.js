@@ -392,24 +392,14 @@ const jogTo = (axisAndDistance) => {
 const jogWithUnitsSafeguard = (feedrate, axisAndDistance) => {
   // Store what units the UI is currently displaying (what user expects)
   const uiExpectedUnits = gCodeModal.units;
-  
-  // Force firmware to use UI units, execute jog, then query to restore original state
-  // This ensures the jog distance is always interpreted correctly
-  sendCommand(uiExpectedUnits);
-  
-  // Small delay to ensure units command is processed
-  setTimeout(() => {
-    const cmd = `$J=G91F${feedrate}${axisAndDistance}`;
-    const unitsLabel = uiExpectedUnits === 'G20' ? 'inch' : 'mm';
-    addMessage(`JogTo: ${cmd} (${unitsLabel})`);
-    sendCommand(cmd + '\n');
-    
-    // After jog command, query current state to restore if needed
-    // The $G response will be handled by grblGetModal and update the UI automatically
-    setTimeout(() => {
-      sendCommand('$G');
-    }, 200);
-  }, 100);
+
+  // Embed the units code directly in the jog command (G20/G21 are allowed within $J= commands).
+  // This avoids sending a separate G20/G21 command which would fail with
+  // Error 9 (SystemGcLock) when the firmware is still in Jog state from a previous jog.
+  const unitsLabel = uiExpectedUnits === 'G20' ? 'inch' : 'mm';
+  const cmd = `$J=G91${uiExpectedUnits}F${feedrate}${axisAndDistance}`;
+  addMessage(`JogTo: ${cmd} (${unitsLabel})`);
+  sendCommand(cmd + '\n');
 }
 
 /** Peform a move command */

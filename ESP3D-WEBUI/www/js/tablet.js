@@ -954,21 +954,40 @@ const tabletSetZHomeMDown = () => zeroAxis("Z");
 const tabletSetZHomeMUp = () => refreshGcode();
 // Button event handlers - Fifth Row - nothing special here, move on
 
-// Send $STOP directly via WebSocket to bypass PAGEID routing.
-// This ensures stop works immediately after a browser reconnect, before
-// the CURRENT_ID message arrives to update page_id.
-const sendStopCommand = () => {
+// Send a command directly via WebSocket to bypass PAGEID routing.
+// Returns true if the command was sent, false if the WebSocket is not open.
+const sendViaWS = (cmd) => {
   if (ws_source && ws_source.readyState === WebSocket.OPEN) {
     try {
-      ws_source.send("$STOP\n");
+      ws_source.send(cmd);
+      return true;
     } catch (e) {
-      console.warn("WebSocket send failed, falling back to HTTP:", e);
-      sendCommand("$STOP");
+      console.warn("WebSocket send failed:", e);
     }
-  } else {
-    sendCommand("$STOP");
   }
-  scheduleCallback(() => { sendCommand('$MINFO'); }, 1000);
+  return false;
+};
+
+// Send $STOP directly via WebSocket to bypass PAGEID routing.
+// If the WebSocket is not yet open (e.g. still CONNECTING after a browser
+// reconnect), retry every 300 ms for up to ~10 seconds so the command is
+// delivered as soon as the connection is established.
+const sendStopCommand = () => {
+  const RETRY_INTERVAL_MS = 300;
+  const MAX_RETRY_ATTEMPTS = 33; // 33 * 300ms ≈ 10 seconds
+  if (!sendViaWS("$STOP\n")) {
+    let attempts = 0;
+    const retryTimer = setInterval(() => {
+      if (sendViaWS("$STOP\n") || ++attempts >= MAX_RETRY_ATTEMPTS) {
+        clearInterval(retryTimer);
+      }
+    }, RETRY_INTERVAL_MS);
+  }
+  scheduleCallback(() => {
+    if (!sendViaWS("$MINFO\n")) {
+      sendCommand('$MINFO');
+    }
+  }, 1000);
 };
 
 // Button event handlers - Sixth Row

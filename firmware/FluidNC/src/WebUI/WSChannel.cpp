@@ -245,7 +245,13 @@ namespace WebUI {
                     log_debug("WebSocket " << num << " from " << ip << " uri " << uri);
 
                     _lastWSChannel = wsChannel;
-                    allChannels.registration(wsChannel);
+                    // Register at the front of the channel queue so that WS commands
+                    // (e.g. $STOP) are always polled before any running InputFile.
+                    // If a new WS connection arrives after a file job has started the
+                    // InputFile sits later in the queue; front-insertion ensures the
+                    // new channel wins the round-robin before InputFile can grab the
+                    // next slot.
+                    allChannels.registrationFront(wsChannel);
                     _wsChannels[num] = wsChannel;
 
                     // On first websocket connection, stop capturing to startup log

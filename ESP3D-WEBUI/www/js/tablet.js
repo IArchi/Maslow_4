@@ -748,6 +748,14 @@ function tabletGrblState(grbl, response) {
 
   tabletUpdateModal()
 
+  // When a stop was requested and the machine is now Idle, cancel further
+  // retries.  The stop command was already sent at least once; if the machine
+  // was running it has stopped, and if it was already Idle the initial send
+  // was harmless.
+  if (_stopPending && stateName === 'Idle') {
+    _stopPending = false;
+  }
+
   switch (stateName) {
     case 'Sleep':
     case 'Alarm':
@@ -975,9 +983,10 @@ const sendViaWS = (cmd) => {
 let _stopPending = false;
 
 // Called from ws_source.onopen (socket.js) on every WebSocket (re)connect.
+// Does NOT clear _stopPending — tabletGrblState clears it once the firmware
+// confirms the machine is no longer running (stateName === 'Idle').
 const onWSOpenCallback = () => {
   if (_stopPending) {
-    _stopPending = false;
     try {
       ws_source.send("$STOP\n");
     } catch (e) {
@@ -987,31 +996,30 @@ const onWSOpenCallback = () => {
 };
 
 // Send $STOP directly via WebSocket to bypass PAGEID routing.
-// Tries immediately; if the WebSocket is not yet open, sets _stopPending so
-// that onWSOpenCallback delivers it as the very first message on reconnect
-// (before any auto-reports fill the TX buffer).  Also retries every 300 ms
-// for up to ~10 seconds so that if the WebSocket opens mid-interval the
-// command is not delayed until the next reconnect.
+// Sets _stopPending and retries every 300 ms for up to ~10 seconds.
+// _stopPending is cleared by tabletGrblState when the firmware confirms
+// the machine is Idle, or by the timeout.  onWSOpenCallback also sends
+// $STOP as the very first message on every WebSocket (re)connect while
+// the flag is set, so the command survives a TCP drop between send and
+// firmware processing.
 const sendStopCommand = () => {
   const RETRY_INTERVAL_MS = 300;
   const MAX_RETRY_ATTEMPTS = 33; // 33 * 300ms ≈ 10 seconds
   _stopPending = true;
-  if (sendViaWS("$STOP\n")) {
-    _stopPending = false;
-    // Successfully sent; no retry needed
-  } else {
-    let attempts = 0;
-    const retryTimer = setInterval(() => {
-      // Stop retrying if onWSOpenCallback already delivered the command,
-      // the send succeeds on this attempt, or we've exhausted retries.
-      if (!_stopPending) {
-        clearInterval(retryTimer);
-      } else if (sendViaWS("$STOP\n") || ++attempts >= MAX_RETRY_ATTEMPTS) {
-        _stopPending = false;
-        clearInterval(retryTimer);
-      }
-    }, RETRY_INTERVAL_MS);
-  }
+  sendViaWS("$STOP\n"); // Try immediately; keep _stopPending for retries
+  let attempts = 0;
+  const retryTimer = setInterval(() => {
+    if (!_stopPending) {
+      clearInterval(retryTimer);
+      return;
+    }
+    sendViaWS("$STOP\n");
+    if (++attempts >= MAX_RETRY_ATTEMPTS) {
+      _stopPending = false;
+      clearInterval(retryTimer);
+      console.warn("$STOP retry limit reached without firmware confirmation; machine may not have stopped");
+    }
+  }, RETRY_INTERVAL_MS);
   scheduleCallback(() => {
     if (!sendViaWS("$MINFO\n")) {
       sendCommand('$MINFO');

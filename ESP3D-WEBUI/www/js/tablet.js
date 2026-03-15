@@ -968,17 +968,46 @@ const sendViaWS = (cmd) => {
   return false;
 };
 
+// True when a stop has been requested but not yet confirmed delivered.
+// onWSOpenCallback sends $STOP on every WebSocket (re)connect while this
+// flag is set, so the command reaches the firmware before any auto-reports
+// start flowing.
+let _stopPending = false;
+
+// Called from ws_source.onopen (socket.js) on every WebSocket (re)connect.
+const onWSOpenCallback = () => {
+  if (_stopPending) {
+    _stopPending = false;
+    try {
+      ws_source.send("$STOP\n");
+    } catch (e) {
+      console.warn("Failed to send pending $STOP on connect:", e);
+    }
+  }
+};
+
 // Send $STOP directly via WebSocket to bypass PAGEID routing.
-// If the WebSocket is not yet open (e.g. still CONNECTING after a browser
-// reconnect), retry every 300 ms for up to ~10 seconds so the command is
-// delivered as soon as the connection is established.
+// Tries immediately; if the WebSocket is not yet open, sets _stopPending so
+// that onWSOpenCallback delivers it as the very first message on reconnect
+// (before any auto-reports fill the TX buffer).  Also retries every 300 ms
+// for up to ~10 seconds so that if the WebSocket opens mid-interval the
+// command is not delayed until the next reconnect.
 const sendStopCommand = () => {
   const RETRY_INTERVAL_MS = 300;
   const MAX_RETRY_ATTEMPTS = 33; // 33 * 300ms ≈ 10 seconds
-  if (!sendViaWS("$STOP\n")) {
+  _stopPending = true;
+  if (sendViaWS("$STOP\n")) {
+    _stopPending = false;
+    // Successfully sent; no retry needed
+  } else {
     let attempts = 0;
     const retryTimer = setInterval(() => {
-      if (sendViaWS("$STOP\n") || ++attempts >= MAX_RETRY_ATTEMPTS) {
+      // Stop retrying if onWSOpenCallback already delivered the command,
+      // the send succeeds on this attempt, or we've exhausted retries.
+      if (!_stopPending) {
+        clearInterval(retryTimer);
+      } else if (sendViaWS("$STOP\n") || ++attempts >= MAX_RETRY_ATTEMPTS) {
+        _stopPending = false;
         clearInterval(retryTimer);
       }
     }, RETRY_INTERVAL_MS);

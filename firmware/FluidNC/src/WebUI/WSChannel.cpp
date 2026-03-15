@@ -90,9 +90,9 @@ namespace WebUI {
             return false;
         }
         if (_server->canSend(_clientNum) <= 0) {
-            _dead = true;
-            log_warn("WebSocket client not ready; closing");
-            WSChannels::removeChannel(this);
+            // TCP send buffer is momentarily full; skip this message rather than
+            // killing the channel.  Killing would destroy any pending receive-side
+            // commands (e.g. $STOP) waiting in the queue.
             return false;
         }
         if (!_server->sendTXT(_clientNum, s.c_str())) {
@@ -110,9 +110,10 @@ namespace WebUI {
                 return;
             }
             if (_server->canSend(_clientNum) <= 0) {
-                _dead = true;
-                log_warn("WebSocket client not ready; closing");
-                WSChannels::removeChannel(this);
+                // TCP send buffer is momentarily full.  Drop this status report
+                // (advisory data) rather than killing the channel.  Killing the
+                // channel would destroy any pending receive-side commands (e.g.
+                // $STOP) that are waiting in the queue to be processed.
                 _TXbufferSize = 0;
                 return;
             }

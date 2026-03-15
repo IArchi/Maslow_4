@@ -748,11 +748,11 @@ function tabletGrblState(grbl, response) {
 
   tabletUpdateModal()
 
-  // When a stop was requested and the machine is now Idle, cancel further
-  // retries.  The stop command was already sent at least once; if the machine
-  // was running it has stopped, and if it was already Idle the initial send
-  // was harmless.
-  if (_stopPending && stateName === 'Idle') {
+  // When a stop was requested and the machine is now Idle or Alarm, cancel
+  // further retries.  Idle = normal stop; Alarm = stop triggered an alarm
+  // (e.g. watchdog fired mid-stop).  Either way the machine is no longer
+  // running, so continuing to send $STOP would be harmful.
+  if (_stopPending && (stateName === 'Idle' || stateName === 'Alarm')) {
     _stopPending = false;
   }
 

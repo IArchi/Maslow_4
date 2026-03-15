@@ -841,8 +841,14 @@ static Error maslow_stop(const char* value, WebUI::AuthenticationLevel auth_leve
     if (Maslow.using_default_config) {
         return Error::ConfigurationInvalid;
     }
+    // Reset the update watchdog before each operation that can block on the
+    // AllChannels mutex (stopJob, Maslow.stop).  The polling task on Core 0
+    // may hold that mutex while flushing the WebSocket TX buffer; without
+    // these resets the 100 ms watchdog can fire and set State::Alarm.
+    Maslow.resetUpdateWatchdog();
     Maslow.stopMotors();  // Stop XY belt motors immediately
     Maslow.raiseZ();      // Raise Z to Z home + 2mm to prevent workpiece damage
+    Maslow.resetUpdateWatchdog();
     sys.set_state(State::Idle);
     Maslow.stop();  // Complete cleanup (calibration state, arm reset, etc.)
     return Error::Ok;

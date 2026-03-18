@@ -32,6 +32,7 @@ private:
 
 public:
     static std::string _progress;
+    static int32_t     _current_line_num;  // SD file line being processed (for planner threading)
 
     // fsname is the default file system on which the file is located, in case the path does not specify
     // path is the full path to the file
@@ -68,6 +69,11 @@ public:
     void     ack(Error status) override;
     Channel* pollLine(char* line) override;
     void     stopJob() override;
+    void     pauseJob() override;
 
     ~InputFile();
+
+private:
+    // Helper method to format the current motion command as a string
+    const char* getMotionCommandString();
 };

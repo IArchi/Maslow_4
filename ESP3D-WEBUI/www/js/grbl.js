@@ -283,6 +283,7 @@ function parseGrblStatus(response) {
     spindleSpeed: undefined,
     ovr: undefined,
     lineNumber: undefined,
+    sdLineNumber: undefined,
     flood: undefined,
     mist: undefined,
     pins: undefined,
@@ -366,6 +367,7 @@ function parseGrblStatus(response) {
         var sdinfo = value.split(',')
         grbl.sdPercent = parseFloat(sdinfo[0])
         grbl.sdName = sdinfo[1]
+        grbl.sdLineNumber = sdinfo[2] ? parseInt(sdinfo[2], 10) : undefined
         break
       case 'Pn':
         // pin status
@@ -525,6 +527,62 @@ function show_grbl_position(wpos, mpos) {
   }
 }
 
+// Update Maslow action button display based on current Maslow state
+// This is the new state-dependent action button in row 3, column 5
+const updateMaslowActionButton = () => {
+  if (typeof maslowStatus === 'undefined') {
+    return;
+  }
+  
+  const actionButton = id("maslowActionButton");
+  if (!actionButton) {
+    return;
+  }
+  
+  let displayText = "";
+  let isActionable = false;
+  let shouldShow = false;
+  const backgroundColor = "#4aa85c"; // green when shown
+  
+  // Only show button for states 0, 2, and 4
+  switch (maslowStatus.state) {
+    case 0: // UNKNOWN
+      displayText = "Retract";
+      isActionable = true;
+      shouldShow = true;
+      break;
+    case 2: // RETRACTED
+      displayText = "Extend";
+      isActionable = true;
+      shouldShow = true;
+      break;
+    case 4: // EXTENDEDOUT
+      displayText = "Apply Tension";
+      isActionable = true;
+      shouldShow = true;
+      break;
+    default:
+      // Hide button for all other states (including state 7 - READY_TO_CUT)
+      shouldShow = false;
+      break;
+  }
+  
+  // Update button text
+  setHTML("maslowActionText", displayText);
+  
+  // Show or hide button based on state
+  // Use visibility instead of display to maintain grid layout
+  if (shouldShow) {
+    actionButton.style.visibility = "visible";
+    actionButton.style.backgroundColor = backgroundColor;
+    actionButton.style.cursor = "pointer";
+    actionButton.style.fontWeight = "bold";
+  } else {
+    actionButton.style.visibility = "hidden";
+    actionButton.style.cursor = "default";
+  }
+};
+
 const show_grbl_status = (stateName = "", message = "", hasSD = false) => {
   setHTML("grbl_status_text", translate_text_item(message))
   setClickability("clear_status_btn", stateName === "Alarm");
@@ -610,23 +668,23 @@ function grblProcessStatus(response) {
   var grbl = parseGrblStatus(response)
   // Record persistent values of data
   const oldWCO = WCO ? [WCO[0], WCO[1], WCO[2]] : null;
-  if (grbl.wco) {
+  if (grbl.wco && !grbl.wco.some(isNaN)) {
     WCO = grbl.wco;
-    // Check if WCO has changed and trigger callback if set
-    if (onWCOUpdateCallback && oldWCO &&
-        (WCO[0] !== oldWCO[0] || WCO[1] !== oldWCO[1] || WCO[2] !== oldWCO[2])) {
+    // Check if WCO has changed (or arrived for the first time) and trigger callback if set
+    if (onWCOUpdateCallback &&
+        (!oldWCO || WCO[0] !== oldWCO[0] || WCO[1] !== oldWCO[1] || WCO[2] !== oldWCO[2])) {
       onWCOUpdateCallback(WCO, oldWCO);
     }
   }
   if (grbl.ovr) {
     OVR = grbl.ovr;
   }
-  if (grbl.mpos) {
+  if (grbl.mpos && !grbl.mpos.some(isNaN)) {
     MPOS = grbl.mpos;
     if (WCO) {
       WPOS = grbl.mpos.map((v, index) => v - WCO[index]);
     }
-  } else if (grbl.wpos) {
+  } else if (grbl.wpos && !grbl.wpos.some(isNaN)) {
     WPOS = grbl.wpos;
     if (WCO) {
       MPOS = grbl.wpos.map((v, index) => v + WCO[index]);

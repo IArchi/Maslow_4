@@ -106,8 +106,8 @@ bool Calibration::requestStateChange(int newState) {
                 log_info("Cannot extend the belts until they have been retracted");
                 break;
             }
-        case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack or release tension
-            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION) {
+        case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack, release tension, or calibration computing
+            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION || currentState == CALIBRATION_COMPUTING) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
                 // Save belt positions now that belts are extended and at a known position
@@ -148,6 +148,15 @@ bool Calibration::requestStateChange(int newState) {
             }
         case CALIBRATION_IN_PROGRESS:  //We can enter calibration in progress from EXTENDEDOUT, READY_TO_CUT, or CALIBRATION_COMPUTING
             if (currentState == EXTENDEDOUT || currentState == READY_TO_CUT || currentState == CALIBRATION_COMPUTING) {
+                // If we're coming from CALIBRATION_COMPUTING and calibration is already complete,
+                // go directly to READY_TO_CUT instead of cycling through CALIBRATION_IN_PROGRESS
+                if (currentState == CALIBRATION_COMPUTING && waypoint > pointCount && pointCount > 0) {
+                    log_info("Calibration already complete (waypoint " << waypoint << " > pointCount " << pointCount 
+                             << "), transitioning directly to READY_TO_CUT");
+                    resetCalibrationState();
+                    return requestStateChange(READY_TO_CUT);
+                }
+                
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration
@@ -256,6 +265,29 @@ bool Calibration::requestStateChange(int newState) {
         case READY_TO_CUT:  //We can enter ready to cut from calibration in progress, calibration computing or taking slack
             if (currentState == CALIBRATION_IN_PROGRESS || currentState == CALIBRATION_COMPUTING || currentState == TAKING_SLACK) {
                 currentState = READY_TO_CUT;
+                
+                // Synchronize motor positions with actual belt positions to prevent jogging issues
+                // This is especially critical when transitioning from CALIBRATION_COMPUTING
+                float beltLength[ARM_COUNT];
+                for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                    beltLength[arm] = Maslow.axis[arm].getPosition();  // Actual belt position from hardware
+                }
+
+                log_info("Synchronizing motor positions for READY_TO_CUT:");
+                log_info("TL: " << beltLength[_TL] << " TR: " << beltLength[_TR] << " BL: " << beltLength[_BL]
+                                << " BR: " << beltLength[_BR]);
+
+                // Set motor positions directly from hardware readings to ensure motion system accuracy
+                // Axis mapping: A=TL(0), B=TR(1), C=BL(2), D=BR(3), Z=router(4)
+                set_motor_steps(0, mpos_to_steps(beltLength[_TL], 0));  // A axis = TL belt
+                set_motor_steps(1, mpos_to_steps(beltLength[_TR], 1));  // B axis = TR belt
+                set_motor_steps(2, mpos_to_steps(beltLength[_BL], 2));  // C axis = BL belt
+                set_motor_steps(3, mpos_to_steps(beltLength[_BR], 3));  // D axis = BR belt
+                // Z axis position is preserved during transition to READY_TO_CUT
+
+                gc_sync_position();   // Update GCode engine with synchronized position
+                plan_sync_position(); // Update motion planner with synchronized position
+                
                 sys.set_state(State::Idle);
                 // Explicitly save belt positions now that calibration/take-slack is complete and belts are tight
                 Maslow.saveBeltPositions();
@@ -371,40 +403,68 @@ void Calibration::home() {
             }
             break;
         case RELEASE_TENSION:
-            //decompress belts for the first half second
-            if (millis() - complyCallTimer < 40) {
-                Maslow.axis[_BR].decompressBelt();
-                Maslow.axis[_BL].decompressBelt();
-                Maslow.axis[_TR].decompressBelt();
-                Maslow.axis[_TL].decompressBelt();
-            } else if (millis() - complyCallTimer < 800) {
-                for (int arm = _TL; arm < ARM_COUNT; arm++) {
-                    Maslow.axis[arm].comply();
+            {
+                unsigned long elapsed = millis() - complyCallTimer;
+                //decompress belts for the first 40ms
+                if (elapsed < 40) {
+                    Maslow.axis[_BR].decompressBelt();
+                    Maslow.axis[_BL].decompressBelt();
+                    Maslow.axis[_TR].decompressBelt();
+                    Maslow.axis[_TL].decompressBelt();
                 }
-            } else {
-                for (int arm = _TL; arm < ARM_COUNT; arm++) {
-                    Maslow.axis[arm].stop();
+                //comply for 760ms (40-800ms)
+                else if (elapsed < 800) {
+                    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                        Maslow.axis[arm].comply();
+                    }
                 }
-                sys.set_state(State::Idle);
+                //stop motors and wait for settling (800-1300ms)
+                else if (elapsed < 1300) {
+                    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                        Maslow.axis[arm].stop();
+                    }
+                }
+                //transition to next state after settling period
+                else {
+                    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                        Maslow.axis[arm].stop();
+                    }
+                    // Don't call sys.set_state here - it will be called by requestStateChange
 
-                // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
-                // return to EXTENDEDOUT state, otherwise go to UNKNOWN
-                if (previousState == READY_TO_CUT || previousState == EXTENDEDOUT || previousState == CALIBRATION_COMPUTING) {
-                    requestStateChange(EXTENDEDOUT);
-                } else {
-                    requestStateChange(UNKNOWN);
+                    // If the machine was in READY_TO_CUT, EXTENDEDOUT, or CALIBRATION_COMPUTING state before releasing tension,
+                    // return to EXTENDEDOUT state, otherwise go to UNKNOWN
+                    if (previousState == READY_TO_CUT || previousState == EXTENDEDOUT || previousState == CALIBRATION_COMPUTING) {
+                        requestStateChange(EXTENDEDOUT);
+                    } else {
+                        requestStateChange(UNKNOWN);
+                    }
                 }
             }
             break;
         case CALIBRATION_IN_PROGRESS:
             calibration_loop();
             break;
+        case CALIBRATION_COMPUTING:
+            // In CALIBRATION_COMPUTING state, we're waiting for the computer to acknowledge
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                Maslow.axis[arm].stop();
+            }
+            break;
+        case READY_TO_CUT:
+            // When calibration is complete and we're ready to cut, ensure we're in Idle state
+            // and stop any residual motor activity
+            sys.set_state(State::Idle);
+            for (int arm = _TL; arm < ARM_COUNT; arm++) {
+                Maslow.axis[arm].stop();
+            }
+            break;
     }
 
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && !calibrationInProgress &&
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
+        currentState != CALIBRATION_COMPUTING && currentState != READY_TO_CUT && !calibrationInProgress && 
         !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }
@@ -445,7 +505,7 @@ void Calibration::calibration_loop() {
                 sys.set_state(State::Idle);
                 recomputeCountIndex++;
             } else {
-                hold(250);
+                hold(150);  // Reduced from 250ms to 150ms for faster calibration
             }
         }
     }
@@ -464,7 +524,7 @@ void Calibration::calibration_loop() {
                 calibrationGrid[waypoint][1]);  //This is used to set the order that the belts are pulled tight in the following measurement
             Maslow.x = calibrationGrid[waypoint][0];  //Are these ever used anywhere?
             Maslow.y = calibrationGrid[waypoint][1];
-            hold(250);
+            hold(150);  // Reduced from 250ms to 150ms for faster calibration
         }
     }
 }
@@ -654,39 +714,52 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
         Maslow.axis[_TL].recomputePID();
         Maslow.axis[_TR].recomputePID();
 
-        //On the left side of the sheet we want to pull the left belt tight first
-        if (Maslow.x < 0) {
-            if (!BL_tight) {
-                if (Maslow.axis[_BL].pull_tight(current)) {
-                    BL_tight = true;
-                    //log_info("Pulled BL tight");
+        // For the first six measurement points (waypoints 0-5), pull belts sequentially
+        // After that, pull belts simultaneously for speed
+        if (waypoint <= 5) {
+            //On the left side of the sheet we want to pull the left belt tight first
+            if (Maslow.x < 0) {
+                if (!BL_tight) {
+                    if (Maslow.axis[_BL].pull_tight(current)) {
+                        BL_tight = true;
+                        //log_info("Pulled BL tight");
+                    }
+                    return false;
                 }
-                return false;
+                if (!BR_tight) {
+                    if (Maslow.axis[_BR].pull_tight(current)) {
+                        BR_tight = true;
+                        //log_info("Pulled BR tight");
+                    }
+                    return false;
+                }
             }
-            if (!BR_tight) {
-                if (Maslow.axis[_BR].pull_tight(current)) {
-                    BR_tight = true;
-                    //log_info("Pulled BR tight");
+
+            //On the right side of the sheet we want to pull the right belt tight first
+            else {
+                if (!BR_tight) {
+                    if (Maslow.axis[_BR].pull_tight(current)) {
+                        BR_tight = true;
+                        //log_info("Pulled BR tight");
+                    }
+                    return false;
                 }
-                return false;
+                if (!BL_tight) {
+                    if (Maslow.axis[_BL].pull_tight(current)) {
+                        BL_tight = true;
+                        //log_info("Pulled BL tight");
+                    }
+                    return false;
+                }
             }
         }
-
-        //On the right side of the sheet we want to pull the right belt tight first
+        // For subsequent waypoints (6+), pull both belts simultaneously
         else {
-            if (!BR_tight) {
-                if (Maslow.axis[_BR].pull_tight(current)) {
-                    BR_tight = true;
-                    //log_info("Pulled BR tight");
-                }
-                return false;
+            if (Maslow.axis[_BL].pull_tight(current)) {
+                BL_tight = true;
             }
-            if (!BL_tight) {
-                if (Maslow.axis[_BL].pull_tight(current)) {
-                    BL_tight = true;
-                    //log_info("Pulled BL tight");
-                }
-                return false;
+            if (Maslow.axis[_BR].pull_tight(current)) {
+                BR_tight = true;
             }
         }
 
@@ -719,8 +792,8 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
     }
     // in HoRIZONTAL orientation we pull on the belts depending on the direction of the last move. This is important because the other two belts are likely slack
     else if (orientation == HORIZONTAL) {
-        // For the first waypoint (waypoint == 0), use a two-phase approach to ensure proper tension
-        if (waypoint == 0) {
+        // For the first six waypoints (waypoints 0-5), use sequential pulling to handle slack belts properly
+        if (waypoint <= 5) {
             static bool tight[ARM_COUNT]         = { false, false, false, false };
             static bool initial_tension_complete = false;
 
@@ -819,7 +892,7 @@ bool Calibration::take_measurement(float result[4], int dir, int run, int curren
             }
             return false;
         }
-        // For subsequent waypoints, use directional logic to pull only relevant belts
+        // For subsequent waypoints (6+), pull belts simultaneously for faster measurements
         else {
             static MotorUnit* pullAxis1;
             static MotorUnit* pullAxis2;
@@ -1118,7 +1191,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();
     static bool          decompress     = true;
-    float                stepSize       = 0.06;
+    float                stepSize       = 0.09;  // Increased by 50% from 0.06 for faster calibration movement
 
     static int direction = UP;
 
@@ -1239,7 +1312,7 @@ bool Calibration::move_with_slack(double fromX, double fromY, double toX, double
             stabilizeTimer = millis();
             return false;  // Continue stabilizing
         }
-        if (millis() - stabilizeTimer < 50) {  // 50ms stabilization period
+        if (millis() - stabilizeTimer < 30) {  // 30ms stabilization period (reduced from 50ms)
             return false;                      // Continue stabilizing
         }
         stabilizeTimer = 0;  // Reset for next waypoint
@@ -1496,7 +1569,7 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     // The algorithm works for any interior point E inside the square
     double L = SquareCalculation::calculateSquareSideLength(tlLen, trLen, blLen, brLen);
 
-    if (L < 500.0 || L > 5000.0) {  // Sanity check on square size
+    if (L < 500.0 || L > 5500.0) {  // Sanity check on square size
         log_error("Unable to adjust frame size. Calculated size " << L << "mm is outside reasonable range");
         return false;
     }
@@ -1659,7 +1732,7 @@ void Calibration::resetCalibrationState() {
     // Deallocate memory if allocated
     deallocateCalibrationMemory();
 
-    log_info("Calibration state reset");
+    log_info("Find Anchors state reset");
 }
 
 //Takes a raw measurement, projects it into the XY plane, then adds the belt end extension and arm length to get the actual distance.

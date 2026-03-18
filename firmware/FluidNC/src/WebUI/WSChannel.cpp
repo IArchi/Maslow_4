@@ -89,9 +89,15 @@ namespace WebUI {
         if (_dead) {
             return false;
         }
+        if (_server->canSend(_clientNum) <= 0) {
+            // TCP send buffer is momentarily full; skip this message rather than
+            // killing the channel.  Killing would destroy any pending receive-side
+            // commands (e.g. $STOP) waiting in the queue.
+            return false;
+        }
         if (!_server->sendTXT(_clientNum, s.c_str())) {
             _dead = true;
-            log_debug("WebSocket is unresponsive; closing");
+            log_warn("WebSocket is unresponsive; closing");
             WSChannels::removeChannel(this);
             return false;
         }
@@ -100,11 +106,20 @@ namespace WebUI {
     void WSChannel::flush(void) {
         if (_TXbufferSize > 0) {
             if (_dead) {
+                _TXbufferSize = 0;
+                return;
+            }
+            if (_server->canSend(_clientNum) <= 0) {
+                // TCP send buffer is momentarily full.  Drop this status report
+                // (advisory data) rather than killing the channel.  Killing the
+                // channel would destroy any pending receive-side commands (e.g.
+                // $STOP) that are waiting in the queue to be processed.
+                _TXbufferSize = 0;
                 return;
             }
             if (!_server->sendBIN(_clientNum, _TXbuffer, _TXbufferSize)) {
                 _dead = true;
-                log_debug("WebSocket is unresponsive; closing");
+                log_warn("WebSocket is unresponsive; closing");
                 WSChannels::removeChannel(this);
             }
 
@@ -230,7 +245,13 @@ namespace WebUI {
                     log_debug("WebSocket " << num << " from " << ip << " uri " << uri);
 
                     _lastWSChannel = wsChannel;
-                    allChannels.registration(wsChannel);
+                    // Register at the front of the channel queue so that WS commands
+                    // (e.g. $STOP) are always polled before any running InputFile.
+                    // If a new WS connection arrives after a file job has started the
+                    // InputFile sits later in the queue; front-insertion ensures the
+                    // new channel wins the round-robin before InputFile can grab the
+                    // next slot.
+                    allChannels.registrationFront(wsChannel);
                     _wsChannels[num] = wsChannel;
 
                     // On first websocket connection, stop capturing to startup log
@@ -249,6 +270,10 @@ namespace WebUI {
                         s = "ACTIVE_ID:";
                         s += std::to_string(wsChannel->id());
                         wsChannel->sendTXT(s);
+                        // Start auto-reporting immediately so position data is visible in new
+                        // browser windows even while GCode is running.  The browser will
+                        // override this default with its own $Report/Interval preference.
+                        wsChannel->setReportInterval(200);
                     }
                 }
             } break;

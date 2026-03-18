@@ -252,17 +252,22 @@ namespace Kinematics {
 
         // Solve for X,Y position using intersection of circles
         float x, y;
-        if (computeXYfromBeltLengths(tlXYDistance, trXYDistance, x, y)) {
+        if (computeXYfromBeltLengths(tlXYDistance, trXYDistance, x, y) && !std::isnan(x) && !std::isnan(y)) {
             // Apply inverse scale factors to convert from scaled motor space back to cartesian space
             cartesian[X_AXIS] = x / Maslow.scaleX;
             cartesian[Y_AXIS] = y / Maslow.scaleY;
         } else {
             // If we can't solve the kinematics, fall back to (0,0)
-            // This can happen if belt lengths are inconsistent
+            // This can happen if belt lengths are inconsistent or zero
             cartesian[X_AXIS] = 0.0f;
             cartesian[Y_AXIS] = 0.0f;
-            // Don't spam the console when belts are at zero length - this is expected behavior
-            if (!(tlBeltLength == 0.0f || trBeltLength == 0.0f)) {
+            // Don't spam the console when belts are at zero length or during transitional states
+            // where belt lengths are not yet in a valid configuration for kinematics computation
+            int calibState = Maslow.calibration.currentState;
+            if (!(tlBeltLength == 0.0f || trBeltLength == 0.0f) &&
+                calibState != EXTENDING && calibState != RETRACTING &&
+                calibState != TAKING_SLACK && calibState != RELEASE_TENSION &&
+                calibState != UNKNOWN) {
                 log_error("MaslowKinematics: Failed to compute X,Y from belt lengths, using (0,0)");
             }
         }
@@ -375,7 +380,14 @@ namespace Kinematics {
 
     // Convert angled belt measurement to XY plane distance
     float MaslowKinematics::measurementToXYPlane(float measurement, float zHeight) const {
-        float lengthInXY = sqrt(measurement * measurement - zHeight * zHeight);
+        float squaredDiff = measurement * measurement - zHeight * zHeight;
+        if (squaredDiff < 0.0f) {
+            // Belt length is shorter than z-height component - geometrically invalid.
+            // Return 0 so computeXYfromBeltLengths will detect an impossible configuration
+            // and fall back to a safe default position instead of producing NaN.
+            return 0.0f;
+        }
+        float lengthInXY = sqrtf(squaredDiff);
         return lengthInXY + _beltEndExtension + _armLength;  // Add belt end extension and arm length
     }
 
@@ -517,9 +529,9 @@ void MaslowKinematics::validateAndCorrectAnchorCoordinates() {
         coordinatesCorrected          = true;
     }
 
-    // Check side lengths - minimum 500mm, maximum 5000mm
+    // Check side lengths - minimum 500mm, maximum 5500mm
     const float MIN_SIDE_LENGTH = 500.0f;
-    const float MAX_SIDE_LENGTH = 5000.0f;
+    const float MAX_SIDE_LENGTH = 5500.0f;
 
     // Calculate distances for each side of the frame
     float topSideLength = sqrt(
@@ -544,7 +556,7 @@ void MaslowKinematics::validateAndCorrectAnchorCoordinates() {
         char* buffer = getLogBuffer();
         snprintf(buffer,
                  1400,
-                 "Frame side lengths are outside valid range (500-5000mm). "
+                 "Frame side lengths are outside valid range (500-5500mm). "
                  "Top=%gmm, Right=%gmm, Bottom=%gmm, Left=%gmm. Calibration cannot proceed with these dimensions.",
                  topSideLength,
                  rightSideLength,

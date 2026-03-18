@@ -1,8 +1,12 @@
 // When we can change to proper ESM - uncomment this
 // import { checkHomed, maslowErrorMsgHandling, maslowInfoMsgHandling, maslowMsgHandling, sendCommand } from "maslow";
 
+// Constants
+const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded before restoration
+
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
+var _gcodeRaw = "";
 
 var snd = null;
 var sndok = true;
@@ -181,6 +185,121 @@ const zeroAxis = (axis) => {
   addMessage(`Home pos set for: ${axis}`);
 }
 
+const getUnitInfo = () => {
+  const isInchMode = gCodeModal.units === 'G20';
+  const mmPerInch = 25.4;
+  return {
+    unitLabel: isInchMode ? 'in' : 'mm',
+    decimals: isInchMode ? 4 : 3,
+    toDisplay: (mm) => isInchMode ? mm / mmPerInch : mm,
+  };
+}
+
+const getWorkAreaBounds = () => {
+  const lv = globalThis.loadedValues || {};
+  const areaX = parseFloat(lv.workAreaX) || 2440;
+  const areaY = parseFloat(lv.workAreaY) || 1220;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  return {
+    minX: offX - areaX / 2,
+    maxX: offX + areaX / 2,
+    minY: offY - areaY / 2,
+    maxY: offY + areaY / 2,
+  };
+}
+
+const openSetHomePopup = () => {
+  tabletClick();
+  const bounds = getWorkAreaBounds();
+  // Pre-fill with current machine position so jogging to a spot and opening
+  // the popup defaults to "set home here" (confirming without changes sets
+  // GCode origin at the current machine position)
+  const { unitLabel, decimals, toDisplay } = getUnitInfo();
+  const dispMinX = toDisplay(bounds.minX);
+  const dispMaxX = toDisplay(bounds.maxX);
+  const dispMinY = toDisplay(bounds.minY);
+  const dispMaxY = toDisplay(bounds.maxY);
+  const xInput = id("setHomeX");
+  const yInput = id("setHomeY");
+  if (xInput) {
+    xInput.value = MPOS ? toDisplay(MPOS[0]).toFixed(decimals) : "0";
+    xInput.min = dispMinX;
+    xInput.max = dispMaxX;
+    xInput.title = `X: ${dispMinX.toFixed(decimals)} to ${dispMaxX.toFixed(decimals)} ${unitLabel}`;
+  }
+  if (yInput) {
+    yInput.value = MPOS ? toDisplay(MPOS[1]).toFixed(decimals) : "0";
+    yInput.min = dispMinY;
+    yInput.max = dispMaxY;
+    yInput.title = `Y: ${dispMinY.toFixed(decimals)} to ${dispMaxY.toFixed(decimals)} ${unitLabel}`;
+  }
+  const xUnit = id("setHomeXUnit");
+  if (xUnit) xUnit.textContent = `(${unitLabel})`;
+  const yUnit = id("setHomeYUnit");
+  if (yUnit) yUnit.textContent = `(${unitLabel})`;
+  const homeLabel = id("currentHomePositionLabel");
+  if (homeLabel) {
+    const hx = (WCO && WCO.length >= 2) ? toDisplay(WCO[0]).toFixed(decimals) : "0";
+    const hy = (WCO && WCO.length >= 2) ? toDisplay(WCO[1]).toFixed(decimals) : "0";
+    homeLabel.textContent = `Current: (${hx}, ${hy}) ${unitLabel}`;
+  }
+  openModal("set-home-popup");
+}
+
+const confirmSetHome = () => {
+  const bounds = getWorkAreaBounds();
+  const { toDisplay } = getUnitInfo();
+
+  // Clamp entered values to work area boundary (values are in current display units)
+  const rawX = parseFloat(id("setHomeX").value);
+  const rawY = parseFloat(id("setHomeY").value);
+  const dispMinX = toDisplay(bounds.minX);
+  const dispMaxX = toDisplay(bounds.maxX);
+  const dispMinY = toDisplay(bounds.minY);
+  const dispMaxY = toDisplay(bounds.maxY);
+  const xVal = isNaN(rawX) ? 0 : Math.max(dispMinX, Math.min(dispMaxX, rawX));
+  const yVal = isNaN(rawY) ? 0 : Math.max(dispMinY, Math.min(dispMaxY, rawY));
+
+  if (xVal !== rawX || yVal !== rawY) {
+    addMessage(`Home position clamped to work area: X=${xVal} Y=${yVal}`);
+  }
+
+  hideModal("set-home-popup");
+
+  // xVal, yVal are the desired machine coordinates for the GCode origin (WPOS=0).
+  // G10 L20 P0 X{v} sets the current machine position as WPOS=v, so WCO = MPOS - v.
+  // To place origin at machine (xVal, yVal), we need WCO = (xVal, yVal),
+  // which means we set current WPOS = MPOS - xVal.
+  // MPOS is always in mm; convert to current display units for the G10 command.
+  const mposX = toDisplay(MPOS ? MPOS[0] : 0);
+  const mposY = toDisplay(MPOS ? MPOS[1] : 0);
+  const cmd = `G10 L20 P0 X${mposX - xVal} Y${mposY - yVal}`;
+  sendCommand(cmd);
+  addMessage(`Home pos set: X=${xVal} Y=${yVal}`);
+  setXYHomeBtnText(xyHomeLabelRedefined);
+  setTimeout(setXYHomeBtnText, 1000);
+
+  // Refresh the canvas once firmware confirms the WCO change.
+  // The WCO callback in grbl.js fires synchronously inside grblProcessStatus,
+  // before MPOS/WPOS are recalculated with the new WCO.  Using setTimeout(fn,0)
+  // defers refreshGcode until after grblProcessStatus finishes, ensuring WPOS
+  // is already updated when the canvas redraws.
+  // A fallback timeout handles slow connections or cases where WCO value is
+  // unchanged (callback won't fire).
+  const originalCallback = onWCOUpdateCallback;
+  let fallbackId = setTimeout(() => {
+    onWCOUpdateCallback = originalCallback;
+    refreshGcode();
+  }, 3000);
+
+  onWCOUpdateCallback = (newWCO, prevWCO) => {
+    clearTimeout(fallbackId);
+    onWCOUpdateCallback = originalCallback;
+    setTimeout(refreshGcode, 0);
+  };
+}
+
 const toggleUnits = () => {
   tabletClick()
   sendCommand(gCodeModal.units === 'G21' ? 'G20' : 'G21');
@@ -352,11 +471,7 @@ const moveHome = () => {
     return;
   }
 
-  //We want to move to the opposite of the machine's current X,Y cordinates
-  const x = Number.parseFloat(getText('mpos-x'));
-  const y = Number.parseFloat(getText('mpos-y'));
-
-  jog({ X: -1 * x, Y: -1 * y })
+  move({ X: 0, Y: 0 });
 }
 
 function saveSerialMessages() {
@@ -530,6 +645,7 @@ const green = "#86f686";
 const red = "#f64646";
 const gray = "#f6f6f6";
 const orange = "#ff9500";
+const stopRed = "#ce654c";
 
 function setRunControls() {
   if (gCodeLoaded) {
@@ -579,6 +695,9 @@ function scaleUnits(target) {
 
 function tabletUpdateModal() {
   const newUnits = gCodeModal.units === "G21" ? "mm" : "Inch";
+  const isInch = gCodeModal.units === "G20";
+  id("tablettab_toggle_units").style.backgroundColor = isInch ? "#e6c800" : "#f2f0e4";
+
   if (getValue("tablettab_toggle_units") === newUnits) {
     return;
   }
@@ -628,6 +747,14 @@ function tabletGrblState(grbl, response) {
   oldCannotClick = cannotClick
 
   tabletUpdateModal()
+
+  // When a stop was requested and the machine is now Idle or Alarm, cancel
+  // further retries.  Idle = normal stop; Alarm = stop triggered an alarm
+  // (e.g. watchdog fired mid-stop).  Either way the machine is no longer
+  // running, so continuing to send $STOP would be harmful.
+  if (_stopPending && (stateName === 'Idle' || stateName === 'Alarm')) {
+    _stopPending = false;
+  }
 
   switch (stateName) {
     case 'Sleep':
@@ -710,10 +837,9 @@ function tabletGrblState(grbl, response) {
 
   // var modeText = `${gCodeModal.distance} ${gCodeModal.wcs} ${gCodeModal.units} T${gCodeModal.tool} F${gCodeModal.feedrate} S${gCodeModal.spindle}`;
 
-  if (grbl.lineNumber && ["Run", "Hold", "Stop"].includes(stateName)) {
-    //setText('line', grbl.lineNumber);
+  if (grbl.sdLineNumber && ["Run", "Hold"].includes(stateName)) {
     if (gCodeDisplayable) {
-      scrollToLine(grbl.lineNumber);
+      scrollToLine(grbl.sdLineNumber);
     }
   }
   // Always update tool position, even without GCode loaded
@@ -723,22 +849,95 @@ function tabletGrblState(grbl, response) {
 
   if (WPOS) {
     WPOS.forEach((pos, index) => {
-      setTextContent(`mpos-${axisNames[index]}`, Number(pos * factor).toFixed(index > 2 ? 2 : digits));
+      setTextContent(`wpos-${axisNames[index]}`, Number(pos * factor).toFixed(index > 2 ? 2 : digits));
     })
   }
 
-  MPOS.forEach((pos, index) => {
-    //setTextContent('mpos-'+axisNames[index], Number(pos*factor).toFixed(index > 2 ? 2 : digits));
-  })
+  if (MPOS) {
+    MPOS.forEach((pos, index) => {
+      const axisName = axisNames[index].toUpperCase();
+      setTextContent(`mpos-${axisNames[index]}`, `|${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)}|`);
+    })
+  }
 }
 
 let gCodeFilename = '';
 
+// Flag to prevent concurrent GCode state restoration attempts
+let restoringGCodeState = false;
 
+// GCode state persistence functions
+const saveGCodeState = () => {
+  if (gCodeFilename && gCodeLoaded) {
+    store_localdata('gCodeFilename', gCodeFilename);
+    store_localdata('gCodeLoaded', 'true');
+    console.log(`GCode state saved: ${gCodeFilename}`);
+  }
+  // Note: We don't automatically clear state here if conditions aren't met
+  // State should only be cleared explicitly via clearGCodeState()
+};
+
+const clearGCodeState = () => {
+  delete_localdata('gCodeFilename');
+  delete_localdata('gCodeLoaded');
+  console.log('GCode state cleared');
+};
+
+const restoreGCodeState = () => {
+  // Prevent concurrent restoration attempts
+  if (restoringGCodeState) {
+    console.log('GCode restoration already in progress, skipping');
+    return;
+  }
+
+  const savedFilename = get_localdata('gCodeFilename');
+  const savedLoaded = get_localdata('gCodeLoaded');
+
+  if (savedFilename && savedLoaded === 'true') {
+    console.log(`Restoring GCode state: ${savedFilename}`);
+    restoringGCodeState = true;
+
+    // Check if the file still exists by trying to load it
+    // Note: encodeURIComponent encodes the entire SD path, matching the pattern used in
+    // tabletLoadGCodeFile (lines 1105, 1130) for consistency with existing code
+    fetch(encodeURIComponent(`SD${savedFilename}`), { method: 'HEAD' })
+      .then((response) => {
+        if (response.ok) {
+          // File exists, load it
+          const contentLength = response.headers.get('Content-Length');
+          const size = contentLength ? parseInt(contentLength, 10) : 0;
+          tabletLoadGCodeFile(savedFilename, size);
+        } else {
+          // File doesn't exist anymore, clear state
+          console.log('Saved GCode file no longer exists, clearing state');
+          clearGCodeState();
+        }
+      })
+      .catch((error) => {
+        console.log('Error checking GCode file, clearing state:', error);
+        clearGCodeState();
+      })
+      .finally(() => {
+        restoringGCodeState = false;
+      });
+  }
+};
 
 const tabletDOMActivate = () => {
   fullscreenIfMobile();
   setBottomHeight();
+  // Restore GCode state when tablet tab is activated
+  // This handles the case where the page was loaded but user navigates to tablet tab later
+  // Only attempt restoration if no file is currently loaded and not already restoring
+  if (!gCodeFilename && !restoringGCodeState) {
+    // Delay is needed to ensure file list has been populated by files_refreshFiles()
+    setTimeout(() => {
+      // Check again after delay in case state changed
+      if (!gCodeFilename) {
+        restoreGCodeState();
+      }
+    }, FILE_LIST_LOAD_DELAY_MS);
+  }
 }
 
 // Button event handlers - First Row
@@ -762,14 +961,116 @@ const tabletMoveBottomRight = () => sendMove("X+Y-");
 const tabletSetZHomeMDown = () => zeroAxis("Z");
 const tabletSetZHomeMUp = () => refreshGcode();
 // Button event handlers - Fifth Row - nothing special here, move on
+
+// Send a command directly via WebSocket to bypass PAGEID routing.
+// Returns true if the command was sent, false if the WebSocket is not open.
+const sendViaWS = (cmd) => {
+  if (ws_source && ws_source.readyState === WebSocket.OPEN) {
+    try {
+      ws_source.send(cmd);
+      return true;
+    } catch (e) {
+      console.warn("WebSocket send failed:", e);
+    }
+  }
+  return false;
+};
+
+// True when a stop has been requested but not yet confirmed delivered.
+// onWSOpenCallback sends $STOP on every WebSocket (re)connect while this
+// flag is set, so the command reaches the firmware before any auto-reports
+// start flowing.
+let _stopPending = false;
+
+// Called from ws_source.onopen (socket.js) on every WebSocket (re)connect.
+// Does NOT clear _stopPending — tabletGrblState clears it once the firmware
+// confirms the machine is no longer running (stateName === 'Idle').
+const onWSOpenCallback = () => {
+  if (_stopPending) {
+    try {
+      ws_source.send("$STOP\n");
+    } catch (e) {
+      console.warn("Failed to send pending $STOP on connect:", e);
+    }
+  }
+};
+
+// Send $STOP directly via WebSocket to bypass PAGEID routing.
+// Sets _stopPending and retries every 300 ms for up to ~10 seconds.
+// _stopPending is cleared by tabletGrblState when the firmware confirms
+// the machine is Idle, or by the timeout.  onWSOpenCallback also sends
+// $STOP as the very first message on every WebSocket (re)connect while
+// the flag is set, so the command survives a TCP drop between send and
+// firmware processing.
+const sendStopCommand = () => {
+  const RETRY_INTERVAL_MS = 300;
+  const MAX_RETRY_ATTEMPTS = 33; // 33 * 300ms ≈ 10 seconds
+  _stopPending = true;
+  sendViaWS("$STOP\n"); // Try immediately; keep _stopPending for retries
+  let attempts = 0;
+  const retryTimer = setInterval(() => {
+    if (!_stopPending) {
+      clearInterval(retryTimer);
+      return;
+    }
+    sendViaWS("$STOP\n");
+    if (++attempts >= MAX_RETRY_ATTEMPTS) {
+      _stopPending = false;
+      clearInterval(retryTimer);
+      console.warn("$STOP retry limit reached without firmware confirmation; machine may not have stopped");
+    }
+  }, RETRY_INTERVAL_MS);
+  scheduleCallback(() => {
+    if (!sendViaWS("$MINFO\n")) {
+      sendCommand('$MINFO');
+    }
+  }, 1000);
+};
+
 // Button event handlers - Sixth Row
-const tabletGCodeStop = () => onCalibrationButtonsClick("$STOP", "Stop Maslow and Gcode");
+const tabletGCodeStop = () => {
+  const stopBtn = id("tablettab_gcode_stop");
+  if (stopBtn) {
+    stopBtn.style.backgroundColor = orange;
+  }
+  addMessage("Stop Maslow and Gcode");
+  sendStopCommand();
+};
+
+const resetStopButtonColors = () => {
+  // tablettab_gcode_stop uses an inline style so we must set it explicitly
+  const gcodeStopBtn = id("tablettab_gcode_stop");
+  if (gcodeStopBtn) {
+    gcodeStopBtn.style.backgroundColor = stopRed;
+  }
+  // tablettab_cal_stop uses the .stop-button CSS class with !important, so
+  // removing the inline style lets the class rule take effect again
+  const calStopBtn = id("tablettab_cal_stop");
+  if (calStopBtn) {
+    calStopBtn.style.removeProperty('background-color');
+  }
+};
 // Control event handlers - Calibration Popup
 const tabletCalPopupHide = () => hideModal("calibration-popup");
-const tabletCalRetract = () => onCalibrationButtonsClick("$ALL", "Retract All");
-const tabletCalExtend = () => onCalibrationButtonsClick("$EXT", "Extend All");
+
+// Helper function to set focus back to tablet view
+const returnFocusToTablet = () => {
+  const tabletListener = id("tablet-listener");
+  if (tabletListener) {
+    tabletListener.focus();
+  }
+};
+
+const tabletCalRetract = () => {
+  onCalibrationButtonsClick("$ALL", "Retract All");
+  returnFocusToTablet();
+};
+const tabletCalExtend = () => {
+  onCalibrationButtonsClick("$EXT", "Extend All");
+  returnFocusToTablet();
+};
 const tabletCalCalibrate = () => {
-  onCalibrationButtonsClick("$CAL", "Calibrate");
+  onCalibrationButtonsClick("$CAL", "Find Anchors");
   scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
 };
 const tabletCalTense = () => {
@@ -781,10 +1082,49 @@ const tabletCalOpenConfig = () => {
   loadConfigValues();
   openModal("configuration-popup");
 };
-const tabletCalStop = () => onCalibrationButtonsClick("$STOP", "Stop");
-const tabletCalSetZStop = () => onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
-const tabletCalTest = () => onCalibrationButtonsClick("$TEST", "Test");
-const tabletCalRelax = () => onCalibrationButtonsClick("$CMP", "Release Tension");
+const tabletCalStop = () => {
+  const stopBtn = id("tablettab_cal_stop");
+  if (stopBtn) {
+    stopBtn.style.setProperty('background-color', orange, 'important');
+  }
+  addMessage("Stop");
+  sendStopCommand();
+  returnFocusToTablet();
+};
+const tabletCalSetZStop = () => {
+  onCalibrationButtonsClick("$SETZSTOP", "Set Z-Stop");
+  returnFocusToTablet();
+};
+const tabletCalTest = () => {
+  onCalibrationButtonsClick("$TEST", "Test");
+  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
+};
+const tabletCalRelax = () => {
+  onCalibrationButtonsClick("$CMP", "Release Tension");
+  returnFocusToTablet();
+};
+
+// Handler for the new Maslow action button (below Setup button)
+const handleMaslowActionButtonClick = () => {
+  if (typeof maslowStatus === 'undefined') {
+    return;
+  }
+  
+  // Execute action based on Maslow state
+  switch (maslowStatus.state) {
+    case 0: // UNKNOWN - Retract
+      tabletCalRetract();
+      break;
+    case 2: // RETRACTED - Extend
+      tabletCalExtend();
+      break;
+    case 4: // EXTENDEDOUT - Apply Tension
+      tabletCalTense();
+      break;
+    // State 7 (READY_TO_CUT) and others don't need a click action
+  }
+};
+
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
 // Control event handlers - Common
@@ -868,9 +1208,13 @@ function tabletInit() {
     id("tablettab_set_z_home").addEventListener("mouseup", tabletSetZHomeMUp);
     id("tablettab_move_to_xy_home").addEventListener("click", moveHome);
     id("tablettab_toggle_units").addEventListener("click", toggleUnits);
-    id("tablettab_set_xy_home").addEventListener("mousedown", setHomeClickDown);
-    id("tablettab_set_xy_home").addEventListener("mouseup", setHomeClickUp);
-    id("tablettab_set_xy_home").addEventListener("dblclick", setXYHome);
+    id("tablettab_set_xy_home").addEventListener("click", openSetHomePopup);
+
+    // Buttons - Set Home Pop-up
+    id("set-home-popup").addEventListener("click", () => hideModal("set-home-popup"));
+    id("set_home_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_set_home_cancel").addEventListener("click", () => hideModal("set-home-popup"));
+    id("tablettab_set_home_confirm").addEventListener("click", confirmSetHome);
 
     // Controls - Fifth Row
     id("filelist").addEventListener("change", selectFile);
@@ -882,6 +1226,9 @@ function tabletInit() {
     // id("tablettab_gcode_pause").addEventListener("click", doPauseButton);
     id("tablettab_gcode_stop").addEventListener("click", tabletGCodeStop);
     id("systemStatus").addEventListener("click", clearAlarm);
+    
+    // New Maslow action button (below Setup)
+    id("maslowActionButton").addEventListener("click", handleMaslowActionButtonClick);
 
     id("tablettab_save_serial_msg").addEventListener("click", saveSerialMessages);
     
@@ -913,17 +1260,29 @@ function tabletInit() {
 const showGCode = (gcode, append = false, updateToolpath = true) => {
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
+    _gcodeRaw = "";
     setValue("tablettab_gcode", "(No GCode loaded)");
     tpDisplayer().clear();
   } else {
+    let startLine;
     if (append) {
-      const currentContent = getValue("tablettab_gcode") || "";
-      setValue("tablettab_gcode", currentContent + gcode);
+      startLine = (_gcodeRaw.match(/\n/g) || []).length + 1;
+      _gcodeRaw += gcode;
     } else {
-      setValue("tablettab_gcode", gcode);
+      startLine = 1;
+      _gcodeRaw = gcode;
+    }
+    const lines = gcode.split("\n");
+    const endsWithNewline = lines.length > 0 && lines[lines.length - 1] === "";
+    if (endsWithNewline) lines.pop();
+    const numbered = lines.map((line, i) => `(${startLine + i}) ${line}`).join("\n") + (endsWithNewline ? "\n" : "");
+    if (append) {
+      setValue("tablettab_gcode", (getValue("tablettab_gcode") || "") + numbered);
+    } else {
+      setValue("tablettab_gcode", numbered);
     }
     if (gCodeDisplayable && updateToolpath) {
-      tpDisplayer().showToolpath(getValue("tablettab_gcode"), gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(_gcodeRaw, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
   }
@@ -953,7 +1312,7 @@ function scrollToLine(lineNumber) {
   const lineHeight = Number.parseFloat(getComputedStyle(gCodeLines).getPropertyValue('line-height'));
   const gCodeText = gCodeLines.value;
 
-  gCodeLines.scrollTop = lineNumber * lineHeight
+  gCodeLines.scrollTop = Math.max(0, (lineNumber - 1) * lineHeight - (gCodeLines.clientHeight / 2) + (lineHeight / 2))
 
   let start;
   let end;
@@ -961,7 +1320,7 @@ function scrollToLine(lineNumber) {
     start = 0;
     end = 1;
   } else {
-    start = lineNumber === 1 ? 0 : nthLineEnd(gCodeText, lineNumber) + 1;
+    start = lineNumber <= 1 ? 0 : nthLineEnd(gCodeText, lineNumber - 1) + 1;
     end = gCodeText.indexOf("\n", start);
   }
 
@@ -1001,6 +1360,8 @@ function tabletLoadGCodeFile(path, size) {
         .then((response) => response.text())
         .then((gcode) => {
           showGCode(gcode);
+          // Save GCode state after successful load
+          saveGCodeState();
           // Restore ping monitoring after preview completes
           restorePingAfterUpload();
           Monitor_output_Update("[Preview] GCode preview loaded successfully\n");
@@ -1085,11 +1446,12 @@ async function tabletLoadGCodeFileSequentially(path) {
     
     // Final toolpath update to ensure everything is displayed
     if (gCodeDisplayable) {
-      const finalContent = getValue("tablettab_gcode");
-      tpDisplayer().showToolpath(finalContent, gCodeModal, arrayToXYZ(WPOS));
+      tpDisplayer().showToolpath(_gcodeRaw, gCodeModal, arrayToXYZ(WPOS));
       updateJobBoundsDisplay();
     }
-    
+
+    // Save GCode state after successful load
+    saveGCodeState();
     // Restore ping monitoring after preview completes
     restorePingAfterUpload();
     Monitor_output_Update("[Preview] GCode preview loaded successfully\n");
@@ -1118,9 +1480,22 @@ function selectFile() {
     updateDeleteButtonState();
     return;
   }
+  if (index === -4) {
+    // Clear GCode from memory
+    gCodeFilename = "";
+    gCodeDisplayable = false;
+    showGCode("");
+    clearGCodeState();
+    // Reset dropdown to the first option (legend)
+    filelist.selectedIndex = 0;
+    updateDeleteButtonState();
+    addMessage("GCode cleared from memory");
+    return;
+  }
   if (index === -1) {
     // Go up
     gCodeFilename = "";
+    clearGCodeState();
     files_go_levelup()
     updateDeleteButtonState();
     return
@@ -1129,6 +1504,7 @@ function selectFile() {
   const filename = file.name;
   if (file.isdir) {
     gCodeFilename = "";
+    clearGCodeState();
     files_enter_dir(filename);
   } else {
     tabletLoadGCodeFile(`${files_currentPath()}${filename}`, file.size);
@@ -1472,11 +1848,14 @@ function processTabletFileDelete(answer) {
 function tabletFileDeleteSuccess(response) {
   // Remember the deleted file name for logging
   const deletedFile = gCodeFilename;
-  
+
   // Clear the selected file and reset dropdown
   gCodeFilename = "";
   showGCode(""); // Clear the GCode display
-  
+
+  // Clear the saved GCode state
+  clearGCodeState();
+
   // Reset the dropdown to the first option immediately
   const filelist = id("filelist");
   if (filelist) {

@@ -18,6 +18,10 @@ tp.strokeStyle = 'black';
 // See firmware/FluidNC/src/Config.h:179 and MotionControl.cpp:142-160
 var ARC_ANGULAR_TRAVEL_EPSILON = 5e-7;
 
+// Constants for arc calculations
+const TWO_PI = Math.PI * 2;
+const CARDINAL_ANGLES = [0, Math.PI/2, Math.PI, 3*Math.PI/2]; // 0°, 90°, 180°, 270°
+
 var cameraAngle = 2; // Default to top-down view
 
 // Default fallback values (will be replaced by actual configuration values)
@@ -314,6 +318,12 @@ var tpBbox = {
     }
 };
 
+// Bounding box for the work area rectangle only (excludes belt anchor points)
+var workAreaBbox = {
+    min: { x: Infinity, y: Infinity },
+    max: { x: -Infinity, y: -Infinity }
+};
+
 // Separate tracking for just the job/gcode bounding box (excluding machine bounds)
 var jobBbox = {
     min: {
@@ -344,6 +354,12 @@ var resetBbox = function() {
     tpBbox.max.y = -Infinity;
     tpBbox.max.z = -Infinity;
     bboxIsSet = false;
+
+    // Reset work area bbox
+    workAreaBbox.min.x = Infinity;
+    workAreaBbox.min.y = Infinity;
+    workAreaBbox.max.x = -Infinity;
+    workAreaBbox.max.y = -Infinity;
 
     // Also reset job bounding box
     jobBbox.min.x = Infinity;
@@ -745,6 +761,12 @@ var drawMachineBounds = function() {
     tpBbox.max.y = Math.max(tpBbox.max.y, p2.y);
     bboxIsSet = true;
 
+    // Track the work area bounds separately (excludes belt anchor points)
+    workAreaBbox.min.x = Math.min(workAreaBbox.min.x, p0.x);
+    workAreaBbox.min.y = Math.min(workAreaBbox.min.y, p0.y);
+    workAreaBbox.max.x = Math.max(workAreaBbox.max.x, p2.x);
+    workAreaBbox.max.y = Math.max(workAreaBbox.max.y, p2.y);
+
     // Draw the work area rectangle
     tp.beginPath();
     tp.moveTo(p0.x, p0.y);
@@ -918,11 +940,13 @@ var clearCanvas = function() {
     // Reset the transform and clear the canvas
     tp.setTransform(1,0,0,1,0,0);
 
-//    if (tpRect == undefined) {
-        var tpRect = canvas.parentNode.getBoundingClientRect();
-        // canvas.width = tpRect.width ? tpRect.width : 400;
-        // canvas.height = tpRect.height ? tpRect.height : 400;
-//    }
+    // Resize the canvas pixel buffer to match the actual rendered display size.
+    // Without this the browser stretches the buffer non-uniformly, distorting the aspect ratio.
+    var tpRect = canvas.getBoundingClientRect();
+    if (tpRect.width > 0 && tpRect.height > 0) {
+        canvas.width = tpRect.width * scale;
+        canvas.height = tpRect.height * scale;
+    }
 
     tp.fillStyle = "white";
     tp.fillRect(0, 0, canvas.width, canvas.height);
@@ -946,8 +970,67 @@ var transformCanvas = function() {
         return;
     }
 
-    var imageWidth = tpBbox.max.x - tpBbox.min.x;
-    var imageHeight = tpBbox.max.y - tpBbox.min.y;
+    // Prefer jobBbox (actual cutting paths) over tpBbox (includes machine bounds and full arc extents)
+    // This prevents the display from zooming out to show large theoretical circle extents
+    var displayBbox;
+    if (jobBboxExists()) {
+        // jobBbox is in world coordinates, need to project to screen coordinates
+        // Project all 8 corners of the bounding box and find the projected bbox
+        const workCoordinateOffset = WCO;
+        let corners = [];
+
+        if (workCoordinateOffset && Array.isArray(workCoordinateOffset) && workCoordinateOffset.length >= 2) {
+            // Convert from work to machine coordinates before projecting
+            corners = [
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.min.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.min.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.max.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)}),
+                projection({x: jobBbox.min.x + workCoordinateOffset[0], y: jobBbox.max.y + workCoordinateOffset[1], z: jobBbox.max.z + (workCoordinateOffset[2] || 0)})
+            ];
+        } else {
+            // No WCO, project work coordinates directly
+            corners = [
+                projection({x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.min.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.min.x, y: jobBbox.max.y, z: jobBbox.min.z}),
+                projection({x: jobBbox.min.x, y: jobBbox.min.y, z: jobBbox.max.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.min.y, z: jobBbox.max.z}),
+                projection({x: jobBbox.max.x, y: jobBbox.max.y, z: jobBbox.max.z}),
+                projection({x: jobBbox.min.x, y: jobBbox.max.y, z: jobBbox.max.z})
+            ];
+        }
+
+        // Find min/max of projected corners in a single pass
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (let i = 0; i < corners.length; i++) {
+            minX = Math.min(minX, corners[i].x);
+            minY = Math.min(minY, corners[i].y);
+            maxX = Math.max(maxX, corners[i].x);
+            maxY = Math.max(maxY, corners[i].y);
+        }
+        displayBbox = {
+            min: { x: minX, y: minY },
+            max: { x: maxX, y: maxY }
+        };
+        // Also include machine work area bounds so the border rectangle is always fully visible
+        if (isFinite(workAreaBbox.min.x) && isFinite(workAreaBbox.min.y) && isFinite(workAreaBbox.max.x) && isFinite(workAreaBbox.max.y)) {
+            displayBbox.min.x = Math.min(displayBbox.min.x, workAreaBbox.min.x);
+            displayBbox.min.y = Math.min(displayBbox.min.y, workAreaBbox.min.y);
+            displayBbox.max.x = Math.max(displayBbox.max.x, workAreaBbox.max.x);
+            displayBbox.max.y = Math.max(displayBbox.max.y, workAreaBbox.max.y);
+        }
+    } else {
+        // Fall back to tpBbox which is already in projected coordinates
+        displayBbox = tpBbox;
+    }
+
+    var imageWidth = displayBbox.max.x - displayBbox.min.x;
+    var imageHeight = displayBbox.max.y - displayBbox.min.y;
     if (imageWidth == 0) {
         imageWidth = 1;
     }
@@ -964,8 +1047,24 @@ var transformCanvas = function() {
     if (scaler < 0) {
         scaler = -scaler;
     }
-    xOffset = inset - tpBbox.min.x * scaler;
-    yOffset = (canvas.height-inset) - tpBbox.min.y * (-scaler);
+
+    // Determine what should be centered in the canvas:
+    // - Border views (workAreaBbox is valid): center the work area border
+    // - Zoomed-in views: center the displayBbox content
+    var centerX, centerY;
+    if (isFinite(workAreaBbox.min.x) && isFinite(workAreaBbox.min.y) && isFinite(workAreaBbox.max.x) && isFinite(workAreaBbox.max.y)) {
+        centerX = (workAreaBbox.min.x + workAreaBbox.max.x) / 2;
+        centerY = (workAreaBbox.min.y + workAreaBbox.max.y) / 2;
+    } else {
+        centerX = (displayBbox.min.x + displayBbox.max.x) / 2;
+        centerY = (displayBbox.min.y + displayBbox.max.y) / 2;
+    }
+    // The transform is: x' = scaler*x + xOffset, y' = -scaler*y + yOffset
+    // We want the center of the chosen bbox to map to the canvas center:
+    //   scaler*centerX + xOffset = canvas.width/2  => xOffset = canvas.width/2 - scaler*centerX
+    //  -scaler*centerY + yOffset = canvas.height/2 => yOffset = canvas.height/2 + scaler*centerY
+    xOffset = canvas.width / 2 - scaler * centerX;
+    yOffset = canvas.height / 2 + scaler * centerY;
 
     // Canvas coordinates of image bounding box top and right
     var imageTop = scaler * imageHeight;
@@ -1132,16 +1231,16 @@ var bboxHandlers = {
 	// Note: We use one atan2() call to detect full circles (matching firmware behavior),
 	// but the rest of the decision tree avoids transcendental functions for efficiency.
 	// Every path through the axis crossing logic is 4 or 5 simple comparisons.
-	
+
 	// Check for full circle or multi-rotation arcs using same logic as FluidNC firmware
 	// Calculate angular travel (CCW angle between start and end from center)
 	// Same calculation as firmware: atan2(r_axis0 * rt_axis1 - r_axis1 * rt_axis0, r_axis0 * rt_axis0 + r_axis1 * rt_axis1)
 	var angular_travel = Math.atan2(sx * ey - sy * ex, sx * ex + sy * ey);
-	
+
 	// Check if angular travel is near zero (full circle) using firmware's epsilon
-	var isFullCircle = (extraRotations >= 1) || 
+	var isFullCircle = (extraRotations >= 1) ||
 	                   (Math.abs(angular_travel) <= ARC_ANGULAR_TRAVEL_EPSILON);
-	
+
 	// Calculate axis crossings for PROJECTED coordinates (for display)
 	if (ey >= 0) {              // End in upper half plane
 	    if (ex > 0) {             // End in quadrant 0 - X+ Y+
@@ -1216,13 +1315,13 @@ var bboxHandlers = {
 	var maxY = py ? pc.y + radius : Math.max(ps.y, pe.y);
 	var minX = mx ? pc.x - radius : Math.min(ps.x, pe.x);
 	var minY = my ? pc.y - radius : Math.min(ps.y, pe.y);
-	
+
 	// Check for full circle or multi-rotation arcs in world coordinates
 	// Use same logic as firmware (see above for projected coordinates)
 	var world_angular_travel = Math.atan2(world_sx * world_ey - world_sy * world_ex, world_sx * world_ex + world_sy * world_ey);
-	var world_isFullCircle = (extraRotations >= 1) || 
+	var world_isFullCircle = (extraRotations >= 1) ||
 	                         (Math.abs(world_angular_travel) <= ARC_ANGULAR_TRAVEL_EPSILON);
-	
+
 	// Calculate axis crossings for WORLD coordinates (for job bounding box)
 	if (world_ey >= 0) {              // End in upper half plane
 	    if (world_ex > 0) {             // End in quadrant 0 - X+ Y+
@@ -1295,7 +1394,62 @@ var bboxHandlers = {
 	}
 
 	// Now calculate world coordinate bounding box for job bounds
-	// Use both start and end positions when axis is not crossed
+	// For job bbox, we need to include the actual arc extent, but not the full circle
+	// Check if the arc crosses any cardinal directions (where it would reach maximum extent)
+	// Only include these points if they're actually within the arc span
+
+	// Start with the arc endpoints
+	var world_maxX_job = Math.max(start.x, end.x);
+	var world_maxY_job = Math.max(start.y, end.y);
+	var world_minX_job = Math.min(start.x, end.x);
+	var world_minY_job = Math.min(start.y, end.y);
+
+	// For small arcs or arcs that don't cross cardinal directions near the radius extent,
+	// also check if we need to include the peak of the arc bulge
+	// Only do this if the arc actually crosses the axis (as indicated by world_px, world_py, etc.)
+	// but limit it to the actual arc extent, not the full radius
+	if (world_px || world_py || world_mx || world_my) {
+		// Sample a few points along the arc to find the actual extent
+		var theta1 = Math.atan2(world_sy, world_sx);
+		var theta2 = Math.atan2(world_ey, world_ex);
+		var cw = modal.motion === "G2";
+
+		if (!cw && theta2 < theta1) {
+			theta2 += TWO_PI;
+		} else if (cw && theta2 > theta1) {
+			theta2 -= TWO_PI;
+		}
+
+		// Check if cardinal directions (0, 90, 180, 270 deg) are within the arc
+		for (var ci = 0; ci < CARDINAL_ANGLES.length; ci++) {
+			var angle = CARDINAL_ANGLES[ci];
+			// Check if this angle is within the arc span
+			var inSpan = false;
+			if (!cw) {
+				// CCW arc
+				if (angle >= theta1 && angle <= theta2) inSpan = true;
+				// Handle wraparound
+				if (theta2 > TWO_PI && angle + TWO_PI >= theta1 && angle + TWO_PI <= theta2) inSpan = true;
+			} else {
+				// CW arc (theta2 < theta1)
+				if (angle <= theta1 && angle >= theta2) inSpan = true;
+				// Handle wraparound
+				if (theta2 < 0 && angle - TWO_PI <= theta1 && angle - TWO_PI >= theta2) inSpan = true;
+			}
+
+			if (inSpan) {
+				var px = center.x + world_radius * Math.cos(angle);
+				var py = center.y + world_radius * Math.sin(angle);
+				world_maxX_job = Math.max(world_maxX_job, px);
+				world_maxY_job = Math.max(world_maxY_job, py);
+				world_minX_job = Math.min(world_minX_job, px);
+				world_minY_job = Math.min(world_minY_job, py);
+			}
+		}
+	}
+
+	// For display bbox (tpBbox), use the full extent with axis crossings
+	// This ensures accurate rendering of the arc shape
 	var world_maxX = world_px ? center.x + world_radius : Math.max(start.x, end.x);
 	var world_maxY = world_py ? center.y + world_radius : Math.max(start.y, end.y);
 	var world_minX = world_mx ? center.x - world_radius : Math.min(start.x, end.x);
@@ -1307,7 +1461,7 @@ var bboxHandlers = {
         // Project the arc bounding box for display bbox calculation
         // Use machine coordinates when WCO is available (same as the drawn arc)
         let p0, p1, p2, p3, p4, p5, p6, p7;
-        
+
         if (wco && Array.isArray(wco) && wco.length >= 2) {
             // WCO available, convert bounding box corners from WPOS to MPOS
             p0 = projection({x: world_minX + wco[0], y: world_minY + wco[1], z: minZ + (wco[2] || 0)});
@@ -1344,13 +1498,14 @@ var bboxHandlers = {
         initialMovesForBbox = false;
 
         // Update job bounding box in world coordinates for arc
+        // Use simplified bounds (start/end points only) to avoid zoom-out for large radius arcs
         // Only add bounds if we were already past initial moves (to exclude arc starting from rapid position)
         if (!wasInitialMoves) {
-            jobBbox.min.x = Math.min(jobBbox.min.x, world_minX);
-            jobBbox.min.y = Math.min(jobBbox.min.y, world_minY);
+            jobBbox.min.x = Math.min(jobBbox.min.x, world_minX_job);
+            jobBbox.min.y = Math.min(jobBbox.min.y, world_minY_job);
             jobBbox.min.z = Math.min(jobBbox.min.z, minZ);
-            jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX);
-            jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY);
+            jobBbox.max.x = Math.max(jobBbox.max.x, world_maxX_job);
+            jobBbox.max.y = Math.max(jobBbox.max.y, world_maxY_job);
             jobBbox.max.z = Math.max(jobBbox.max.z, maxZ);
             jobBboxIsSet = true;
         } else {
@@ -1377,9 +1532,9 @@ var bboxHandlers = {
             var cw = modal.motion === "G2";
 
         if (!cw && theta2 < theta1) {
-            theta2 += Math.PI * 2;
+            theta2 += TWO_PI;
         } else if (cw && theta2 > theta1) {
-            theta2 -= Math.PI * 2;
+            theta2 -= TWO_PI;
         }
 
             // Sample arc with enough points to capture its shape (start at i=1 to skip start point)
@@ -1442,7 +1597,7 @@ var displayHandlers = {
         // Note: JavaScript uses double precision (64-bit) floats by default, which provides
         // better precision than firmware's single precision (32-bit) floats. This ensures
         // we won't have false positives for large radius arcs due to precision limits.
-        
+
         // Convert work coordinates to machine coordinates if WCO is available
         const wco = WCO;
         let startMPOS, centerMPOS, endMPOS;
@@ -1464,14 +1619,14 @@ var displayHandlers = {
         var radius = Math.hypot(deltaX1, deltaY1);
         var deltaX2 = endMPOS.x - centerMPOS.x;
         var deltaY2 = endMPOS.y - centerMPOS.y;
-        
+
         // Calculate angular travel using same formula as firmware (MotionControl.cpp:142)
         // and bounding box calculation above
-        var angular_travel = Math.atan2(deltaX1 * deltaY2 - deltaY1 * deltaX2, 
+        var angular_travel = Math.atan2(deltaX1 * deltaY2 - deltaY1 * deltaX2,
                                         deltaX1 * deltaX2 + deltaY1 * deltaY2);
-        
+
         var cw = modal.motion == "G2";
-        
+
         // Use firmware's epsilon to detect full circles (defined at module level)
         if (cw) {  // Clockwise - correct atan2 output per direction
             if (angular_travel >= -ARC_ANGULAR_TRAVEL_EPSILON) {
@@ -1496,10 +1651,10 @@ var displayHandlers = {
         n = 10 * Math.ceil(Math.abs(angular_travel) / Math.PI);
         dt = angular_travel / n;
         dz = (end.z - start.z) / n;
-        
+
         // Start angle
         var theta = Math.atan2(deltaY1, deltaX1);
-        
+
         ps = projection(startMPOS);
         tp.moveTo(ps.x, ps.y);
         next = {};
@@ -1581,8 +1736,10 @@ ToolpathDisplayer.prototype.showToolpath = function(gcode, modal, initialPositio
     }
 
     // Draw the work origin (cross and circle) after transform is set up
-    var imageWidth = tpBbox.max.x - tpBbox.min.x;
-    drawOrigin(imageWidth * 0.04);
+    // Use canvas.width / scaler to get the effective world-space width of the visible area.
+    // This avoids huge crosshairs when transformCanvas() zoomed in on a small jobBbox
+    // while tpBbox (which includes full machine bounds) is much larger.
+    drawOrigin(canvas.width / scaler * 0.04);
 
     initialMoves = true;
     displayHandlers.position = initialPosition;
@@ -1658,12 +1815,6 @@ ToolpathDisplayer.prototype.showToolPosition = function(modal, position) {
 
     // Only draw if we have a valid bounding box
     if (bboxIsSet) {
-        // Calculate image dimensions for proper origin size
-        var imageWidth = tpBbox.max.x - tpBbox.min.x;
-        if (imageWidth == 0) {
-            imageWidth = 1;
-        }
-
         // Draw visible elements based on camera angle
         if(drawBounds){
             drawMachineBounds();
@@ -1673,7 +1824,9 @@ ToolpathDisplayer.prototype.showToolPosition = function(modal, position) {
         }
 
         // Draw the work origin (cross and circle)
-        drawOrigin(imageWidth * 0.04);
+        // Use canvas.width / scaler so the crosshair is proportional to the visible area,
+        // not to tpBbox which may be much larger than the displayed jobBbox.
+        drawOrigin(canvas.width / scaler * 0.04);
 
         // Draw job bounding box if available (updates with WCO changes)
         drawJobBoundingBox();
@@ -1841,11 +1994,15 @@ var updateJobBoundsDisplay = function() {
 
         boundsText.innerHTML = `Size: ${width} × ${height} mm<br>Z: ${bbox.min.z.toFixed(1)} to ${bbox.max.z.toFixed(1)} mm (${zRange}mm range)`;
         boundsInfo.style.display = "block";
-        traceButton.style.display = "block";
+        traceButton.style.opacity = "1";
+        traceButton.style.pointerEvents = "auto";
+        traceButton.style.cursor = "pointer";
     } else {
         boundsText.innerHTML = "No file loaded";
         boundsInfo.style.display = "none";
-        traceButton.style.display = "none";
+        traceButton.style.opacity = "0.5";
+        traceButton.style.pointerEvents = "none";
+        traceButton.style.cursor = "not-allowed";
     }
 }
 
@@ -1860,7 +2017,8 @@ var traceBoundary = function() {
     const currentPos = arrayToXYZ(WPOS);
 
     // Create the boundary tracing commands
-    var commands = [`G90`]; // Absolute positioning
+    var originalUnits = (gCodeModal && gCodeModal.units) ? gCodeModal.units : 'G21'; // Save current unit mode to restore later
+    var commands = [`G21`, `G90`]; // Switch to mm, absolute positioning
 
     // Use envelope points if available (shaped boundary), otherwise fall back to rectangle
     if (jobEnvelopePoints.length > 0) {
@@ -1881,6 +2039,9 @@ var traceBoundary = function() {
 
     // Return to original position
     commands.push(`G0 X${currentPos.x.toFixed(3)} Y${currentPos.y.toFixed(3)}`);
+
+    // Restore original unit mode
+    commands.push(originalUnits === 'G20' ? `G20` : `G21`);
 
     // Confirm before starting
     var pointCount = jobEnvelopePoints.length > 0 ? jobEnvelopePoints.length : 4;

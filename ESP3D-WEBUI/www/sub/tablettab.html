@@ -1,5 +1,5 @@
 <div id="tablettab" class="tabcontent tablettab">
-  <div id="tablet-listener">
+  <div id="tablet-listener" tabindex="0">
     <div class="maslow">
       <div class="display tablettab-canvas-wrapper">
         <canvas id="small-toolpath" class="previewer" style="width: 100%; height: 100%"></canvas>
@@ -54,11 +54,6 @@
             <canvas id="rBtn" style="width: 100%; height: 100%"></canvas>
           </div>
           <div id="dynamic_button_1" class="maslow-grid-item maslow-grid-item-btn" style="background-color: #f2f0e4;">
-            <div id="tablettab_trace_boundary" class="maslow-grid-item maslow-grid-item-btn" 
-                 style="background-color: #f2f0e4; display: none; cursor: pointer;"
-                 title="Move around the job boundary to check positioning">
-              Trace Boundary
-            </div>
           </div>
           <!-- Buttons row 3 -->
           <div id="tablettab_zDown" class="maslow-grid-item maslow-grid-item-btn"
@@ -79,7 +74,10 @@
           </div>
           <div id="tablettab_bottomRight" class="maslow-grid-item maslow-grid-item-btn"
             style="background-color: #b69fcb;"><canvas id="brBtn" style="width: 100%; height: 100%"></canvas> </div>
-          <div id="dynamic_button_2" class="maslow-grid-item maslow-grid-item-btn" style="background-color: #f2f0e4;">
+          <div id="maslowActionButton" class="maslow-grid-item maslow-grid-item-btn maslow-action-button" 
+               style="background-color: #4aa85c; font-size: 1.2vw; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; visibility: hidden;"
+               title="State-dependent action button">
+            <span id="maslowActionText">Idle</span>
           </div>
           <!-- Buttons row 4 -->
           <div id="tablettab_set_z_home" class="maslow-grid-item maslow-grid-item-btn"
@@ -89,8 +87,13 @@
           <div id="tablettab_toggle_units" class="maslow-grid-item maslow-grid-item-btn"
             style="background-color: #f2f0e4;" title="Toggle Units">mm</div>
           <div id="tablettab_set_xy_home" class="maslow-grid-item maslow-grid-item-btn"
-            style="background-color: #f2f0e4;" title="Press and hold, or tap twice">Define XY Home</div>
+            style="background-color: #f2f0e4;" title="Set XY home position">Define XY Home</div>
           <div id="dynamic_button_3" class="maslow-grid-item maslow-grid-item-btn" style="background-color: #f2f0e4;">
+            <div id="tablettab_trace_boundary" class="maslow-grid-item maslow-grid-item-btn"
+                 style="background-color: #f2f0e4; cursor: pointer;"
+                 title="Move around the job boundary to check positioning">
+              Trace Boundary
+            </div>
           </div>
         </div>
         <!-- Controls row 5 -->
@@ -127,15 +130,18 @@
             <table style="width:100%">
               <tr>
                 <td>X:</td>
-                <td id="mpos-x">0.000</td>
+                <td id="wpos-x">0.000</td>
+                <td id="mpos-x">|Xm: 0.000|</td>
               </tr>
               <tr>
                 <td>Y:</td>
-                <td id="mpos-y">0.000</td>
+                <td id="wpos-y">0.000</td>
+                <td id="mpos-y">|Ym: 0.000|</td>
               </tr>
               <tr>
                 <td>Z:</td>
-                <td id="mpos-z">0.000</td>
+                <td id="wpos-z">0.000</td>
+                <td id="mpos-z">|Zm: 0.000|</td>
               </tr>
               <tr>
                 <td id="active-state"></td>
@@ -184,6 +190,41 @@
           <button id="tablettab_cal_test" class="calibration-modal-button">Test</button>
           <button id="tablettab_cal_zstop" class="calibration-modal-button"
             title="Record the 'bottom' limit for Z-axis movement">Set Z-Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="set-home-popup" class="calibration-modal-container">
+    <div id="set_home_popup_content" class="calibration-modal-content">
+      <div class="calibration-modal-button-container">
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label style="text-align: center;">Set Home Position</label>
+          </div>
+          <div style="display: flex; justify-content: center;">
+            <label id="currentHomePositionLabel" style="text-align: center; font-size: 0.85em; color: #888;"></label>
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="grid-container">
+          <div class="input-row">
+            <label for="setHomeX" class="input-label">X <span id="setHomeXUnit" style="font-size: 0.85em; color: #666;"></span></label>
+          </div>
+          <div class="input-row">
+            <input id="setHomeX" type="number" step="any" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="setHomeY" class="input-label">Y <span id="setHomeYUnit" style="font-size: 0.85em; color: #666;"></span></label>
+          </div>
+          <div class="input-row">
+            <input id="setHomeY" type="number" step="any" class="calibration-modal-input" placeholder="0">
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
+          <button id="tablettab_set_home_cancel" class="calibration-modal-button stop-button">Cancel</button>
+          <button id="tablettab_set_home_confirm" class="calibration-modal-button">Set Home</button>
         </div>
       </div>
     </div>

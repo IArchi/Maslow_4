@@ -167,9 +167,9 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 		case 6:
-			stateLabel.innerHTML = "State: Calibrating";
+			stateLabel.innerHTML = "State: Finding Anchors";
 			if (mainStateLabel) {
-				mainStateLabel.innerHTML = "State: Calibrating";
+				mainStateLabel.innerHTML = "State: Finding Anchors";
 				if (mainStateLabelContainer) mainStateLabelContainer.style.backgroundColor = blueBackground;
 			}
 
@@ -210,9 +210,9 @@ const updateDynamicButtons = () => {
 			// No buttons are active in this state
 			break;
 		case 9:
-			stateLabel.innerHTML = "State: Calibration Computing";
+			stateLabel.innerHTML = "State: Find Anchors Computing";
 			if (mainStateLabel) {
-				mainStateLabel.innerHTML = "State: Calibration Computing";
+				mainStateLabel.innerHTML = "State: Find Anchors Computing";
 				if (mainStateLabelContainer) mainStateLabelContainer.style.backgroundColor = blueBackground;
 			}
 			// No buttons are active in this state
@@ -236,6 +236,16 @@ const updateDynamicButtons = () => {
 			calibrateButton.style.backgroundColor = greyBackground;
 			break;
 	}
+	
+	// Update the new Maslow action button when state changes
+	if (typeof updateMaslowActionButton === 'function') {
+		updateMaslowActionButton();
+	}
+
+	// Reset stop button colors when action completes (state update received)
+	if (typeof resetStopButtonColors === 'function') {
+		resetStopButtonColors();
+	}
 }
 
 
@@ -258,6 +268,11 @@ const maslowInfoMsgHandling = (msg) => {
 			}
 		} catch (error) {
 			console.error("Parsing the 'MINFO' message failed, the maslow status has not been changed. This is probably a programmer error.");
+		}
+
+		// Reset stop button colors when firmware responds to our command
+		if (typeof resetStopButtonColors === 'function') {
+			resetStopButtonColors();
 		}
 		return true;
 	}

@@ -841,8 +841,26 @@ static Error maslow_stop(const char* value, WebUI::AuthenticationLevel auth_leve
     if (Maslow.using_default_config) {
         return Error::ConfigurationInvalid;
     }
-    sys.set_state(State::Alarm);
-    Maslow.stop();
+    // Reset the update watchdog before each operation that can block on the
+    // AllChannels mutex (stopJob, Maslow.stop).  The polling task on Core 0
+    // may hold that mutex while flushing the WebSocket TX buffer; without
+    // these resets the 100 ms watchdog can fire and set State::Alarm.
+    Maslow.resetUpdateWatchdog();
+    Maslow.stopMotors();  // Stop XY belt motors immediately
+    Maslow.raiseZ();      // Raise Z to Z home + 2mm to prevent workpiece damage
+    Maslow.resetUpdateWatchdog();
+    sys.set_state(State::Idle);
+    // Explicitly save current belt and Z positions to NVS before cleanup.
+    // The automatic save in Maslow.update() only fires on Cycle/Jog→Idle
+    // transitions that occur inside the update() loop; when raizeZ() returns
+    // without calling protocol_buffer_synchronize() (Z already at safe height),
+    // update() is not called inside maslow_stop() and the auto-save would only
+    // happen on the next protocol_execute_realtime() cycle — after Maslow.stop()
+    // has already run. Saving here guarantees positions are always persisted,
+    // regardless of whether the Z raise executed or the previous state.
+    Maslow.saveZPos();
+    Maslow.saveBeltPositions();
+    Maslow.stop();  // Complete cleanup (calibration state, arm reset, etc.)
     return Error::Ok;
 }
 static Error maslow_telemetry_dump(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
@@ -884,6 +902,10 @@ static Error maslow_start_calibration(const char* value, WebUI::AuthenticationLe
         return Error::ConfigurationInvalid;
     }
     sys.set_state(State::Homing);
+    // requestStateChange(CALIBRATION_IN_PROGRESS) performs significant initialization work
+    // (memory allocation, grid generation, position computation). Reset the update watchdog
+    // before calling it to prevent a false emergency stop.
+    Maslow.resetUpdateWatchdog();
     Maslow.calibration.requestStateChange(CALIBRATION_IN_PROGRESS);
     return Error::Ok;
 }
@@ -892,8 +914,12 @@ static Error overwrite_config(const char* value, WebUI::AuthenticationLevel auth
     if (Maslow.using_default_config) {
         return Error::ConfigurationInvalid;
     }
-    // value will be ignored, we will use the config_filename value instead
-    return dump_config(config_filename->get(), auth_level, out);
+    // Writing to LittleFS can block the main loop for hundreds of milliseconds.
+    // Reset the update watchdog before and after to prevent a false emergency stop.
+    Maslow.resetUpdateWatchdog();
+    Error result = dump_config(config_filename->get(), auth_level, out);
+    Maslow.resetUpdateWatchdog();
+    return result;
 }
 
 static Error maslow_TLO(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {
@@ -1175,6 +1201,9 @@ Error do_command_or_setting(const char* key, char* value, WebUI::AuthenticationL
         if (rts.isHandled_) {
             if (value) {
                 // Validate only if something changed, not for display
+                // Traversing the full config tree for validation can take significant time.
+                // Reset the update watchdog before validation to prevent a false emergency stop.
+                Maslow.resetUpdateWatchdog();
                 try {
                     Configuration::Validator validator;
                     config->validate();
@@ -1184,9 +1213,14 @@ Error do_command_or_setting(const char* key, char* value, WebUI::AuthenticationL
                     return Error::ConfigurationInvalid;
                 }
 
+                // Traversing the full config tree for afterParse can take significant time.
+                // Reset the update watchdog before and after to prevent a false emergency stop.
+                // This also serves as the post-validation watchdog reset.
+                Maslow.resetUpdateWatchdog();
                 Configuration::AfterParse afterParseHandler;
                 config->afterParse();
                 config->group(afterParseHandler);
+                Maslow.resetUpdateWatchdog();
             }
             return Error::Ok;
         }

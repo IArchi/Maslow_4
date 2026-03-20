@@ -22,6 +22,10 @@
 ### Enter Z offsets for your anchor points
 ### Enter spoilboard thickness and work thickness 
 ### Run a test pattern and enter scale adjustments
+### Saving your YAML file
+### Udating the firmware
+### Making sure your firmware and index files match
+
 
 
 

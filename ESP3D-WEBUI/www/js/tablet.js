@@ -648,12 +648,13 @@ const orange = "#ff9500";
 const stopRed = "#ce654c";
 
 function setRunControls() {
-  if (gCodeLoaded) {
-    // A GCode file is ready to go
+  const isReadyToCut = typeof maslowStatus !== 'undefined' && maslowStatus.state === MASLOW_STATE_READY_TO_CUT;
+  if (gCodeLoaded && isReadyToCut) {
+    // A GCode file is ready to go and Maslow is ready to cut
     setPlayButton(true, green, 'Start', runGCode)
     //setPauseButton(false, gray, 'Pause', null)
   } else {
-    // Can't start because no GCode to run
+    // Can't start: no GCode loaded or Maslow is not ready to cut
     setPlayButton(false, gray, 'Start', null)
     //setPauseButton(false, gray, 'Pause', null)
   }

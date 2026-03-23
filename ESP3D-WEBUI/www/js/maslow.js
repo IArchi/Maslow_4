@@ -4,6 +4,9 @@
 /** Maslow Status */
 let maslowStatus = { homed: false, extended: false, state: 0 };
 
+/** Maslow state constants (mirror firmware Maslow.h defines) */
+const MASLOW_STATE_READY_TO_CUT = 7;
+
 /** This keeps track of when we saw the last heartbeat from the machine */
 //I think this is not used anymore and can be removed now
 let lastHeartBeatTime = new Date().getTime();
@@ -240,6 +243,11 @@ const updateDynamicButtons = () => {
 	// Update the new Maslow action button when state changes
 	if (typeof updateMaslowActionButton === 'function') {
 		updateMaslowActionButton();
+	}
+
+	// Update run controls so the Start button reflects whether Maslow is ready to cut
+	if (typeof setRunControls === 'function') {
+		setRunControls();
 	}
 
 	// Reset stop button colors when action completes (state update received)
@@ -479,7 +487,7 @@ globalThis.setValue = globalThis.setValue || function(id, value) {
 globalThis.loadedValues = globalThis.loadedValues || {};
 
 const checkHomed = () => {
-	if (maslowStatus.state != 7) { // If the state is not 'ready to cut'
+	if (maslowStatus.state != MASLOW_STATE_READY_TO_CUT) { // If the state is not 'ready to cut'
 		console.log("Maslow is not ready to move, current state: " + maslowStatus.state);
 		const err_msg = `${M} is not ready to move.`;
 		alert(err_msg);
@@ -492,7 +500,7 @@ const checkHomed = () => {
 		}
 	}
 
-	return maslowStatus.state == 7; // Return true if the state is 'ready to cut'
+	return maslowStatus.state == MASLOW_STATE_READY_TO_CUT; // Return true if the state is 'ready to cut'
 }
 
 /** Short hand convenience call to SendPrinterCommand with some preset values.

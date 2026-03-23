@@ -18,33 +18,33 @@ The 1/4 inch bit limits you by resolution and shape, many people buy a more deli
 Two common router bit adapters that Maslow community members have found useful are a 1/4 to 1/8 inch chuck adaptor so that you can use 1/8 router and carving bits (common size for Dremel tools and widely available)  And then an alternate chuck tightening system and nut as it is a bit challenging to change router bits in the tight space inside the Maslow. Some of these like MuscleChuck use a hex wrench or other tool, others use different tightening systems that also may be easier to use. 
 
 Router bits, feeds and speeds will vary greatly with material, bit size, humidity and type of cut.  As a place to get started forum member TDA put together this list of important ideas: 
+<https://forums.maslowcnc.com/t/routers-and-bits-that-can-be-usted-on-the-maslow-4/19984/5>
 
-Chipload:
+**Chipload:**
 This is the widest part of the chip being made per flute per rotation of the bit. This determines a great deal in the cut and the effects of the cut. A short incomplete list would be force, heat making it to the other components, cut quality, and tool life. To calculate tool chipload from a feed and speed: Chipload = feed / RPM / number of flutes.
 
-Runout:
+**Runout:**
 This is how much the tool spins off the center axis of the cutter (bit wobble). It’s an important factor especially in multi-flute tools as this number will get added and subtracted to chipload to various flutes of the bit.
 
-Minimum chipload:
+**Minimum chipload:**
 For every material we have a minimum chipload to actually cut. This is determined by both the material’s ability to support itself and a part of the bit that will almost never be listed called the edge radius. For most soft materials (less hard than metal) we don’t really have to worry about the edge radius except maybe for some tools that are designed for metal. If we cut less than this minimum then what will happen is instead of cutting the chip, it will push a partially formed chip out of the way or “grind” / “rub” away the material. This causes an increase in both cutting force and heat vs cutting. After the minimum we will also have chiploads that produce better cuts based on the tool and material.
 
 Another thing to consider in chipload is that the primary source of heat (if not rubbing) is in the deformation of what becomes the chip. So the smaller the chipload the higher the heat that makes it to the material and tool. So even if we are cutting there are advantages to a larger chipload for tool life and cut quality.
 
 Our maximum will almost always be determined by the failure point of the material, flute of the tool, or machine. These are all limited by cutting forces. In other words, when is the cutting force and direction of that force causing a failure in one of these?
 
-Cutting force:
+**Cutting force:**
 Cutting force is functionally determined by cubic material removed per flute. So an increase in tool diameter, stepover, cutting depth, or chipload increases our cutting forces. These are more or less proportional. Although when you include things like a helix in a tool this causes a change in the force direction which can change the when or where a failure point is.
 
 Additional to this there are tool geometry differences that can change our cutting forces. As previously mentioned the helix (flute twist) would be one. In the case of helix the tighter the helix the more force you are redirecting to the Z axis. This can be a good thing if it gives us more room for a higher chipload where we were otherwise listed. However, it can also cause tearout of the material as we are now trying to shear it in a vertical direction.
 
 Another thing that will affect this is the edge radius and the rake. The rake of a tool is the angle of attack. The more positive rake the less force required to take the same chip. The edge radius is the actual thickness of the edge of the tool. It’s a function of the carbide grade, grind, and geometry. The thinner it is the smaller the impact surface of the edge and the less force. Like for like, these both come at the cost of flute strength.
 
-A few other things to cover.
 
-Surface speed:
+**Surface speed:**
 This is a complicated issue. The simple way to put it is that this is the rotational velocity of the edge of the tool as it spins. The larger the tool or the faster the RPM the higher the surface speed. There’s a limit based on the tool and the material where you can damage one or the other. The flip side of this is until that point you increase shear and can get a cleaner cut.
 
-Acceleration compensation:
+**Acceleration compensation:**
 One thing that has to be accounted for in all of this is we can’t keep the chipload up in the entire cut. This is affected by length of the cut and direction changes. Basically we can’t go from 0-60 in zero seconds and we can’t take a 90° turn at full speed. So any changes in direction or short segments of cuts will slow down and speed up based on the machine, controller, and settings. This is something that should at least be considered when thinking about feed rates and tool selection as we want to at least be hitting minimum or as close as we can get the majority of the cut. Basically we want to be cutting above the minimum enough that we have margin for direction changes.
 
 Here is a video discussing bit types
@@ -56,8 +56,8 @@ This section was also from that forum discussion:
 
 The above could also be changed by the tool if we have a higher helix upcut as it will drive more of the force into the stronger Z direction. If we have a small enough edge radius, rake, etc. we’ll have a smaller minimum chipload. If we have a higher rake and enough flute relief we will have less force in the same cut.
 
-Also  [quote="TDA, post:5, topic:19984"]
-Preface: I’m with PreciseBits. So while I try to only post general information take everything I say with the understanding that I have a bias.
+Also  
+"Preface: I’m with PreciseBits. So while I try to only post general information take everything I say with the understanding that I have a bias.
 
 I won’t talk too much about routers as I have a very strong bias in this type towards the 611. But in general the 2 biggest “failure” points are usually brushes and bearings. Brushes are replaceable and cheap. Bearing failure is basically throwing out the router or investing in tools for bearing changes. With that said, I’d stick to a brand name that will likely use at least decent bearings that are spec’ed to the RPM and load expected.
 
@@ -75,16 +75,9 @@ The higher the helix (flute twist) the more force is driven into the “Z”. Ke
 
 The up-cut is because that direction will try to force the Maslow through the material it’s cutting. As opposed to a down-cut where the force will be trying to lift the Maslow off the material. So the up-cut especially with a higher helix tool should provide more rigidity.
 
-If someone wants the long version let me know. I can go more into the the force changes, chipload, runouts effect on the cut, general rule of thumb for material minimum, tool geometry, etc.
-
-[quote="md8n, post:3, topic:19984"]
-I normally go for very small bit with single flutes (single cutting blade), but that’s for my old Maslow. The new one goes faster, so I have to try everything again when I get it.
-[/quote]
-
 You should be able to ballpark it with chipload. Like for like any cut that would work with say a single flute tool would work at double the feed with a 2 flute. You won’t have a true like for like though due tool geometry chanes like flute rake, helix, core, etc. But it should get you close for similar geometries.
 
-If anyone doesn’t know the simple version of chipload is the widest part of the chip taken by a single flute in a single flute rotation. So, Chipload = Feed / RPM / Number of flutes.
-[/quote]
+If anyone doesn’t know the simple version of chipload is the widest part of the chip taken by a single flute in a single flute rotation. So, **Chipload = Feed / RPM / Number of flutes.**"
 
 
 

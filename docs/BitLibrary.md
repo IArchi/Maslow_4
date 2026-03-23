@@ -4,10 +4,10 @@ This is a place to list bits that the community has found useful, for each bit a
 
 Your Maslow kit needs a router DewaltDWP611 to work as well as a cutting bit to go in the router.  The Dewalt 611 has a very exact 1/4 inch hole in the chuck.  As sold it can only use router bits with a 1/4 in shaft. 
 
-To change a Router bit, you will need to press in towards the center of the router on a yellow button that is in a semicircular recess in the bottom Maslow4 Clamp ring. This button pushes a metal rod into a cut out space on the shaft of the router to hold the shaft in place while you use a wrench to loosen the chuck nut which will let the router bit slide in and out.  This is a lot for just two hands to do. Maslow community members have designed a 3D printable button pusher stub to push into the hole to hold the button down while changing the bit. Be sure to remove it before starting. <https://www.maslowcnc.com/the-not-shop>
+**To change a Router bit**, you will need to press in towards the center of the router on a yellow button that is in a semicircular recess in the bottom Maslow4 Clamp ring. This button pushes a metal rod into a cut out space on the shaft of the router to hold the shaft in place while you use a wrench to loosen the chuck nut which will let the router bit slide in and out.  This is a lot for just two hands to do. Maslow community members have designed a 3D printable button pusher stub to push into the hole to hold the button down while changing the bit. Be sure to remove it before starting. <https://www.maslowcnc.com/the-not-shop>
 
 
-The most common cutting bit is a 1/4 in 2 flute spiral upcutting bit.  These are available in the Maslow website shop and in most hardware stores.  
+**The most common cutting bit is a 1/4 in 2 flute spiral upcutting bit**.  These are available in the Maslow website shop and in most hardware stores.  
 <https://shop.maslowcnc.com/collections/router-bits-and-accessories>  
 This bit will cut a 1/4 inch groove in plywood or other material, part way through to make pocket cuts or all of the way through to cut around the profile of a piece. It can also drill a 1/4 in hole by pecking in and out of the hole in stages but not very well. Buy one of these to get started. 
 
@@ -15,7 +15,7 @@ This bit will cut a 1/4 inch groove in plywood or other material, part way throu
 The 1/4 inch bit limits you by resolution and shape, many people buy a more delicate 1/8 upcut spiral to do smaller details.  From there you could do all sorts of things. V cutters are good for engraving signs, Longer bits are good for cutting through soft styrofoam, stubby drill bits (regular length drill bits don't quite fit)  for drilling holes.  Rounded bits for sculpting surfaces.  There are many options. 
 
 
-Two common router bit adapters that Maslow community members have found useful are a 1/4 to 1/8 inch chuck adaptor so that you can use 1/8 router and carving bits (common size for Dremel tools and widely available)  And then an alternate chuck tightening system and nut as it is a bit challenging to change router bits in the tight space inside the Maslow. Some of these like MuscleChuck use a hex wrench or other tool, others use different tightening systems that also may be easier to use. 
+**Two common router bit adapters that Maslow community members have found useful are a 1/4 to 1/8 inch chuck adaptor** so that you can use 1/8 router and carving bits (common size for Dremel tools and widely available)  And then an alternate chuck tightening system and nut as it is a bit challenging to change router bits in the tight space inside the Maslow. Some of these like MuscleChuck use a hex wrench or other tool, others use different tightening systems that also may be easier to use. 
 
 Router bits, feeds and speeds will vary greatly with material, bit size, humidity and type of cut.  As a place to get started forum member TDA put together this list of important ideas: 
 <https://forums.maslowcnc.com/t/routers-and-bits-that-can-be-usted-on-the-maslow-4/19984/5>
@@ -48,7 +48,7 @@ This is a complicated issue. The simple way to put it is that this is the rotati
 One thing that has to be accounted for in all of this is we can’t keep the chipload up in the entire cut. This is affected by length of the cut and direction changes. Basically we can’t go from 0-60 in zero seconds and we can’t take a 90° turn at full speed. So any changes in direction or short segments of cuts will slow down and speed up based on the machine, controller, and settings. This is something that should at least be considered when thinking about feed rates and tool selection as we want to at least be hitting minimum or as close as we can get the majority of the cut. Basically we want to be cutting above the minimum enough that we have margin for direction changes.
 
 Here is a video discussing bit types
-https://www.youtube.com/watch?v=seAmL6mtqgM
+<https://www.youtube.com/watch?v=seAmL6mtqgM>
 In general we will go slower than the recommended speeds for large commercial gantry machines. 
 
 This section was also from that forum discussion:

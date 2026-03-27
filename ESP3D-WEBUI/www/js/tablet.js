@@ -621,6 +621,41 @@ var playButtonHandler
 function setPlayButton(isEnabled, color, text, click) {
   setButton('playBtn', isEnabled, color, text);
   playButtonHandler = click;
+  // Update the parent div's background and redraw the canvas 2D content so the
+  // visual state accurately reflects the intended button state.  CSS backgroundColor
+  // on the canvas alone has no effect when the canvas has an opaque 2D fill.
+  const playDiv = id('tablettab_gcode_play');
+  const canvas = id('playBtn');
+  if (canvas && canvas.getContext) {
+    if (playDiv) {
+      playDiv.style.backgroundColor = color;
+    }
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // canvas.width/height default to 300x150 per the HTML canvas spec
+      const w = canvas.width || 300;
+      const h = canvas.height || 150;
+      ctx.clearRect(0, 0, w, h); // Make canvas transparent so div color shows through
+      if (color !== gray) {
+        // Draw a centered white triangle to indicate an actionable state
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const size = Math.min(w, h) * 0.3;
+        ctx.beginPath();
+        ctx.strokeStyle = 'white';
+        ctx.fillStyle = 'white';
+        ctx.lineWidth = 1;
+        ctx.lineCap = 'butt';
+        ctx.lineJoin = 'miter';
+        ctx.moveTo(centerX - size/2, centerY - size/2);
+        ctx.lineTo(centerX - size/2, centerY + size/2);
+        ctx.lineTo(centerX + size/2, centerY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+  }
 }
 function doPlayButton() {
   if (playButtonHandler) {
@@ -648,12 +683,13 @@ const orange = "#ff9500";
 const stopRed = "#ce654c";
 
 function setRunControls() {
-  if (gCodeLoaded) {
-    // A GCode file is ready to go
+  const isReadyToCut = typeof maslowStatus !== 'undefined' && maslowStatus.state === MASLOW_STATE_READY_TO_CUT;
+  if (gCodeLoaded && isReadyToCut) {
+    // A GCode file is ready to go and Maslow is ready to cut
     setPlayButton(true, green, 'Start', runGCode)
     //setPauseButton(false, gray, 'Pause', null)
   } else {
-    // Can't start because no GCode to run
+    // Can't start: no GCode loaded or Maslow is not ready to cut
     setPlayButton(false, gray, 'Start', null)
     //setPauseButton(false, gray, 'Pause', null)
   }

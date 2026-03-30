@@ -50,6 +50,7 @@ READY_TO_CUT 7
     -Retract All
     -Apply Tension
     -Release Tension
+    -Park (State-Dependent Button: moves to machine 0,0)
 */
 const updateDynamicButtons = () => {
 

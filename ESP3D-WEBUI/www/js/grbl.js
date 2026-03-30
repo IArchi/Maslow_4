@@ -507,7 +507,7 @@ const updateMaslowActionButton = () => {
   let shouldShow = false;
   const backgroundColor = "#4aa85c"; // green when shown
   
-  // Only show button for states 0, 2, and 4
+  // Only show button for states 0, 2, 4, and 7
   switch (maslowStatus.state) {
     case 0: // UNKNOWN
       displayText = "Retract";
@@ -524,8 +524,12 @@ const updateMaslowActionButton = () => {
       isActionable = true;
       shouldShow = true;
       break;
+    case 7: // READY_TO_CUT - Park
+      displayText = "Park";
+      isActionable = true;
+      shouldShow = true;
+      break;
     default:
-      // Hide button for all other states (including state 7 - READY_TO_CUT)
       shouldShow = false;
       break;
   }

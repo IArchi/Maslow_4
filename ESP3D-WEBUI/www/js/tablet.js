@@ -1157,7 +1157,10 @@ const handleMaslowActionButtonClick = () => {
     case 4: // EXTENDEDOUT - Apply Tension
       tabletCalTense();
       break;
-    // State 7 (READY_TO_CUT) and others don't need a click action
+    case 7: // READY_TO_CUT - Park at machine 0,0
+      sendCommand('G53 G0 X0 Y0');
+      addMessage('Parking at machine position X=0, Y=0');
+      break;
   }
 };
 

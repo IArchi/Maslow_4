@@ -1158,7 +1158,7 @@ const handleMaslowActionButtonClick = () => {
       tabletCalTense();
       break;
     case 7: // READY_TO_CUT - Park at machine 0,0
-      sendCommand('G53 G0 X0 Y0');
+      sendCommand('G53 G0 Y0 X0');
       addMessage('Parking at machine position X=0, Y=0');
       break;
   }

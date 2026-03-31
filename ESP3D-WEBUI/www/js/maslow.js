@@ -585,6 +585,7 @@ const saveConfigValues = () => {
 	refreshSettings(current_setting_filter);
 	saveMaslowYaml();
 	loadCornerValues();
+	loadParkSettings();
 
 	hideModal('configuration-popup');
 }

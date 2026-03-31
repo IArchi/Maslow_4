@@ -197,6 +197,11 @@ const updateDynamicButtons = () => {
 			tenseButton.style.backgroundColor = greyBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
 
+			// Load park settings so the park button uses configured values
+			if (typeof loadParkSettings === 'function') {
+				loadParkSettings();
+			}
+
 			break;
 		case 8:
 			stateLabel.innerHTML = "State: Releasing Tension";
@@ -397,6 +402,9 @@ const cfgDef = {
 	Work_Area_Y: { name: "workAreaY", type: "A", cmd: "Maslow_Work_Area_Y" },
 	Work_Area_Center_Offset_X: { name: "workAreaCenterOffsetX", type: "A", cmd: "Maslow_Work_Area_Center_Offset_X" },
 	Work_Area_Center_Offset_Y: { name: "workAreaCenterOffsetY", type: "A", cmd: "Maslow_Work_Area_Center_Offset_Y" },
+	Park_Z: { name: "parkZ", type: "A", cmd: "Maslow_Park_Z" },
+	Park_X: { name: "parkX", type: "A", cmd: "Maslow_Park_X" },
+	Park_Y: { name: "parkY", type: "A", cmd: "Maslow_Park_Y" },
 };
 
 /** Handle Maslow specific configuration messages
@@ -538,6 +546,16 @@ const loadCornerValues = () => {
 		const cfgVal = cfgDef[key];
 		const cmd = `$/${cfgVal.cmd || `${M}_${key}`}`;
 		SendPrinterCommand(cmd);
+	});
+};
+
+/** Load park position settings from firmware (queried on demand) */
+const loadParkSettings = () => {
+	['Park_Z', 'Park_X', 'Park_Y'].forEach((key) => {
+		const cfgVal = cfgDef[key];
+		if (cfgVal) {
+			SendPrinterCommand(`$/${cfgVal.cmd}`);
+		}
 	});
 };
 

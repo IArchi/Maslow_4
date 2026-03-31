@@ -1157,7 +1157,7 @@ const handleMaslowActionButtonClick = () => {
     case 4: // EXTENDEDOUT - Apply Tension
       tabletCalTense();
       break;
-    case 7: // READY_TO_CUT - Park: lift Z first, then move to park position
+    case 7: // READY_TO_CUT - Park: lift Z to safe height (work coords), then move to park position (machine coords)
     {
       const lv = globalThis.loadedValues || {};
       const parkZ = parseFloat(lv.parkZ);
@@ -1166,9 +1166,9 @@ const handleMaslowActionButtonClick = () => {
       const safeZ = isNaN(parkZ) ? 2.0 : parkZ;
       const targetX = isNaN(parkX) ? 0.0 : parkX;
       const targetY = isNaN(parkY) ? 0.0 : parkY;
-      sendCommand(`G53 G0 Z${safeZ}`);
+      sendCommand(`G90 G0 Z${safeZ}`);
       sendCommand(`G53 G0 Y${targetY} X${targetX}`);
-      addMessage(`Parking: Z${safeZ} then X=${targetX}, Y=${targetY} (machine coordinates)`);
+      addMessage(`Parking: raising Z to ${safeZ}mm above Z home, then moving to machine X=${targetX}, Y=${targetY}`);
       break;
     }
   }

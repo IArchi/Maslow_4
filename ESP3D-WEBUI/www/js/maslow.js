@@ -576,6 +576,10 @@ const saveConfigValues = () => {
 		if (value !== cfgVal.loadedVal) {
 			const cmd = `$/${cfgVal.cmd || `${M}_${key}`}=${value}`;
 			sendCommand(cmd);
+			// Immediately update loadedValues so the new value is available without
+			// waiting for the async WebSocket round-trip from loadParkSettings()
+			if (!globalThis.loadedValues) globalThis.loadedValues = {};
+			globalThis.loadedValues[cfgVal.name] = value;
 		}
 	};
 

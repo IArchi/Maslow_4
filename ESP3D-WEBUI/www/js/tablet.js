@@ -1029,6 +1029,13 @@ const onWSOpenCallback = () => {
       console.warn("Failed to send pending $STOP on connect:", e);
     }
   }
+  // Refresh park settings after reconnect (e.g. after firmware restart with new maslow.yaml).
+  // A short delay lets the firmware send CURRENT_ID so PAGEID is established before querying.
+  scheduleCallback(() => {
+    if (typeof loadParkSettings === 'function') {
+      loadParkSettings();
+    }
+  }, 1000);
 };
 
 // Send $STOP directly via WebSocket to bypass PAGEID routing.

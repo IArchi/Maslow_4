@@ -1019,6 +1019,13 @@ const onWSOpenCallback = () => {
       console.warn("Failed to send pending $STOP on connect:", e);
     }
   }
+  // Refresh park settings after reconnect (e.g. after firmware restart with new maslow.yaml).
+  // A short delay lets the firmware send CURRENT_ID so PAGEID is established before querying.
+  scheduleCallback(() => {
+    if (typeof loadParkSettings === 'function') {
+      loadParkSettings();
+    }
+  }, 1000);
 };
 
 // Send $STOP directly via WebSocket to bypass PAGEID routing.
@@ -1147,7 +1154,20 @@ const handleMaslowActionButtonClick = () => {
     case 4: // EXTENDEDOUT - Apply Tension
       tabletCalTense();
       break;
-    // State 7 (READY_TO_CUT) and others don't need a click action
+    case 7: // READY_TO_CUT - Park: lift Z to safe height (work coords), then move to park position (machine coords)
+    {
+      const lv = globalThis.loadedValues || {};
+      const parkZ = parseFloat(lv.parkZ);
+      const parkX = parseFloat(lv.parkX);
+      const parkY = parseFloat(lv.parkY);
+      const safeZ = isNaN(parkZ) ? 2.0 : parkZ;
+      const targetX = isNaN(parkX) ? 0.0 : parkX;
+      const targetY = isNaN(parkY) ? 0.0 : parkY;
+      sendCommand(`G90 G0 Z${safeZ}`);
+      sendCommand(`G53 G0 Y${targetY} X${targetX}`);
+      addMessage(`Parking: raising Z to ${safeZ}mm above Z home, then moving to machine X=${targetX}, Y=${targetY}`);
+      break;
+    }
   }
 };
 

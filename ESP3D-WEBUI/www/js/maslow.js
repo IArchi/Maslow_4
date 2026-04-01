@@ -50,6 +50,7 @@ READY_TO_CUT 7
     -Retract All
     -Apply Tension
     -Release Tension
+    -Park (State-Dependent Button: moves to machine 0,0)
 */
 const updateDynamicButtons = () => {
 
@@ -195,6 +196,11 @@ const updateDynamicButtons = () => {
 			extendButton.style.backgroundColor = greyBackground;
 			tenseButton.style.backgroundColor = greyBackground;
 			calibrateButton.style.backgroundColor = greyBackground;
+
+			// Load park settings so the park button uses configured values
+			if (typeof loadParkSettings === 'function') {
+				loadParkSettings();
+			}
 
 			break;
 		case 8:
@@ -396,6 +402,9 @@ const cfgDef = {
 	Work_Area_Y: { name: "workAreaY", type: "A", cmd: "Maslow_Work_Area_Y" },
 	Work_Area_Center_Offset_X: { name: "workAreaCenterOffsetX", type: "A", cmd: "Maslow_Work_Area_Center_Offset_X" },
 	Work_Area_Center_Offset_Y: { name: "workAreaCenterOffsetY", type: "A", cmd: "Maslow_Work_Area_Center_Offset_Y" },
+	Park_Z: { name: "parkZ", type: "A", cmd: "Maslow_Park_Z" },
+	Park_X: { name: "parkX", type: "A", cmd: "Maslow_Park_X" },
+	Park_Y: { name: "parkY", type: "A", cmd: "Maslow_Park_Y" },
 };
 
 /** Handle Maslow specific configuration messages
@@ -540,6 +549,16 @@ const loadCornerValues = () => {
 	});
 };
 
+/** Load park position settings from firmware (queried on demand) */
+const loadParkSettings = () => {
+	['Park_Z', 'Park_X', 'Park_Y'].forEach((key) => {
+		const cfgVal = cfgDef[key];
+		if (cfgVal) {
+			SendPrinterCommand(`$/${cfgVal.cmd}`);
+		}
+	});
+};
+
 const saveConfigValues = () => {
 	// Get all of the config data as entered, and as already loaded
 	for (const key of allConfigKeys()) {
@@ -557,6 +576,10 @@ const saveConfigValues = () => {
 		if (value !== cfgVal.loadedVal) {
 			const cmd = `$/${cfgVal.cmd || `${M}_${key}`}=${value}`;
 			sendCommand(cmd);
+			// Immediately update loadedValues so the new value is available without
+			// waiting for the async WebSocket round-trip from loadParkSettings()
+			if (!globalThis.loadedValues) globalThis.loadedValues = {};
+			globalThis.loadedValues[cfgVal.name] = value;
 		}
 	};
 
@@ -566,6 +589,7 @@ const saveConfigValues = () => {
 	refreshSettings(current_setting_filter);
 	saveMaslowYaml();
 	loadCornerValues();
+	loadParkSettings();
 
 	hideModal('configuration-popup');
 }

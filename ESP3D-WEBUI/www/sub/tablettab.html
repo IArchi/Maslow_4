@@ -191,6 +191,11 @@
           <button id="tablettab_cal_zstop" class="calibration-modal-button"
             title="Record the 'bottom' limit for Z-axis movement">Set Z-Stop</button>
         </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row" style="grid-template-columns: 100%;">
+          <button id="tablettab_cal_work_area" class="calibration-modal-button">Work Area</button>
+        </div>
+        <div id="work-area-values-summary" style="text-align: center; font-size: 0.85em; color: #555; margin-top: 4px;"></div>
       </div>
     </div>
   </div>
@@ -225,6 +230,53 @@
         <div class="buttons-row">
           <button id="tablettab_set_home_cancel" class="calibration-modal-button stop-button">Cancel</button>
           <button id="tablettab_set_home_confirm" class="calibration-modal-button">Set Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="work-area-popup" class="calibration-modal-container">
+    <div id="work_area_popup_content" class="calibration-modal-content">
+      <div class="calibration-modal-button-container">
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label style="text-align: center; font-weight: bold;">Work Area</label>
+          </div>
+        </div>
+        <div class="input-row">
+          <div id="work-area-current-values" style="text-align: center; font-size: 0.85em; color: #555;"></div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="grid-container">
+          <div class="input-row">
+            <label for="workAreaX" class="input-label">Work Area X (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="workAreaX" type="number" min="1" max="10000" step="1" class="calibration-modal-input" placeholder="2440">
+          </div>
+          <div class="input-row">
+            <label for="workAreaY" class="input-label">Work Area Y (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="workAreaY" type="number" min="1" max="10000" step="1" class="calibration-modal-input" placeholder="1220">
+          </div>
+          <div class="input-row">
+            <label for="workAreaCenterOffsetX" class="input-label">Center Offset X (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="workAreaCenterOffsetX" type="number" min="-5000" max="5000" step="1" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="workAreaCenterOffsetY" class="input-label">Center Offset Y (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="workAreaCenterOffsetY" type="number" min="-5000" max="5000" step="1" class="calibration-modal-input" placeholder="0">
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
+          <button id="tablettab_work_area_cancel" class="calibration-modal-button stop-button">Cancel</button>
+          <button id="tablettab_work_area_save" class="calibration-modal-button">Save</button>
         </div>
       </div>
     </div>

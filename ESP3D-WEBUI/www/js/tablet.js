@@ -973,6 +973,7 @@ const tabletMoveTop = () => sendMove("Y+");
 const tabletMoveTopRight = () => sendMove("X+Y+");
 const tabletCalibrationOpen = () => {
   loadCornerValues();
+  updateWorkAreaSummary();
   openModal("calibration-popup");
 }
 // Button event handlers - Second Row
@@ -1171,8 +1172,78 @@ const handleMaslowActionButtonClick = () => {
   }
 };
 
+
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
+
+// Control event handlers - Work Area Popup
+const tabletWorkAreaPopupHide = () => hideModal("work-area-popup");
+
+const updateWorkAreaSummary = () => {
+  const lv = globalThis.loadedValues || {};
+  const areaX = parseFloat(lv.workAreaX) || 2440;
+  const areaY = parseFloat(lv.workAreaY) || 1220;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  const summary = `${areaX}, ${areaY}, ${offX}, ${offY}`;
+  const summaryEl = id("work-area-values-summary");
+  if (summaryEl) summaryEl.textContent = summary;
+};
+
+const tabletOpenWorkAreaPopup = () => {
+  const lv = globalThis.loadedValues || {};
+  const areaX = parseFloat(lv.workAreaX) || 2440;
+  const areaY = parseFloat(lv.workAreaY) || 1220;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+
+  const elX = id("workAreaX");
+  const elY = id("workAreaY");
+  const elOffX = id("workAreaCenterOffsetX");
+  const elOffY = id("workAreaCenterOffsetY");
+  const elCurrent = id("work-area-current-values");
+
+  if (elX) elX.value = areaX;
+  if (elY) elY.value = areaY;
+  if (elOffX) elOffX.value = offX;
+  if (elOffY) elOffY.value = offY;
+  if (elCurrent) elCurrent.textContent = `Current: ${areaX}, ${areaY}, ${offX}, ${offY}`;
+
+  openModal("work-area-popup");
+};
+
+const tabletSaveWorkArea = () => {
+  const elX = id("workAreaX");
+  const elY = id("workAreaY");
+  const elOffX = id("workAreaCenterOffsetX");
+  const elOffY = id("workAreaCenterOffsetY");
+
+  const newX = elX ? elX.value.trim() : "";
+  const newY = elY ? elY.value.trim() : "";
+  const newOffX = elOffX ? elOffX.value.trim() : "";
+  const newOffY = elOffY ? elOffY.value.trim() : "";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "workAreaX", cmd: "Maslow_Work_Area_X", newVal: newX },
+    { field: "workAreaY", cmd: "Maslow_Work_Area_Y", newVal: newY },
+    { field: "workAreaCenterOffsetX", cmd: "Maslow_Work_Area_Center_Offset_X", newVal: newOffX },
+    { field: "workAreaCenterOffsetY", cmd: "Maslow_Work_Area_Center_Offset_Y", newVal: newOffY },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  updateWorkAreaSummary();
+  hideModal("work-area-popup");
+};
+
 // Control event handlers - Common
 const tabletPopupStopProp = (event) => event.stopPropagation();
 
@@ -1294,6 +1365,13 @@ function tabletInit() {
     id("tablettab_cal_zstop").addEventListener("click", tabletCalSetZStop);
     id("tablettab_cal_test").addEventListener("click", tabletCalTest);
     id("tablettab_cal_relax").addEventListener("click", tabletCalRelax);
+    id("tablettab_cal_work_area").addEventListener("click", tabletOpenWorkAreaPopup);
+
+    // Buttons - Work Area Pop-up
+    id("work-area-popup").addEventListener("click", tabletWorkAreaPopupHide);
+    id("work_area_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_work_area_cancel").addEventListener("click", tabletWorkAreaPopupHide);
+    id("tablettab_work_area_save").addEventListener("click", tabletSaveWorkArea);
 
     // Buttons - Configuration Pop-up
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);

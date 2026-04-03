@@ -974,7 +974,6 @@ const tabletMoveTop = () => sendMove("Y+");
 const tabletMoveTopRight = () => sendMove("X+Y+");
 const tabletCalibrationOpen = () => {
   loadCornerValues();
-  updateWorkAreaSummary();
   openModal("calibration-popup");
 }
 // Button event handlers - Second Row
@@ -1190,11 +1189,7 @@ const getWorkAreaValues = () => {
 
 const tabletWorkAreaPopupHide = () => hideModal("work-area-popup");
 
-const updateWorkAreaSummary = () => {
-  const { areaX, areaY, offX, offY } = getWorkAreaValues();
-  const summaryEl = id("work-area-values-summary");
-  if (summaryEl) summaryEl.textContent = `${areaX}, ${areaY}, ${offX}, ${offY}`;
-};
+
 
 const tabletOpenWorkAreaPopup = () => {
   const { areaX, areaY, offX, offY } = getWorkAreaValues();
@@ -1242,7 +1237,6 @@ const tabletSaveWorkArea = () => {
   }
 
   saveMaslowYaml();
-  updateWorkAreaSummary();
   hideModal("work-area-popup");
 };
 

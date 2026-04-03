@@ -3,6 +3,7 @@
 
 // Constants
 const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded before restoration
+const workAreaDefaults = { x: 2440, y: 1220, offX: 0, offY: 0 };
 
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
@@ -197,10 +198,10 @@ const getUnitInfo = () => {
 
 const getWorkAreaBounds = () => {
   const lv = globalThis.loadedValues || {};
-  const areaX = parseFloat(lv.workAreaX) || 2440;
-  const areaY = parseFloat(lv.workAreaY) || 1220;
-  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
-  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  const areaX = parseFloat(lv.workAreaX) || workAreaDefaults.x;
+  const areaY = parseFloat(lv.workAreaY) || workAreaDefaults.y;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || workAreaDefaults.offX;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || workAreaDefaults.offY;
   return {
     minX: offX - areaX / 2,
     maxX: offX + areaX / 2,
@@ -1177,25 +1178,26 @@ const handleMaslowActionButtonClick = () => {
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
 
 // Control event handlers - Work Area Popup
+const getWorkAreaValues = () => {
+  const lv = globalThis.loadedValues || {};
+  return {
+    areaX: parseFloat(lv.workAreaX) || workAreaDefaults.x,
+    areaY: parseFloat(lv.workAreaY) || workAreaDefaults.y,
+    offX: parseFloat(lv.workAreaCenterOffsetX) || workAreaDefaults.offX,
+    offY: parseFloat(lv.workAreaCenterOffsetY) || workAreaDefaults.offY,
+  };
+};
+
 const tabletWorkAreaPopupHide = () => hideModal("work-area-popup");
 
 const updateWorkAreaSummary = () => {
-  const lv = globalThis.loadedValues || {};
-  const areaX = parseFloat(lv.workAreaX) || 2440;
-  const areaY = parseFloat(lv.workAreaY) || 1220;
-  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
-  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
-  const summary = `${areaX}, ${areaY}, ${offX}, ${offY}`;
+  const { areaX, areaY, offX, offY } = getWorkAreaValues();
   const summaryEl = id("work-area-values-summary");
-  if (summaryEl) summaryEl.textContent = summary;
+  if (summaryEl) summaryEl.textContent = `${areaX}, ${areaY}, ${offX}, ${offY}`;
 };
 
 const tabletOpenWorkAreaPopup = () => {
-  const lv = globalThis.loadedValues || {};
-  const areaX = parseFloat(lv.workAreaX) || 2440;
-  const areaY = parseFloat(lv.workAreaY) || 1220;
-  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
-  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  const { areaX, areaY, offX, offY } = getWorkAreaValues();
 
   const elX = id("workAreaX");
   const elY = id("workAreaY");

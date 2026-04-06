@@ -291,7 +291,7 @@ async function main() {
 
         const origData = await runAlgorithm(
             CalibrationComputer,
-            { maxIterations: 20000, maxStagnant: 500 },
+            { maxIterations: 2000, maxStagnant: 100 },
             measurements,
             guess,
             'Original (hill-climbing)'

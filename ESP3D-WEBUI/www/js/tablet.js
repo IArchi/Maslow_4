@@ -1240,6 +1240,63 @@ const tabletSaveWorkArea = () => {
   hideModal("work-area-popup");
 };
 
+const parkDefaults = { x: 0.0, y: 0.0, z: 2.0 };
+
+const getParkValues = () => {
+  const lv = globalThis.loadedValues || {};
+  return {
+    x: isNaN(parseFloat(lv.parkX)) ? parkDefaults.x : parseFloat(lv.parkX),
+    y: isNaN(parseFloat(lv.parkY)) ? parkDefaults.y : parseFloat(lv.parkY),
+    z: isNaN(parseFloat(lv.parkZ)) ? parkDefaults.z : parseFloat(lv.parkZ),
+  };
+};
+
+const tabletParkPopupHide = () => hideModal("park-popup");
+
+const tabletOpenParkPopup = () => {
+  const { x, y, z } = getParkValues();
+
+  const elX = id("parkX");
+  const elY = id("parkY");
+  const elZ = id("parkZ");
+  const elCurrent = id("park-current-values");
+
+  if (elX) elX.value = x;
+  if (elY) elY.value = y;
+  if (elZ) elZ.value = z;
+  if (elCurrent) elCurrent.textContent = `Current: X=${x}, Y=${y}, Z=${z}`;
+
+  openModal("park-popup");
+};
+
+const tabletSavePark = () => {
+  const elX = id("parkX");
+  const elY = id("parkY");
+  const elZ = id("parkZ");
+
+  const newX = elX ? elX.value.trim() : "";
+  const newY = elY ? elY.value.trim() : "";
+  const newZ = elZ ? elZ.value.trim() : "";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "parkX", cmd: "Maslow_Park_X", newVal: newX },
+    { field: "parkY", cmd: "Maslow_Park_Y", newVal: newY },
+    { field: "parkZ", cmd: "Maslow_Park_Z", newVal: newZ },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  hideModal("park-popup");
+};
+
 // Control event handlers - Common
 const tabletPopupStopProp = (event) => event.stopPropagation();
 
@@ -1362,12 +1419,19 @@ function tabletInit() {
     id("tablettab_cal_test").addEventListener("click", tabletCalTest);
     id("tablettab_cal_relax").addEventListener("click", tabletCalRelax);
     id("tablettab_cal_work_area").addEventListener("click", tabletOpenWorkAreaPopup);
+    id("tablettab_cal_park").addEventListener("click", tabletOpenParkPopup);
 
     // Buttons - Work Area Pop-up
     id("work-area-popup").addEventListener("click", tabletWorkAreaPopupHide);
     id("work_area_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_work_area_cancel").addEventListener("click", tabletWorkAreaPopupHide);
     id("tablettab_work_area_save").addEventListener("click", tabletSaveWorkArea);
+
+    // Buttons - Park Pop-up
+    id("park-popup").addEventListener("click", tabletParkPopupHide);
+    id("park_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_park_cancel").addEventListener("click", tabletParkPopupHide);
+    id("tablettab_park_save").addEventListener("click", tabletSavePark);
 
     // Buttons - Configuration Pop-up
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);

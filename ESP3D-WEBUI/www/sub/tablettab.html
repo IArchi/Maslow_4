@@ -193,6 +193,8 @@
         <div class="buttons-row">
           <button id="tablettab_cal_work_area" class="calibration-modal-button"
             title="Edit work area limits, restricting Maslow's boundaries.&#10;Maslow will be unable to travel beyond limits.">Work Area</button>
+          <button id="tablettab_cal_park" class="calibration-modal-button"
+            title="Enter location to Park Maslow">Park</button>
         </div>
       </div>
     </div>
@@ -275,6 +277,47 @@
         <div class="buttons-row">
           <button id="tablettab_work_area_cancel" class="calibration-modal-button stop-button">Cancel</button>
           <button id="tablettab_work_area_save" class="calibration-modal-button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="park-popup" class="calibration-modal-container">
+    <div id="park_popup_content" class="calibration-modal-content">
+      <div class="calibration-modal-button-container">
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label style="text-align: center; font-weight: bold;">Park</label>
+          </div>
+        </div>
+        <div class="input-row">
+          <div id="park-current-values" style="text-align: center; font-size: 0.85em; color: #555;"></div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="grid-container">
+          <div class="input-row">
+            <label for="parkX" class="input-label">Park X (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="parkX" type="number" min="-10000" max="10000" step="any" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="parkY" class="input-label">Park Y (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="parkY" type="number" min="-10000" max="10000" step="any" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="parkZ" class="input-label">Park Z (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="parkZ" type="number" min="-100" max="100" step="any" class="calibration-modal-input" placeholder="2">
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
+          <button id="tablettab_park_cancel" class="calibration-modal-button stop-button">Cancel</button>
+          <button id="tablettab_park_save" class="calibration-modal-button">Save</button>
         </div>
       </div>
     </div>

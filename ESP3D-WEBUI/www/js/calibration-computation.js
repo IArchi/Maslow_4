@@ -707,6 +707,13 @@ class LevenbergMarquardtCalibrationComputer {
         this.stepSize = config.stepSize || 10.0;
         this.convergenceThreshold = config.convergenceThreshold || 1e-4;
         this.acceptableThreshold = config.acceptableThreshold || 0.5;
+        // Optional logging callback: fn(message) — defaults to no-op so the class
+        // stays environment-agnostic (works in browser and Node.js tests).
+        this.logFn = config.logFn || null;
+    }
+
+    _log(msg) {
+        if (this.logFn) this.logFn(msg);
     }
 
     /**
@@ -740,6 +747,9 @@ class LevenbergMarquardtCalibrationComputer {
         const h = this.stepSize;
         const [tlX0, tlY0, trX0, trY0, brX0] = lmGuessToParams(this.initialGuess);
 
+        this._log(`[LM] Starting optimization: ${N} measurements, maxIterations=${this.maxIterations}, h=${h}mm`);
+        this._log(`[LM] Initial anchor guess — tl=(${tlX0.toFixed(1)}, ${tlY0.toFixed(1)}) tr=(${trX0.toFixed(1)}, ${trY0.toFixed(1)}) br=(${brX0.toFixed(1)}, 0)`);
+
         // ── Step 1: Initialise sled positions via 2D Gauss-Newton ─────────────
         // This is independent of line-walking and robust to large anchor errors.
         const initSleds = [];
@@ -747,6 +757,8 @@ class LevenbergMarquardtCalibrationComputer {
             const sl = lmEstimateSledPosition(m, tlX0, tlY0, trX0, trY0, brX0);
             initSleds.push(sl.x, sl.y);
         }
+
+        this._log(`[LM] Phase 1: sled positions initialised via 2D Gauss-Newton`);
 
         // ── Step 2: Build full parameter vector ────────────────────────────────
         let params = [tlX0, tlY0, trX0, trY0, brX0, ...initSleds];
@@ -760,6 +772,8 @@ class LevenbergMarquardtCalibrationComputer {
         let consecutiveRejections = 0;
         let lambda = this.lambda;
         this.totalIterations = 0;
+
+        this._log(`[LM] Phase 1 initial SSR: ${ssr.toFixed(4)} (${5 + 2 * N} parameters, ${4 * N} residuals)`);
 
         // ── Step 3: LM iterations ──────────────────────────────────────────────
         while (this.totalIterations < this.maxIterations) {
@@ -791,30 +805,43 @@ class LevenbergMarquardtCalibrationComputer {
                     bestSSR = ssr;
                     bestParams = params.slice();
                 }
+
+                // Only check convergence after an accepted step — a rejected step
+                // with small norm just means lambda is large, not that we've converged.
+                const anchorStepNorm = Math.sqrt(
+                    step.slice(0, 5).reduce((s, v) => s + v * v, 0)
+                );
+                if (anchorStepNorm < this.convergenceThreshold) {
+                    this._log(`[LM] Converged: anchor step norm ${anchorStepNorm.toExponential(2)} < threshold ${this.convergenceThreshold}`);
+                    break;
+                }
             } else {
                 lambda *= this.lambdaIncrease;
                 consecutiveRejections++;
-                if (consecutiveRejections > 20 || lambda > 1e12) break;
+                if (consecutiveRejections > 20 || lambda > 1e12) {
+                    this._log(`[LM] Stopping: ${consecutiveRejections} consecutive rejections, lambda=${lambda.toExponential(2)}`);
+                    break;
+                }
             }
 
             this.totalIterations++;
 
-            // Convergence: check only the 5 anchor parameters
-            const anchorStepNorm = Math.sqrt(
-                step.slice(0, 5).reduce((s, v) => s + v * v, 0)
-            );
-            if (anchorStepNorm < this.convergenceThreshold) break;
-
-            // Yield to keep UI responsive
+            // Yield to keep UI responsive and report progress with current best anchor positions
             if (this.totalIterations % 50 === 0) {
+                const currentFitness = 1 / (lmComputeFitness(r) + 1e-10);
+                this._log(`[LM] Iter ${this.totalIterations}: SSR=${ssr.toFixed(4)}, fitness=${currentFitness.toFixed(4)}, lambda=${lambda.toExponential(2)}`);
                 if (progressCallback) {
-                    progressCallback(this.totalIterations, 1 / (lmComputeFitness(r) + 1e-10));
+                    // Pass current best anchor positions so the UI can show live progress
+                    progressCallback(this.totalIterations, currentFitness, lmParamsToGuess(bestParams));
                 }
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
 
         this.lambda = lambda;
+
+        this._log(`[LM] Phase 1 complete: ${this.totalIterations} iterations, best SSR=${bestSSR.toFixed(4)}`);
+        this._log(`[LM] Phase 1 best anchors — tl=(${bestParams[0].toFixed(1)}, ${bestParams[1].toFixed(1)}) tr=(${bestParams[2].toFixed(1)}, ${bestParams[3].toFixed(1)}) br=(${bestParams[4].toFixed(1)}, 0)`);
 
         // ── Phase 2 refinement: Re-initialise sleds from the converged anchors ──
         // This escapes local minima caused by poor initial sled estimates when the
@@ -828,8 +855,15 @@ class LevenbergMarquardtCalibrationComputer {
         const r2 = lmBundleResiduals(measurements, params2);
         const ssr2 = lmSSR(r2);
 
+        this._log(`[LM] Phase 2: re-initialised sled positions, SSR=${ssr2.toFixed(4)} (was ${bestSSR.toFixed(4)})`);
+
         if (ssr2 < bestSSR) {
-            // Phase 2 starting point is better; run a second LM pass
+            // Phase 2 starting point is already an improvement — capture it immediately
+            // so we never return a worse Phase 1 result even if the Phase 2 loop makes no progress.
+            bestSSR = ssr2;
+            bestParams = params2.slice();
+            // Run a second LM pass to try to improve further from this starting point
+            this._log(`[LM] Phase 2 starting point is better — running second LM pass`);
             let p2 = params2.slice();
             let rp2 = r2;
             let ssr2Cur = ssr2;
@@ -866,6 +900,7 @@ class LevenbergMarquardtCalibrationComputer {
 
         // ── Step 4: Report results ─────────────────────────────────────────────
         // Compute fitness using the same metric as CalibrationComputer for comparability
+        this._log(`[LM] Optimization complete: ${this.totalIterations} total iterations, best SSR=${bestSSR.toFixed(4)}`);
         const bestAnchorGuess = lmParamsToGuess(bestParams);
         const finalFitness = computeLinesFitness(
             JSON.parse(JSON.stringify(measurements)),
@@ -880,6 +915,8 @@ class LevenbergMarquardtCalibrationComputer {
             fitness: finalFitness.fitness
         };
         this.bestFitness = 1 / finalFitness.fitness;
+
+        this._log(`[LM] Final result — tl=(${this.bestGuess.tl.x.toFixed(1)}, ${this.bestGuess.tl.y.toFixed(1)}) tr=(${this.bestGuess.tr.x.toFixed(1)}, ${this.bestGuess.tr.y.toFixed(1)}) br=(${this.bestGuess.br.x.toFixed(1)}, 0) fitness=${this.bestFitness.toFixed(6)}`);
 
         return JSON.parse(JSON.stringify(this.bestGuess));
     }

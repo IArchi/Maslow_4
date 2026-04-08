@@ -473,9 +473,17 @@ async function findMaxFitness(measurements) {
 
   // Run one LM pass from the given guess; returns the result object
   async function runLM(guess) {
-    const lm = new LevenbergMarquardtCalibrationComputer(guess, { maxIterations: 500 });
-    const result = await lm.processDataChunk(projectedMeasurements, (iters, fitness) => {
-      sendCalibrationEvent({ final: false, bestGuess: lm.getStatus().bestGuess || guess, totalCounter: iters });
+    const lm = new LevenbergMarquardtCalibrationComputer(guess, {
+      maxIterations: 500,
+      logFn: (msg) => {
+        messagesBox.textContent += msg + '\n';
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+      }
+    });
+    // The 3rd argument to progressCallback is the current best anchor guess,
+    // populated live inside the LM loop so the UI reflects real progress.
+    const result = await lm.processDataChunk(projectedMeasurements, (iters, fitness, currentBestGuess) => {
+      sendCalibrationEvent({ final: false, bestGuess: currentBestGuess || guess, totalCounter: iters });
     });
     const { totalIterations } = lm.getStatus();
     messagesBox.textContent += `LM converged in ${totalIterations} iterations, fitness: ${(1 / result.fitness).toFixed(7)}\n`;
@@ -483,11 +491,13 @@ async function findMaxFitness(measurements) {
     return result;
   }
 
-  messagesBox.textContent += "Running Levenberg-Marquardt optimization...\n";
+  messagesBox.textContent += `Running Levenberg-Marquardt optimization (${projectedMeasurements.length} measurements)...\n`;
   messagesBox.scrollTop = messagesBox.scrollHeight;
 
   let bestGuess = await runLM(startingGuess);
   let currentFitness = 1 / bestGuess.fitness;
+  messagesBox.textContent += `Result: tl=(${bestGuess.tl.x.toFixed(1)}, ${bestGuess.tl.y.toFixed(1)}) tr=(${bestGuess.tr.x.toFixed(1)}, ${bestGuess.tr.y.toFixed(1)}) br=(${bestGuess.br.x.toFixed(1)}, 0)\n`;
+  messagesBox.scrollTop = messagesBox.scrollHeight;
 
   while (currentFitness < acceptableCalibrationThreshold) {
     if (currentFitness > bestFitnessAcrossAllRetries) {
@@ -537,15 +547,16 @@ async function findMaxFitness(measurements) {
       startingGuess
     });
     messagesBox.textContent += ` ${retryInfo.description}\n`;
+    messagesBox.textContent += `Retry start: tl=(${retryGuess.tl.x.toFixed(1)}, ${retryGuess.tl.y.toFixed(1)}) tr=(${retryGuess.tr.x.toFixed(1)}, ${retryGuess.tr.y.toFixed(1)}) br=(${retryGuess.br.x.toFixed(1)}, 0)\n`;
     messagesBox.scrollTop = messagesBox.scrollHeight;
-
-    sendCalibrationEvent({ good: false, final: true, guess: bestGuess }, true);
 
     messagesBox.textContent += "Running Levenberg-Marquardt optimization...\n";
     messagesBox.scrollTop = messagesBox.scrollHeight;
 
     bestGuess = await runLM(retryGuess);
     currentFitness = 1 / bestGuess.fitness;
+    messagesBox.textContent += `Result: tl=(${bestGuess.tl.x.toFixed(1)}, ${bestGuess.tl.y.toFixed(1)}) tr=(${bestGuess.tr.x.toFixed(1)}, ${bestGuess.tr.y.toFixed(1)}) br=(${bestGuess.br.x.toFixed(1)}, 0)\n`;
+    messagesBox.scrollTop = messagesBox.scrollHeight;
   }
 
   if (currentFitness > bestFitnessAcrossAllRetries) {

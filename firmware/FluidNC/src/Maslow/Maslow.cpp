@@ -864,10 +864,10 @@ void Maslow_::loadBeltPositions() {
     // When belts are retracted (RETRACTED), mark all belts as not extended
     if (newState == EXTENDEDOUT) {
         calibration.setExtendedState(true, true, true, true);
-        log_debug("Set Calibration extended* variables to true (belts are extended)");
+        log_debug("Set Find Anchors extended* variables to true (belts are extended)");
     } else {
         calibration.setExtendedState(false, false, false, false);
-        log_debug("Set Calibration extended* variables to false (belts are retracted)");
+        log_debug("Set Find Anchors extended* variables to false (belts are retracted)");
     }
 
     // Disable alarm if present

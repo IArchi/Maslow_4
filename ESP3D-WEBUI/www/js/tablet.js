@@ -1104,8 +1104,16 @@ const tabletCalExtend = () => {
   returnFocusToTablet();
 };
 const tabletCalCalibrate = () => {
-  onCalibrationButtonsClick("$CAL", "Find Anchors");
-  scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
+  confirmdlg(
+    "Find Anchors",
+    "Please confirm Z is fully lowered to continue",
+    (response) => {
+      if (response === "yes") {
+        onCalibrationButtonsClick("$CAL", "Find Anchors");
+        scheduleCallback(() => { hideModal("calibration-popup"); }, 1000);
+      }
+    }
+  );
 };
 const tabletCalTense = () => {
   onCalibrationButtonsClick("$TKSLK", "Apply Tension");

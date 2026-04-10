@@ -64,6 +64,9 @@ let log_off = false;
 
 let reconnect_timer = null;
 
+/** Interval (ms) between auto-reconnect attempts while the disconnect dialog is visible */
+const RECONNECT_INTERVAL_MS = 3000;
+
 const cancelReconnectTimer = () => {
 	if (reconnect_timer !== null) {
 		clearInterval(reconnect_timer);
@@ -113,7 +116,7 @@ const Disable_interface = (lostconnection) => {
 	// Auto-reconnect: try once every 3 seconds (well under the 1/second limit).
 	// resetConnectionState() or a successful onopen will cancel this timer.
 	cancelReconnectTimer();
-	reconnect_timer = setInterval(startSocket, 3000);
+	reconnect_timer = setInterval(startSocket, RECONNECT_INTERVAL_MS);
 };
 
 const EventListenerSetup = () => {
@@ -180,7 +183,7 @@ const startSocket = () => {
 		ws_source.onclose = null;
 		ws_source.onerror = null;
 		ws_source.onmessage = null;
-		try { ws_source.close(); } catch (e) {}
+		try { ws_source.close(); } catch (e) { console.debug('Error closing previous WebSocket:', e); }
 	}
 	try {
 		if (async_webcommunication) {

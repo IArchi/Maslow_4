@@ -1311,6 +1311,72 @@ const tabletSavePark = () => {
   }, 1000);
 };
 
+const scaleThicknessDefaults = { scaleX: 1.0, scaleY: 1.0, workThickness: 0.0, spoilboardThickness: 0.0 };
+
+const getScaleThicknessValues = () => {
+  const lv = globalThis.loadedValues || {};
+  return {
+    scaleX: isNaN(parseFloat(lv.scaleX)) ? scaleThicknessDefaults.scaleX : parseFloat(lv.scaleX),
+    scaleY: isNaN(parseFloat(lv.scaleY)) ? scaleThicknessDefaults.scaleY : parseFloat(lv.scaleY),
+    workThickness: isNaN(parseFloat(lv.workThickness)) ? scaleThicknessDefaults.workThickness : parseFloat(lv.workThickness),
+    spoilboardThickness: isNaN(parseFloat(lv.spoilboardThickness)) ? scaleThicknessDefaults.spoilboardThickness : parseFloat(lv.spoilboardThickness),
+  };
+};
+
+const tabletScaleThicknessPopupHide = () => hideModal("scale-thickness-popup");
+
+const tabletOpenScaleThicknessPopup = () => {
+  const { scaleX, scaleY, workThickness, spoilboardThickness } = getScaleThicknessValues();
+
+  const elScaleX = id("scaleX");
+  const elScaleY = id("scaleY");
+  const elWorkThickness = id("workThickness");
+  const elSpoilboardThickness = id("spoilboardThickness");
+  const elCurrent = id("scale-thickness-current-values");
+
+  if (elScaleX) elScaleX.value = scaleX;
+  if (elScaleY) elScaleY.value = scaleY;
+  if (elWorkThickness) elWorkThickness.value = workThickness;
+  if (elSpoilboardThickness) elSpoilboardThickness.value = spoilboardThickness;
+  if (elCurrent) elCurrent.textContent = `Current: Scale X=${scaleX}, Scale Y=${scaleY}, Work=${workThickness}mm, Spoilboard=${spoilboardThickness}mm`;
+
+  openModal("scale-thickness-popup");
+};
+
+const tabletSaveScaleThickness = () => {
+  const elScaleX = id("scaleX");
+  const elScaleY = id("scaleY");
+  const elWorkThickness = id("workThickness");
+  const elSpoilboardThickness = id("spoilboardThickness");
+
+  const newScaleX = elScaleX ? elScaleX.value.trim() : "";
+  const newScaleY = elScaleY ? elScaleY.value.trim() : "";
+  const newWorkThickness = elWorkThickness ? elWorkThickness.value.trim() : "";
+  const newSpoilboardThickness = elSpoilboardThickness ? elSpoilboardThickness.value.trim() : "";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "scaleX", cmd: "Maslow_Scale_X", newVal: newScaleX },
+    { field: "scaleY", cmd: "Maslow_Scale_Y", newVal: newScaleY },
+    { field: "workThickness", cmd: "Maslow_workThickness", newVal: newWorkThickness },
+    { field: "spoilboardThickness", cmd: "Maslow_spoilboardThickness", newVal: newSpoilboardThickness },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  scheduleCallback(() => {
+    hideModal("scale-thickness-popup");
+    hideModal("calibration-popup");
+  }, 1000);
+};
+
 // Control event handlers - Common
 const tabletPopupStopProp = (event) => event.stopPropagation();
 
@@ -1434,6 +1500,7 @@ function tabletInit() {
     id("tablettab_cal_relax").addEventListener("click", tabletCalRelax);
     id("tablettab_cal_work_area").addEventListener("click", tabletOpenWorkAreaPopup);
     id("tablettab_cal_park").addEventListener("click", tabletOpenParkPopup);
+    id("tablettab_cal_scale_thickness").addEventListener("click", tabletOpenScaleThicknessPopup);
 
     // Buttons - Work Area Pop-up
     id("work-area-popup").addEventListener("click", tabletWorkAreaPopupHide);
@@ -1446,6 +1513,12 @@ function tabletInit() {
     id("park_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_park_cancel").addEventListener("click", tabletParkPopupHide);
     id("tablettab_park_save").addEventListener("click", tabletSavePark);
+
+    // Buttons - Scale and Thickness Pop-up
+    id("scale-thickness-popup").addEventListener("click", tabletScaleThicknessPopupHide);
+    id("scale_thickness_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_scale_thickness_cancel").addEventListener("click", tabletScaleThicknessPopupHide);
+    id("tablettab_scale_thickness_save").addEventListener("click", tabletSaveScaleThickness);
 
     // Buttons - Configuration Pop-up
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);

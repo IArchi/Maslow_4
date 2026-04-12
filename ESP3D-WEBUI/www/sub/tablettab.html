@@ -195,6 +195,8 @@
             title="Edit work area limits, restricting Maslow's boundaries.&#10;Maslow will be unable to travel beyond limits.">Set Work Area</button>
           <button id="tablettab_cal_park" class="calibration-modal-button green-button"
             title="Enter location to Park Maslow">Set Park</button>
+          <button id="tablettab_cal_scale_thickness" class="calibration-modal-button green-button"
+            title="Set scale factors and material thickness">Set Scale and Thickness</button>
         </div>
       </div>
     </div>
@@ -318,6 +320,53 @@
         <div class="buttons-row">
           <button id="tablettab_park_cancel" class="calibration-modal-button stop-button">Cancel</button>
           <button id="tablettab_park_save" class="calibration-modal-button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scale-thickness-popup" class="calibration-modal-container">
+    <div id="scale_thickness_popup_content" class="calibration-modal-content">
+      <div class="calibration-modal-button-container">
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label style="text-align: center; font-weight: bold;">Scale and Thickness</label>
+          </div>
+        </div>
+        <div class="input-row">
+          <div id="scale-thickness-current-values" style="text-align: center; font-size: 0.85em; color: #555;"></div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="grid-container">
+          <div class="input-row">
+            <label for="scaleX" class="input-label">Scale X</label>
+          </div>
+          <div class="input-row">
+            <input id="scaleX" type="number" min="0.8" max="1.2" step="0.001" class="calibration-modal-input" placeholder="1.0">
+          </div>
+          <div class="input-row">
+            <label for="scaleY" class="input-label">Scale Y</label>
+          </div>
+          <div class="input-row">
+            <input id="scaleY" type="number" min="0.8" max="1.2" step="0.001" class="calibration-modal-input" placeholder="1.0">
+          </div>
+          <div class="input-row">
+            <label for="workThickness" class="input-label">Work Thickness (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="workThickness" type="number" min="0" max="50" step="0.1" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="spoilboardThickness" class="input-label">Spoilboard Thickness (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="spoilboardThickness" type="number" min="0" max="50" step="0.1" class="calibration-modal-input" placeholder="0">
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
+          <button id="tablettab_scale_thickness_cancel" class="calibration-modal-button stop-button">Cancel</button>
+          <button id="tablettab_scale_thickness_save" class="calibration-modal-button">Save</button>
         </div>
       </div>
     </div>

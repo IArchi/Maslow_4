@@ -1245,7 +1245,10 @@ const tabletSaveWorkArea = () => {
   }
 
   saveMaslowYaml();
-  scheduleCallback(() => { hideModal("work-area-popup"); }, 1000);
+  scheduleCallback(() => {
+    hideModal("work-area-popup");
+    hideModal("calibration-popup");
+  }, 1000);
 };
 
 const parkDefaults = { x: 0.0, y: 0.0, z: 2.0 };
@@ -1302,7 +1305,10 @@ const tabletSavePark = () => {
   }
 
   saveMaslowYaml();
-  scheduleCallback(() => { hideModal("park-popup"); }, 1000);
+  scheduleCallback(() => {
+    hideModal("park-popup");
+    hideModal("calibration-popup");
+  }, 1000);
 };
 
 // Control event handlers - Common

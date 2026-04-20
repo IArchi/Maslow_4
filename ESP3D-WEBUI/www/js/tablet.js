@@ -338,6 +338,58 @@ const setAxis = (axis, field) => {
 var timeout_id = 0,
   hold_time = 1000
 
+// Maximum safe Z home value in mm. Values above this may indicate a corrupted
+// position after an alarm or power reset.
+const Z_HOME_MAX_SAFE_MM = 72;
+
+// Tracks whether the user has acknowledged the high Z home warning this session.
+// Reset whenever the Z home value increases beyond the previously acknowledged level.
+let zHomeWarningAcknowledged = false;
+let zHomeLastAcknowledgedValue = null;
+
+/**
+ * If the Z home value (WCO[2]) exceeds Z_HOME_MAX_SAFE_MM, show a confirmation
+ * popup before allowing movement. Calls `callback` immediately when the value is
+ * safe, or after the user clicks "Yes" in the warning dialog.
+ * Re-prompts if the Z home value has increased since the last acknowledgment,
+ * or if it dropped below the threshold and rose above it again.
+ * Note: WCO values are always reported by the firmware in mm.
+ * @param {Function} callback - The movement action to execute if confirmed
+ */
+const checkZHomeAndProceed = (callback) => {
+  const zHome = WCO && WCO.length >= 3 ? WCO[2] : null;
+  if (zHome !== null && zHome > Z_HOME_MAX_SAFE_MM) {
+    // Re-prompt if the value has increased beyond what was previously acknowledged
+    if (zHomeLastAcknowledgedValue !== null && zHome > zHomeLastAcknowledgedValue) {
+      zHomeWarningAcknowledged = false;
+    }
+    if (!zHomeWarningAcknowledged) {
+      confirmdlg(
+        "High Z Home Value",
+        `Warning: Z home value (${zHome.toFixed(1)}mm) exceeds the safe maximum of ` +
+        `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z home position ` +
+        `after an alarm or power reset.<br><br>` +
+        `Movement is still allowed for maintenance purposes (e.g. to release the ` +
+        `Z-axis screws).<br><br>Do you want to proceed?`,
+        (response) => {
+          if (response === "yes") {
+            zHomeWarningAcknowledged = true;
+            zHomeLastAcknowledgedValue = zHome;
+            callback();
+          }
+        }
+      );
+      return;
+    }
+  } else if (zHome !== null) {
+    // Value is within safe range - clear acknowledgment so any future high value
+    // triggers a new warning
+    zHomeWarningAcknowledged = false;
+    zHomeLastAcknowledgedValue = null;
+  }
+  callback();
+};
+
 /** Check the parameters used by jog and move commands,
  * and return them as a composite string */
 const checkParams = (params = {}) => {
@@ -450,7 +502,7 @@ const sendMove = (cmd) => {
   };
 
   if (cmd in jogMoveFnList) {
-    jogMoveFnList[cmd]();
+    checkZHomeAndProceed(jogMoveFnList[cmd]);
   } else {
     addMessage(`Invalid jog/move command: ${cmd}`);
   }
@@ -461,7 +513,9 @@ const moveHome = () => {
     return;
   }
 
-  move({ X: 0, Y: 0 });
+  checkZHomeAndProceed(() => {
+    move({ X: 0, Y: 0 });
+  });
 }
 
 function saveSerialMessages() {

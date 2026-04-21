@@ -338,54 +338,74 @@ const setAxis = (axis, field) => {
 var timeout_id = 0,
   hold_time = 1000
 
-// Maximum safe Z home value in mm. Values above this may indicate a corrupted
-// position after an alarm or power reset.
+// Maximum safe machine Z position in mm. If a movement would cause machine Z to
+// exceed this value, a confirmation popup is shown before proceeding.
 const Z_HOME_MAX_SAFE_MM = 72;
 
-// Tracks whether the user has acknowledged the high Z home warning this session.
-// Reset whenever the Z home value increases beyond the previously acknowledged level.
+// Tracks whether the user has acknowledged the high Z position warning this session.
+// Reset whenever the resulting Z increases beyond the previously acknowledged level,
+// or when machine Z returns to the safe range.
 let zHomeWarningAcknowledged = false;
-let zHomeLastAcknowledgedValue = null;
+let zHomeLastAcknowledgedResultZ = null;
 
 /**
- * If the Z home value (WCO[2]) exceeds Z_HOME_MAX_SAFE_MM, show a confirmation
- * popup before allowing movement. Calls `callback` immediately when the value is
+ * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
+ * show a confirmation popup before allowing it. Calls `callback` immediately when
  * safe, or after the user clicks "Yes" in the warning dialog.
- * Re-prompts if the Z home value has increased since the last acknowledgment,
- * or if it dropped below the threshold and rose above it again.
- * Note: WCO values are always reported by the firmware in mm.
- * @param {Function} callback - The movement action to execute if confirmed
+ * Note: MPOS values are always reported by the firmware in mm.
+ * @param {Function} callback  - The movement action to execute if confirmed
+ * @param {number}   zDeltaMm  - Expected change in machine Z (mm). Positive = up,
+ *                               negative = down, 0 = no Z change (X/Y only moves).
+ *                               For moves to a fixed target, pass targetMachineZ - MPOS[2].
+ *                               Negative values are always safe and bypass the check.
  */
-const checkZHomeAndProceed = (callback) => {
-  const zHome = WCO && WCO.length >= 3 ? WCO[2] : null;
-  if (zHome !== null && zHome > Z_HOME_MAX_SAFE_MM) {
-    // Re-prompt if the value has increased beyond what was previously acknowledged
-    if (zHomeLastAcknowledgedValue !== null && zHome > zHomeLastAcknowledgedValue) {
+const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
+  // Lowering Z is always safe regardless of current position
+  if (zDeltaMm < 0) {
+    callback();
+    return;
+  }
+
+  const machineZMm = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  if (machineZMm === null) {
+    // Position data unavailable - cannot evaluate safety; proceed without check
+    callback();
+    return;
+  }
+
+  const resultingZMm = machineZMm + zDeltaMm;
+  if (resultingZMm > Z_HOME_MAX_SAFE_MM) {
+    // Re-prompt if the resulting Z has increased beyond what was previously acknowledged
+    if (zHomeLastAcknowledgedResultZ !== null && resultingZMm > zHomeLastAcknowledgedResultZ) {
       zHomeWarningAcknowledged = false;
     }
     if (!zHomeWarningAcknowledged) {
+      // zDeltaMm > 0 means the move itself would raise Z over the limit;
+      // zDeltaMm === 0 means Z is already above the limit.
+      const zIsRising = zDeltaMm > 0;
       confirmdlg(
-        "High Z Home Value",
-        `Warning: Z home value (${zHome.toFixed(1)}mm) exceeds the safe maximum of ` +
-        `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z home position ` +
+        "High Z Position",
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `${zIsRising ? 'would exceed' : 'exceeds'} the safe maximum of ` +
+        `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z position ` +
         `after an alarm or power reset.<br><br>` +
         `Movement is still allowed for maintenance purposes (e.g. to release the ` +
         `Z-axis screws).<br><br>Do you want to proceed?`,
         (response) => {
           if (response === "yes") {
             zHomeWarningAcknowledged = true;
-            zHomeLastAcknowledgedValue = zHome;
+            zHomeLastAcknowledgedResultZ = resultingZMm;
             callback();
           }
         }
       );
       return;
     }
-  } else if (zHome !== null) {
-    // Value is within safe range - clear acknowledgment so any future high value
-    // triggers a new warning
+  } else {
+    // Resulting Z is within safe range - clear acknowledgment so any future
+    // high-Z movement triggers a new warning
     zHomeWarningAcknowledged = false;
-    zHomeLastAcknowledgedValue = null;
+    zHomeLastAcknowledgedResultZ = null;
   }
   callback();
 };
@@ -478,31 +498,52 @@ const sendMove = (cmd) => {
     ? Number(getText('disZ')) || 0
     : Number(getText('disM')) || 0;
 
+  // Convert a display-unit jog distance to mm for the safety threshold check.
+  // MPOS is always in mm; jog distances match the current display unit (mm or inch).
+  const toMmDist = (d) => gCodeModal.units === 'G20' ? d * 25.4 : d;
+
+  // Current machine Z and work-coordinate origin Z (both always in mm from firmware).
+  // Null when position data has not yet arrived from the firmware.
+  const machineZ  = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  const workZeroZ = WCO  && WCO.length  >= 3 ? WCO[2]  : null;
+
+  // For commands that move Z to a specific work-coordinate target, compute the
+  // expected change in machine Z (positive = rising).  When position data is
+  // unavailable fall back to 0; checkZHomeAndProceed handles null MPOS separately.
+  const deltaToWorkOriginZ = (machineZ !== null && workZeroZ !== null)
+    ? workZeroZ - machineZ : 0;
+  // Z_TOP moves to work Z=70; machine Z target = workZeroZ + 70.
+  const deltaToZTop = (machineZ !== null && workZeroZ !== null)
+    ? (workZeroZ + 70) - machineZ : 0;
+
+  // Map each command to [action, zDeltaMm].
+  // zDeltaMm = expected machine-Z change in mm:
+  //   > 0  → rising  (check if result would exceed limit)
+  //   = 0  → no Z change; check whether current machine Z already exceeds limit
+  //   < 0  → lowering (checkZHomeAndProceed bypasses the warning for negative deltas)
   const jogMoveFnList = {
-    G28: () => sendCommand('G28'),
-    G30: () => sendCommand('G30'),
-    X0Y0Z0: () => move({ X: 0, Y: 0, Z: 0 }),
-    X0: () => move({ X: 0 }),
-    Y0: () => move({ Y: 0 }),
-    Z0: () => move({ Z: 0 }),
-    'X-Y+': () => jog({ X: -distance, Y: distance }),
-    'X+Y+': () => jog({ X: distance, Y: distance }),
-    'X-Y-': () => jog({ X: -distance, Y: -distance }),
-    'X+Y-': () => jog({ X: distance, Y: -distance }),
-    'X-': () => jog({ X: -distance }),
-    'X+': () => jog({ X: distance }),
-    'Y-': () => jog({ Y: -distance }),
-    'Y+': () => jog({ Y: distance }),
-    'Z-': () => jog({ Z: -distance }),
-    'Z+': () => jog({ Z: distance }),
-    'Z_TOP': () => {
-      // She's got legs ♫
-      move({ Z: 70 });
-    },
+    G28:    [() => sendCommand('G28'),                         0],
+    G30:    [() => sendCommand('G30'),                         0],
+    X0Y0Z0: [() => move({ X: 0, Y: 0, Z: 0 }),  deltaToWorkOriginZ],
+    X0:     [() => move({ X: 0 }),                             0],
+    Y0:     [() => move({ Y: 0 }),                             0],
+    Z0:     [() => move({ Z: 0 }),               deltaToWorkOriginZ],
+    'X-Y+': [() => jog({ X: -distance, Y:  distance }),        0],
+    'X+Y+': [() => jog({ X:  distance, Y:  distance }),        0],
+    'X-Y-': [() => jog({ X: -distance, Y: -distance }),        0],
+    'X+Y-': [() => jog({ X:  distance, Y: -distance }),        0],
+    'X-':   [() => jog({ X: -distance }),                      0],
+    'X+':   [() => jog({ X:  distance }),                      0],
+    'Y-':   [() => jog({ Y: -distance }),                      0],
+    'Y+':   [() => jog({ Y:  distance }),                      0],
+    'Z-':   [() => jog({ Z: -distance }),   -toMmDist(distance)],
+    'Z+':   [() => jog({ Z:  distance }),    toMmDist(distance)],
+    'Z_TOP':[() => move({ Z: 70 }),                  deltaToZTop],
   };
 
   if (cmd in jogMoveFnList) {
-    checkZHomeAndProceed(jogMoveFnList[cmd]);
+    const [action, zDeltaMm] = jogMoveFnList[cmd];
+    checkZHomeAndProceed(action, zDeltaMm);
   } else {
     addMessage(`Invalid jog/move command: ${cmd}`);
   }

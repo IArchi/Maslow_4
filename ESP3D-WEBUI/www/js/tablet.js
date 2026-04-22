@@ -425,17 +425,8 @@ const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
     zLowLastAcknowledgedResultZ = null;
   }
 
-  // --- High Z check: resulting machine Z would exceed the maximum or Z home ---
-  // Zhome < Zm check: Z home (WCO[2]) must always be >= machine Z (Zm).
-  // Fire if the resulting machine Z would exceed the defined Z home position.
-  const wcoZ = WCO && WCO.length >= 3 ? WCO[2] : null;
-  const resultingWorkZMm = wcoZ !== null ? resultingZMm - wcoZ : null;
-
-  const exceedsMachineLimit = resultingZMm > Z_HOME_MAX_SAFE_MM;
-  // Trigger if Zm > Zhome (machine Z exceeds Z home position)
-  const exceedsWorkLimit = resultingWorkZMm !== null && resultingWorkZMm > 0;
-
-  if (exceedsMachineLimit || exceedsWorkLimit) {
+  // --- High Z check: resulting machine Z would exceed the maximum ---
+  if (resultingZMm > Z_HOME_MAX_SAFE_MM) {
     // Re-prompt if the resulting Z has increased beyond what was previously acknowledged
     if (zHomeLastAcknowledgedResultZ !== null && resultingZMm > zHomeLastAcknowledgedResultZ) {
       zHomeWarningAcknowledged = false;
@@ -444,12 +435,9 @@ const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
       // zDeltaMm > 0 means the move itself would raise Z over the limit;
       // zDeltaMm === 0 means Z is already above the limit.
       const zIsRising = zDeltaMm > 0;
-      const workZDetail = resultingWorkZMm !== null
-        ? ` (${resultingWorkZMm.toFixed(1)}mm above Z home)`
-        : '';
       confirmdlg(
         "High Z Position",
-        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm${workZDetail}) ` +
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
         `${zIsRising ? 'would exceed' : 'exceeds'} the safe maximum of ` +
         `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z position ` +
         `after an alarm or power reset.<br><br>` +

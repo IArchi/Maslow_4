@@ -342,11 +342,21 @@ var timeout_id = 0,
 // exceed this value, a confirmation popup is shown before proceeding.
 const Z_HOME_MAX_SAFE_MM = 72;
 
+// Minimum safe machine Z position in mm. Machine Z should never go below 0 (home
+// position); if a movement would push Z below this value it indicates corruption.
+const Z_HOME_MIN_SAFE_MM = 0;
+
 // Tracks whether the user has acknowledged the high Z position warning this session.
 // Reset whenever the resulting Z increases beyond the previously acknowledged level,
 // or when machine Z returns to the safe range.
 let zHomeWarningAcknowledged = false;
 let zHomeLastAcknowledgedResultZ = null;
+
+// Tracks whether the user has acknowledged the low Z position warning this session.
+// Reset whenever the resulting Z decreases below the previously acknowledged level,
+// or when machine Z returns to the safe range.
+let zLowWarningAcknowledged = false;
+let zLowLastAcknowledgedResultZ = null;
 
 // Whether the one-time startup Z safety check has already fired this connection.
 // Reset on every WebSocket reconnect so the warning re-fires after a firmware restart.
@@ -354,29 +364,24 @@ let startupZCheckDone = false;
 
 /**
  * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
- * or would cause machine Z to exceed the defined Z home position (WCO[2]),
+ * go below Z_HOME_MIN_SAFE_MM, or exceed the defined Z home position (WCO[2]),
  * show a confirmation popup before allowing it. Calls `callback` immediately when
  * safe, or after the user clicks "Yes" in the warning dialog.
  * Note: MPOS values are always reported by the firmware in mm.
  *
- * Two independent conditions trigger the popup (either is sufficient):
- *   1. Resulting machine Z > Z_HOME_MAX_SAFE_MM (absolute machine-coordinate check)
+ * Three independent conditions trigger the popup (any is sufficient):
+ *   1. Resulting machine Z > Z_HOME_MAX_SAFE_MM (absolute upper limit check)
  *   2. Resulting machine Z > WCO[2] (Zhome < Zm invariant: machine Z must never exceed
  *      the defined Z home position; if Zm > Zhome it indicates position corruption)
+ *   3. Resulting machine Z < Z_HOME_MIN_SAFE_MM (absolute lower limit check: machine Z
+ *      must not go below 0, the home/minimum position)
  *
  * @param {Function} callback  - The movement action to execute if confirmed
  * @param {number}   zDeltaMm  - Expected change in machine Z (mm). Positive = up,
  *                               negative = down, 0 = no Z change (X/Y only moves).
  *                               For moves to a fixed target, pass targetMachineZ - MPOS[2].
- *                               Negative values are always safe and bypass the check.
  */
 const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
-  // Lowering Z is always safe regardless of current position
-  if (zDeltaMm < 0) {
-    callback();
-    return;
-  }
-
   const machineZMm = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
   if (machineZMm === null) {
     // Position data unavailable - cannot evaluate safety; proceed without check
@@ -386,6 +391,41 @@ const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
 
   const resultingZMm = machineZMm + zDeltaMm;
 
+  // --- Low Z check: resulting machine Z would go below the machine minimum ---
+  if (resultingZMm < Z_HOME_MIN_SAFE_MM) {
+    // Re-prompt if resulting Z has gone even lower than what was previously acknowledged
+    if (zLowLastAcknowledgedResultZ !== null && resultingZMm < zLowLastAcknowledgedResultZ) {
+      zLowWarningAcknowledged = false;
+    }
+    if (!zLowWarningAcknowledged) {
+      const zIsLowering = zDeltaMm < 0;
+      confirmdlg(
+        "Low Z Position",
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `${zIsLowering ? 'would go below' : 'is below'} the minimum safe position of ` +
+        `${Z_HOME_MIN_SAFE_MM}mm. This may indicate an incorrect Z position ` +
+        `after an alarm or power reset.<br><br>` +
+        `Movement is still allowed for maintenance purposes (e.g. to release the ` +
+        `Z-axis screws).<br><br>Do you want to proceed?`,
+        (response) => {
+          if (response === "yes") {
+            zLowWarningAcknowledged = true;
+            zLowLastAcknowledgedResultZ = resultingZMm;
+            callback();
+          }
+        }
+      );
+      return;
+    }
+    callback();
+    return;
+  } else {
+    // Resulting Z is above minimum - clear low-Z acknowledgment
+    zLowWarningAcknowledged = false;
+    zLowLastAcknowledgedResultZ = null;
+  }
+
+  // --- High Z check: resulting machine Z would exceed the maximum or Z home ---
   // Zhome < Zm check: Z home (WCO[2]) must always be >= machine Z (Zm).
   // Fire if the resulting machine Z would exceed the defined Z home position.
   const wcoZ = WCO && WCO.length >= 3 ? WCO[2] : null;
@@ -542,9 +582,9 @@ const sendMove = (cmd) => {
 
   // Map each command to [action, zDeltaMm].
   // zDeltaMm = expected machine-Z change in mm:
-  //   > 0  → rising  (check if result would exceed limit)
-  //   = 0  → no Z change; check whether current machine Z already exceeds limit
-  //   < 0  → lowering (checkZHomeAndProceed bypasses the warning for negative deltas)
+  //   > 0  → rising  (check if result would exceed upper limit or Z home)
+  //   = 0  → no Z change; check whether current machine Z already exceeds a limit
+  //   < 0  → lowering (check if result would go below Z machine minimum)
   const jogMoveFnList = {
     G28:    [() => sendCommand('G28'),                         0],
     G30:    [() => sendCommand('G30'),                         0],
@@ -1143,6 +1183,11 @@ const onWSOpenCallback = () => {
   // Reset startup Z check so the safety popup re-fires if machine Z is unsafe
   // after a reconnect or firmware restart.
   startupZCheckDone = false;
+  // Reset Z safety acknowledgment state so warnings re-fire after reconnect.
+  zHomeWarningAcknowledged = false;
+  zHomeLastAcknowledgedResultZ = null;
+  zLowWarningAcknowledged = false;
+  zLowLastAcknowledgedResultZ = null;
   if (_stopPending) {
     try {
       ws_source.send("$STOP\n");

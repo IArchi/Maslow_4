@@ -357,6 +357,12 @@ let startupZCheckDone = false;
  * show a confirmation popup before allowing it. Calls `callback` immediately when
  * safe, or after the user clicks "Yes" in the warning dialog.
  * Note: MPOS values are always reported by the firmware in mm.
+ *
+ * Two independent conditions trigger the popup (either is sufficient):
+ *   1. Resulting machine Z > Z_HOME_MAX_SAFE_MM (absolute machine-coordinate check)
+ *   2. Resulting work Z (machine Z − WCO[2]) > Z_HOME_MAX_SAFE_MM (Zhome < Zm check:
+ *      machine Z is more than Z_HOME_MAX_SAFE_MM above the defined Z home position)
+ *
  * @param {Function} callback  - The movement action to execute if confirmed
  * @param {number}   zDeltaMm  - Expected change in machine Z (mm). Positive = up,
  *                               negative = down, 0 = no Z change (X/Y only moves).
@@ -378,7 +384,17 @@ const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
   }
 
   const resultingZMm = machineZMm + zDeltaMm;
-  if (resultingZMm > Z_HOME_MAX_SAFE_MM) {
+
+  // Additional Zhome < Zm check: fire if resulting Z is more than Z_HOME_MAX_SAFE_MM
+  // above the Z home position (WCO[2]). This catches cases where the work coordinate
+  // origin has an offset that makes work Z high even when machine Z appears acceptable.
+  const wcoZ = WCO && WCO.length >= 3 ? WCO[2] : null;
+  const resultingWorkZMm = wcoZ !== null ? resultingZMm - wcoZ : null;
+
+  const exceedsMachineLimit = resultingZMm > Z_HOME_MAX_SAFE_MM;
+  const exceedsWorkLimit = resultingWorkZMm !== null && resultingWorkZMm > Z_HOME_MAX_SAFE_MM;
+
+  if (exceedsMachineLimit || exceedsWorkLimit) {
     // Re-prompt if the resulting Z has increased beyond what was previously acknowledged
     if (zHomeLastAcknowledgedResultZ !== null && resultingZMm > zHomeLastAcknowledgedResultZ) {
       zHomeWarningAcknowledged = false;
@@ -387,9 +403,12 @@ const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
       // zDeltaMm > 0 means the move itself would raise Z over the limit;
       // zDeltaMm === 0 means Z is already above the limit.
       const zIsRising = zDeltaMm > 0;
+      const workZDetail = resultingWorkZMm !== null
+        ? ` (${resultingWorkZMm.toFixed(1)}mm above Z home)`
+        : '';
       confirmdlg(
         "High Z Position",
-        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm${workZDetail}) ` +
         `${zIsRising ? 'would exceed' : 'exceeds'} the safe maximum of ` +
         `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z position ` +
         `after an alarm or power reset.<br><br>` +

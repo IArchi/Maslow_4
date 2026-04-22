@@ -181,7 +181,10 @@ function initUI_4() {
 	if (target_firmware === "???") {
 		console.log("Launch Setup");
 		display_boot_progress();
-		closeModal("Connection successful");
+		const activeSetup = getactiveModal();
+		if (activeSetup && activeSetup.name === "connectdlg.html") {
+			closeModal("Connection successful");
+		}
 		setupdlg();
 	} else {
 		//wizard is done UI can be updated
@@ -189,7 +192,10 @@ function initUI_4() {
 		do_not_build_settings = false;
 		display_boot_progress();
 		build_HTML_setting_list(current_setting_filter);
-		closeModal();
+		const activeMain = getactiveModal();
+		if (activeMain && activeMain.name === "connectdlg.html") {
+			closeModal();
+		}
 		show_main_UI();
 	}
 }

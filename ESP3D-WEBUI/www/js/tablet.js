@@ -348,6 +348,10 @@ const Z_HOME_MAX_SAFE_MM = 72;
 let zHomeWarningAcknowledged = false;
 let zHomeLastAcknowledgedResultZ = null;
 
+// Whether the one-time startup Z safety check has already fired this connection.
+// Reset on every WebSocket reconnect so the warning re-fires after a firmware restart.
+let startupZCheckDone = false;
+
 /**
  * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
  * show a confirmation popup before allowing it. Calls `callback` immediately when
@@ -980,6 +984,15 @@ function tabletGrblState(grbl, response) {
       setTextContent(`mpos-${axisNames[index]}`, `|${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)}|`);
     })
   }
+
+  // On the first status update that has both WCO and MPOS data, proactively
+  // show the Z safety popup if machine Z is already above the safe threshold.
+  // This catches a corrupted Z position before the user touches any button.
+  // WCO availability is used as the signal that full position data has arrived.
+  if (!startupZCheckDone && WCO && MPOS && MPOS.length >= 3) {
+    startupZCheckDone = true;
+    checkZHomeAndProceed(() => {}, 0);
+  }
 }
 
 let gCodeFilename = '';
@@ -1107,6 +1120,9 @@ let _stopPending = false;
 // Does NOT clear _stopPending — tabletGrblState clears it once the firmware
 // confirms the machine is no longer running (stateName === 'Idle').
 const onWSOpenCallback = () => {
+  // Reset startup Z check so the safety popup re-fires if machine Z is unsafe
+  // after a reconnect or firmware restart.
+  startupZCheckDone = false;
   if (_stopPending) {
     try {
       ws_source.send("$STOP\n");

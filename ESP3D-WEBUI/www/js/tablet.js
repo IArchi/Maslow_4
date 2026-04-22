@@ -354,14 +354,15 @@ let startupZCheckDone = false;
 
 /**
  * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
+ * or would cause machine Z to exceed the defined Z home position (WCO[2]),
  * show a confirmation popup before allowing it. Calls `callback` immediately when
  * safe, or after the user clicks "Yes" in the warning dialog.
  * Note: MPOS values are always reported by the firmware in mm.
  *
  * Two independent conditions trigger the popup (either is sufficient):
  *   1. Resulting machine Z > Z_HOME_MAX_SAFE_MM (absolute machine-coordinate check)
- *   2. Resulting work Z (machine Z − WCO[2]) > Z_HOME_MAX_SAFE_MM (Zhome < Zm check:
- *      machine Z is more than Z_HOME_MAX_SAFE_MM above the defined Z home position)
+ *   2. Resulting machine Z > WCO[2] (Zhome < Zm invariant: machine Z must never exceed
+ *      the defined Z home position; if Zm > Zhome it indicates position corruption)
  *
  * @param {Function} callback  - The movement action to execute if confirmed
  * @param {number}   zDeltaMm  - Expected change in machine Z (mm). Positive = up,
@@ -385,14 +386,14 @@ const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
 
   const resultingZMm = machineZMm + zDeltaMm;
 
-  // Additional Zhome < Zm check: fire if resulting Z is more than Z_HOME_MAX_SAFE_MM
-  // above the Z home position (WCO[2]). This catches cases where the work coordinate
-  // origin has an offset that makes work Z high even when machine Z appears acceptable.
+  // Zhome < Zm check: Z home (WCO[2]) must always be >= machine Z (Zm).
+  // Fire if the resulting machine Z would exceed the defined Z home position.
   const wcoZ = WCO && WCO.length >= 3 ? WCO[2] : null;
   const resultingWorkZMm = wcoZ !== null ? resultingZMm - wcoZ : null;
 
   const exceedsMachineLimit = resultingZMm > Z_HOME_MAX_SAFE_MM;
-  const exceedsWorkLimit = resultingWorkZMm !== null && resultingWorkZMm > Z_HOME_MAX_SAFE_MM;
+  // Trigger if Zm > Zhome (machine Z exceeds Z home position)
+  const exceedsWorkLimit = resultingWorkZMm !== null && resultingWorkZMm > 0;
 
   if (exceedsMachineLimit || exceedsWorkLimit) {
     // Re-prompt if the resulting Z has increased beyond what was previously acknowledged

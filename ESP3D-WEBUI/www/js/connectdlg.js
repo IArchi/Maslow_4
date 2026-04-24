@@ -151,8 +151,22 @@ const retryconnect = () => {
 const forceCloseConnectionDialog = () => {
 	const connectModal = id("connectdlg.html");
 	if (connectModal && connectModal.style.display !== "none") {
-		console.log("Force closing stuck connection dialog");
-		closeModal("Force closed");
+		const activeModal = getactiveModal();
+		if (activeModal && activeModal.name === "connectdlg.html") {
+			// Connection dialog is the topmost modal – close it normally.
+			console.log("Force closing stuck connection dialog");
+			closeModal("Force closed");
+		} else {
+			// Another modal (e.g. a safety warning) is on top of the stack.
+			// Hide the connection dialog element directly and remove any of its
+			// entries from the modal stack so the active modal is not disturbed.
+			connectModal.style.display = "none";
+			for (let i = listmodal.length - 1; i >= 0; i--) {
+				if (listmodal[i].name === "connectdlg.html") {
+					listmodal.splice(i, 1);
+				}
+			}
+		}
 	}
 	connectionInProgress = false;
 };

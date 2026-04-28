@@ -1450,6 +1450,7 @@ function tabletInit() {
     // Buttons - Second Row
     id("tablettab_left").addEventListener("click", tabletMoveLeft);
     id("tablettab_right").addEventListener("click", tabletMoveRight);
+    id("tablettab_options_btn").addEventListener("click", tabletCalOpenOptionalSettings);
 
     // Buttons - Third Row
     id("tablettab_zDown").addEventListener("click", tabletMoveZDown);

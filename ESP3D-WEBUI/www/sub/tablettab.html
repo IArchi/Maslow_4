@@ -191,6 +191,23 @@
             title="Record the 'bottom' limit for Z-axis movement">Set Z-Stop</button>
         </div>
         <div class="buttons-row">
+          <button id="tablettab_cal_optional_settings" class="calibration-modal-button green-button"
+            title="Set work area, park position, scale factors and material thickness">Optional Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="optional-settings-popup" class="calibration-modal-container">
+    <div id="optional_settings_popup_content" class="calibration-modal-content">
+      <div class="calibration-modal-button-container">
+        <div class="input-row">
+          <div style="display: flex; justify-content: center;">
+            <label style="text-align: center;">Optional Settings</label>
+          </div>
+        </div>
+        <hr style="border-top: 1px dashed;">
+        <div class="buttons-row">
           <button id="tablettab_cal_work_area" class="calibration-modal-button green-button"
             title="Edit work area limits, restricting Maslow's boundaries.&#10;Maslow will be unable to travel beyond limits.">Set Work Area</button>
           <button id="tablettab_cal_park" class="calibration-modal-button green-button"

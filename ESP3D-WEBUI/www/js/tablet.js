@@ -1184,6 +1184,10 @@ const handleMaslowActionButtonClick = () => {
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
 
+// Control event handlers - Optional Settings Popup
+const tabletOptionalSettingsPopupHide = () => hideModal("optional-settings-popup");
+const tabletCalOpenOptionalSettings = () => openModal("optional-settings-popup");
+
 // Control event handlers - Work Area Popup
 const getWorkAreaValues = () => {
   const lv = globalThis.loadedValues || {};
@@ -1247,7 +1251,7 @@ const tabletSaveWorkArea = () => {
   saveMaslowYaml();
   scheduleCallback(() => {
     hideModal("work-area-popup");
-    hideModal("calibration-popup");
+    hideModal("optional-settings-popup");
   }, 1000);
 };
 
@@ -1307,7 +1311,7 @@ const tabletSavePark = () => {
   saveMaslowYaml();
   scheduleCallback(() => {
     hideModal("park-popup");
-    hideModal("calibration-popup");
+    hideModal("optional-settings-popup");
   }, 1000);
 };
 
@@ -1373,7 +1377,7 @@ const tabletSaveScaleThickness = () => {
   saveMaslowYaml();
   scheduleCallback(() => {
     hideModal("scale-thickness-popup");
-    hideModal("calibration-popup");
+    hideModal("optional-settings-popup");
   }, 1000);
 };
 
@@ -1498,6 +1502,11 @@ function tabletInit() {
     id("tablettab_cal_zstop").addEventListener("click", tabletCalSetZStop);
     id("tablettab_cal_test").addEventListener("click", tabletCalTest);
     id("tablettab_cal_relax").addEventListener("click", tabletCalRelax);
+    id("tablettab_cal_optional_settings").addEventListener("click", tabletCalOpenOptionalSettings);
+
+    // Buttons - Optional Settings Pop-up
+    id("optional-settings-popup").addEventListener("click", tabletOptionalSettingsPopupHide);
+    id("optional_settings_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_cal_work_area").addEventListener("click", tabletOpenWorkAreaPopup);
     id("tablettab_cal_park").addEventListener("click", tabletOpenParkPopup);
     id("tablettab_cal_scale_thickness").addEventListener("click", tabletOpenScaleThicknessPopup);

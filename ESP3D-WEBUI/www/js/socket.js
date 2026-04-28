@@ -256,7 +256,9 @@ const startSocket = () => {
 					// Close stuck connection dialog if any message received from machine
 					// This indicates the machine is connected and communicating
 					const connectModal = id("connectdlg.html");
-					if (connectModal && connectModal.style.display !== "none") {
+					const activeOnMsg = getactiveModal();
+					if (connectModal && connectModal.style.display !== "none" &&
+						activeOnMsg && activeOnMsg.name === "connectdlg.html") {
 						console.log("SOCKET FIX: Machine message received - closing stuck connection dialog");
 						closeModal("Machine connected");
 					}
@@ -304,7 +306,9 @@ const startSocket = () => {
 			// Close stuck connection dialog if any message received from machine
 			// This indicates the machine is connected and communicating  
 			const connectModal = id("connectdlg.html");
-			if (connectModal && connectModal.style.display !== "none") {
+			const activeOnMsg2 = getactiveModal();
+			if (connectModal && connectModal.style.display !== "none" &&
+				activeOnMsg2 && activeOnMsg2.name === "connectdlg.html") {
 				console.log("SOCKET FIX: Machine message received - closing stuck connection dialog");
 				closeModal("Machine connected");
 			}

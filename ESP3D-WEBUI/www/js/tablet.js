@@ -339,6 +339,130 @@ const setAxis = (axis, field) => {
 var timeout_id = 0,
   hold_time = 1000
 
+// Maximum safe machine Z position in mm. If a movement would cause machine Z to
+// exceed this value, a confirmation popup is shown before proceeding.
+const Z_HOME_MAX_SAFE_MM = 72;
+
+// Minimum safe machine Z position in mm. Machine Z should never go below 0 (home
+// position); if a movement would push Z below this value it indicates corruption.
+const Z_HOME_MIN_SAFE_MM = 0;
+
+// Tracks whether the user has acknowledged the high Z position warning this session.
+// Reset whenever the resulting Z increases beyond the previously acknowledged level,
+// or when machine Z returns to the safe range.
+let zHomeWarningAcknowledged = false;
+let zHomeLastAcknowledgedResultZ = null;
+
+// Tracks whether the user has acknowledged the low Z position warning this session.
+// Reset whenever the resulting Z decreases below the previously acknowledged level,
+// or when machine Z returns to the safe range.
+let zLowWarningAcknowledged = false;
+let zLowLastAcknowledgedResultZ = null;
+
+// Whether the one-time startup Z safety check has already fired this connection.
+// Reset on every WebSocket reconnect so the warning re-fires after a firmware restart.
+let startupZCheckDone = false;
+
+/**
+ * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
+ * go below Z_HOME_MIN_SAFE_MM, or exceed the defined Z home position (WCO[2]),
+ * show a confirmation popup before allowing it. Calls `callback` immediately when
+ * safe, or after the user clicks "Yes" in the warning dialog.
+ * Note: MPOS values are always reported by the firmware in mm.
+ *
+ * Three independent conditions trigger the popup (any is sufficient):
+ *   1. Resulting machine Z > Z_HOME_MAX_SAFE_MM (absolute upper limit check)
+ *   2. Resulting machine Z > WCO[2] (Zhome < Zm invariant: machine Z must never exceed
+ *      the defined Z home position; if Zm > Zhome it indicates position corruption)
+ *   3. Resulting machine Z < Z_HOME_MIN_SAFE_MM (absolute lower limit check: machine Z
+ *      must not go below 0, the home/minimum position)
+ *
+ * @param {Function} callback  - The movement action to execute if confirmed
+ * @param {number}   zDeltaMm  - Expected change in machine Z (mm). Positive = up,
+ *                               negative = down, 0 = no Z change (X/Y only moves).
+ *                               For moves to a fixed target, pass targetMachineZ - MPOS[2].
+ */
+const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
+  const machineZMm = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  if (machineZMm === null) {
+    // Position data unavailable - cannot evaluate safety; proceed without check
+    callback();
+    return;
+  }
+
+  const resultingZMm = machineZMm + zDeltaMm;
+
+  // --- Low Z check: resulting machine Z would go below the machine minimum ---
+  if (resultingZMm < Z_HOME_MIN_SAFE_MM) {
+    // Re-prompt if resulting Z has gone even lower than what was previously acknowledged
+    if (zLowLastAcknowledgedResultZ !== null && resultingZMm < zLowLastAcknowledgedResultZ) {
+      zLowWarningAcknowledged = false;
+    }
+    if (!zLowWarningAcknowledged) {
+      const zIsLowering = zDeltaMm < 0;
+      confirmdlg(
+        "Low Z Position",
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `${zIsLowering ? 'would go below' : 'is below'} the minimum safe position of ` +
+        `${Z_HOME_MIN_SAFE_MM}mm. This may indicate an incorrect Z position ` +
+        `after an alarm or power reset.<br><br>` +
+        `Movement is still allowed for maintenance purposes (e.g. to release the ` +
+        `Z-axis screws).<br><br>Do you want to proceed?`,
+        (response) => {
+          if (response === "yes") {
+            zLowWarningAcknowledged = true;
+            zLowLastAcknowledgedResultZ = resultingZMm;
+            callback();
+          }
+        }
+      );
+      return;
+    }
+    callback();
+    return;
+  } else {
+    // Resulting Z is above minimum - clear low-Z acknowledgment
+    zLowWarningAcknowledged = false;
+    zLowLastAcknowledgedResultZ = null;
+  }
+
+  // --- High Z check: resulting machine Z would exceed the maximum ---
+  if (resultingZMm > Z_HOME_MAX_SAFE_MM) {
+    // Re-prompt if the resulting Z has increased beyond what was previously acknowledged
+    if (zHomeLastAcknowledgedResultZ !== null && resultingZMm > zHomeLastAcknowledgedResultZ) {
+      zHomeWarningAcknowledged = false;
+    }
+    if (!zHomeWarningAcknowledged) {
+      // zDeltaMm > 0 means the move itself would raise Z over the limit;
+      // zDeltaMm === 0 means Z is already above the limit.
+      const zIsRising = zDeltaMm > 0;
+      confirmdlg(
+        "High Z Position",
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `${zIsRising ? 'would exceed' : 'exceeds'} the safe maximum of ` +
+        `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z position ` +
+        `after an alarm or power reset.<br><br>` +
+        `Movement is still allowed for maintenance purposes (e.g. to release the ` +
+        `Z-axis screws).<br><br>Do you want to proceed?`,
+        (response) => {
+          if (response === "yes") {
+            zHomeWarningAcknowledged = true;
+            zHomeLastAcknowledgedResultZ = resultingZMm;
+            callback();
+          }
+        }
+      );
+      return;
+    }
+  } else {
+    // Resulting Z is within safe range - clear acknowledgment so any future
+    // high-Z movement triggers a new warning
+    zHomeWarningAcknowledged = false;
+    zHomeLastAcknowledgedResultZ = null;
+  }
+  callback();
+};
+
 /** Check the parameters used by jog and move commands,
  * and return them as a composite string */
 const checkParams = (params = {}) => {
@@ -427,31 +551,52 @@ const sendMove = (cmd) => {
     ? Number(getText('disZ')) || 0
     : Number(getText('disM')) || 0;
 
+  // Convert a display-unit jog distance to mm for the safety threshold check.
+  // MPOS is always in mm; jog distances match the current display unit (mm or inch).
+  const toMmDist = (d) => gCodeModal.units === 'G20' ? d * 25.4 : d;
+
+  // Current machine Z and work-coordinate origin Z (both always in mm from firmware).
+  // Null when position data has not yet arrived from the firmware.
+  const machineZ  = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  const workZeroZ = WCO  && WCO.length  >= 3 ? WCO[2]  : null;
+
+  // For commands that move Z to a specific work-coordinate target, compute the
+  // expected change in machine Z (positive = rising).  When position data is
+  // unavailable fall back to 0; checkZHomeAndProceed handles null MPOS separately.
+  const deltaToWorkOriginZ = (machineZ !== null && workZeroZ !== null)
+    ? workZeroZ - machineZ : 0;
+  // Z_TOP moves to work Z=70; machine Z target = workZeroZ + 70.
+  const deltaToZTop = (machineZ !== null && workZeroZ !== null)
+    ? (workZeroZ + 70) - machineZ : 0;
+
+  // Map each command to [action, zDeltaMm].
+  // zDeltaMm = expected machine-Z change in mm:
+  //   > 0  → rising  (check if result would exceed upper limit or Z home)
+  //   = 0  → no Z change; check whether current machine Z already exceeds a limit
+  //   < 0  → lowering (check if result would go below Z machine minimum)
   const jogMoveFnList = {
-    G28: () => sendCommand('G28'),
-    G30: () => sendCommand('G30'),
-    X0Y0Z0: () => move({ X: 0, Y: 0, Z: 0 }),
-    X0: () => move({ X: 0 }),
-    Y0: () => move({ Y: 0 }),
-    Z0: () => move({ Z: 0 }),
-    'X-Y+': () => jog({ X: -distance, Y: distance }),
-    'X+Y+': () => jog({ X: distance, Y: distance }),
-    'X-Y-': () => jog({ X: -distance, Y: -distance }),
-    'X+Y-': () => jog({ X: distance, Y: -distance }),
-    'X-': () => jog({ X: -distance }),
-    'X+': () => jog({ X: distance }),
-    'Y-': () => jog({ Y: -distance }),
-    'Y+': () => jog({ Y: distance }),
-    'Z-': () => jog({ Z: -distance }),
-    'Z+': () => jog({ Z: distance }),
-    'Z_TOP': () => {
-      // She's got legs ♫
-      move({ Z: 70 });
-    },
+    G28:    [() => sendCommand('G28'),                         0],
+    G30:    [() => sendCommand('G30'),                         0],
+    X0Y0Z0: [() => move({ X: 0, Y: 0, Z: 0 }),  deltaToWorkOriginZ],
+    X0:     [() => move({ X: 0 }),                             0],
+    Y0:     [() => move({ Y: 0 }),                             0],
+    Z0:     [() => move({ Z: 0 }),               deltaToWorkOriginZ],
+    'X-Y+': [() => jog({ X: -distance, Y:  distance }),        0],
+    'X+Y+': [() => jog({ X:  distance, Y:  distance }),        0],
+    'X-Y-': [() => jog({ X: -distance, Y: -distance }),        0],
+    'X+Y-': [() => jog({ X:  distance, Y: -distance }),        0],
+    'X-':   [() => jog({ X: -distance }),                      0],
+    'X+':   [() => jog({ X:  distance }),                      0],
+    'Y-':   [() => jog({ Y: -distance }),                      0],
+    'Y+':   [() => jog({ Y:  distance }),                      0],
+    'Z-':   [() => jog({ Z: -distance }),   -toMmDist(distance)],
+    'Z+':   [() => jog({ Z:  distance }),    toMmDist(distance)],
+    'Z_TOP':[() => move({ Z: 70 }),                  deltaToZTop],
   };
 
   if (cmd in jogMoveFnList) {
-    jogMoveFnList[cmd]();
+    const [action, zDeltaMm] = jogMoveFnList[cmd];
+    checkZHomeAndProceed(action, zDeltaMm);
   } else {
     addMessage(`Invalid jog/move command: ${cmd}`);
   }
@@ -462,7 +607,9 @@ const moveHome = () => {
     return;
   }
 
-  move({ X: 0, Y: 0 });
+  checkZHomeAndProceed(() => {
+    move({ X: 0, Y: 0 });
+  });
 }
 
 function saveSerialMessages() {
@@ -886,6 +1033,15 @@ function tabletGrblState(grbl, response) {
       setTextContent(`mpos-${axisNames[index]}`, `|${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)}|`);
     })
   }
+
+  // On the first status update that has both WCO and MPOS data, proactively
+  // show the Z safety popup if machine Z is already above the safe threshold.
+  // This catches a corrupted Z position before the user touches any button.
+  // WCO availability is used as the signal that full position data has arrived.
+  if (!startupZCheckDone && WCO && MPOS && MPOS.length >= 3) {
+    startupZCheckDone = true;
+    checkZHomeAndProceed(() => {}, 0);
+  }
 }
 
 let gCodeFilename = '';
@@ -1013,6 +1169,14 @@ let _stopPending = false;
 // Does NOT clear _stopPending — tabletGrblState clears it once the firmware
 // confirms the machine is no longer running (stateName === 'Idle').
 const onWSOpenCallback = () => {
+  // Reset startup Z check so the safety popup re-fires if machine Z is unsafe
+  // after a reconnect or firmware restart.
+  startupZCheckDone = false;
+  // Reset Z safety acknowledgment state so warnings re-fire after reconnect.
+  zHomeWarningAcknowledged = false;
+  zHomeLastAcknowledgedResultZ = null;
+  zLowWarningAcknowledged = false;
+  zLowLastAcknowledgedResultZ = null;
   if (_stopPending) {
     try {
       ws_source.send("$STOP\n");

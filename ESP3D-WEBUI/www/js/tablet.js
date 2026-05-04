@@ -1667,7 +1667,6 @@ function tabletInit() {
     id("tablettab_cal_zstop").addEventListener("click", tabletCalSetZStop);
     id("tablettab_cal_test").addEventListener("click", tabletCalTest);
     id("tablettab_cal_relax").addEventListener("click", tabletCalRelax);
-    id("tablettab_cal_optional_settings").addEventListener("click", tabletCalOpenOptionalSettings);
 
     // Buttons - Optional Settings Pop-up
     id("optional-settings-popup").addEventListener("click", tabletOptionalSettingsPopupHide);

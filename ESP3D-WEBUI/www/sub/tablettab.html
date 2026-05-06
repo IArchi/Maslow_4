@@ -11,7 +11,7 @@
         <div id="main-state-label-container" style="text-align: center;">
           <label id="main-state-label" style="font-weight: bold;">State: </label>
         </div>
-        <div style="grid-template-columns: 20% 20% 20% 20% 20%;" class="maslow-grid-container tablettab-controls-item">
+        <div id="tablettab-jog-controls" style="grid-template-columns: 20% 20% 20% 20% 20%;" class="maslow-grid-container tablettab-controls-item">
           <!-- Buttons row 1 -->
           <div id="tablettab_zUp" class="maslow-grid-item maslow-grid-item-btn"
             style="background-color: #f2f0e4;; color: #337ab7; border-right: 2px solid grey;">
@@ -98,7 +98,7 @@
           </div>
         </div>
         <!-- Controls row 5 -->
-        <div style="grid-template-columns: 60% 20% 20%;" class="maslow-grid-container tablettab-controls-item"
+        <div id="tablettab-file-controls" style="grid-template-columns: 60% 20% 20%;" class="maslow-grid-container tablettab-controls-item"
           style="height: 60px;">
           <select id="filelist" class="form-control">
             <option>Load File...</option>
@@ -119,14 +119,14 @@
           </div>
         </div>
         <!-- Buttons row 6 -->
-        <div class="maslow-grid-container tablettab-controls-item" style="grid-template-columns: 33% 33% 33%;">
+        <div id="tablettab-playback-controls" class="maslow-grid-container tablettab-controls-item" style="grid-template-columns: 33% 33% 33%;">
           <div id="tablettab_gcode_play" class="maslow-grid-item maslow-grid-item-btn"
             style="background-color: #4aa85c;"><canvas id="playBtn" style="width: 100%; height: 100%"></canvas></div>
           <div id="tablettab_gcode_stop" class="maslow-grid-item maslow-grid-item-btn"
             style="background-color: #ce654c;"><canvas id="stopBtn" style="width: 100%; height: 100%"></canvas></div>
           <div id="systemStatus" class="maslow-grid-item system-status">Idle</div>
         </div>
-        <div class="maslow-grid-container tablettab-controls-item" style="grid-template-columns: auto;">
+        <div id="tablettab-position-display" class="maslow-grid-container tablettab-controls-item" style="grid-template-columns: auto;">
           <div class="maslow-grid-item">
             <table style="width:100%">
               <tr>
@@ -150,7 +150,7 @@
             </table>
           </div>
         </div>
-        <div class="maslow-grid-container tablettab-controls-item" style="grid-template-columns: auto;">
+        <div id="tablettab-job-bounds-container" class="maslow-grid-container tablettab-controls-item" style="grid-template-columns: auto;">
           <div class="maslow-grid-item">
             <div id="job-bounds-info" style="padding: 5px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; display: none;">
               <strong>Job Bounds:</strong><br>

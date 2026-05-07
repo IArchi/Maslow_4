@@ -211,7 +211,11 @@ void Maslow_::update() {
     if (!Maslow.using_default_config) {
         unsigned long now = millis();
         //if the update function is not being called enough, stop everything to prevent damage
-        if (now - lastCallToUpdate > UPDATE_WATCHDOG_MS) {
+        // Skip the watchdog check during file/firmware uploads: flash write operations stall
+        // both CPU cores, so update() may not run for > UPDATE_WATCHDOG_MS through no fault
+        // of the motion system.  lastCallToUpdate is still refreshed so the watchdog does not
+        // trigger immediately after the upload finishes.
+        if (!uploadInProgress && now - lastCallToUpdate > UPDATE_WATCHDOG_MS) {
             unsigned int elapsedTime = now - lastCallToUpdate;
             log_error("Emergency stop. Update function not being called enough. " << elapsedTime << "ms since last call");
             watchdogFired = true;

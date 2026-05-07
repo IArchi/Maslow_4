@@ -3,6 +3,7 @@
 
 // Constants
 const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded before restoration
+const workAreaDefaults = { x: 2440, y: 1220, offX: 0, offY: 0 };
 
 var gCodeLoaded = false;
 var gCodeDisplayable = false;
@@ -197,10 +198,10 @@ const getUnitInfo = () => {
 
 const getWorkAreaBounds = () => {
   const lv = globalThis.loadedValues || {};
-  const areaX = parseFloat(lv.workAreaX) || 2440;
-  const areaY = parseFloat(lv.workAreaY) || 1220;
-  const offX = parseFloat(lv.workAreaCenterOffsetX) || 0;
-  const offY = parseFloat(lv.workAreaCenterOffsetY) || 0;
+  const areaX = parseFloat(lv.workAreaX) || workAreaDefaults.x;
+  const areaY = parseFloat(lv.workAreaY) || workAreaDefaults.y;
+  const offX = parseFloat(lv.workAreaCenterOffsetX) || workAreaDefaults.offX;
+  const offY = parseFloat(lv.workAreaCenterOffsetY) || workAreaDefaults.offY;
   return {
     minX: offX - areaX / 2,
     maxX: offX + areaX / 2,
@@ -338,6 +339,130 @@ const setAxis = (axis, field) => {
 var timeout_id = 0,
   hold_time = 1000
 
+// Maximum safe machine Z position in mm. If a movement would cause machine Z to
+// exceed this value, a confirmation popup is shown before proceeding.
+const Z_HOME_MAX_SAFE_MM = 72;
+
+// Minimum safe machine Z position in mm. Machine Z should never go below 0 (home
+// position); if a movement would push Z below this value it indicates corruption.
+const Z_HOME_MIN_SAFE_MM = 0;
+
+// Tracks whether the user has acknowledged the high Z position warning this session.
+// Reset whenever the resulting Z increases beyond the previously acknowledged level,
+// or when machine Z returns to the safe range.
+let zHomeWarningAcknowledged = false;
+let zHomeLastAcknowledgedResultZ = null;
+
+// Tracks whether the user has acknowledged the low Z position warning this session.
+// Reset whenever the resulting Z decreases below the previously acknowledged level,
+// or when machine Z returns to the safe range.
+let zLowWarningAcknowledged = false;
+let zLowLastAcknowledgedResultZ = null;
+
+// Whether the one-time startup Z safety check has already fired this connection.
+// Reset on every WebSocket reconnect so the warning re-fires after a firmware restart.
+let startupZCheckDone = false;
+
+/**
+ * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
+ * go below Z_HOME_MIN_SAFE_MM, or exceed the defined Z home position (WCO[2]),
+ * show a confirmation popup before allowing it. Calls `callback` immediately when
+ * safe, or after the user clicks "Yes" in the warning dialog.
+ * Note: MPOS values are always reported by the firmware in mm.
+ *
+ * Three independent conditions trigger the popup (any is sufficient):
+ *   1. Resulting machine Z > Z_HOME_MAX_SAFE_MM (absolute upper limit check)
+ *   2. Resulting machine Z > WCO[2] (Zhome < Zm invariant: machine Z must never exceed
+ *      the defined Z home position; if Zm > Zhome it indicates position corruption)
+ *   3. Resulting machine Z < Z_HOME_MIN_SAFE_MM (absolute lower limit check: machine Z
+ *      must not go below 0, the home/minimum position)
+ *
+ * @param {Function} callback  - The movement action to execute if confirmed
+ * @param {number}   zDeltaMm  - Expected change in machine Z (mm). Positive = up,
+ *                               negative = down, 0 = no Z change (X/Y only moves).
+ *                               For moves to a fixed target, pass targetMachineZ - MPOS[2].
+ */
+const checkZHomeAndProceed = (callback, zDeltaMm = 0) => {
+  const machineZMm = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  if (machineZMm === null) {
+    // Position data unavailable - cannot evaluate safety; proceed without check
+    callback();
+    return;
+  }
+
+  const resultingZMm = machineZMm + zDeltaMm;
+
+  // --- Low Z check: resulting machine Z would go below the machine minimum ---
+  if (resultingZMm < Z_HOME_MIN_SAFE_MM) {
+    // Re-prompt if resulting Z has gone even lower than what was previously acknowledged
+    if (zLowLastAcknowledgedResultZ !== null && resultingZMm < zLowLastAcknowledgedResultZ) {
+      zLowWarningAcknowledged = false;
+    }
+    if (!zLowWarningAcknowledged) {
+      const zIsLowering = zDeltaMm < 0;
+      confirmdlg(
+        "Low Z Position",
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `${zIsLowering ? 'would go below' : 'is below'} the minimum safe position of ` +
+        `${Z_HOME_MIN_SAFE_MM}mm. This may indicate an incorrect Z position ` +
+        `after an alarm or power reset.<br><br>` +
+        `Movement is still allowed for maintenance purposes (e.g. to release the ` +
+        `Z-axis screws).<br><br>Do you want to proceed?`,
+        (response) => {
+          if (response === "yes") {
+            zLowWarningAcknowledged = true;
+            zLowLastAcknowledgedResultZ = resultingZMm;
+            callback();
+          }
+        }
+      );
+      return;
+    }
+    callback();
+    return;
+  } else {
+    // Resulting Z is above minimum - clear low-Z acknowledgment
+    zLowWarningAcknowledged = false;
+    zLowLastAcknowledgedResultZ = null;
+  }
+
+  // --- High Z check: resulting machine Z would exceed the maximum ---
+  if (resultingZMm > Z_HOME_MAX_SAFE_MM) {
+    // Re-prompt if the resulting Z has increased beyond what was previously acknowledged
+    if (zHomeLastAcknowledgedResultZ !== null && resultingZMm > zHomeLastAcknowledgedResultZ) {
+      zHomeWarningAcknowledged = false;
+    }
+    if (!zHomeWarningAcknowledged) {
+      // zDeltaMm > 0 means the move itself would raise Z over the limit;
+      // zDeltaMm === 0 means Z is already above the limit.
+      const zIsRising = zDeltaMm > 0;
+      confirmdlg(
+        "High Z Position",
+        `Warning: Machine Z position (${resultingZMm.toFixed(1)}mm) ` +
+        `${zIsRising ? 'would exceed' : 'exceeds'} the safe maximum of ` +
+        `${Z_HOME_MAX_SAFE_MM}mm. This may indicate an incorrect Z position ` +
+        `after an alarm or power reset.<br><br>` +
+        `Movement is still allowed for maintenance purposes (e.g. to release the ` +
+        `Z-axis screws).<br><br>Do you want to proceed?`,
+        (response) => {
+          if (response === "yes") {
+            zHomeWarningAcknowledged = true;
+            zHomeLastAcknowledgedResultZ = resultingZMm;
+            callback();
+          }
+        }
+      );
+      return;
+    }
+  } else {
+    // Resulting Z is within safe range - clear acknowledgment so any future
+    // high-Z movement triggers a new warning
+    zHomeWarningAcknowledged = false;
+    zHomeLastAcknowledgedResultZ = null;
+  }
+  callback();
+};
+
 /** Check the parameters used by jog and move commands,
  * and return them as a composite string */
 const checkParams = (params = {}) => {
@@ -426,31 +551,52 @@ const sendMove = (cmd) => {
     ? Number(getText('disZ')) || 0
     : Number(getText('disM')) || 0;
 
+  // Convert a display-unit jog distance to mm for the safety threshold check.
+  // MPOS is always in mm; jog distances match the current display unit (mm or inch).
+  const toMmDist = (d) => gCodeModal.units === 'G20' ? d * 25.4 : d;
+
+  // Current machine Z and work-coordinate origin Z (both always in mm from firmware).
+  // Null when position data has not yet arrived from the firmware.
+  const machineZ  = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  const workZeroZ = WCO  && WCO.length  >= 3 ? WCO[2]  : null;
+
+  // For commands that move Z to a specific work-coordinate target, compute the
+  // expected change in machine Z (positive = rising).  When position data is
+  // unavailable fall back to 0; checkZHomeAndProceed handles null MPOS separately.
+  const deltaToWorkOriginZ = (machineZ !== null && workZeroZ !== null)
+    ? workZeroZ - machineZ : 0;
+  // Z_TOP moves to work Z=70; machine Z target = workZeroZ + 70.
+  const deltaToZTop = (machineZ !== null && workZeroZ !== null)
+    ? (workZeroZ + 70) - machineZ : 0;
+
+  // Map each command to [action, zDeltaMm].
+  // zDeltaMm = expected machine-Z change in mm:
+  //   > 0  → rising  (check if result would exceed upper limit or Z home)
+  //   = 0  → no Z change; check whether current machine Z already exceeds a limit
+  //   < 0  → lowering (check if result would go below Z machine minimum)
   const jogMoveFnList = {
-    G28: () => sendCommand('G28'),
-    G30: () => sendCommand('G30'),
-    X0Y0Z0: () => move({ X: 0, Y: 0, Z: 0 }),
-    X0: () => move({ X: 0 }),
-    Y0: () => move({ Y: 0 }),
-    Z0: () => move({ Z: 0 }),
-    'X-Y+': () => jog({ X: -distance, Y: distance }),
-    'X+Y+': () => jog({ X: distance, Y: distance }),
-    'X-Y-': () => jog({ X: -distance, Y: -distance }),
-    'X+Y-': () => jog({ X: distance, Y: -distance }),
-    'X-': () => jog({ X: -distance }),
-    'X+': () => jog({ X: distance }),
-    'Y-': () => jog({ Y: -distance }),
-    'Y+': () => jog({ Y: distance }),
-    'Z-': () => jog({ Z: -distance }),
-    'Z+': () => jog({ Z: distance }),
-    'Z_TOP': () => {
-      // She's got legs ♫
-      move({ Z: 70 });
-    },
+    G28:    [() => sendCommand('G28'),                         0],
+    G30:    [() => sendCommand('G30'),                         0],
+    X0Y0Z0: [() => move({ X: 0, Y: 0, Z: 0 }),  deltaToWorkOriginZ],
+    X0:     [() => move({ X: 0 }),                             0],
+    Y0:     [() => move({ Y: 0 }),                             0],
+    Z0:     [() => move({ Z: 0 }),               deltaToWorkOriginZ],
+    'X-Y+': [() => jog({ X: -distance, Y:  distance }),        0],
+    'X+Y+': [() => jog({ X:  distance, Y:  distance }),        0],
+    'X-Y-': [() => jog({ X: -distance, Y: -distance }),        0],
+    'X+Y-': [() => jog({ X:  distance, Y: -distance }),        0],
+    'X-':   [() => jog({ X: -distance }),                      0],
+    'X+':   [() => jog({ X:  distance }),                      0],
+    'Y-':   [() => jog({ Y: -distance }),                      0],
+    'Y+':   [() => jog({ Y:  distance }),                      0],
+    'Z-':   [() => jog({ Z: -distance }),   -toMmDist(distance)],
+    'Z+':   [() => jog({ Z:  distance }),    toMmDist(distance)],
+    'Z_TOP':[() => move({ Z: 70 }),                  deltaToZTop],
   };
 
   if (cmd in jogMoveFnList) {
-    jogMoveFnList[cmd]();
+    const [action, zDeltaMm] = jogMoveFnList[cmd];
+    checkZHomeAndProceed(action, zDeltaMm);
   } else {
     addMessage(`Invalid jog/move command: ${cmd}`);
   }
@@ -461,7 +607,9 @@ const moveHome = () => {
     return;
   }
 
-  move({ X: 0, Y: 0 });
+  checkZHomeAndProceed(() => {
+    move({ X: 0, Y: 0 });
+  });
 }
 
 function saveSerialMessages() {
@@ -885,6 +1033,15 @@ function tabletGrblState(grbl, response) {
       setTextContent(`mpos-${axisNames[index]}`, `|${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)}|`);
     })
   }
+
+  // On the first status update that has both WCO and MPOS data, proactively
+  // show the Z safety popup if machine Z is already above the safe threshold.
+  // This catches a corrupted Z position before the user touches any button.
+  // WCO availability is used as the signal that full position data has arrived.
+  if (!startupZCheckDone && WCO && MPOS && MPOS.length >= 3) {
+    startupZCheckDone = true;
+    checkZHomeAndProceed(() => {}, 0);
+  }
 }
 
 let gCodeFilename = '';
@@ -1012,6 +1169,14 @@ let _stopPending = false;
 // Does NOT clear _stopPending — tabletGrblState clears it once the firmware
 // confirms the machine is no longer running (stateName === 'Idle').
 const onWSOpenCallback = () => {
+  // Reset startup Z check so the safety popup re-fires if machine Z is unsafe
+  // after a reconnect or firmware restart.
+  startupZCheckDone = false;
+  // Reset Z safety acknowledgment state so warnings re-fire after reconnect.
+  zHomeWarningAcknowledged = false;
+  zHomeLastAcknowledgedResultZ = null;
+  zLowWarningAcknowledged = false;
+  zLowLastAcknowledgedResultZ = null;
   if (_stopPending) {
     try {
       ws_source.send("$STOP\n");
@@ -1179,8 +1344,207 @@ const handleMaslowActionButtonClick = () => {
   }
 };
 
+
 // Control event handlers - Configuration Popup
 const tabletConfigPopupHide = () => hideModal("configuration-popup");
+
+// Control event handlers - Optional Settings Popup
+const tabletOptionalSettingsPopupHide = () => hideModal("optional-settings-popup");
+const tabletCalOpenOptionalSettings = () => openModal("optional-settings-popup");
+
+// Control event handlers - Work Area Popup
+const getWorkAreaValues = () => {
+  const lv = globalThis.loadedValues || {};
+  return {
+    areaX: parseFloat(lv.workAreaX) || workAreaDefaults.x,
+    areaY: parseFloat(lv.workAreaY) || workAreaDefaults.y,
+    offX: parseFloat(lv.workAreaCenterOffsetX) || workAreaDefaults.offX,
+    offY: parseFloat(lv.workAreaCenterOffsetY) || workAreaDefaults.offY,
+  };
+};
+
+const tabletWorkAreaPopupHide = () => hideModal("work-area-popup");
+
+
+
+const tabletOpenWorkAreaPopup = () => {
+  const { areaX, areaY, offX, offY } = getWorkAreaValues();
+
+  const elX = id("workAreaX");
+  const elY = id("workAreaY");
+  const elOffX = id("workAreaCenterOffsetX");
+  const elOffY = id("workAreaCenterOffsetY");
+  const elCurrent = id("work-area-current-values");
+
+  if (elX) elX.value = areaX;
+  if (elY) elY.value = areaY;
+  if (elOffX) elOffX.value = offX;
+  if (elOffY) elOffY.value = offY;
+  if (elCurrent) elCurrent.textContent = `Current: ${areaX}, ${areaY}, ${offX}, ${offY}`;
+
+  openModal("work-area-popup");
+};
+
+const tabletSaveWorkArea = () => {
+  const elX = id("workAreaX");
+  const elY = id("workAreaY");
+  const elOffX = id("workAreaCenterOffsetX");
+  const elOffY = id("workAreaCenterOffsetY");
+
+  const newX = elX ? elX.value.trim() : "";
+  const newY = elY ? elY.value.trim() : "";
+  const newOffX = elOffX ? elOffX.value.trim() : "";
+  const newOffY = elOffY ? elOffY.value.trim() : "";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "workAreaX", cmd: "Maslow_Work_Area_X", newVal: newX },
+    { field: "workAreaY", cmd: "Maslow_Work_Area_Y", newVal: newY },
+    { field: "workAreaCenterOffsetX", cmd: "Maslow_Work_Area_Center_Offset_X", newVal: newOffX },
+    { field: "workAreaCenterOffsetY", cmd: "Maslow_Work_Area_Center_Offset_Y", newVal: newOffY },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  scheduleCallback(() => {
+    hideModal("work-area-popup");
+    hideModal("optional-settings-popup");
+  }, 1000);
+};
+
+const parkDefaults = { x: 0.0, y: 0.0, z: 2.0 };
+
+const getParkValues = () => {
+  const lv = globalThis.loadedValues || {};
+  return {
+    x: isNaN(parseFloat(lv.parkX)) ? parkDefaults.x : parseFloat(lv.parkX),
+    y: isNaN(parseFloat(lv.parkY)) ? parkDefaults.y : parseFloat(lv.parkY),
+    z: isNaN(parseFloat(lv.parkZ)) ? parkDefaults.z : parseFloat(lv.parkZ),
+  };
+};
+
+const tabletParkPopupHide = () => hideModal("park-popup");
+
+const tabletOpenParkPopup = () => {
+  const { x, y, z } = getParkValues();
+
+  const elX = id("parkX");
+  const elY = id("parkY");
+  const elZ = id("parkZ");
+  const elCurrent = id("park-current-values");
+
+  if (elX) elX.value = x;
+  if (elY) elY.value = y;
+  if (elZ) elZ.value = z;
+  if (elCurrent) elCurrent.textContent = `Current: X=${x}, Y=${y}, Z=${z}`;
+
+  openModal("park-popup");
+};
+
+const tabletSavePark = () => {
+  const elX = id("parkX");
+  const elY = id("parkY");
+  const elZ = id("parkZ");
+
+  const newX = elX ? elX.value.trim() : "";
+  const newY = elY ? elY.value.trim() : "";
+  const newZ = elZ ? elZ.value.trim() : "";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "parkX", cmd: "Maslow_Park_X", newVal: newX },
+    { field: "parkY", cmd: "Maslow_Park_Y", newVal: newY },
+    { field: "parkZ", cmd: "Maslow_Park_Z", newVal: newZ },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  scheduleCallback(() => {
+    hideModal("park-popup");
+    hideModal("optional-settings-popup");
+  }, 1000);
+};
+
+const scaleThicknessDefaults = { scaleX: 1.0, scaleY: 1.0, workThickness: 0.0, spoilboardThickness: 0.0 };
+
+const getScaleThicknessValues = () => {
+  const lv = globalThis.loadedValues || {};
+  return {
+    scaleX: isNaN(parseFloat(lv.scaleX)) ? scaleThicknessDefaults.scaleX : parseFloat(lv.scaleX),
+    scaleY: isNaN(parseFloat(lv.scaleY)) ? scaleThicknessDefaults.scaleY : parseFloat(lv.scaleY),
+    workThickness: isNaN(parseFloat(lv.workThickness)) ? scaleThicknessDefaults.workThickness : parseFloat(lv.workThickness),
+    spoilboardThickness: isNaN(parseFloat(lv.spoilboardThickness)) ? scaleThicknessDefaults.spoilboardThickness : parseFloat(lv.spoilboardThickness),
+  };
+};
+
+const tabletScaleThicknessPopupHide = () => hideModal("scale-thickness-popup");
+
+const tabletOpenScaleThicknessPopup = () => {
+  const { scaleX, scaleY, workThickness, spoilboardThickness } = getScaleThicknessValues();
+
+  const elScaleX = id("scaleX");
+  const elScaleY = id("scaleY");
+  const elWorkThickness = id("workThickness");
+  const elSpoilboardThickness = id("spoilboardThickness");
+  const elCurrent = id("scale-thickness-current-values");
+
+  if (elScaleX) elScaleX.value = scaleX;
+  if (elScaleY) elScaleY.value = scaleY;
+  if (elWorkThickness) elWorkThickness.value = workThickness;
+  if (elSpoilboardThickness) elSpoilboardThickness.value = spoilboardThickness;
+  if (elCurrent) elCurrent.textContent = `Current: Scale X=${scaleX}, Scale Y=${scaleY}, Work=${workThickness}mm, Spoilboard=${spoilboardThickness}mm`;
+
+  openModal("scale-thickness-popup");
+};
+
+const tabletSaveScaleThickness = () => {
+  const elScaleX = id("scaleX");
+  const elScaleY = id("scaleY");
+  const elWorkThickness = id("workThickness");
+  const elSpoilboardThickness = id("spoilboardThickness");
+
+  const newScaleX = elScaleX ? elScaleX.value.trim() : "";
+  const newScaleY = elScaleY ? elScaleY.value.trim() : "";
+  const newWorkThickness = elWorkThickness ? elWorkThickness.value.trim() : "";
+  const newSpoilboardThickness = elSpoilboardThickness ? elSpoilboardThickness.value.trim() : "";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "scaleX", cmd: "Maslow_Scale_X", newVal: newScaleX },
+    { field: "scaleY", cmd: "Maslow_Scale_Y", newVal: newScaleY },
+    { field: "workThickness", cmd: "Maslow_workThickness", newVal: newWorkThickness },
+    { field: "spoilboardThickness", cmd: "Maslow_spoilboardThickness", newVal: newSpoilboardThickness },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  scheduleCallback(() => {
+    hideModal("scale-thickness-popup");
+    hideModal("optional-settings-popup");
+  }, 1000);
+};
+
 // Control event handlers - Common
 const tabletPopupStopProp = (event) => event.stopPropagation();
 
@@ -1250,6 +1614,7 @@ function tabletInit() {
     // Buttons - Second Row
     id("tablettab_left").addEventListener("click", tabletMoveLeft);
     id("tablettab_right").addEventListener("click", tabletMoveRight);
+    id("tablettab_options_btn").addEventListener("click", tabletCalOpenOptionalSettings);
 
     // Buttons - Third Row
     id("tablettab_zDown").addEventListener("click", tabletMoveZDown);
@@ -1302,6 +1667,31 @@ function tabletInit() {
     id("tablettab_cal_zstop").addEventListener("click", tabletCalSetZStop);
     id("tablettab_cal_test").addEventListener("click", tabletCalTest);
     id("tablettab_cal_relax").addEventListener("click", tabletCalRelax);
+
+    // Buttons - Optional Settings Pop-up
+    id("optional-settings-popup").addEventListener("click", tabletOptionalSettingsPopupHide);
+    id("optional_settings_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_cal_work_area").addEventListener("click", tabletOpenWorkAreaPopup);
+    id("tablettab_cal_park").addEventListener("click", tabletOpenParkPopup);
+    id("tablettab_cal_scale_thickness").addEventListener("click", tabletOpenScaleThicknessPopup);
+
+    // Buttons - Work Area Pop-up
+    id("work-area-popup").addEventListener("click", tabletWorkAreaPopupHide);
+    id("work_area_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_work_area_cancel").addEventListener("click", tabletWorkAreaPopupHide);
+    id("tablettab_work_area_save").addEventListener("click", tabletSaveWorkArea);
+
+    // Buttons - Park Pop-up
+    id("park-popup").addEventListener("click", tabletParkPopupHide);
+    id("park_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_park_cancel").addEventListener("click", tabletParkPopupHide);
+    id("tablettab_park_save").addEventListener("click", tabletSavePark);
+
+    // Buttons - Scale and Thickness Pop-up
+    id("scale-thickness-popup").addEventListener("click", tabletScaleThicknessPopupHide);
+    id("scale_thickness_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_scale_thickness_cancel").addEventListener("click", tabletScaleThicknessPopupHide);
+    id("tablettab_scale_thickness_save").addEventListener("click", tabletSaveScaleThickness);
 
     // Buttons - Configuration Pop-up
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);

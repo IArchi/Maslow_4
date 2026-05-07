@@ -112,6 +112,11 @@ public:
     void   eStop(String message = "Emergency stop triggered.");
     void   panic();
     void   resetUpdateWatchdog();
+
+    // Set true during file/firmware uploads to suppress the update-loop watchdog.
+    // Flash write operations stall both CPU cores; without this flag the 100 ms
+    // watchdog fires spuriously and latches the red LED until a power cycle.
+    volatile bool uploadInProgress = false;
     String axis_id_to_label(int axis_id);
     void   safety_control();
     bool   axis_homed[4] = { false, false, false, false };

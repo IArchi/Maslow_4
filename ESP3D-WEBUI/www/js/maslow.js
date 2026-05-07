@@ -5,7 +5,9 @@
 let maslowStatus = { homed: false, extended: false, state: 0 };
 
 /** Maslow state constants (mirror firmware Maslow.h defines) */
+const MASLOW_STATE_FINDING_ANCHORS = 6;
 const MASLOW_STATE_READY_TO_CUT = 7;
+const MASLOW_STATE_FIND_ANCHORS_COMPUTING = 9;
 
 /** This keeps track of when we saw the last heartbeat from the machine */
 //I think this is not used anymore and can be removed now
@@ -260,7 +262,36 @@ const updateDynamicButtons = () => {
 	if (typeof resetStopButtonColors === 'function') {
 		resetStopButtonColors();
 	}
+
+	// Show or hide status fields based on whether Find Anchors is running
+	updateFindAnchorsView();
 }
+
+/**
+ * Show or hide status panels based on whether Find Anchors is running.
+ * When Find Anchors is active (states 6 or 9), hide irrelevant panels
+ * and expand the serial messages textarea so users can see progress output.
+ */
+const updateFindAnchorsView = () => {
+	const isFindingAnchors = (maslowStatus.state === MASLOW_STATE_FINDING_ANCHORS || maslowStatus.state === MASLOW_STATE_FIND_ANCHORS_COMPUTING);
+
+	const elementsToHide = [
+		document.getElementById('tablettab-jog-controls'),
+		document.getElementById('tablettab-file-controls'),
+		document.getElementById('tablettab-playback-controls'),
+		document.getElementById('tablettab-position-display'),
+		document.getElementById('tablettab-job-bounds-container'),
+	];
+
+	elementsToHide.forEach(el => {
+		if (el) el.style.display = isFindingAnchors ? 'none' : '';
+	});
+
+	const messagesTextarea = document.getElementById('messages');
+	if (messagesTextarea) {
+		messagesTextarea.rows = isFindingAnchors ? 35 : 14;
+	}
+};
 
 
 

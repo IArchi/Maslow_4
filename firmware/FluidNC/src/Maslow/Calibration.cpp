@@ -13,7 +13,8 @@
 namespace {
     inline void serviceCalibrationComputationWatchdogs() {
         // Keep both Maslow's update-loop watchdog and ESP task watchdog fed during
-        // long LM computations, then yield so idle tasks can run.
+        // long LM computations, then cooperatively yield so the scheduler can run
+        // idle tasks on this core and avoid watchdog resets from task starvation.
         Maslow.resetUpdateWatchdog();
         esp_task_wdt_reset();
         delay(0);

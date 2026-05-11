@@ -787,7 +787,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         log_error("Find Anchors recompute failed: out of memory at points=" << measurementCount);
         return false;
     } catch (...) {
-        log_error("Find Anchors recompute failed: unexpected exception");
+        log_error("Find Anchors recompute failed: unexpected exception at points=" << measurementCount);
         return false;
     }
 }

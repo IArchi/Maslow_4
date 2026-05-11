@@ -41,10 +41,6 @@ public:
     bool  adjustFrameSizeToMatchFirstMeasurement();
     bool  computeXYfromLengths(double TL, double TR, float& x, float& y);
     void  calibration_loop();
-    void  print_calibration_data();
-    void  calibrationDataRecieved();
-    void  checkCalibrationData();
-
     void allocateCalibrationMemory();
     void deallocateCalibrationMemory();
     void resetCalibrationState();
@@ -118,7 +114,6 @@ private:
     int    recomputePoints[10];          // Stores the index of the points where we want to trigger a recompute
     int    recomputeCountIndex    = 0;   // Stores the index of the recompute point we are currently on
     int    recomputeCount         = 0;   // Stores the number of recompute points
-    double calibrationDataWaiting = -1;  //-1 if data is not waiting, other wise the milis since the data was last sent
 
     //Used to keep track of how often the PID controller is updated
     unsigned long lastCallToPID    = millis();
@@ -144,8 +139,9 @@ private:
     bool          BROOveride   = false;
     unsigned long overideTimer = millis();
 
-    bool safetyOn         = true;
-    bool HeartBeatEnabled = true;
+    bool safetyOn = true;
+
+    bool recomputeAnchorsWithLevenbergMarquardt(int measurementCount);
 
     //A structure to hold the state names
     struct StateName {

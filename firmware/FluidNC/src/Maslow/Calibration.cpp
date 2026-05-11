@@ -3,6 +3,177 @@
 #include "../Kinematics/MaslowKinematics.h"
 #include "../System.h"
 #include "SquareCalculation.h"
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
+namespace {
+    struct CalibrationMeasurement {
+        double tl;
+        double tr;
+        double bl;
+        double br;
+    };
+
+    constexpr double LM_INITIAL_LAMBDA      = 0.001;
+    constexpr double LM_LAMBDA_INCREASE      = 10.0;
+    constexpr double LM_LAMBDA_DECREASE      = 0.1;
+    constexpr int    LM_MAX_ITERATIONS       = 500;
+    constexpr int    LM_MAX_REJECTIONS       = 20;
+    constexpr double LM_STEP_SIZE            = 10.0;
+    constexpr double LM_CONVERGENCE_THRESHOLD = 1e-4;
+
+    void bundleResiduals(const std::vector<CalibrationMeasurement>& measurements, const std::vector<double>& params, std::vector<double>& residuals) {
+        const double tlX = params[0], tlY = params[1];
+        const double trX = params[2], trY = params[3];
+        const double brX = params[4];
+
+        residuals.assign(measurements.size() * 4, 0.0);
+        for (size_t i = 0; i < measurements.size(); i++) {
+            const double sx = params[5 + 2 * i];
+            const double sy = params[5 + 2 * i + 1];
+            const auto&  m  = measurements[i];
+
+            const double dTl = std::sqrt((sx - tlX) * (sx - tlX) + (sy - tlY) * (sy - tlY));
+            const double dTr = std::sqrt((sx - trX) * (sx - trX) + (sy - trY) * (sy - trY));
+            const double dBl = std::sqrt((sx) * (sx) + (sy) * (sy));
+            const double dBr = std::sqrt((sx - brX) * (sx - brX) + (sy) * (sy));
+
+            residuals[4 * i + 0] = dTl - m.tl;
+            residuals[4 * i + 1] = dTr - m.tr;
+            residuals[4 * i + 2] = dBl - m.bl;
+            residuals[4 * i + 3] = dBr - m.br;
+        }
+    }
+
+    double sumSquaredResiduals(const std::vector<double>& residuals) {
+        double sum = 0.0;
+        for (const double r : residuals) {
+            sum += r * r;
+        }
+        return sum;
+    }
+
+    void estimateSledPosition(const CalibrationMeasurement& measurement, double tlX, double tlY, double trX, double trY, double brX, double& sx, double& sy) {
+        sx = (tlX + trX) / 2.0;
+        sy = (tlY + trY) / 4.0;
+
+        const double anchorX[4] = { tlX, trX, 0.0, brX };
+        const double anchorY[4] = { tlY, trY, 0.0, 0.0 };
+        const double belt[4]    = { measurement.tl, measurement.tr, measurement.bl, measurement.br };
+
+        for (int iter = 0; iter < 20; iter++) {
+            double hxx = 0.0, hyy = 0.0, hxy = 0.0, gx = 0.0, gy = 0.0;
+            for (int j = 0; j < 4; j++) {
+                const double dx = sx - anchorX[j];
+                const double dy = sy - anchorY[j];
+                const double d  = std::sqrt(dx * dx + dy * dy) + 1e-10;
+                const double r  = d - belt[j];
+                const double jx = dx / d;
+                const double jy = dy / d;
+                hxx += jx * jx;
+                hyy += jy * jy;
+                hxy += jx * jy;
+                gx += r * jx;
+                gy += r * jy;
+            }
+
+            const double det = hxx * hyy - hxy * hxy + 1e-12;
+            sx -= (hyy * gx - hxy * gy) / det;
+            sy -= (hxx * gy - hxy * gx) / det;
+
+            if (std::abs(gx) + std::abs(gy) < 1e-8) {
+                break;
+            }
+        }
+    }
+
+    void bundleJacobian(const std::vector<CalibrationMeasurement>& measurements,
+                        const std::vector<double>&                 params,
+                        const std::vector<double>&                 baseResiduals,
+                        double                                     stepSize,
+                        std::vector<double>&                       jacobian) {
+        const size_t residualCount = baseResiduals.size();
+        const size_t paramCount    = params.size();
+        jacobian.assign(residualCount * paramCount, 0.0);
+
+        for (size_t j = 0; j < paramCount; j++) {
+            std::vector<double> shiftedParams = params;
+            shiftedParams[j] += stepSize;
+            std::vector<double> shiftedResiduals;
+            bundleResiduals(measurements, shiftedParams, shiftedResiduals);
+            for (size_t i = 0; i < residualCount; i++) {
+                jacobian[i * paramCount + j] = (shiftedResiduals[i] - baseResiduals[i]) / stepSize;
+            }
+        }
+    }
+
+    void normalEquations(const std::vector<double>& jacobian,
+                         const std::vector<double>& residuals,
+                         size_t                     paramCount,
+                         std::vector<double>&       jtj,
+                         std::vector<double>&       jtr) {
+        jtj.assign(paramCount * paramCount, 0.0);
+        jtr.assign(paramCount, 0.0);
+        const size_t residualCount = residuals.size();
+
+        for (size_t i = 0; i < residualCount; i++) {
+            for (size_t a = 0; a < paramCount; a++) {
+                const double Jia = jacobian[i * paramCount + a];
+                jtr[a] += Jia * residuals[i];
+                for (size_t b = a; b < paramCount; b++) {
+                    const double value = Jia * jacobian[i * paramCount + b];
+                    jtj[a * paramCount + b] += value;
+                    if (a != b) {
+                        jtj[b * paramCount + a] += value;
+                    }
+                }
+            }
+        }
+    }
+
+    bool solveLinearSystem(std::vector<double> matrix, std::vector<double> rhs, size_t n, std::vector<double>& solution) {
+        solution.assign(n, 0.0);
+
+        for (size_t col = 0; col < n; col++) {
+            size_t pivot = col;
+            for (size_t row = col + 1; row < n; row++) {
+                if (std::abs(matrix[row * n + col]) > std::abs(matrix[pivot * n + col])) {
+                    pivot = row;
+                }
+            }
+            if (std::abs(matrix[pivot * n + col]) < 1e-12) {
+                return false;
+            }
+            if (pivot != col) {
+                for (size_t k = col; k < n; k++) {
+                    std::swap(matrix[col * n + k], matrix[pivot * n + k]);
+                }
+                std::swap(rhs[col], rhs[pivot]);
+            }
+
+            const double pivotValue = matrix[col * n + col];
+            for (size_t row = col + 1; row < n; row++) {
+                const double factor = matrix[row * n + col] / pivotValue;
+                matrix[row * n + col] = 0.0;
+                for (size_t k = col + 1; k < n; k++) {
+                    matrix[row * n + k] -= factor * matrix[col * n + k];
+                }
+                rhs[row] -= factor * rhs[col];
+            }
+        }
+
+        for (int row = static_cast<int>(n) - 1; row >= 0; row--) {
+            double sum = rhs[row];
+            for (size_t col = row + 1; col < n; col++) {
+                sum -= matrix[row * n + col] * solution[col];
+            }
+            solution[row] = sum / matrix[row * n + row];
+        }
+
+        return true;
+    }
+}  // namespace
 
 // Helper function to get MaslowKinematics instance
 static Kinematics::MaslowKinematics* getKinematics() {
@@ -474,6 +645,114 @@ void Calibration::home() {
 //------------------------------------------------------ Homing and calibration functions
 //------------------------------------------------------
 
+bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
+    if (measurementCount <= 0) {
+        return false;
+    }
+
+    auto kinematics = getKinematics();
+    if (!kinematics) {
+        return false;
+    }
+
+    std::vector<CalibrationMeasurement> measurements;
+    measurements.reserve(measurementCount);
+    for (int i = 0; i < measurementCount; i++) {
+        measurements.push_back({ calibration_data[i][0], calibration_data[i][1], calibration_data[i][2], calibration_data[i][3] });
+    }
+
+    std::vector<double> params;
+    params.reserve(5 + 2 * measurementCount);
+    params.push_back(kinematics->getTlX());
+    params.push_back(kinematics->getTlY());
+    params.push_back(kinematics->getTrX());
+    params.push_back(kinematics->getTrY());
+    params.push_back(kinematics->getBrX());
+
+    for (const auto& measurement : measurements) {
+        double sx = 0.0;
+        double sy = 0.0;
+        estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
+        params.push_back(sx);
+        params.push_back(sy);
+    }
+
+    std::vector<double> residuals;
+    bundleResiduals(measurements, params, residuals);
+    double currentSSR = sumSquaredResiduals(residuals);
+
+    std::vector<double> bestParams = params;
+    double              bestSSR    = currentSSR;
+    double              lambda     = LM_INITIAL_LAMBDA;
+    int                 rejections = 0;
+
+    for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
+        std::vector<double> jacobian;
+        bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian);
+
+        std::vector<double> jtj;
+        std::vector<double> jtr;
+        normalEquations(jacobian, residuals, params.size(), jtj, jtr);
+
+        std::vector<double> damped = jtj;
+        for (size_t i = 0; i < params.size(); i++) {
+            damped[i * params.size() + i] += lambda * std::max(jtj[i * params.size() + i], 1e-10);
+        }
+
+        std::vector<double> rhs(jtr.size(), 0.0);
+        for (size_t i = 0; i < jtr.size(); i++) {
+            rhs[i] = -jtr[i];
+        }
+
+        std::vector<double> step;
+        if (!solveLinearSystem(damped, rhs, params.size(), step)) {
+            return false;
+        }
+
+        std::vector<double> nextParams = params;
+        for (size_t i = 0; i < params.size(); i++) {
+            nextParams[i] += step[i];
+        }
+
+        std::vector<double> nextResiduals;
+        bundleResiduals(measurements, nextParams, nextResiduals);
+        const double nextSSR = sumSquaredResiduals(nextResiduals);
+
+        if (nextSSR < currentSSR) {
+            params = std::move(nextParams);
+            residuals = std::move(nextResiduals);
+            currentSSR = nextSSR;
+            lambda = std::max(lambda * LM_LAMBDA_DECREASE, 1e-12);
+            rejections = 0;
+
+            if (currentSSR < bestSSR) {
+                bestSSR = currentSSR;
+                bestParams = params;
+            }
+
+            double anchorStepNorm = 0.0;
+            for (int i = 0; i < 5; i++) {
+                anchorStepNorm += step[i] * step[i];
+            }
+            if (std::sqrt(anchorStepNorm) < LM_CONVERGENCE_THRESHOLD) {
+                break;
+            }
+        } else {
+            lambda *= LM_LAMBDA_INCREASE;
+            rejections++;
+            if (rejections > LM_MAX_REJECTIONS || lambda > 1e12) {
+                break;
+            }
+        }
+    }
+
+    kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
+    log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
+                                                    << bestParams[3] << ") brX=" << bestParams[4]
+                                                    << " SSR=" << bestSSR << " points=" << measurementCount);
+    return true;
+}
+
 // --Maslow calibration loop
 void Calibration::calibration_loop() {
     if (waypoint >
@@ -499,10 +778,12 @@ void Calibration::calibration_loop() {
             waypoint++;  //Increment the waypoint counter
 
             if (waypoint > recomputePoints[recomputeCountIndex]) {  //If we have reached the end of this stage of the calibration process
-                requestStateChange(CALIBRATION_COMPUTING);
-                print_calibration_data();
-                calibrationDataWaiting = millis();
-                sys.set_state(State::Idle);
+                if (!recomputeAnchorsWithLevenbergMarquardt(waypoint)) {
+                    log_error("Find Anchors recompute failed");
+                    resetCalibrationState();
+                    requestStateChange(EXTENDEDOUT);
+                    return;
+                }
                 recomputeCountIndex++;
             } else {
                 hold(150);  // Reduced from 250ms to 150ms for faster calibration
@@ -1588,51 +1869,6 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     return true;
 }
 
-// ------------------------------------------------------
-// ------------------------------------------------------ Communication Functions
-// ------------------------------------------------------
-
-//Checks to see if the calibration data needs to be sent again
-void Calibration::checkCalibrationData() {
-    if (calibrationDataWaiting > 0) {
-        if (millis() - calibrationDataWaiting > 30007) {
-            log_error("Find Anchors data not acknowledged by computer, resending");
-            print_calibration_data();
-            calibrationDataWaiting = millis();
-        }
-    }
-}
-
-// function for outputting calibration data in the log line by line like this: {bl:2376.69,   br:923.40,   tr:1733.87,   tl:2801.87},
-void Calibration::print_calibration_data() {
-    auto kinematics = getKinematics();
-    if (!kinematics)
-        return;
-
-    //These are used to set the browser side initial guess for the frame size
-    log_data("$/" << M << "_tlX=" << kinematics->getTlX());
-    log_data("$/" << M << "_tlY=" << kinematics->getTlY());
-    log_data("$/" << M << "_trX=" << kinematics->getTrX());
-    log_data("$/" << M << "_trY=" << kinematics->getTrY());
-    log_data("$/" << M << "_brX=" << kinematics->getBrX());
-
-    String data = "CLBM:[";
-    for (int i = 0; i < waypoint; i++) {
-        data += "{bl:" + String(calibration_data[i][2]) + ",   br:" + String(calibration_data[i][3]) +
-                ",   tr:" + String(calibration_data[i][1]) + ",   tl:" + String(calibration_data[i][0]) + "},";
-    }
-    data += "]";
-    HeartBeatEnabled = false;
-    log_data(data.c_str());
-    HeartBeatEnabled = true;
-}
-
-//Runs when the calibration data has been acknowledged as received by the computer and the calibration process is progressing
-void Calibration::calibrationDataRecieved() {
-    // log_info("Calibration data acknowledged received by computer");
-    calibrationDataWaiting = -1;
-}
-
 //non-blocking delay, just pauses everything for specified time
 void Calibration::hold(unsigned long time) {
     holdTime  = time;
@@ -1719,7 +1955,6 @@ void Calibration::resetCalibrationState() {
     pointCount             = 0;
     recomputeCountIndex    = 0;
     calibrationInProgress  = false;
-    calibrationDataWaiting = -1;
 
     // Reset calibration loop state variables
     calibrationDirection  = UP;    // Default direction

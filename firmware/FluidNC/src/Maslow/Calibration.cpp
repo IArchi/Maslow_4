@@ -115,7 +115,7 @@ namespace {
         const size_t residualCount = baseResiduals.size();
         const size_t paramCount    = params.size();
         jacobian.assign(residualCount * paramCount, 0.0);
-        shiftedParams = params;
+        shiftedParams.assign(params.begin(), params.end());
 
         for (size_t j = 0; j < paramCount; j++) {
             if ((j & WATCHDOG_FEED_INTERVAL_MASK) == 0) {

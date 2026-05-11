@@ -11,13 +11,15 @@
 #include <vector>
 
 namespace {
-    inline void serviceCalibrationComputationWatchdogs() {
-        // Keep both Maslow's update-loop watchdog and ESP task watchdog fed during
-        // long LM computations, then cooperatively yield so the scheduler can run
-        // idle tasks on this core and avoid watchdog resets from task starvation.
+    inline void serviceCalibrationWatchdogs(bool yieldToScheduler = false) {
+        // Keep both Maslow's update-loop watchdog and ESP task watchdog fed.
         Maslow.resetUpdateWatchdog();
         esp_task_wdt_reset();
-        delay(0);
+        if (yieldToScheduler) {
+            // During long compute loops, cooperatively yield so the scheduler can
+            // run idle tasks on this core and avoid task-starvation resets.
+            delay(0);
+        }
     }
 
     struct CalibrationMeasurement {
@@ -113,7 +115,7 @@ namespace {
 
         for (size_t j = 0; j < paramCount; j++) {
             if ((j & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
-                serviceCalibrationComputationWatchdogs();
+                serviceCalibrationWatchdogs(true);
             }
             std::vector<double> shiftedParams = params;
             shiftedParams[j] += stepSize;
@@ -154,7 +156,7 @@ namespace {
 
         for (size_t col = 0; col < n; col++) {
             if ((col & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
-                serviceCalibrationComputationWatchdogs();
+                serviceCalibrationWatchdogs(true);
             }
             size_t pivot = col;
             for (size_t row = col + 1; row < n; row++) {
@@ -666,7 +668,7 @@ void Calibration::home() {
 //------------------------------------------------------
 
 bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
-    serviceCalibrationComputationWatchdogs();
+    serviceCalibrationWatchdogs(true);
 
     if (measurementCount <= 0) {
         log_error("Find Anchors recompute failed: no measurements available");
@@ -694,7 +696,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
     params.push_back(kinematics->getBrX());
 
     for (const auto& measurement : measurements) {
-        serviceCalibrationComputationWatchdogs();
+        serviceCalibrationWatchdogs(true);
         double sx = 0.0;
         double sy = 0.0;
         estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
@@ -712,7 +714,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
     int                 rejections = 0;
 
     for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
-        serviceCalibrationComputationWatchdogs();
+        serviceCalibrationWatchdogs(true);
         std::vector<double> jacobian;
         bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian);
 
@@ -773,7 +775,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         }
     }
 
-    serviceCalibrationComputationWatchdogs();
+    serviceCalibrationWatchdogs(true);
     kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
     log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
                                                     << bestParams[3] << ") brX=" << bestParams[4]
@@ -783,6 +785,8 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
 // --Maslow calibration loop
 void Calibration::calibration_loop() {
+    serviceCalibrationWatchdogs();
+
     if (waypoint >
         pointCount) {  //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
         char saveCommand[] = "$CO";
@@ -1021,6 +1025,8 @@ bool Calibration::computeXYfromLengths(double TL, double TR, float& x, float& y)
  * @return True when the measurement is done, false otherwise.
  */
 bool Calibration::take_measurement(float result[4], int dir, int run, int current, int waypoint) {
+    serviceCalibrationWatchdogs();
+
     //Shouldn't this be handled with the same code as below but with the direction set to UP?
     if (orientation == VERTICAL) {
         //first we pull two bottom belts tight one after another, if x<0 we pull left belt first, if x>0 we pull right belt first
@@ -1503,6 +1509,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
 // Move pulling just two belts depending in the direction of the movement
 bool Calibration::move_with_slack(double fromX, double fromY, double toX, double toY) {
+    serviceCalibrationWatchdogs();
+
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();
     static bool          decompress     = true;

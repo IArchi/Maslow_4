@@ -785,7 +785,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
 // --Maslow calibration loop
 void Calibration::calibration_loop() {
-    serviceCalibrationWatchdogs();
+    serviceCalibrationWatchdogs(false);
 
     if (waypoint >
         pointCount) {  //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
@@ -1025,7 +1025,7 @@ bool Calibration::computeXYfromLengths(double TL, double TR, float& x, float& y)
  * @return True when the measurement is done, false otherwise.
  */
 bool Calibration::take_measurement(float result[4], int dir, int run, int current, int waypoint) {
-    serviceCalibrationWatchdogs();
+    serviceCalibrationWatchdogs(false);
 
     //Shouldn't this be handled with the same code as below but with the direction set to UP?
     if (orientation == VERTICAL) {
@@ -1509,7 +1509,7 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
 // Move pulling just two belts depending in the direction of the movement
 bool Calibration::move_with_slack(double fromX, double fromY, double toX, double toY) {
-    serviceCalibrationWatchdogs();
+    serviceCalibrationWatchdogs(false);
 
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();

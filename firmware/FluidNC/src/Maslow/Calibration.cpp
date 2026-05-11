@@ -8,6 +8,7 @@
 #include <esp_task_wdt.h>
 #include <algorithm>
 #include <cmath>
+#include <new>
 #include <vector>
 
 namespace {
@@ -668,119 +669,127 @@ void Calibration::home() {
 //------------------------------------------------------
 
 bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
-    serviceCalibrationWatchdogs(true);
-
-    if (measurementCount <= 0) {
-        log_error("Find Anchors recompute failed: no measurements available");
-        return false;
-    }
-
-    auto kinematics = getKinematics();
-    if (!kinematics) {
-        log_error("Find Anchors recompute failed: MaslowKinematics unavailable");
-        return false;
-    }
-
-    std::vector<CalibrationMeasurement> measurements;
-    measurements.reserve(measurementCount);
-    for (int i = 0; i < measurementCount; i++) {
-        measurements.push_back({ calibration_data[i][0], calibration_data[i][1], calibration_data[i][2], calibration_data[i][3] });
-    }
-
-    std::vector<double> params;
-    params.reserve(5 + 2 * measurementCount);
-    params.push_back(kinematics->getTlX());
-    params.push_back(kinematics->getTlY());
-    params.push_back(kinematics->getTrX());
-    params.push_back(kinematics->getTrY());
-    params.push_back(kinematics->getBrX());
-
-    for (const auto& measurement : measurements) {
+    try {
         serviceCalibrationWatchdogs(true);
-        double sx = 0.0;
-        double sy = 0.0;
-        estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
-        params.push_back(sx);
-        params.push_back(sy);
-    }
 
-    std::vector<double> residuals;
-    bundleResiduals(measurements, params, residuals);
-    double currentSSR = sumSquaredResiduals(residuals);
-
-    std::vector<double> bestParams = params;
-    double              bestSSR    = currentSSR;
-    double              lambda     = LM_INITIAL_LAMBDA;
-    int                 rejections = 0;
-
-    for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
-        serviceCalibrationWatchdogs(true);
-        std::vector<double> jacobian;
-        bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian);
-
-        std::vector<double> jtj;
-        std::vector<double> jtr;
-        normalEquations(jacobian, residuals, params.size(), jtj, jtr);
-
-        std::vector<double> damped = jtj;
-        for (size_t i = 0; i < params.size(); i++) {
-            damped[i * params.size() + i] += lambda * std::max(jtj[i * params.size() + i], 1e-10);
-        }
-
-        std::vector<double> rhs(jtr.size(), 0.0);
-        for (size_t i = 0; i < jtr.size(); i++) {
-            rhs[i] = -jtr[i];
-        }
-
-        std::vector<double> step;
-        if (!solveLinearSystem(damped, rhs, params.size(), step)) {
-            log_error("Find Anchors recompute failed: linear solver did not converge at iteration " << iteration);
+        if (measurementCount <= 0) {
+            log_error("Find Anchors recompute failed: no measurements available");
             return false;
         }
 
-        std::vector<double> nextParams = params;
-        for (size_t i = 0; i < params.size(); i++) {
-            nextParams[i] += step[i];
+        auto kinematics = getKinematics();
+        if (!kinematics) {
+            log_error("Find Anchors recompute failed: MaslowKinematics unavailable");
+            return false;
         }
 
-        std::vector<double> nextResiduals;
-        bundleResiduals(measurements, nextParams, nextResiduals);
-        const double nextSSR = sumSquaredResiduals(nextResiduals);
+        std::vector<CalibrationMeasurement> measurements;
+        measurements.reserve(measurementCount);
+        for (int i = 0; i < measurementCount; i++) {
+            measurements.push_back({ calibration_data[i][0], calibration_data[i][1], calibration_data[i][2], calibration_data[i][3] });
+        }
 
-        if (nextSSR < currentSSR) {
-            params = std::move(nextParams);
-            residuals = std::move(nextResiduals);
-            currentSSR = nextSSR;
-            lambda = std::max(lambda * LM_LAMBDA_DECREASE, 1e-12);
-            rejections = 0;
+        std::vector<double> params;
+        params.reserve(5 + 2 * measurementCount);
+        params.push_back(kinematics->getTlX());
+        params.push_back(kinematics->getTlY());
+        params.push_back(kinematics->getTrX());
+        params.push_back(kinematics->getTrY());
+        params.push_back(kinematics->getBrX());
 
-            if (currentSSR < bestSSR) {
-                bestSSR = currentSSR;
-                bestParams = params;
+        for (const auto& measurement : measurements) {
+            serviceCalibrationWatchdogs(true);
+            double sx = 0.0;
+            double sy = 0.0;
+            estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
+            params.push_back(sx);
+            params.push_back(sy);
+        }
+
+        std::vector<double> residuals;
+        bundleResiduals(measurements, params, residuals);
+        double currentSSR = sumSquaredResiduals(residuals);
+
+        std::vector<double> bestParams = params;
+        double              bestSSR    = currentSSR;
+        double              lambda     = LM_INITIAL_LAMBDA;
+        int                 rejections = 0;
+
+        for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
+            serviceCalibrationWatchdogs(true);
+            std::vector<double> jacobian;
+            bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian);
+
+            std::vector<double> jtj;
+            std::vector<double> jtr;
+            normalEquations(jacobian, residuals, params.size(), jtj, jtr);
+
+            std::vector<double> damped = jtj;
+            for (size_t i = 0; i < params.size(); i++) {
+                damped[i * params.size() + i] += lambda * std::max(jtj[i * params.size() + i], 1e-10);
             }
 
-            double anchorStepNorm = 0.0;
-            for (int i = 0; i < 5; i++) {
-                anchorStepNorm += step[i] * step[i];
+            std::vector<double> rhs(jtr.size(), 0.0);
+            for (size_t i = 0; i < jtr.size(); i++) {
+                rhs[i] = -jtr[i];
             }
-            if (std::sqrt(anchorStepNorm) < LM_CONVERGENCE_THRESHOLD) {
-                break;
+
+            std::vector<double> step;
+            if (!solveLinearSystem(damped, rhs, params.size(), step)) {
+                log_error("Find Anchors recompute failed: linear solver did not converge at iteration " << iteration);
+                return false;
             }
-        } else {
-            lambda *= LM_LAMBDA_INCREASE;
-            rejections++;
-            if (rejections > LM_MAX_REJECTIONS || lambda > 1e12) {
-                break;
+
+            std::vector<double> nextParams = params;
+            for (size_t i = 0; i < params.size(); i++) {
+                nextParams[i] += step[i];
+            }
+
+            std::vector<double> nextResiduals;
+            bundleResiduals(measurements, nextParams, nextResiduals);
+            const double nextSSR = sumSquaredResiduals(nextResiduals);
+
+            if (nextSSR < currentSSR) {
+                params = std::move(nextParams);
+                residuals = std::move(nextResiduals);
+                currentSSR = nextSSR;
+                lambda = std::max(lambda * LM_LAMBDA_DECREASE, 1e-12);
+                rejections = 0;
+
+                if (currentSSR < bestSSR) {
+                    bestSSR = currentSSR;
+                    bestParams = params;
+                }
+
+                double anchorStepNorm = 0.0;
+                for (int i = 0; i < 5; i++) {
+                    anchorStepNorm += step[i] * step[i];
+                }
+                if (std::sqrt(anchorStepNorm) < LM_CONVERGENCE_THRESHOLD) {
+                    break;
+                }
+            } else {
+                lambda *= LM_LAMBDA_INCREASE;
+                rejections++;
+                if (rejections > LM_MAX_REJECTIONS || lambda > 1e12) {
+                    break;
+                }
             }
         }
+
+        serviceCalibrationWatchdogs(true);
+        kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
+        log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
+                                                        << bestParams[3] << ") brX=" << bestParams[4]
+                                                        << " SSR=" << bestSSR << " points=" << measurementCount);
+        return true;
+    } catch (const std::bad_alloc&) {
+        log_error("Find Anchors recompute failed: out of memory at points=" << measurementCount);
+        return false;
+    } catch (...) {
+        log_error("Find Anchors recompute failed: unexpected exception");
+        return false;
     }
-
-    serviceCalibrationWatchdogs(true);
-    kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
-    log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
-                                                    << bestParams[3] << ") brX=" << bestParams[4]
-                                                    << " SSR=" << bestSSR << " points=" << measurementCount);
-    return true;
 }
 
 // --Maslow calibration loop

@@ -45,6 +45,7 @@ The workflow can be customized by editing `.github/workflows/stale.yml`:
 - `days-before-pr-close`: Days after stale label before closing (default: 7)
 - `exempt-issue-labels`: Labels that prevent issues from going stale
 - `exempt-pr-labels`: Labels that prevent PRs from going stale
+- `ascending`: Process oldest items first (`true`) or newest first (`false`)
 
 ## Purpose
 

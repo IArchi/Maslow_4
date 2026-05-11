@@ -55,4 +55,5 @@ jobs:
           # Additional configuration
           operations-per-run: 100
           remove-stale-when-updated: true
-          ascending: false
+          # Process oldest items first so historical stale issues/PRs are eventually closed.
+          ascending: true

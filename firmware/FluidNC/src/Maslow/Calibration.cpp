@@ -1,6 +1,8 @@
 #include "Calibration.h"
 #include "Maslow.h"
 #include "../Kinematics/MaslowKinematics.h"
+#include "../Serial.h"
+#include "../Settings.h"
 #include "../System.h"
 #include "SquareCalculation.h"
 #include <algorithm>
@@ -15,7 +17,7 @@ namespace {
         double br;
     };
 
-    constexpr double LM_INITIAL_LAMBDA      = 0.001;
+    constexpr double LM_INITIAL_LAMBDA       = 0.001;
     constexpr double LM_LAMBDA_INCREASE      = 10.0;
     constexpr double LM_LAMBDA_DECREASE      = 0.1;
     constexpr int    LM_MAX_ITERATIONS       = 500;
@@ -647,11 +649,13 @@ void Calibration::home() {
 
 bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
     if (measurementCount <= 0) {
+        log_error("Find Anchors recompute failed: no measurements available");
         return false;
     }
 
     auto kinematics = getKinematics();
     if (!kinematics) {
+        log_error("Find Anchors recompute failed: MaslowKinematics unavailable");
         return false;
     }
 
@@ -706,6 +710,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
         std::vector<double> step;
         if (!solveLinearSystem(damped, rhs, params.size(), step)) {
+            log_error("Find Anchors recompute failed: linear solver did not converge at iteration " << iteration);
             return false;
         }
 
@@ -757,6 +762,12 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 void Calibration::calibration_loop() {
     if (waypoint >
         pointCount) {  //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
+        char saveCommand[] = "$CO";
+        Error saveResult   = execute_line(saveCommand, allChannels, WebUI::AuthenticationLevel::LEVEL_ADMIN);
+        if (saveResult != Error::Ok) {
+            log_error("Find Anchors completed, but saving configuration failed: " << static_cast<int>(saveResult));
+        }
+
         //Reset all of the calibration variables to the defaults so that calibration can be run again
         resetCalibrationState();
         requestStateChange(READY_TO_CUT);

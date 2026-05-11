@@ -139,7 +139,7 @@ private:
     bool          BROOveride   = false;
     unsigned long overideTimer = millis();
 
-    bool safetyOn = true;
+    bool safetyOn         = true;
 
     bool recomputeAnchorsWithLevenbergMarquardt(int measurementCount);
 

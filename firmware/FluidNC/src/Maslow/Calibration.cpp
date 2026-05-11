@@ -10,10 +10,6 @@
 #include <vector>
 
 namespace {
-    inline void feedUpdateWatchdog() {
-        Maslow.resetUpdateWatchdog();
-    }
-
     struct CalibrationMeasurement {
         double tl;
         double tr;
@@ -28,6 +24,8 @@ namespace {
     constexpr int    LM_MAX_REJECTIONS       = 20;
     constexpr double LM_STEP_SIZE            = 10.0;
     constexpr double LM_CONVERGENCE_THRESHOLD = 1e-4;
+    // Feed watchdog every 8 loop iterations to prevent false E-stop while keeping solver overhead low.
+    constexpr size_t WATCHDOG_FEED_INTERVAL_MASK = 0x7;
 
     void bundleResiduals(const std::vector<CalibrationMeasurement>& measurements, const std::vector<double>& params, std::vector<double>& residuals) {
         const double tlX = params[0], tlY = params[1];
@@ -104,8 +102,8 @@ namespace {
         jacobian.assign(residualCount * paramCount, 0.0);
 
         for (size_t j = 0; j < paramCount; j++) {
-            if ((j & 0x7) == 0) {
-                feedUpdateWatchdog();
+            if ((j & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
+                Maslow.resetUpdateWatchdog();
             }
             std::vector<double> shiftedParams = params;
             shiftedParams[j] += stepSize;
@@ -145,8 +143,8 @@ namespace {
         solution.assign(n, 0.0);
 
         for (size_t col = 0; col < n; col++) {
-            if ((col & 0x7) == 0) {
-                feedUpdateWatchdog();
+            if ((col & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
+                Maslow.resetUpdateWatchdog();
             }
             size_t pivot = col;
             for (size_t row = col + 1; row < n; row++) {
@@ -658,7 +656,7 @@ void Calibration::home() {
 //------------------------------------------------------
 
 bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
-    feedUpdateWatchdog();
+    Maslow.resetUpdateWatchdog();
 
     if (measurementCount <= 0) {
         log_error("Find Anchors recompute failed: no measurements available");
@@ -686,7 +684,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
     params.push_back(kinematics->getBrX());
 
     for (const auto& measurement : measurements) {
-        feedUpdateWatchdog();
+        Maslow.resetUpdateWatchdog();
         double sx = 0.0;
         double sy = 0.0;
         estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
@@ -704,7 +702,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
     int                 rejections = 0;
 
     for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
-        feedUpdateWatchdog();
+        Maslow.resetUpdateWatchdog();
         std::vector<double> jacobian;
         bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian);
 
@@ -765,7 +763,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         }
     }
 
-    feedUpdateWatchdog();
+    Maslow.resetUpdateWatchdog();
     kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
     log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
                                                     << bestParams[3] << ") brX=" << bestParams[4]

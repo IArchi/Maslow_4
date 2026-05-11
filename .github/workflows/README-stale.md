@@ -31,6 +31,13 @@ The workflow runs automatically:
 - **Daily at midnight UTC (00:00)** - Checks all open issues and PRs
 - **Manual trigger** - Can be run manually from the Actions tab if needed
 
+## Required Workflow Permissions
+
+The stale workflow needs these write permissions:
+- `issues: write`
+- `pull-requests: write`
+- `actions: write` (required so `actions/stale` can update/reset its internal `_state` actions cache between runs)
+
 ## Removing the Stale Label
 
 If an issue or PR marked as stale receives any activity (comment, commit, review), the `stale` label is automatically removed and the clock resets.

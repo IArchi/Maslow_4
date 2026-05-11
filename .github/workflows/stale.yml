@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      actions: write
       issues: write
       pull-requests: write
 
@@ -55,5 +56,4 @@ jobs:
           # Additional configuration
           operations-per-run: 100
           remove-stale-when-updated: true
-          # Process oldest items first so historical stale issues/PRs are eventually closed.
-          ascending: true
+          ascending: false

@@ -109,19 +109,21 @@ namespace {
                         const std::vector<double>&                 params,
                         const std::vector<double>&                 baseResiduals,
                         double                                     stepSize,
-                        std::vector<double>&                       jacobian) {
+                        std::vector<double>&                       jacobian,
+                        std::vector<double>&                       shiftedParams,
+                        std::vector<double>&                       shiftedResiduals) {
         const size_t residualCount = baseResiduals.size();
         const size_t paramCount    = params.size();
         jacobian.assign(residualCount * paramCount, 0.0);
+        shiftedParams = params;
 
         for (size_t j = 0; j < paramCount; j++) {
             if ((j & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
                 serviceCalibrationWatchdogs(true);
             }
-            std::vector<double> shiftedParams = params;
             shiftedParams[j] += stepSize;
-            std::vector<double> shiftedResiduals;
             bundleResiduals(measurements, shiftedParams, shiftedResiduals);
+            shiftedParams[j] -= stepSize;
             for (size_t i = 0; i < residualCount; i++) {
                 jacobian[i * paramCount + j] = (shiftedResiduals[i] - baseResiduals[i]) / stepSize;
             }
@@ -152,7 +154,7 @@ namespace {
         }
     }
 
-    bool solveLinearSystem(std::vector<double> matrix, std::vector<double> rhs, size_t n, std::vector<double>& solution) {
+    bool solveLinearSystem(std::vector<double>& matrix, std::vector<double>& rhs, size_t n, std::vector<double>& solution) {
         solution.assign(n, 0.0);
 
         for (size_t col = 0; col < n; col++) {
@@ -301,7 +303,8 @@ bool Calibration::requestStateChange(int newState) {
                 break;
             }
         case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack, release tension, or calibration computing
-            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION || currentState == CALIBRATION_COMPUTING) {
+            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION ||
+                currentState == CALIBRATION_COMPUTING || currentState == CALIBRATION_IN_PROGRESS) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
                 // Save belt positions now that belts are extended and at a known position
@@ -714,38 +717,43 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         double              bestSSR    = currentSSR;
         double              lambda     = LM_INITIAL_LAMBDA;
         int                 rejections = 0;
+        std::vector<double> jacobian;
+        std::vector<double> shiftedParams;
+        std::vector<double> shiftedResiduals;
+        std::vector<double> jtj;
+        std::vector<double> jtr;
+        std::vector<double> damped;
+        std::vector<double> rhs;
+        std::vector<double> step;
+        std::vector<double> nextParams;
+        std::vector<double> nextResiduals;
 
         for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
             serviceCalibrationWatchdogs(true);
-            std::vector<double> jacobian;
-            bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian);
+            bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian, shiftedParams, shiftedResiduals);
 
-            std::vector<double> jtj;
-            std::vector<double> jtr;
             normalEquations(jacobian, residuals, params.size(), jtj, jtr);
 
-            std::vector<double> damped = jtj;
+            damped = jtj;
             for (size_t i = 0; i < params.size(); i++) {
                 damped[i * params.size() + i] += lambda * std::max(jtj[i * params.size() + i], 1e-10);
             }
 
-            std::vector<double> rhs(jtr.size(), 0.0);
+            rhs.assign(jtr.size(), 0.0);
             for (size_t i = 0; i < jtr.size(); i++) {
                 rhs[i] = -jtr[i];
             }
 
-            std::vector<double> step;
             if (!solveLinearSystem(damped, rhs, params.size(), step)) {
                 log_error("Find Anchors recompute failed: linear solver did not converge at iteration " << iteration);
                 return false;
             }
 
-            std::vector<double> nextParams = params;
+            nextParams = params;
             for (size_t i = 0; i < params.size(); i++) {
                 nextParams[i] += step[i];
             }
 
-            std::vector<double> nextResiduals;
             bundleResiduals(measurements, nextParams, nextResiduals);
             const double nextSSR = sumSquaredResiduals(nextResiduals);
 

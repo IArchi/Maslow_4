@@ -115,6 +115,10 @@ private:
     int    recomputeCountIndex    = 0;   // Stores the index of the recompute point we are currently on
     int    recomputeCount         = 0;   // Stores the number of recompute points
 
+    // Fitness tracking across recomputes
+    double previousFitnessRms  = -1.0;  // RMS from prior recompute; -1.0 = no prior recompute
+    bool   lastRecomputePassed = false;  // Set true only when all fitness gates pass
+
     //Used to keep track of how often the PID controller is updated
     unsigned long lastCallToPID    = millis();
     unsigned long lastMiss         = millis();

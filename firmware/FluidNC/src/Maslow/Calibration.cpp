@@ -30,12 +30,27 @@ namespace {
         double br;
     };
 
-    constexpr double LM_INITIAL_LAMBDA       = 0.001;
-    constexpr double LM_LAMBDA_INCREASE      = 10.0;
-    constexpr double LM_LAMBDA_DECREASE      = 0.1;
-    constexpr int    LM_MAX_ITERATIONS       = 100;
-    constexpr int    LM_MAX_REJECTIONS       = 10;
+    constexpr double LM_INITIAL_LAMBDA        = 0.001;
+    constexpr double LM_LAMBDA_INCREASE       = 10.0;
+    constexpr double LM_LAMBDA_DECREASE       = 0.1;
+    constexpr int    LM_MAX_ITERATIONS        = 100;
+    constexpr int    LM_MAX_REJECTIONS        = 10;
     constexpr double LM_CONVERGENCE_THRESHOLD = 1e-4;
+
+    // Fitness gate thresholds — tune against real-machine logs before tightening
+    constexpr double FITNESS_RMS_FAIL_MM            = 5.0;   // average belt error too large
+    constexpr double FITNESS_MAX_RES_FAIL_MM        = 15.0;  // single-waypoint outlier
+    constexpr double FITNESS_ANCHOR_IMBALANCE_RATIO = 2.0;   // max/min per-anchor RMS
+    constexpr double FITNESS_ANCHOR_JUMP_MM         = 50.0;  // between-recompute anchor jump
+    constexpr double FITNESS_ANCHOR_IMBALANCE_EPS   = 0.05;  // epsilon to avoid div-by-zero on near-perfect fits
+
+    struct CalibrationFitness {
+        double rms;             // sqrt(SSR / 4N) — overall fitness analog, units: mm
+        double maxResidual;     // max|r_i| — single worst belt-length error, mm
+        double rmsPerAnchor[4]; // {tl, tr, bl, br} per-anchor RMS, mm
+        int    iterations;      // LM iterations actually run
+        bool   converged;       // true if step-norm < threshold within iteration cap
+    };
 
     void bundleResiduals(const std::vector<CalibrationMeasurement>& measurements, const std::vector<double>& params, std::vector<double>& residuals) {
         const double tlX = params[0], tlY = params[1];
@@ -770,6 +785,13 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         params.push_back(kinematics->getTrY());
         params.push_back(kinematics->getBrX());
 
+        // Capture pre-solve anchor params for cross-recompute jump detection
+        const double tlX0 = params[0];
+        const double tlY0 = params[1];
+        const double trX0 = params[2];
+        const double trY0 = params[3];
+        const double brX0 = params[4];
+
         for (const auto& measurement : measurements) {
             serviceCalibrationWatchdogs(true);
             double sx = 0.0;
@@ -938,6 +960,114 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         log_debug("Find Anchors LM iterations=" << iterationCount << " bestSSR=" << bestSSR);
 
         serviceCalibrationWatchdogs(true);
+
+        // ── Fitness computation ────────────────────────────────────────────────
+        std::vector<double> finalRes;
+        bundleResiduals(measurements, bestParams, finalRes);
+
+        CalibrationFitness fit;
+        fit.rms        = std::sqrt(bestSSR / (4.0 * measurementCount));
+        fit.iterations = iterationCount;
+        fit.converged  = (rejections <= LM_MAX_REJECTIONS) && (lambda < 1e12);
+
+        fit.maxResidual = 0.0;
+        for (const double r : finalRes) {
+            const double ar = std::abs(r);
+            if (ar > fit.maxResidual) {
+                fit.maxResidual = ar;
+            }
+        }
+
+        for (int j = 0; j < 4; j++) {
+            double sumSq = 0.0;
+            for (int i = 0; i < measurementCount; i++) {
+                const double r = finalRes[4 * i + j];
+                sumSq += r * r;
+            }
+            fit.rmsPerAnchor[j] = std::sqrt(sumSq / measurementCount);
+        }
+
+        // ── Fitness gates ──────────────────────────────────────────────────────
+
+        // Gate 1: convergence
+        if (!fit.converged) {
+            log_error("Find Anchors fit failed: LM did not converge (rejections=" << rejections << " lambda=" << lambda << ")");
+            return false;
+        }
+
+        // Gate 2: overall RMS
+        if (fit.rms > FITNESS_RMS_FAIL_MM) {
+            log_error("Find Anchors fit failed: rms=" << fit.rms << "mm exceeds limit " << FITNESS_RMS_FAIL_MM << "mm");
+            return false;
+        }
+
+        // Gate 3: max residual — find worst anchor/measurement index for the log
+        if (fit.maxResidual > FITNESS_MAX_RES_FAIL_MM) {
+            int    worstI = 0, worstJ = 0;
+            double worstVal = 0.0;
+            for (int i = 0; i < measurementCount; i++) {
+                for (int j = 0; j < 4; j++) {
+                    const double ar = std::abs(finalRes[4 * i + j]);
+                    if (ar > worstVal) {
+                        worstVal = ar;
+                        worstI   = i;
+                        worstJ   = j;
+                    }
+                }
+            }
+            log_error("Find Anchors fit failed: maxResidual=" << fit.maxResidual << "mm at anchor=" << worstJ
+                                                              << " measurement=" << worstI << " (limit " << FITNESS_MAX_RES_FAIL_MM << "mm)");
+            return false;
+        }
+
+        // Gate 4: per-anchor RMS imbalance
+        {
+            double minRms = fit.rmsPerAnchor[0];
+            double maxRms = fit.rmsPerAnchor[0];
+            int    worstJ = 0;
+            for (int j = 1; j < 4; j++) {
+                if (fit.rmsPerAnchor[j] < minRms) {
+                    minRms = fit.rmsPerAnchor[j];
+                }
+                if (fit.rmsPerAnchor[j] > maxRms) {
+                    maxRms = fit.rmsPerAnchor[j];
+                    worstJ = j;
+                }
+            }
+            if (minRms > FITNESS_ANCHOR_IMBALANCE_EPS && maxRms > FITNESS_ANCHOR_IMBALANCE_RATIO * minRms) {
+                log_error("Find Anchors fit failed: per-anchor RMS imbalance: max=" << maxRms << "mm (anchor " << worstJ << ") > "
+                                                                                    << FITNESS_ANCHOR_IMBALANCE_RATIO << "x min=" << minRms << "mm");
+                return false;
+            }
+        }
+
+        // Gate 5: cross-recompute fitness degradation
+        if (previousFitnessRms >= 0.0 && fit.rms > previousFitnessRms * 1.5 && fit.rms > 1.0) {
+            log_error("Find Anchors fit degraded: previous=" << previousFitnessRms << "mm, now=" << fit.rms << "mm");
+            return false;
+        }
+
+        // Gate 6: anchor jump between recomputes (skip on first recompute)
+        if (previousFitnessRms >= 0.0) {
+            const double dTl  = std::sqrt((bestParams[0] - tlX0) * (bestParams[0] - tlX0) + (bestParams[1] - tlY0) * (bestParams[1] - tlY0));
+            const double dTr  = std::sqrt((bestParams[2] - trX0) * (bestParams[2] - trX0) + (bestParams[3] - trY0) * (bestParams[3] - trY0));
+            const double dBrX = std::abs(bestParams[4] - brX0);
+            const double maxJump = std::max({ dTl, dTr, dBrX });
+            if (maxJump > FITNESS_ANCHOR_JUMP_MM) {
+                log_error("Find Anchors fit failed: anchor jump=" << maxJump << "mm exceeds limit " << FITNESS_ANCHOR_JUMP_MM << "mm between recomputes");
+                return false;
+            }
+        }
+
+        // ── All gates passed: log fitness and persist ─────────────────────────
+        log_info("Find Anchors fit: rms=" << fit.rms << "mm max=" << fit.maxResidual << "mm"
+                                          << " perAnchor=[" << fit.rmsPerAnchor[0] << "," << fit.rmsPerAnchor[1] << ","
+                                          << fit.rmsPerAnchor[2] << "," << fit.rmsPerAnchor[3] << "]mm"
+                                          << " iters=" << fit.iterations << " converged=" << fit.converged);
+
+        previousFitnessRms  = fit.rms;
+        lastRecomputePassed = true;
+
         kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
         log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
                                                         << bestParams[3] << ") brX=" << bestParams[4]
@@ -958,16 +1088,22 @@ void Calibration::calibration_loop() {
 
     if (waypoint >
         pointCount) {  //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
-        char saveCommand[] = "$CO";
-        Error saveResult   = execute_line(saveCommand, allChannels, WebUI::AuthenticationLevel::LEVEL_ADMIN);
-        if (saveResult != Error::Ok) {
-            log_error("Find Anchors completed, but saving configuration failed: " << static_cast<int>(saveResult));
-        }
+        if (lastRecomputePassed) {
+            char saveCommand[] = "$CO";
+            Error saveResult   = execute_line(saveCommand, allChannels, WebUI::AuthenticationLevel::LEVEL_ADMIN);
+            if (saveResult != Error::Ok) {
+                log_error("Find Anchors completed, but saving configuration failed: " << static_cast<int>(saveResult));
+            }
 
-        //Reset all of the calibration variables to the defaults so that calibration can be run again
-        resetCalibrationState();
-        requestStateChange(READY_TO_CUT);
-        log_info("Find Anchors complete");
+            //Reset all of the calibration variables to the defaults so that calibration can be run again
+            resetCalibrationState();
+            requestStateChange(READY_TO_CUT);
+            log_info("Find Anchors complete");
+        } else {
+            log_error("Find Anchors completed but final fit failed quality gates; anchors NOT saved");
+            resetCalibrationState();
+            requestStateChange(EXTENDEDOUT);
+        }
         return;
     }
 
@@ -2174,6 +2310,10 @@ void Calibration::resetCalibrationState() {
     // Reset orientation detection variables so it runs on next calibration
     orientationDetectionDone = false;
     orientationDetectTimer   = 0;
+
+    // Reset fitness tracking so a fresh calibration run starts clean
+    previousFitnessRms  = -1.0;
+    lastRecomputePassed = false;
 
     // Deallocate memory if allocated
     deallocateCalibrationMemory();

@@ -33,12 +33,9 @@ namespace {
     constexpr double LM_INITIAL_LAMBDA       = 0.001;
     constexpr double LM_LAMBDA_INCREASE      = 10.0;
     constexpr double LM_LAMBDA_DECREASE      = 0.1;
-    constexpr int    LM_MAX_ITERATIONS       = 500;
-    constexpr int    LM_MAX_REJECTIONS       = 20;
-    constexpr double LM_STEP_SIZE            = 10.0;
+    constexpr int    LM_MAX_ITERATIONS       = 100;
+    constexpr int    LM_MAX_REJECTIONS       = 10;
     constexpr double LM_CONVERGENCE_THRESHOLD = 1e-4;
-    // Feed watchdog every 8 loop iterations to prevent false E-stop while keeping solver overhead low.
-    constexpr size_t WATCHDOG_FEED_INTERVAL_MASK = 0x7;
 
     void bundleResiduals(const std::vector<CalibrationMeasurement>& measurements, const std::vector<double>& params, std::vector<double>& residuals) {
         const double tlX = params[0], tlY = params[1];
@@ -105,132 +102,171 @@ namespace {
         }
     }
 
-    void bundleJacobian(const std::vector<CalibrationMeasurement>& measurements,
-                        const std::vector<double>&                 params,
-                        const std::vector<double>&                 baseResiduals,
-                        double                                     stepSize,
-                        std::vector<double>&                       jacobian,
-                        std::vector<double>&                       shiftedParams,
-                        std::vector<double>&                       shiftedResiduals) {
-        (void) baseResiduals;
-        (void) stepSize;
-        (void) shiftedParams;
-        (void) shiftedResiduals;
-
-        const size_t residualCount = measurements.size() * 4;
-        const size_t paramCount    = params.size();
-        jacobian.assign(residualCount * paramCount, 0.0);
-
-        const double tlX = params[0], tlY = params[1];
-        const double trX = params[2], trY = params[3];
-        const double brX = params[4];
-
-        for (size_t i = 0; i < measurements.size(); i++) {
-            const size_t rowBase = 4 * i;
-            const size_t sxCol   = 5 + 2 * i;
-            const size_t syCol   = sxCol + 1;
-            const double sx      = params[sxCol];
-            const double sy      = params[syCol];
-
-            const double dxTl = sx - tlX;
-            const double dyTl = sy - tlY;
-            const double dTl  = std::sqrt(dxTl * dxTl + dyTl * dyTl) + 1e-12;
-
-            const double dxTr = sx - trX;
-            const double dyTr = sy - trY;
-            const double dTr  = std::sqrt(dxTr * dxTr + dyTr * dyTr) + 1e-12;
-
-            const double dBl = std::sqrt(sx * sx + sy * sy) + 1e-12;
-
-            const double dxBr = sx - brX;
-            const double dBr  = std::sqrt(dxBr * dxBr + sy * sy) + 1e-12;
-
-            jacobian[(rowBase + 0) * paramCount + 0] = -dxTl / dTl;
-            jacobian[(rowBase + 0) * paramCount + 1] = -dyTl / dTl;
-            jacobian[(rowBase + 0) * paramCount + sxCol] = dxTl / dTl;
-            jacobian[(rowBase + 0) * paramCount + syCol] = dyTl / dTl;
-
-            jacobian[(rowBase + 1) * paramCount + 2] = -dxTr / dTr;
-            jacobian[(rowBase + 1) * paramCount + 3] = -dyTr / dTr;
-            jacobian[(rowBase + 1) * paramCount + sxCol] = dxTr / dTr;
-            jacobian[(rowBase + 1) * paramCount + syCol] = dyTr / dTr;
-
-            jacobian[(rowBase + 2) * paramCount + sxCol] = sx / dBl;
-            jacobian[(rowBase + 2) * paramCount + syCol] = sy / dBl;
-
-            jacobian[(rowBase + 3) * paramCount + 4] = -dxBr / dBr;
-            jacobian[(rowBase + 3) * paramCount + sxCol] = dxBr / dBr;
-            jacobian[(rowBase + 3) * paramCount + syCol] = sy / dBr;
+    void measurementJacobiansAndResiduals(const CalibrationMeasurement& measurement,
+                                          double                        tlX,
+                                          double                        tlY,
+                                          double                        trX,
+                                          double                        trY,
+                                          double                        brX,
+                                          double                        sx,
+                                          double                        sy,
+                                          double (&jia)[4][5],
+                                          double (&jis)[4][2],
+                                          double (&ri)[4]) {
+        for (size_t row = 0; row < 4; row++) {
+            for (size_t col = 0; col < 5; col++) {
+                jia[row][col] = 0.0;
+            }
+            jis[row][0] = 0.0;
+            jis[row][1] = 0.0;
         }
+
+        const double dxTl = sx - tlX;
+        const double dyTl = sy - tlY;
+        const double dTl  = std::sqrt(dxTl * dxTl + dyTl * dyTl) + 1e-12;
+
+        const double dxTr = sx - trX;
+        const double dyTr = sy - trY;
+        const double dTr  = std::sqrt(dxTr * dxTr + dyTr * dyTr) + 1e-12;
+
+        const double dBl = std::sqrt(sx * sx + sy * sy) + 1e-12;
+
+        const double dxBr = sx - brX;
+        const double dBr  = std::sqrt(dxBr * dxBr + sy * sy) + 1e-12;
+
+        ri[0] = dTl - measurement.tl;
+        ri[1] = dTr - measurement.tr;
+        ri[2] = dBl - measurement.bl;
+        ri[3] = dBr - measurement.br;
+
+        jia[0][0] = -dxTl / dTl;
+        jia[0][1] = -dyTl / dTl;
+        jis[0][0] = dxTl / dTl;
+        jis[0][1] = dyTl / dTl;
+
+        jia[1][2] = -dxTr / dTr;
+        jia[1][3] = -dyTr / dTr;
+        jis[1][0] = dxTr / dTr;
+        jis[1][1] = dyTr / dTr;
+
+        jis[2][0] = sx / dBl;
+        jis[2][1] = sy / dBl;
+
+        jia[3][4] = -dxBr / dBr;
+        jis[3][0] = dxBr / dBr;
+        jis[3][1] = sy / dBr;
     }
 
-    void normalEquations(const std::vector<double>& jacobian,
-                         const std::vector<double>& residuals,
-                         size_t                     paramCount,
-                         std::vector<double>&       jtj,
-                         std::vector<double>&       jtr) {
-        jtj.assign(paramCount * paramCount, 0.0);
-        jtr.assign(paramCount, 0.0);
-        const size_t residualCount = residuals.size();
-
-        for (size_t i = 0; i < residualCount; i++) {
-            for (size_t a = 0; a < paramCount; a++) {
-                const double Jia = jacobian[i * paramCount + a];
-                jtr[a] += Jia * residuals[i];
-                for (size_t b = a; b < paramCount; b++) {
-                    const double value = Jia * jacobian[i * paramCount + b];
-                    jtj[a * paramCount + b] += value;
-                    if (a != b) {
-                        jtj[b * paramCount + a] += value;
-                    }
-                }
-            }
+    bool invertDamped2x2(double v00, double v01, double v11, double lambda, double (&inverse)[2][2]) {
+        const double d00 = v00 + lambda * std::max(v00, 1e-10);
+        const double d11 = v11 + lambda * std::max(v11, 1e-10);
+        const double det = d00 * d11 - v01 * v01;
+        if (std::abs(det) < 1e-12) {
+            return false;
         }
+
+        const double invDet = 1.0 / det;
+        inverse[0][0]       = d11 * invDet;
+        inverse[0][1]       = -v01 * invDet;
+        inverse[1][0]       = -v01 * invDet;
+        inverse[1][1]       = d00 * invDet;
+        return true;
     }
 
-    bool solveLinearSystem(std::vector<double>& matrix, std::vector<double>& rhs, size_t n, std::vector<double>& solution) {
-        solution.assign(n, 0.0);
+    bool solve5x5(double matrix[5][5], const double rhs[5], double solution[5]) {
+        double b[5];
+        for (size_t i = 0; i < 5; i++) {
+            b[i]        = rhs[i];
+            solution[i] = 0.0;
+        }
 
-        for (size_t col = 0; col < n; col++) {
-            if ((col & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
-                serviceCalibrationWatchdogs(true);
-            }
+        for (size_t col = 0; col < 5; col++) {
             size_t pivot = col;
-            for (size_t row = col + 1; row < n; row++) {
-                if (std::abs(matrix[row * n + col]) > std::abs(matrix[pivot * n + col])) {
+            for (size_t row = col + 1; row < 5; row++) {
+                if (std::abs(matrix[row][col]) > std::abs(matrix[pivot][col])) {
                     pivot = row;
                 }
             }
-            if (std::abs(matrix[pivot * n + col]) < 1e-12) {
+            if (std::abs(matrix[pivot][col]) < 1e-12) {
                 return false;
             }
             if (pivot != col) {
-                for (size_t k = col; k < n; k++) {
-                    std::swap(matrix[col * n + k], matrix[pivot * n + k]);
+                for (size_t k = col; k < 5; k++) {
+                    std::swap(matrix[col][k], matrix[pivot][k]);
                 }
-                std::swap(rhs[col], rhs[pivot]);
+                std::swap(b[col], b[pivot]);
             }
 
-            const double pivotValue = matrix[col * n + col];
-            for (size_t row = col + 1; row < n; row++) {
-                const double factor = matrix[row * n + col] / pivotValue;
-                matrix[row * n + col] = 0.0;
-                for (size_t k = col + 1; k < n; k++) {
-                    matrix[row * n + k] -= factor * matrix[col * n + k];
+            const double pivotValue = matrix[col][col];
+            for (size_t row = col + 1; row < 5; row++) {
+                const double factor = matrix[row][col] / pivotValue;
+                matrix[row][col]    = 0.0;
+                for (size_t k = col + 1; k < 5; k++) {
+                    matrix[row][k] -= factor * matrix[col][k];
                 }
-                rhs[row] -= factor * rhs[col];
+                b[row] -= factor * b[col];
             }
         }
 
-        for (int row = static_cast<int>(n) - 1; row >= 0; row--) {
-            double sum = rhs[row];
-            for (size_t col = row + 1; col < n; col++) {
-                sum -= matrix[row * n + col] * solution[col];
+        for (int row = 4; row >= 0; row--) {
+            double sum = b[row];
+            for (size_t col = row + 1; col < 5; col++) {
+                sum -= matrix[row][col] * solution[col];
             }
-            solution[row] = sum / matrix[row * n + row];
+            solution[row] = sum / matrix[row][row];
         }
-
         return true;
+    }
+
+    void accumulatePointBlocks(const CalibrationMeasurement& measurement,
+                               double                        tlX,
+                               double                        tlY,
+                               double                        trX,
+                               double                        trY,
+                               double                        brX,
+                               double                        sx,
+                               double                        sy,
+                               double (&u)[5][5],
+                               double (&ga)[5],
+                               double (&w)[5][2],
+                               double (&gi)[2],
+                               double& v00,
+                               double& v01,
+                               double& v11) {
+        double jia[4][5];
+        double jis[4][2];
+        double ri[4];
+        measurementJacobiansAndResiduals(measurement, tlX, tlY, trX, trY, brX, sx, sy, jia, jis, ri);
+
+        v00 = 0.0;
+        v01 = 0.0;
+        v11 = 0.0;
+        gi[0] = 0.0;
+        gi[1] = 0.0;
+        for (size_t a = 0; a < 5; a++) {
+            w[a][0] = 0.0;
+            w[a][1] = 0.0;
+        }
+
+        for (size_t row = 0; row < 4; row++) {
+            const double js0 = jis[row][0];
+            const double js1 = jis[row][1];
+            v00 += js0 * js0;
+            v01 += js0 * js1;
+            v11 += js1 * js1;
+            gi[0] += js0 * ri[row];
+            gi[1] += js1 * ri[row];
+
+            for (size_t a = 0; a < 5; a++) {
+                const double ja = jia[row][a];
+                ga[a] += ja * ri[row];
+                w[a][0] += ja * js0;
+                w[a][1] += ja * js1;
+                for (size_t b = a; b < 5; b++) {
+                    u[a][b] += ja * jia[row][b];
+                }
+            }
+        }
     }
 }  // namespace
 
@@ -751,41 +787,122 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         double              bestSSR    = currentSSR;
         double              lambda     = LM_INITIAL_LAMBDA;
         int                 rejections = 0;
-        std::vector<double> jacobian;
-        std::vector<double> shiftedParams;
-        std::vector<double> shiftedResiduals;
-        std::vector<double> jtj;
-        std::vector<double> jtr;
-        std::vector<double> damped;
-        std::vector<double> rhs;
-        std::vector<double> step;
         std::vector<double> nextParams;
         std::vector<double> nextResiduals;
+        int                 iterationCount = 0;
 
         for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
+            iterationCount = iteration + 1;
             serviceCalibrationWatchdogs(true);
-            bundleJacobian(measurements, params, residuals, LM_STEP_SIZE, jacobian, shiftedParams, shiftedResiduals);
 
-            normalEquations(jacobian, residuals, params.size(), jtj, jtr);
+            const double tlX = params[0], tlY = params[1];
+            const double trX = params[2], trY = params[3];
+            const double brX = params[4];
 
-            damped = jtj;
-            for (size_t i = 0; i < params.size(); i++) {
-                damped[i * params.size() + i] += lambda * std::max(jtj[i * params.size() + i], 1e-10);
+            double u[5][5]      = {};
+            double ga[5]        = {};
+            double schurSub[5][5] = {};
+            double schurGain[5] = {};
+
+            for (size_t i = 0; i < measurements.size(); i++) {
+                const size_t sxIndex = 5 + 2 * i;
+                const size_t syIndex = sxIndex + 1;
+
+                double w[5][2];
+                double gi[2];
+                double v00 = 0.0, v01 = 0.0, v11 = 0.0;
+                accumulatePointBlocks(
+                    measurements[i], tlX, tlY, trX, trY, brX, params[sxIndex], params[syIndex], u, ga, w, gi, v00, v01, v11);
+
+                double invV[2][2];
+                if (!invertDamped2x2(v00, v01, v11, lambda, invV)) {
+                    log_error("Find Anchors recompute failed: singular 2x2 block at iteration " << iteration);
+                    return false;
+                }
+
+                for (size_t a = 0; a < 5; a++) {
+                    const double winv0 = w[a][0] * invV[0][0] + w[a][1] * invV[1][0];
+                    const double winv1 = w[a][0] * invV[0][1] + w[a][1] * invV[1][1];
+                    schurGain[a] += winv0 * gi[0] + winv1 * gi[1];
+                    for (size_t b = a; b < 5; b++) {
+                        schurSub[a][b] += winv0 * w[b][0] + winv1 * w[b][1];
+                    }
+                }
             }
 
-            rhs.assign(jtr.size(), 0.0);
-            for (size_t i = 0; i < jtr.size(); i++) {
-                rhs[i] = -jtr[i];
+            for (size_t a = 0; a < 5; a++) {
+                for (size_t b = 0; b < a; b++) {
+                    u[a][b]        = u[b][a];
+                    schurSub[a][b] = schurSub[b][a];
+                }
             }
 
-            if (!solveLinearSystem(damped, rhs, params.size(), step)) {
-                log_error("Find Anchors recompute failed: linear solver did not converge at iteration " << iteration);
+            double schurMatrix[5][5];
+            double schurRhs[5];
+            for (size_t a = 0; a < 5; a++) {
+                for (size_t b = 0; b < 5; b++) {
+                    schurMatrix[a][b] = u[a][b] - schurSub[a][b];
+                }
+                schurMatrix[a][a] += lambda * std::max(u[a][a], 1e-10);
+                schurRhs[a] = -ga[a] + schurGain[a];
+            }
+
+            double anchorStep[5];
+            if (!solve5x5(schurMatrix, schurRhs, anchorStep)) {
+                log_error("Find Anchors recompute failed: reduced linear solver did not converge at iteration " << iteration);
                 return false;
             }
 
             nextParams = params;
-            for (size_t i = 0; i < params.size(); i++) {
-                nextParams[i] += step[i];
+            for (size_t i = 0; i < 5; i++) {
+                nextParams[i] += anchorStep[i];
+            }
+
+            for (size_t i = 0; i < measurements.size(); i++) {
+                const size_t sxIndex = 5 + 2 * i;
+                const size_t syIndex = sxIndex + 1;
+                const double sx      = params[sxIndex];
+                const double sy      = params[syIndex];
+
+                double jia[4][5];
+                double jis[4][2];
+                double ri[4];
+                measurementJacobiansAndResiduals(measurements[i], tlX, tlY, trX, trY, brX, sx, sy, jia, jis, ri);
+
+                double v00 = 0.0, v01 = 0.0, v11 = 0.0;
+                double gi[2] = {};
+                double w[5][2] = {};
+                for (size_t row = 0; row < 4; row++) {
+                    const double js0 = jis[row][0];
+                    const double js1 = jis[row][1];
+                    v00 += js0 * js0;
+                    v01 += js0 * js1;
+                    v11 += js1 * js1;
+                    gi[0] += js0 * ri[row];
+                    gi[1] += js1 * ri[row];
+                    for (size_t a = 0; a < 5; a++) {
+                        w[a][0] += jia[row][a] * js0;
+                        w[a][1] += jia[row][a] * js1;
+                    }
+                }
+
+                double invV[2][2];
+                if (!invertDamped2x2(v00, v01, v11, lambda, invV)) {
+                    log_error("Find Anchors recompute failed: singular 2x2 block at iteration " << iteration);
+                    return false;
+                }
+
+                double pointRhs0 = -gi[0];
+                double pointRhs1 = -gi[1];
+                for (size_t a = 0; a < 5; a++) {
+                    pointRhs0 -= w[a][0] * anchorStep[a];
+                    pointRhs1 -= w[a][1] * anchorStep[a];
+                }
+
+                const double sxStep = invV[0][0] * pointRhs0 + invV[0][1] * pointRhs1;
+                const double syStep = invV[1][0] * pointRhs0 + invV[1][1] * pointRhs1;
+                nextParams[sxIndex] += sxStep;
+                nextParams[syIndex] += syStep;
             }
 
             bundleResiduals(measurements, nextParams, nextResiduals);
@@ -805,7 +922,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
                 double anchorStepNorm = 0.0;
                 for (int i = 0; i < 5; i++) {
-                    anchorStepNorm += step[i] * step[i];
+                    anchorStepNorm += anchorStep[i] * anchorStep[i];
                 }
                 if (std::sqrt(anchorStepNorm) < LM_CONVERGENCE_THRESHOLD) {
                     break;
@@ -818,6 +935,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
                 }
             }
         }
+        log_debug("Find Anchors LM iterations=" << iterationCount << " bestSSR=" << bestSSR);
 
         serviceCalibrationWatchdogs(true);
         kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);

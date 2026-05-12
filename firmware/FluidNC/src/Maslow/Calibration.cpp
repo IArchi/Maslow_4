@@ -112,21 +112,55 @@ namespace {
                         std::vector<double>&                       jacobian,
                         std::vector<double>&                       shiftedParams,
                         std::vector<double>&                       shiftedResiduals) {
-        const size_t residualCount = baseResiduals.size();
+        (void) baseResiduals;
+        (void) stepSize;
+        (void) shiftedParams;
+        (void) shiftedResiduals;
+
+        const size_t residualCount = measurements.size() * 4;
         const size_t paramCount    = params.size();
         jacobian.assign(residualCount * paramCount, 0.0);
-        shiftedParams.assign(params.begin(), params.end());
 
-        for (size_t j = 0; j < paramCount; j++) {
-            if ((j & WATCHDOG_FEED_INTERVAL_MASK) == 0) {
-                serviceCalibrationWatchdogs(true);
-            }
-            shiftedParams[j] += stepSize;
-            bundleResiduals(measurements, shiftedParams, shiftedResiduals);
-            shiftedParams[j] -= stepSize;
-            for (size_t i = 0; i < residualCount; i++) {
-                jacobian[i * paramCount + j] = (shiftedResiduals[i] - baseResiduals[i]) / stepSize;
-            }
+        const double tlX = params[0], tlY = params[1];
+        const double trX = params[2], trY = params[3];
+        const double brX = params[4];
+
+        for (size_t i = 0; i < measurements.size(); i++) {
+            const size_t rowBase = 4 * i;
+            const size_t sxCol   = 5 + 2 * i;
+            const size_t syCol   = sxCol + 1;
+            const double sx      = params[sxCol];
+            const double sy      = params[syCol];
+
+            const double dxTl = sx - tlX;
+            const double dyTl = sy - tlY;
+            const double dTl  = std::sqrt(dxTl * dxTl + dyTl * dyTl) + 1e-12;
+
+            const double dxTr = sx - trX;
+            const double dyTr = sy - trY;
+            const double dTr  = std::sqrt(dxTr * dxTr + dyTr * dyTr) + 1e-12;
+
+            const double dBl = std::sqrt(sx * sx + sy * sy) + 1e-12;
+
+            const double dxBr = sx - brX;
+            const double dBr  = std::sqrt(dxBr * dxBr + sy * sy) + 1e-12;
+
+            jacobian[(rowBase + 0) * paramCount + 0] = -dxTl / dTl;
+            jacobian[(rowBase + 0) * paramCount + 1] = -dyTl / dTl;
+            jacobian[(rowBase + 0) * paramCount + sxCol] = dxTl / dTl;
+            jacobian[(rowBase + 0) * paramCount + syCol] = dyTl / dTl;
+
+            jacobian[(rowBase + 1) * paramCount + 2] = -dxTr / dTr;
+            jacobian[(rowBase + 1) * paramCount + 3] = -dyTr / dTr;
+            jacobian[(rowBase + 1) * paramCount + sxCol] = dxTr / dTr;
+            jacobian[(rowBase + 1) * paramCount + syCol] = dyTr / dTr;
+
+            jacobian[(rowBase + 2) * paramCount + sxCol] = sx / dBl;
+            jacobian[(rowBase + 2) * paramCount + syCol] = sy / dBl;
+
+            jacobian[(rowBase + 3) * paramCount + 4] = -dxBr / dBr;
+            jacobian[(rowBase + 3) * paramCount + sxCol] = dxBr / dBr;
+            jacobian[(rowBase + 3) * paramCount + syCol] = sy / dBr;
         }
     }
 

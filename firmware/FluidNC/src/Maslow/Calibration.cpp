@@ -41,7 +41,6 @@ namespace {
     constexpr double FITNESS_RMS_FAIL_MM              = 5.0;   // average belt error too large
     constexpr double FITNESS_MAX_RES_FAIL_MM          = 15.0;  // single-waypoint outlier
     constexpr double FITNESS_ANCHOR_IMBALANCE_RATIO   = 2.0;   // max/min per-anchor RMS
-    constexpr double FITNESS_ANCHOR_JUMP_MM           = 50.0;  // between-recompute anchor jump
     // Skip imbalance check when minRms is below this value to avoid false positives on near-perfect fits
     constexpr double FITNESS_ANCHOR_IMBALANCE_EPS     = 0.05;  // mm
     constexpr double FITNESS_DEGRADATION_RATIO        = 1.5;   // fit.rms > prev * ratio triggers failure
@@ -1050,19 +1049,6 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         if (previousFitnessRms >= 0.0 && fit.rms > previousFitnessRms * FITNESS_DEGRADATION_RATIO && fit.rms > FITNESS_DEGRADATION_MIN_RMS_MM) {
             log_error("Find Anchors fit degraded: previous=" << previousFitnessRms << "mm, now=" << fit.rms << "mm");
             return false;
-        }
-
-        // Gate 6: anchor jump between recomputes (skip on first recompute).
-        // TL and TR are 2D anchors; brX is constrained to the X axis (brY is always 0) so 1D distance is correct.
-        if (previousFitnessRms >= 0.0) {
-            const double dTl     = std::sqrt((bestParams[0] - tlX0) * (bestParams[0] - tlX0) + (bestParams[1] - tlY0) * (bestParams[1] - tlY0));
-            const double dTr     = std::sqrt((bestParams[2] - trX0) * (bestParams[2] - trX0) + (bestParams[3] - trY0) * (bestParams[3] - trY0));
-            const double dBrX    = std::abs(bestParams[4] - brX0);
-            const double maxJump = std::max({ dTl, dTr, dBrX });
-            if (maxJump > FITNESS_ANCHOR_JUMP_MM) {
-                log_error("Find Anchors fit failed: anchor jump=" << maxJump << "mm exceeds limit " << FITNESS_ANCHOR_JUMP_MM << "mm between recomputes");
-                return false;
-            }
         }
 
         // ── All gates passed: log fitness and persist ─────────────────────────

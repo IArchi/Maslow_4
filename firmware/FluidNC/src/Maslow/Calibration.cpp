@@ -40,8 +40,6 @@ namespace {
     // Fitness gate thresholds — tune against real-machine logs before tightening
     constexpr double FITNESS_RMS_FAIL_MM              = 5.0;   // average belt error too large
     constexpr double FITNESS_MAX_RES_FAIL_MM          = 15.0;  // single-waypoint outlier
-    constexpr double FITNESS_DEGRADATION_RATIO        = 1.5;   // fit.rms > prev * ratio triggers failure
-    constexpr double FITNESS_DEGRADATION_MIN_RMS_MM   = 1.0;   // only gate degradation when fit.rms exceeds this
 
     struct CalibrationFitness {
         double rms;             // sqrt(SSR / 4N) — overall fitness analog, units: mm
@@ -1027,12 +1025,6 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
             }
             log_error("Find Anchors fit failed: maxResidual=" << fit.maxResidual << "mm at anchor=" << worstJ
                                                               << " measurement=" << worstI << " (limit " << FITNESS_MAX_RES_FAIL_MM << "mm)");
-            return false;
-        }
-
-        // Gate 5: cross-recompute fitness degradation
-        if (previousFitnessRms >= 0.0 && fit.rms > previousFitnessRms * FITNESS_DEGRADATION_RATIO && fit.rms > FITNESS_DEGRADATION_MIN_RMS_MM) {
-            log_error("Find Anchors fit degraded: previous=" << previousFitnessRms << "mm, now=" << fit.rms << "mm");
             return false;
         }
 

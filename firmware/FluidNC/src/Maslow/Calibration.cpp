@@ -34,15 +34,12 @@ namespace {
     constexpr double LM_LAMBDA_INCREASE       = 10.0;
     constexpr double LM_LAMBDA_DECREASE       = 0.1;
     constexpr int    LM_MAX_ITERATIONS        = 100;
-    constexpr int    LM_MAX_REJECTIONS        = 10;
+    constexpr int    LM_MAX_REJECTIONS        = 20;
     constexpr double LM_CONVERGENCE_THRESHOLD = 1e-4;
 
     // Fitness gate thresholds — tune against real-machine logs before tightening
     constexpr double FITNESS_RMS_FAIL_MM              = 5.0;   // average belt error too large
     constexpr double FITNESS_MAX_RES_FAIL_MM          = 15.0;  // single-waypoint outlier
-    constexpr double FITNESS_ANCHOR_IMBALANCE_RATIO   = 2.0;   // max/min per-anchor RMS
-    // Skip imbalance check when minRms is below this value to avoid false positives on near-perfect fits
-    constexpr double FITNESS_ANCHOR_IMBALANCE_EPS     = 0.05;  // mm
     constexpr double FITNESS_DEGRADATION_RATIO        = 1.5;   // fit.rms > prev * ratio triggers failure
     constexpr double FITNESS_DEGRADATION_MIN_RMS_MM   = 1.0;   // only gate degradation when fit.rms exceeds this
 
@@ -440,7 +437,17 @@ bool Calibration::requestStateChange(int newState) {
                     resetCalibrationState();
                     return requestStateChange(READY_TO_CUT);
                 }
-                
+
+                // When entering from EXTENDEDOUT this is always a fresh calibration start (either
+                // the first run or a re-run after a failure).  Reset waypoint counters and fitness
+                // tracking so stale data from any previous run cannot affect this run.
+                if (currentState == EXTENDEDOUT) {
+                    waypoint            = 0;
+                    recomputeCountIndex = 0;
+                    previousFitnessRms  = -1.0;
+                    lastRecomputePassed = false;
+                }
+
                 currentState = CALIBRATION_IN_PROGRESS;
 
                 //Reset the axis targets at the beginning of calibration
@@ -993,7 +1000,8 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
         // Gate 1: convergence
         if (!fit.converged) {
-            log_error("Find Anchors fit failed: LM did not converge (rejections=" << rejections << " lambda=" << lambda << ")");
+            log_error("Find Anchors fit failed: LM did not converge (rejections=" << rejections << " lambda=" << lambda
+                                                                                   << ") - the math solver stalled; this is often transient, try calibrating again");
             return false;
         }
 
@@ -1020,29 +1028,6 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
             log_error("Find Anchors fit failed: maxResidual=" << fit.maxResidual << "mm at anchor=" << worstJ
                                                               << " measurement=" << worstI << " (limit " << FITNESS_MAX_RES_FAIL_MM << "mm)");
             return false;
-        }
-
-        // Gate 4: per-anchor RMS imbalance
-        {
-            double minRms = fit.rmsPerAnchor[0];
-            double maxRms = fit.rmsPerAnchor[0];
-            int    worstJ = 0;
-            for (int j = 1; j < 4; j++) {
-                if (fit.rmsPerAnchor[j] < minRms) {
-                    minRms = fit.rmsPerAnchor[j];
-                }
-                if (fit.rmsPerAnchor[j] > maxRms) {
-                    maxRms = fit.rmsPerAnchor[j];
-                    worstJ = j;
-                }
-            }
-            // Skip the imbalance check when minRms is near zero; a near-perfect fit will
-            // naturally have very small per-anchor values that can spuriously trip the ratio.
-            if (minRms > FITNESS_ANCHOR_IMBALANCE_EPS && maxRms > FITNESS_ANCHOR_IMBALANCE_RATIO * minRms) {
-                log_error("Find Anchors fit failed: per-anchor RMS imbalance: max=" << maxRms << "mm (anchor " << worstJ << ") > "
-                                                                                    << FITNESS_ANCHOR_IMBALANCE_RATIO << "x min=" << minRms << "mm");
-                return false;
-            }
         }
 
         // Gate 5: cross-recompute fitness degradation

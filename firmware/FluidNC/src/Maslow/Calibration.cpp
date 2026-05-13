@@ -1,8 +1,291 @@
 #include "Calibration.h"
 #include "Maslow.h"
 #include "../Kinematics/MaslowKinematics.h"
+#include "../Serial.h"
+#include "../Settings.h"
 #include "../System.h"
 #include "SquareCalculation.h"
+#include <esp_task_wdt.h>
+#include <algorithm>
+#include <cmath>
+#include <new>
+#include <vector>
+
+namespace {
+    inline void serviceCalibrationWatchdogs(bool yieldToScheduler = false) {
+        // Keep both Maslow's update-loop watchdog and ESP task watchdog fed.
+        Maslow.resetUpdateWatchdog();
+        esp_task_wdt_reset();
+        if (yieldToScheduler) {
+            // During long compute loops, cooperatively yield so the scheduler can
+            // run idle tasks on this core and avoid task-starvation resets.
+            delay(0);
+        }
+    }
+
+    struct CalibrationMeasurement {
+        double tl;
+        double tr;
+        double bl;
+        double br;
+    };
+
+    constexpr double LM_INITIAL_LAMBDA        = 0.001;
+    constexpr double LM_LAMBDA_INCREASE       = 10.0;
+    constexpr double LM_LAMBDA_DECREASE       = 0.1;
+    constexpr int    LM_MAX_ITERATIONS        = 100;
+    constexpr int    LM_MAX_REJECTIONS        = 10;
+    constexpr double LM_CONVERGENCE_THRESHOLD = 1e-4;
+
+    // Fitness gate thresholds — tune against real-machine logs before tightening
+    constexpr double FITNESS_RMS_FAIL_MM              = 5.0;   // average belt error too large
+    constexpr double FITNESS_MAX_RES_FAIL_MM          = 15.0;  // single-waypoint outlier
+    constexpr double FITNESS_ANCHOR_IMBALANCE_RATIO   = 2.0;   // max/min per-anchor RMS
+    // Skip imbalance check when minRms is below this value to avoid false positives on near-perfect fits
+    constexpr double FITNESS_ANCHOR_IMBALANCE_EPS     = 0.05;  // mm
+    constexpr double FITNESS_DEGRADATION_RATIO        = 1.5;   // fit.rms > prev * ratio triggers failure
+    constexpr double FITNESS_DEGRADATION_MIN_RMS_MM   = 1.0;   // only gate degradation when fit.rms exceeds this
+
+    struct CalibrationFitness {
+        double rms;             // sqrt(SSR / 4N) — overall fitness analog, units: mm
+        double maxResidual;     // max|r_i| — single worst belt-length error, mm
+        double rmsPerAnchor[4]; // {tl, tr, bl, br} per-anchor RMS, mm
+        int    iterations;      // LM iterations actually run
+        bool   converged;       // true if step-norm < threshold within iteration cap
+    };
+
+    void bundleResiduals(const std::vector<CalibrationMeasurement>& measurements, const std::vector<double>& params, std::vector<double>& residuals) {
+        const double tlX = params[0], tlY = params[1];
+        const double trX = params[2], trY = params[3];
+        const double brX = params[4];
+
+        residuals.assign(measurements.size() * 4, 0.0);
+        for (size_t i = 0; i < measurements.size(); i++) {
+            const double sx = params[5 + 2 * i];
+            const double sy = params[5 + 2 * i + 1];
+            const auto&  m  = measurements[i];
+
+            const double dTl = std::sqrt((sx - tlX) * (sx - tlX) + (sy - tlY) * (sy - tlY));
+            const double dTr = std::sqrt((sx - trX) * (sx - trX) + (sy - trY) * (sy - trY));
+            const double dBl = std::sqrt((sx) * (sx) + (sy) * (sy));
+            const double dBr = std::sqrt((sx - brX) * (sx - brX) + (sy) * (sy));
+
+            residuals[4 * i + 0] = dTl - m.tl;
+            residuals[4 * i + 1] = dTr - m.tr;
+            residuals[4 * i + 2] = dBl - m.bl;
+            residuals[4 * i + 3] = dBr - m.br;
+        }
+    }
+
+    double sumSquaredResiduals(const std::vector<double>& residuals) {
+        double sum = 0.0;
+        for (const double r : residuals) {
+            sum += r * r;
+        }
+        return sum;
+    }
+
+    void estimateSledPosition(const CalibrationMeasurement& measurement, double tlX, double tlY, double trX, double trY, double brX, double& sx, double& sy) {
+        sx = (tlX + trX) / 2.0;
+        sy = (tlY + trY) / 4.0;
+
+        const double anchorX[4] = { tlX, trX, 0.0, brX };
+        const double anchorY[4] = { tlY, trY, 0.0, 0.0 };
+        const double belt[4]    = { measurement.tl, measurement.tr, measurement.bl, measurement.br };
+
+        for (int iter = 0; iter < 20; iter++) {
+            double hxx = 0.0, hyy = 0.0, hxy = 0.0, gx = 0.0, gy = 0.0;
+            for (int j = 0; j < 4; j++) {
+                const double dx = sx - anchorX[j];
+                const double dy = sy - anchorY[j];
+                const double d  = std::sqrt(dx * dx + dy * dy) + 1e-10;
+                const double r  = d - belt[j];
+                const double jx = dx / d;
+                const double jy = dy / d;
+                hxx += jx * jx;
+                hyy += jy * jy;
+                hxy += jx * jy;
+                gx += r * jx;
+                gy += r * jy;
+            }
+
+            const double det = hxx * hyy - hxy * hxy + 1e-12;
+            sx -= (hyy * gx - hxy * gy) / det;
+            sy -= (hxx * gy - hxy * gx) / det;
+
+            if (std::abs(gx) + std::abs(gy) < 1e-8) {
+                break;
+            }
+        }
+    }
+
+    void measurementJacobiansAndResiduals(const CalibrationMeasurement& measurement,
+                                          double                        tlX,
+                                          double                        tlY,
+                                          double                        trX,
+                                          double                        trY,
+                                          double                        brX,
+                                          double                        sx,
+                                          double                        sy,
+                                          double (&jia)[4][5],
+                                          double (&jis)[4][2],
+                                          double (&ri)[4]) {
+        for (size_t row = 0; row < 4; row++) {
+            for (size_t col = 0; col < 5; col++) {
+                jia[row][col] = 0.0;
+            }
+            jis[row][0] = 0.0;
+            jis[row][1] = 0.0;
+        }
+
+        const double dxTl = sx - tlX;
+        const double dyTl = sy - tlY;
+        const double dTl  = std::sqrt(dxTl * dxTl + dyTl * dyTl) + 1e-12;
+
+        const double dxTr = sx - trX;
+        const double dyTr = sy - trY;
+        const double dTr  = std::sqrt(dxTr * dxTr + dyTr * dyTr) + 1e-12;
+
+        const double dBl = std::sqrt(sx * sx + sy * sy) + 1e-12;
+
+        const double dxBr = sx - brX;
+        const double dBr  = std::sqrt(dxBr * dxBr + sy * sy) + 1e-12;
+
+        ri[0] = dTl - measurement.tl;
+        ri[1] = dTr - measurement.tr;
+        ri[2] = dBl - measurement.bl;
+        ri[3] = dBr - measurement.br;
+
+        jia[0][0] = -dxTl / dTl;
+        jia[0][1] = -dyTl / dTl;
+        jis[0][0] = dxTl / dTl;
+        jis[0][1] = dyTl / dTl;
+
+        jia[1][2] = -dxTr / dTr;
+        jia[1][3] = -dyTr / dTr;
+        jis[1][0] = dxTr / dTr;
+        jis[1][1] = dyTr / dTr;
+
+        jis[2][0] = sx / dBl;
+        jis[2][1] = sy / dBl;
+
+        jia[3][4] = -dxBr / dBr;
+        jis[3][0] = dxBr / dBr;
+        jis[3][1] = sy / dBr;
+    }
+
+    bool invertDamped2x2(double v00, double v01, double v11, double lambda, double (&inverse)[2][2]) {
+        const double d00 = v00 + lambda * std::max(v00, 1e-10);
+        const double d11 = v11 + lambda * std::max(v11, 1e-10);
+        const double det = d00 * d11 - v01 * v01;
+        if (std::abs(det) < 1e-12) {
+            return false;
+        }
+
+        const double invDet = 1.0 / det;
+        inverse[0][0]       = d11 * invDet;
+        inverse[0][1]       = -v01 * invDet;
+        inverse[1][0]       = -v01 * invDet;
+        inverse[1][1]       = d00 * invDet;
+        return true;
+    }
+
+    bool solve5x5(double matrix[5][5], const double rhs[5], double solution[5]) {
+        double b[5];
+        for (size_t i = 0; i < 5; i++) {
+            b[i]        = rhs[i];
+            solution[i] = 0.0;
+        }
+
+        for (size_t col = 0; col < 5; col++) {
+            size_t pivot = col;
+            for (size_t row = col + 1; row < 5; row++) {
+                if (std::abs(matrix[row][col]) > std::abs(matrix[pivot][col])) {
+                    pivot = row;
+                }
+            }
+            if (std::abs(matrix[pivot][col]) < 1e-12) {
+                return false;
+            }
+            if (pivot != col) {
+                for (size_t k = col; k < 5; k++) {
+                    std::swap(matrix[col][k], matrix[pivot][k]);
+                }
+                std::swap(b[col], b[pivot]);
+            }
+
+            const double pivotValue = matrix[col][col];
+            for (size_t row = col + 1; row < 5; row++) {
+                const double factor = matrix[row][col] / pivotValue;
+                matrix[row][col]    = 0.0;
+                for (size_t k = col + 1; k < 5; k++) {
+                    matrix[row][k] -= factor * matrix[col][k];
+                }
+                b[row] -= factor * b[col];
+            }
+        }
+
+        for (int row = 4; row >= 0; row--) {
+            double sum = b[row];
+            for (size_t col = row + 1; col < 5; col++) {
+                sum -= matrix[row][col] * solution[col];
+            }
+            solution[row] = sum / matrix[row][row];
+        }
+        return true;
+    }
+
+    void accumulatePointBlocks(const CalibrationMeasurement& measurement,
+                               double                        tlX,
+                               double                        tlY,
+                               double                        trX,
+                               double                        trY,
+                               double                        brX,
+                               double                        sx,
+                               double                        sy,
+                               double (&u)[5][5],
+                               double (&ga)[5],
+                               double (&w)[5][2],
+                               double (&gi)[2],
+                               double& v00,
+                               double& v01,
+                               double& v11) {
+        double jia[4][5];
+        double jis[4][2];
+        double ri[4];
+        measurementJacobiansAndResiduals(measurement, tlX, tlY, trX, trY, brX, sx, sy, jia, jis, ri);
+
+        v00 = 0.0;
+        v01 = 0.0;
+        v11 = 0.0;
+        gi[0] = 0.0;
+        gi[1] = 0.0;
+        for (size_t a = 0; a < 5; a++) {
+            w[a][0] = 0.0;
+            w[a][1] = 0.0;
+        }
+
+        for (size_t row = 0; row < 4; row++) {
+            const double js0 = jis[row][0];
+            const double js1 = jis[row][1];
+            v00 += js0 * js0;
+            v01 += js0 * js1;
+            v11 += js1 * js1;
+            gi[0] += js0 * ri[row];
+            gi[1] += js1 * ri[row];
+
+            for (size_t a = 0; a < 5; a++) {
+                const double ja = jia[row][a];
+                ga[a] += ja * ri[row];
+                w[a][0] += ja * js0;
+                w[a][1] += ja * js1;
+                for (size_t b = a; b < 5; b++) {
+                    u[a][b] += ja * jia[row][b];
+                }
+            }
+        }
+    }
+}  // namespace
 
 // Helper function to get MaslowKinematics instance
 static Kinematics::MaslowKinematics* getKinematics() {
@@ -107,7 +390,8 @@ bool Calibration::requestStateChange(int newState) {
                 break;
             }
         case EXTENDEDOUT:  //We can enter extended from extending or in the event of a failure from taking slack, release tension, or calibration computing
-            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION || currentState == CALIBRATION_COMPUTING) {
+            if (currentState == EXTENDING || currentState == TAKING_SLACK || currentState == RELEASE_TENSION ||
+                currentState == CALIBRATION_COMPUTING || currentState == CALIBRATION_IN_PROGRESS) {
                 currentState = EXTENDEDOUT;
                 sys.set_state(State::Idle);
                 // Save belt positions now that belts are extended and at a known position
@@ -474,14 +758,347 @@ void Calibration::home() {
 //------------------------------------------------------ Homing and calibration functions
 //------------------------------------------------------
 
+bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
+    try {
+        serviceCalibrationWatchdogs(true);
+
+        if (measurementCount <= 0) {
+            log_error("Find Anchors recompute failed: no measurements available");
+            return false;
+        }
+
+        auto kinematics = getKinematics();
+        if (!kinematics) {
+            log_error("Find Anchors recompute failed: MaslowKinematics unavailable");
+            return false;
+        }
+
+        std::vector<CalibrationMeasurement> measurements;
+        measurements.reserve(measurementCount);
+        for (int i = 0; i < measurementCount; i++) {
+            measurements.push_back({ calibration_data[i][0], calibration_data[i][1], calibration_data[i][2], calibration_data[i][3] });
+        }
+
+        std::vector<double> params;
+        params.reserve(5 + 2 * measurementCount);
+        params.push_back(kinematics->getTlX());
+        params.push_back(kinematics->getTlY());
+        params.push_back(kinematics->getTrX());
+        params.push_back(kinematics->getTrY());
+        params.push_back(kinematics->getBrX());
+
+        // Capture pre-solve anchor params for cross-recompute jump detection
+        const double tlX0 = params[0];
+        const double tlY0 = params[1];
+        const double trX0 = params[2];
+        const double trY0 = params[3];
+        const double brX0 = params[4];
+
+        for (const auto& measurement : measurements) {
+            serviceCalibrationWatchdogs(true);
+            double sx = 0.0;
+            double sy = 0.0;
+            estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
+            params.push_back(sx);
+            params.push_back(sy);
+        }
+
+        std::vector<double> residuals;
+        bundleResiduals(measurements, params, residuals);
+        double currentSSR = sumSquaredResiduals(residuals);
+
+        std::vector<double> bestParams = params;
+        double              bestSSR    = currentSSR;
+        double              lambda     = LM_INITIAL_LAMBDA;
+        int                 rejections = 0;
+        std::vector<double> nextParams;
+        std::vector<double> nextResiduals;
+        int                 iterationCount = 0;
+
+        for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
+            iterationCount = iteration + 1;
+            serviceCalibrationWatchdogs(true);
+
+            const double tlX = params[0], tlY = params[1];
+            const double trX = params[2], trY = params[3];
+            const double brX = params[4];
+
+            double u[5][5]      = {};
+            double ga[5]        = {};
+            double schurSub[5][5] = {};
+            double schurGain[5] = {};
+
+            for (size_t i = 0; i < measurements.size(); i++) {
+                const size_t sxIndex = 5 + 2 * i;
+                const size_t syIndex = sxIndex + 1;
+
+                double w[5][2];
+                double gi[2];
+                double v00 = 0.0, v01 = 0.0, v11 = 0.0;
+                accumulatePointBlocks(
+                    measurements[i], tlX, tlY, trX, trY, brX, params[sxIndex], params[syIndex], u, ga, w, gi, v00, v01, v11);
+
+                double invV[2][2];
+                if (!invertDamped2x2(v00, v01, v11, lambda, invV)) {
+                    log_error("Find Anchors recompute failed: singular 2x2 block at iteration " << iteration);
+                    return false;
+                }
+
+                for (size_t a = 0; a < 5; a++) {
+                    const double winv0 = w[a][0] * invV[0][0] + w[a][1] * invV[1][0];
+                    const double winv1 = w[a][0] * invV[0][1] + w[a][1] * invV[1][1];
+                    schurGain[a] += winv0 * gi[0] + winv1 * gi[1];
+                    for (size_t b = a; b < 5; b++) {
+                        schurSub[a][b] += winv0 * w[b][0] + winv1 * w[b][1];
+                    }
+                }
+            }
+
+            for (size_t a = 0; a < 5; a++) {
+                for (size_t b = 0; b < a; b++) {
+                    u[a][b]        = u[b][a];
+                    schurSub[a][b] = schurSub[b][a];
+                }
+            }
+
+            double schurMatrix[5][5];
+            double schurRhs[5];
+            for (size_t a = 0; a < 5; a++) {
+                for (size_t b = 0; b < 5; b++) {
+                    schurMatrix[a][b] = u[a][b] - schurSub[a][b];
+                }
+                schurMatrix[a][a] += lambda * std::max(u[a][a], 1e-10);
+                schurRhs[a] = -ga[a] + schurGain[a];
+            }
+
+            double anchorStep[5];
+            if (!solve5x5(schurMatrix, schurRhs, anchorStep)) {
+                log_error("Find Anchors recompute failed: reduced linear solver did not converge at iteration " << iteration);
+                return false;
+            }
+
+            nextParams = params;
+            for (size_t i = 0; i < 5; i++) {
+                nextParams[i] += anchorStep[i];
+            }
+
+            for (size_t i = 0; i < measurements.size(); i++) {
+                const size_t sxIndex = 5 + 2 * i;
+                const size_t syIndex = sxIndex + 1;
+                const double sx      = params[sxIndex];
+                const double sy      = params[syIndex];
+
+                double jia[4][5];
+                double jis[4][2];
+                double ri[4];
+                measurementJacobiansAndResiduals(measurements[i], tlX, tlY, trX, trY, brX, sx, sy, jia, jis, ri);
+
+                double v00 = 0.0, v01 = 0.0, v11 = 0.0;
+                double gi[2] = {};
+                double w[5][2] = {};
+                for (size_t row = 0; row < 4; row++) {
+                    const double js0 = jis[row][0];
+                    const double js1 = jis[row][1];
+                    v00 += js0 * js0;
+                    v01 += js0 * js1;
+                    v11 += js1 * js1;
+                    gi[0] += js0 * ri[row];
+                    gi[1] += js1 * ri[row];
+                    for (size_t a = 0; a < 5; a++) {
+                        w[a][0] += jia[row][a] * js0;
+                        w[a][1] += jia[row][a] * js1;
+                    }
+                }
+
+                double invV[2][2];
+                if (!invertDamped2x2(v00, v01, v11, lambda, invV)) {
+                    log_error("Find Anchors recompute failed: singular 2x2 block at iteration " << iteration);
+                    return false;
+                }
+
+                double pointRhs0 = -gi[0];
+                double pointRhs1 = -gi[1];
+                for (size_t a = 0; a < 5; a++) {
+                    pointRhs0 -= w[a][0] * anchorStep[a];
+                    pointRhs1 -= w[a][1] * anchorStep[a];
+                }
+
+                const double sxStep = invV[0][0] * pointRhs0 + invV[0][1] * pointRhs1;
+                const double syStep = invV[1][0] * pointRhs0 + invV[1][1] * pointRhs1;
+                nextParams[sxIndex] += sxStep;
+                nextParams[syIndex] += syStep;
+            }
+
+            bundleResiduals(measurements, nextParams, nextResiduals);
+            const double nextSSR = sumSquaredResiduals(nextResiduals);
+
+            if (nextSSR < currentSSR) {
+                params = std::move(nextParams);
+                residuals = std::move(nextResiduals);
+                currentSSR = nextSSR;
+                lambda = std::max(lambda * LM_LAMBDA_DECREASE, 1e-12);
+                rejections = 0;
+
+                if (currentSSR < bestSSR) {
+                    bestSSR = currentSSR;
+                    bestParams = params;
+                }
+
+                double anchorStepNorm = 0.0;
+                for (int i = 0; i < 5; i++) {
+                    anchorStepNorm += anchorStep[i] * anchorStep[i];
+                }
+                if (std::sqrt(anchorStepNorm) < LM_CONVERGENCE_THRESHOLD) {
+                    break;
+                }
+            } else {
+                lambda *= LM_LAMBDA_INCREASE;
+                rejections++;
+                if (rejections > LM_MAX_REJECTIONS || lambda > 1e12) {
+                    break;
+                }
+            }
+        }
+        log_debug("Find Anchors LM iterations=" << iterationCount << " bestSSR=" << bestSSR);
+
+        serviceCalibrationWatchdogs(true);
+
+        // ── Fitness computation ────────────────────────────────────────────────
+        std::vector<double> finalRes;
+        bundleResiduals(measurements, bestParams, finalRes);
+
+        CalibrationFitness fit;
+        fit.rms        = std::sqrt(bestSSR / (4.0 * measurementCount));
+        fit.iterations = iterationCount;
+        fit.converged  = (rejections <= LM_MAX_REJECTIONS) && (lambda < 1e12);
+
+        fit.maxResidual = 0.0;
+        for (const double r : finalRes) {
+            const double ar = std::abs(r);
+            if (ar > fit.maxResidual) {
+                fit.maxResidual = ar;
+            }
+        }
+
+        for (int j = 0; j < 4; j++) {
+            double sumSq = 0.0;
+            for (int i = 0; i < measurementCount; i++) {
+                const double r = finalRes[4 * i + j];
+                sumSq += r * r;
+            }
+            fit.rmsPerAnchor[j] = std::sqrt(sumSq / measurementCount);
+        }
+
+        // ── Fitness gates ──────────────────────────────────────────────────────
+
+        // Gate 1: convergence
+        if (!fit.converged) {
+            log_error("Find Anchors fit failed: LM did not converge (rejections=" << rejections << " lambda=" << lambda << ")");
+            return false;
+        }
+
+        // Gate 2: overall RMS
+        if (fit.rms > FITNESS_RMS_FAIL_MM) {
+            log_error("Find Anchors fit failed: rms=" << fit.rms << "mm exceeds limit " << FITNESS_RMS_FAIL_MM << "mm");
+            return false;
+        }
+
+        // Gate 3: max residual — find worst anchor/measurement index for the log
+        if (fit.maxResidual > FITNESS_MAX_RES_FAIL_MM) {
+            int    worstI = 0, worstJ = 0;
+            double worstVal = 0.0;
+            for (int i = 0; i < measurementCount; i++) {
+                for (int j = 0; j < 4; j++) {
+                    const double ar = std::abs(finalRes[4 * i + j]);
+                    if (ar > worstVal) {
+                        worstVal = ar;
+                        worstI   = i;
+                        worstJ   = j;
+                    }
+                }
+            }
+            log_error("Find Anchors fit failed: maxResidual=" << fit.maxResidual << "mm at anchor=" << worstJ
+                                                              << " measurement=" << worstI << " (limit " << FITNESS_MAX_RES_FAIL_MM << "mm)");
+            return false;
+        }
+
+        // Gate 4: per-anchor RMS imbalance
+        {
+            double minRms = fit.rmsPerAnchor[0];
+            double maxRms = fit.rmsPerAnchor[0];
+            int    worstJ = 0;
+            for (int j = 1; j < 4; j++) {
+                if (fit.rmsPerAnchor[j] < minRms) {
+                    minRms = fit.rmsPerAnchor[j];
+                }
+                if (fit.rmsPerAnchor[j] > maxRms) {
+                    maxRms = fit.rmsPerAnchor[j];
+                    worstJ = j;
+                }
+            }
+            // Skip the imbalance check when minRms is near zero; a near-perfect fit will
+            // naturally have very small per-anchor values that can spuriously trip the ratio.
+            if (minRms > FITNESS_ANCHOR_IMBALANCE_EPS && maxRms > FITNESS_ANCHOR_IMBALANCE_RATIO * minRms) {
+                log_error("Find Anchors fit failed: per-anchor RMS imbalance: max=" << maxRms << "mm (anchor " << worstJ << ") > "
+                                                                                    << FITNESS_ANCHOR_IMBALANCE_RATIO << "x min=" << minRms << "mm");
+                return false;
+            }
+        }
+
+        // Gate 5: cross-recompute fitness degradation
+        if (previousFitnessRms >= 0.0 && fit.rms > previousFitnessRms * FITNESS_DEGRADATION_RATIO && fit.rms > FITNESS_DEGRADATION_MIN_RMS_MM) {
+            log_error("Find Anchors fit degraded: previous=" << previousFitnessRms << "mm, now=" << fit.rms << "mm");
+            return false;
+        }
+
+        // ── All gates passed: log fitness and persist ─────────────────────────
+        log_info("Find Anchors fit: rms=" << fit.rms << "mm max=" << fit.maxResidual << "mm"
+                                          << " perAnchor=[" << fit.rmsPerAnchor[0] << "," << fit.rmsPerAnchor[1] << ","
+                                          << fit.rmsPerAnchor[2] << "," << fit.rmsPerAnchor[3] << "]mm"
+                                          << " iters=" << fit.iterations << " converged=" << fit.converged);
+
+        previousFitnessRms  = fit.rms;
+        lastRecomputePassed = true;
+
+        kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
+        log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
+                                                        << bestParams[3] << ") brX=" << bestParams[4]
+                                                        << " SSR=" << bestSSR << " points=" << measurementCount);
+        return true;
+    } catch (const std::bad_alloc&) {
+        log_error("Find Anchors recompute failed: out of memory at points=" << measurementCount);
+        return false;
+    } catch (...) {
+        log_error("Find Anchors recompute failed: unexpected exception at points=" << measurementCount);
+        return false;
+    }
+}
+
 // --Maslow calibration loop
 void Calibration::calibration_loop() {
+    serviceCalibrationWatchdogs(false);
+
     if (waypoint >
         pointCount) {  //Point count is the total number of points to measure so if waypoint > pointcount then the overall measurement process is complete
-        //Reset all of the calibration variables to the defaults so that calibration can be run again
-        resetCalibrationState();
-        requestStateChange(READY_TO_CUT);
-        log_info("Find Anchors complete");
+        // lastRecomputePassed is set to true only inside recomputeAnchorsWithLevenbergMarquardt()
+        // after all fitness gates pass; it is reset to false by resetCalibrationState().
+        // Calibration always performs at least one recompute before reaching waypoint > pointCount.
+        if (lastRecomputePassed) {
+            char saveCommand[] = "$CO";
+            Error saveResult   = execute_line(saveCommand, allChannels, WebUI::AuthenticationLevel::LEVEL_ADMIN);
+            if (saveResult != Error::Ok) {
+                log_error("Find Anchors completed, but saving configuration failed: " << static_cast<int>(saveResult));
+            }
+
+            //Reset all of the calibration variables to the defaults so that calibration can be run again
+            resetCalibrationState();
+            requestStateChange(READY_TO_CUT);
+            log_info("Find Anchors complete");
+        } else {
+            log_error("Find Anchors completed but final fit failed quality gates; anchors NOT saved");
+            resetCalibrationState();
+            requestStateChange(EXTENDEDOUT);
+        }
         return;
     }
 
@@ -499,10 +1116,12 @@ void Calibration::calibration_loop() {
             waypoint++;  //Increment the waypoint counter
 
             if (waypoint > recomputePoints[recomputeCountIndex]) {  //If we have reached the end of this stage of the calibration process
-                requestStateChange(CALIBRATION_COMPUTING);
-                print_calibration_data();
-                calibrationDataWaiting = millis();
-                sys.set_state(State::Idle);
+                if (!recomputeAnchorsWithLevenbergMarquardt(waypoint)) {
+                    log_error("Find Anchors recompute failed");
+                    resetCalibrationState();
+                    requestStateChange(EXTENDEDOUT);
+                    return;
+                }
                 recomputeCountIndex++;
             } else {
                 hold(150);  // Reduced from 250ms to 150ms for faster calibration
@@ -706,6 +1325,8 @@ bool Calibration::computeXYfromLengths(double TL, double TR, float& x, float& y)
  * @return True when the measurement is done, false otherwise.
  */
 bool Calibration::take_measurement(float result[4], int dir, int run, int current, int waypoint) {
+    serviceCalibrationWatchdogs(false);
+
     //Shouldn't this be handled with the same code as below but with the direction set to UP?
     if (orientation == VERTICAL) {
         //first we pull two bottom belts tight one after another, if x<0 we pull left belt first, if x>0 we pull right belt first
@@ -1188,6 +1809,8 @@ bool Calibration::take_measurement_avg_with_check(int waypoint, int dir) {
 
 // Move pulling just two belts depending in the direction of the movement
 bool Calibration::move_with_slack(double fromX, double fromY, double toX, double toY) {
+    serviceCalibrationWatchdogs(false);
+
     //This is where we want to introduce some slack so the system
     static unsigned long moveBeginTimer = millis();
     static bool          decompress     = true;
@@ -1588,51 +2211,6 @@ bool Calibration::adjustFrameSizeToMatchFirstMeasurement() {
     return true;
 }
 
-// ------------------------------------------------------
-// ------------------------------------------------------ Communication Functions
-// ------------------------------------------------------
-
-//Checks to see if the calibration data needs to be sent again
-void Calibration::checkCalibrationData() {
-    if (calibrationDataWaiting > 0) {
-        if (millis() - calibrationDataWaiting > 30007) {
-            log_error("Find Anchors data not acknowledged by computer, resending");
-            print_calibration_data();
-            calibrationDataWaiting = millis();
-        }
-    }
-}
-
-// function for outputting calibration data in the log line by line like this: {bl:2376.69,   br:923.40,   tr:1733.87,   tl:2801.87},
-void Calibration::print_calibration_data() {
-    auto kinematics = getKinematics();
-    if (!kinematics)
-        return;
-
-    //These are used to set the browser side initial guess for the frame size
-    log_data("$/" << M << "_tlX=" << kinematics->getTlX());
-    log_data("$/" << M << "_tlY=" << kinematics->getTlY());
-    log_data("$/" << M << "_trX=" << kinematics->getTrX());
-    log_data("$/" << M << "_trY=" << kinematics->getTrY());
-    log_data("$/" << M << "_brX=" << kinematics->getBrX());
-
-    String data = "CLBM:[";
-    for (int i = 0; i < waypoint; i++) {
-        data += "{bl:" + String(calibration_data[i][2]) + ",   br:" + String(calibration_data[i][3]) +
-                ",   tr:" + String(calibration_data[i][1]) + ",   tl:" + String(calibration_data[i][0]) + "},";
-    }
-    data += "]";
-    HeartBeatEnabled = false;
-    log_data(data.c_str());
-    HeartBeatEnabled = true;
-}
-
-//Runs when the calibration data has been acknowledged as received by the computer and the calibration process is progressing
-void Calibration::calibrationDataRecieved() {
-    // log_info("Calibration data acknowledged received by computer");
-    calibrationDataWaiting = -1;
-}
-
 //non-blocking delay, just pauses everything for specified time
 void Calibration::hold(unsigned long time) {
     holdTime  = time;
@@ -1719,7 +2297,6 @@ void Calibration::resetCalibrationState() {
     pointCount             = 0;
     recomputeCountIndex    = 0;
     calibrationInProgress  = false;
-    calibrationDataWaiting = -1;
 
     // Reset calibration loop state variables
     calibrationDirection  = UP;    // Default direction
@@ -1728,6 +2305,10 @@ void Calibration::resetCalibrationState() {
     // Reset orientation detection variables so it runs on next calibration
     orientationDetectionDone = false;
     orientationDetectTimer   = 0;
+
+    // Reset fitness tracking so a fresh calibration run starts clean
+    previousFitnessRms  = -1.0;
+    lastRecomputePassed = false;
 
     // Deallocate memory if allocated
     deallocateCalibrationMemory();

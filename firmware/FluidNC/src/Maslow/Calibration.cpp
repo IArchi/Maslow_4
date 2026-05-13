@@ -40,9 +40,6 @@ namespace {
     // Fitness gate thresholds — tune against real-machine logs before tightening
     constexpr double FITNESS_RMS_FAIL_MM              = 5.0;   // average belt error too large
     constexpr double FITNESS_MAX_RES_FAIL_MM          = 15.0;  // single-waypoint outlier
-    constexpr double FITNESS_ANCHOR_IMBALANCE_RATIO   = 3.0;   // max/min per-anchor RMS
-    // Skip imbalance check when minRms is below this value to avoid false positives on near-perfect fits
-    constexpr double FITNESS_ANCHOR_IMBALANCE_EPS     = 0.05;  // mm
     constexpr double FITNESS_DEGRADATION_RATIO        = 1.5;   // fit.rms > prev * ratio triggers failure
     constexpr double FITNESS_DEGRADATION_MIN_RMS_MM   = 1.0;   // only gate degradation when fit.rms exceeds this
 
@@ -1031,30 +1028,6 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
             log_error("Find Anchors fit failed: maxResidual=" << fit.maxResidual << "mm at anchor=" << worstJ
                                                               << " measurement=" << worstI << " (limit " << FITNESS_MAX_RES_FAIL_MM << "mm)");
             return false;
-        }
-
-        // Gate 4: per-anchor RMS imbalance
-        {
-            double minRms = fit.rmsPerAnchor[0];
-            double maxRms = fit.rmsPerAnchor[0];
-            int    worstJ = 0;
-            for (int j = 1; j < 4; j++) {
-                if (fit.rmsPerAnchor[j] < minRms) {
-                    minRms = fit.rmsPerAnchor[j];
-                }
-                if (fit.rmsPerAnchor[j] > maxRms) {
-                    maxRms = fit.rmsPerAnchor[j];
-                    worstJ = j;
-                }
-            }
-            // Skip the imbalance check when minRms is near zero; a near-perfect fit will
-            // naturally have very small per-anchor values that can spuriously trip the ratio.
-            if (minRms > FITNESS_ANCHOR_IMBALANCE_EPS && maxRms > FITNESS_ANCHOR_IMBALANCE_RATIO * minRms) {
-                log_error("Find Anchors fit failed: per-anchor RMS imbalance: max=" << maxRms << "mm (anchor " << worstJ << ") > "
-                                                                                    << FITNESS_ANCHOR_IMBALANCE_RATIO << "x min=" << minRms
-                                                                                    << "mm - one belt is measuring inconsistently; check for obstructions or tangles and try again");
-                return false;
-            }
         }
 
         // Gate 5: cross-recompute fitness degradation

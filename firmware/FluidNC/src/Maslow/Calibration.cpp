@@ -1197,10 +1197,13 @@ bool Calibration::takeSlackFunc() {
             diff[_BL] = calibration_data[0][2] - measurementToXYPlane(kinematics->computeBL(x, y, currentZ), blTotalZ);
             diff[_BR] = calibration_data[0][3] - measurementToXYPlane(kinematics->computeBR(x, y, currentZ), brTotalZ);
             log_info("Center point deviation: TL: " << diff[_TL] << " TR: " << diff[_TR] << " BL: " << diff[_BL] << " BR: " << diff[_BR]);
-            double threshold = 12;
-            if (abs(diff[_TL]) > threshold || abs(diff[_TR]) > threshold || abs(diff[_BL]) > threshold || abs(diff[_BR]) > threshold) {
+            constexpr double accurateThreshold = 12.0;
+            constexpr double warningThreshold  = 25.0;
+            const double      maxDeviation =
+                std::max({ std::abs(diff[_TL]), std::abs(diff[_TR]), std::abs(diff[_BL]), std::abs(diff[_BR]) });
+            if (maxDeviation > warningThreshold) {
                 log_error("Center point deviation over "
-                          << threshold << "mm, your coordinate system is not accurate, maybe try running Find Anchors again?");
+                          << warningThreshold << "mm, your coordinate system is not accurate, maybe try running Find Anchors again?");
                 //Should we enter an alarm state here to prevent things from going wrong?
 
                 //Reset
@@ -1208,7 +1211,13 @@ bool Calibration::takeSlackFunc() {
                 requestStateChange(EXTENDEDOUT);
                 return true;
             } else {
-                log_info("Center point deviation within " << threshold << "mm, your coordinate system is accurate");
+                if (maxDeviation > accurateThreshold) {
+                    log_warn("Apply Tension warning: Anchor point locations are inaccurate and the resulting cuts may not be precise. "
+                             "The tension in the belts may also be too high or too low, which can damage the belts. "
+                             "Measured center point deviation was " << maxDeviation << "mm.");
+                } else {
+                    log_info("Center point deviation within " << accurateThreshold << "mm, your coordinate system is accurate");
+                }
                 takeSlackState = 0;
                 holdTimer      = millis();
 

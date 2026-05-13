@@ -1200,7 +1200,7 @@ bool Calibration::takeSlackFunc() {
             constexpr double accurateThreshold = 12.0;
             constexpr double warningThreshold  = 25.0;
             const double      maxDeviation =
-                std::max({ std::abs(diff[_TL]), std::abs(diff[_TR]), std::abs(diff[_BL]), std::abs(diff[_BR]) });
+                std::max(std::max(std::abs(diff[_TL]), std::abs(diff[_TR])), std::max(std::abs(diff[_BL]), std::abs(diff[_BR])));
             if (maxDeviation > warningThreshold) {
                 log_error("Center point deviation over "
                           << warningThreshold << "mm, your coordinate system is not accurate, maybe try running Find Anchors again?");

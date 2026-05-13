@@ -358,13 +358,14 @@ const maslowInfoMsgHandling = (msg) => {
 };
 
 
-const showMaslowNoticeModal = (modalId, titleText, messageHtml) => {
+const showMaslowNoticeModal = (modalId, titleText, messageText) => {
 	let modal = document.getElementById(modalId);
 	if (modal) {
 		const title = modal.querySelector(".maslow-notice-title");
 		const message = modal.querySelector(".maslow-notice-message");
 		if (title) title.textContent = titleText;
-		if (message) message.innerHTML = messageHtml;
+		if (message) message.textContent = messageText;
+		modal.style.display = "flex";
 		return;
 	}
 
@@ -398,7 +399,7 @@ const showMaslowNoticeModal = (modalId, titleText, messageHtml) => {
 
 	const messageElement = document.createElement("p");
 	messageElement.className = "maslow-notice-message";
-	messageElement.innerHTML = messageHtml;
+	messageElement.textContent = messageText;
 
 	const closeButton = document.createElement("button");
 	closeButton.textContent = "Close";

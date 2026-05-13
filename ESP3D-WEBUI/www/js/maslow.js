@@ -3,6 +3,7 @@
 
 /** Maslow Status */
 let maslowStatus = { homed: false, extended: false, state: 0 };
+const APPLY_TENSION_WARNING_PREFIX = "Maslow Apply Tension deviation warning:";
 
 /** Maslow state constants (mirror firmware Maslow.h defines) */
 const MASLOW_STATE_FINDING_ANCHORS = 6;
@@ -349,45 +350,98 @@ const maslowInfoMsgHandling = (msg) => {
 		return true;
 	}
 
+	if (msg.startsWith(`[MSG:WARN: ${APPLY_TENSION_WARNING_PREFIX}`)) {
+		showApplyTensionWarningMessage(msg);
+	}
+
 	return false;
 };
 
 
+const showMaslowNoticeModal = (modalId, titleText, messageText) => {
+	let modal = document.getElementById(modalId);
+	if (modal) {
+		const title = modal.querySelector(".maslow-notice-title");
+		const message = modal.querySelector(".maslow-notice-message");
+		if (title) title.textContent = titleText;
+		if (message) message.textContent = messageText;
+		modal.style.display = "flex";
+		return;
+	}
+
+	modal = document.createElement("div");
+	modal.id = modalId;
+	modal.style.cssText = `
+		position: fixed;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(0, 0, 0, 0.45);
+		z-index: 2000;
+		padding: 20px;
+	`;
+
+	const dialog = document.createElement("div");
+	dialog.style.cssText = `
+		background-color: white;
+		padding: 20px;
+		border: 1px solid black;
+		box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+		max-width: 520px;
+		width: 100%;
+	`;
+
+	const heading = document.createElement("h3");
+	heading.className = "maslow-notice-title";
+	heading.textContent = titleText;
+	heading.style.marginTop = "0";
+
+	const messageElement = document.createElement("p");
+	messageElement.className = "maslow-notice-message";
+	messageElement.textContent = messageText;
+
+	const closeButton = document.createElement("button");
+	closeButton.textContent = "Close";
+	closeButton.style.cssText = `
+		margin-top: 10px;
+		padding: 5px 10px;
+		cursor: pointer;
+	`;
+	closeButton.onclick = () => modal.remove();
+
+	dialog.appendChild(heading);
+	dialog.appendChild(messageElement);
+	dialog.appendChild(closeButton);
+	modal.appendChild(dialog);
+	document.body.appendChild(modal);
+};
+
 /// Show a modal message when calibration is complete
 function showCalibrationCompleteMessage() {
-  const message = "Calibration complete. You do not need to do calibration ever again unless your frame changes size. You might want to store a backup of your maslow.yaml file in case you need to restore it later.";
-  // Create the modal dynamically
-  const modal = document.createElement('div');
-  modal.id = 'calibration-complete-modal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
-    border: 1px solid black;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    z-index: 1000;
-  `;
+	showMaslowNoticeModal(
+		"calibration-complete-modal",
+		"Calibration complete",
+		"Calibration complete. You do not need to do calibration ever again unless your frame changes size. You might want to store a backup of your maslow.yaml file in case you need to restore it later."
+	);
+}
 
-  const messageElement = document.createElement('p');
-  messageElement.textContent = message;
+function showApplyTensionWarningMessage(msg) {
+	const warningMatch = msg.match(/^\[MSG:WARN:\s*(.*)\]$/);
+	if (!warningMatch) {
+		return;
+	}
 
-  const closeButton = document.createElement('button');
-  closeButton.textContent = 'Close';
-    closeButton.style.cssText = `
-    margin-top: 10px;
-    padding: 5px 10px;
-    cursor: pointer;
-  `;
-  closeButton.onclick = function() {
-    document.body.removeChild(modal);
-  };
+	const warningText = warningMatch[1].trim();
+	if (!warningText.startsWith(APPLY_TENSION_WARNING_PREFIX)) {
+		return;
+	}
 
-  modal.appendChild(messageElement);
-  modal.appendChild(closeButton);
-  document.body.appendChild(modal);
+	showMaslowNoticeModal(
+		"apply-tension-warning-modal",
+		"Apply Tension Warning",
+		warningText.substring(APPLY_TENSION_WARNING_PREFIX.length).trim()
+	);
 }
 
 /** Perform maslow specific-ish error message handling */
@@ -691,4 +745,3 @@ const saveWiFiSettings = () => {
 		SendGetHttp(cmd);
 	}
 };
-

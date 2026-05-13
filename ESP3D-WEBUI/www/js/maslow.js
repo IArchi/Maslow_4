@@ -3,7 +3,7 @@
 
 /** Maslow Status */
 let maslowStatus = { homed: false, extended: false, state: 0 };
-const APPLY_TENSION_WARNING_PREFIX = "Apply Tension warning:";
+const APPLY_TENSION_WARNING_PREFIX = "Maslow Apply Tension deviation warning:";
 
 /** Maslow state constants (mirror firmware Maslow.h defines) */
 const MASLOW_STATE_FINDING_ANCHORS = 6;
@@ -350,7 +350,7 @@ const maslowInfoMsgHandling = (msg) => {
 		return true;
 	}
 
-	if (msg.startsWith("[MSG:WARN:")) {
+	if (msg.startsWith(`[MSG:WARN: ${APPLY_TENSION_WARNING_PREFIX}`)) {
 		showApplyTensionWarningMessage(msg);
 	}
 

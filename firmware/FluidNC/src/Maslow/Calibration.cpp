@@ -1212,7 +1212,7 @@ bool Calibration::takeSlackFunc() {
                 return true;
             } else {
                 if (maxDeviation > accurateThreshold) {
-                    log_warn("Apply Tension warning: Anchor point locations are inaccurate and the resulting cuts may not be precise. "
+                    log_warn("Maslow Apply Tension deviation warning: Anchor point locations are inaccurate and the resulting cuts may not be precise. "
                              "The tension in the belts may also be too high or too low, which can damage the belts. "
                              "Measured center point deviation was " << maxDeviation << "mm.");
                 } else {

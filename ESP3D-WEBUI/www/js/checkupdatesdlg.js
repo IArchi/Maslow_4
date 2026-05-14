@@ -171,8 +171,20 @@ function handleReleaseFetched(release, stream) {
 
     const latestTag = release.tag_name || "";
     const currentFw = fw_version || "";
+    const currentUi = web_ui_version || "";
 
-    setHTML("checkupdates_current_version", currentFw || translate_text_item("unknown"));
+    // Display versions, flagging each if it's behind
+    const fwUpdateAvailable = isNewerVersion(currentFw, latestTag);
+    const uiUpdateAvailable = isNewerVersion(currentUi, latestTag);
+
+    const updateBadge = (label) =>
+        `${label} <span style="color:orange;">(&#x25B2; update available)</span>`;
+
+    const fwLabel = currentFw || translate_text_item("unknown");
+    const uiLabel = currentUi || translate_text_item("unknown");
+
+    setHTML("checkupdates_fw_version", fwUpdateAvailable ? updateBadge(fwLabel) : fwLabel);
+    setHTML("checkupdates_ui_version", uiUpdateAvailable ? updateBadge(uiLabel) : uiLabel);
     setHTML("checkupdates_latest_version", latestTag);
     displayBlock("checkupdates_info");
 
@@ -195,7 +207,7 @@ function handleReleaseFetched(release, stream) {
         return;
     }
 
-    if (isNewerVersion(currentFw, latestTag)) {
+    if (fwUpdateAvailable || uiUpdateAvailable) {
         setHTML(
             "checkupdates_status",
             `<span style="color:green;">${translate_text_item("A new update is available!")}</span>`

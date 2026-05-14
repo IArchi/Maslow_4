@@ -463,7 +463,7 @@ function showZHomeResetWarningMessage(msg) {
 	showMaslowNoticeModal(
 		"z-home-reset-warning-modal",
 		"Z Home Reset",
-		`${warningText.substring(Z_HOME_RESET_WARNING_PREFIX.length).trim()} You may need to set Z home before cutting.`
+		warningText.substring(Z_HOME_RESET_WARNING_PREFIX.length).trim()
 	);
 }
 

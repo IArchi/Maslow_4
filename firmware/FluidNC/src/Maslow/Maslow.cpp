@@ -481,6 +481,8 @@ void Maslow_::saveZPos() {
 
 //This function loads the z-axis position from the non-volitle storage
 void Maslow_::loadZPos() {
+    static constexpr float MIN_VALID_ZPOS_MM = -100.0f;
+
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
     if (ret != ESP_OK) {
@@ -501,6 +503,21 @@ void Maslow_::loadZPos() {
         FloatInt32 fi;
         fi.i    = value2;
         targetZ = fi.f;
+
+        if (!std::isfinite(targetZ) || targetZ < MIN_VALID_ZPOS_MM) {
+            log_warn("Invalid z-axis position loaded from NVS (" << targetZ << "), resetting to 0");
+            targetZ = 0;
+            fi.f    = targetZ;
+            ret     = nvs_set_i32(nvsHandle, "zPos", fi.i);
+            if (ret != ESP_OK) {
+                log_info("Error " + std::string(esp_err_to_name(ret)) + " writing corrected zPos to NVS!\n");
+            } else {
+                ret = nvs_commit(nvsHandle);
+                if (ret != ESP_OK) {
+                    log_info("Error " + std::string(esp_err_to_name(ret)) + " committing corrected zPos to NVS!\n");
+                }
+            }
+        }
 
         // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)
         float* mpos  = get_mpos();

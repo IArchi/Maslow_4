@@ -793,11 +793,22 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         // Perturbation offsets applied to anchor starting positions on each retry.
         // tl and tr are perturbed symmetrically (opposite X) to preserve rough frame symmetry.
         // There are LM_MAX_RETRIES entries — one per retry after the initial attempt (attempt 0).
-        constexpr int    LM_MAX_RETRIES        = 3;
-        constexpr double LM_RETRY_PERTURB      = 25.0;   // mm
-        constexpr double LM_LAMBDA_OVERFLOW    = 1e12;   // lambda threshold above which LM is considered stalled
-        const double perturbX[LM_MAX_RETRIES] = {  LM_RETRY_PERTURB, -LM_RETRY_PERTURB, 0.0 };
-        const double perturbY[LM_MAX_RETRIES] = { 0.0,  LM_RETRY_PERTURB, -LM_RETRY_PERTURB };
+        // Each retry is cheap (LM converges in tens of iterations) and the watchdog is serviced
+        // inside the loop, so a larger retry count does not cause problems on the ESP32.
+        constexpr int    LM_MAX_RETRIES     = 10;
+        constexpr double LM_PERTURB_SMALL   = 25.0;  // mm — first pass of perturbations
+        constexpr double LM_PERTURB_LARGE   = 50.0;  // mm — second pass with larger offsets
+        constexpr double LM_LAMBDA_OVERFLOW = 1e12;  // lambda threshold above which LM is considered stalled
+        // clang-format off
+        const double perturbX[LM_MAX_RETRIES] = {
+             LM_PERTURB_SMALL, -LM_PERTURB_SMALL,  0.0,               0.0,
+             LM_PERTURB_SMALL, -LM_PERTURB_SMALL,
+             LM_PERTURB_LARGE, -LM_PERTURB_LARGE,  0.0,               0.0 };
+        const double perturbY[LM_MAX_RETRIES] = {
+             0.0,               0.0,               LM_PERTURB_SMALL, -LM_PERTURB_SMALL,
+             LM_PERTURB_SMALL, -LM_PERTURB_SMALL,
+             0.0,               0.0,               LM_PERTURB_LARGE, -LM_PERTURB_LARGE };
+        // clang-format on
 
         std::vector<double> globalBestParams;
         double              globalBestSSR = std::numeric_limits<double>::infinity();

@@ -481,7 +481,7 @@ void Maslow_::saveZPos() {
 
 //This function loads the z-axis position from the non-volitle storage
 void Maslow_::loadZPos() {
-    static constexpr float MIN_VALID_ZPOS_MM = -100.0f;
+    static constexpr float MIN_VALID_ZPOS_MM = -73.0f;
 
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);

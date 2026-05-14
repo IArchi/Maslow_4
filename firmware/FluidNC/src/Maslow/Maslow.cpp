@@ -505,7 +505,10 @@ void Maslow_::loadZPos() {
         targetZ = fi.f;
 
         if (!std::isfinite(targetZ) || targetZ < MIN_VALID_ZPOS_MM) {
-            log_warn("Invalid z-axis position loaded from NVS (" << targetZ << "), resetting to 0");
+            log_warn(
+                "Maslow Z home reset warning: Persisted Z home was invalid (" << targetZ
+                                                                            << "mm) and has been reset to 0. Please set Z home."
+            );
             targetZ = 0;
             fi.f    = targetZ;
             ret     = nvs_set_i32(nvsHandle, "zPos", fi.i);

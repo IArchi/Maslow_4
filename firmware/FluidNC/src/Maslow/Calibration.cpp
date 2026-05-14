@@ -45,7 +45,6 @@ namespace {
         double rms;             // sqrt(SSR / 4N) — overall fitness analog, units: mm
         double maxResidual;     // max|r_i| — single worst belt-length error, mm
         double rmsPerAnchor[4]; // {tl, tr, bl, br} per-anchor RMS, mm
-        int    iterations;      // LM iterations actually run
         bool   converged;       // true if step-norm < threshold within iteration cap
     };
 
@@ -784,41 +783,60 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
             measurements.push_back({ calibration_data[i][0], calibration_data[i][1], calibration_data[i][2], calibration_data[i][3] });
         }
 
-        std::vector<double> params;
-        params.reserve(5 + 2 * measurementCount);
-        params.push_back(kinematics->getTlX());
-        params.push_back(kinematics->getTlY());
-        params.push_back(kinematics->getTrX());
-        params.push_back(kinematics->getTrY());
-        params.push_back(kinematics->getBrX());
+        // Capture initial anchor estimates for retry perturbations
+        const double tlX0 = kinematics->getTlX();
+        const double tlY0 = kinematics->getTlY();
+        const double trX0 = kinematics->getTrX();
+        const double trY0 = kinematics->getTrY();
+        const double brX0 = kinematics->getBrX();
 
-        // Capture pre-solve anchor params for cross-recompute jump detection
-        const double tlX0 = params[0];
-        const double tlY0 = params[1];
-        const double trX0 = params[2];
-        const double trY0 = params[3];
-        const double brX0 = params[4];
+        // Perturbation offsets applied to anchor starting positions on each retry.
+        // tl and tr are perturbed symmetrically (opposite X) to preserve rough frame symmetry.
+        constexpr int    LM_MAX_RETRIES   = 3;
+        constexpr double LM_RETRY_PERTURB = 25.0;  // mm
+        const double perturbX[LM_MAX_RETRIES] = {  LM_RETRY_PERTURB, -LM_RETRY_PERTURB, 0.0 };
+        const double perturbY[LM_MAX_RETRIES] = { 0.0,  LM_RETRY_PERTURB, -LM_RETRY_PERTURB };
 
-        for (const auto& measurement : measurements) {
-            serviceCalibrationWatchdogs(true);
-            double sx = 0.0;
-            double sy = 0.0;
-            estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
-            params.push_back(sx);
-            params.push_back(sy);
-        }
+        std::vector<double> globalBestParams;
+        double              globalBestSSR = std::numeric_limits<double>::infinity();
+        bool                anyConverged  = false;
 
-        std::vector<double> residuals;
-        bundleResiduals(measurements, params, residuals);
-        double currentSSR = sumSquaredResiduals(residuals);
+        for (int attempt = 0; attempt <= LM_MAX_RETRIES; attempt++) {
+            if (attempt > 0) {
+                log_info("Find Anchors LM retry " << attempt << "/" << LM_MAX_RETRIES << " with perturbed anchors");
+            }
 
-        std::vector<double> bestParams = params;
-        double              bestSSR    = currentSSR;
-        double              lambda     = LM_INITIAL_LAMBDA;
-        int                 rejections = 0;
-        std::vector<double> nextParams;
-        std::vector<double> nextResiduals;
-        int                 iterationCount = 0;
+            const double px = (attempt > 0) ? perturbX[attempt - 1] : 0.0;
+            const double py = (attempt > 0) ? perturbY[attempt - 1] : 0.0;
+
+            std::vector<double> params;
+            params.reserve(5 + 2 * measurementCount);
+            params.push_back(tlX0 + px);
+            params.push_back(tlY0 + py);
+            params.push_back(trX0 - px);
+            params.push_back(trY0 + py);
+            params.push_back(brX0);
+
+            for (const auto& measurement : measurements) {
+                serviceCalibrationWatchdogs(true);
+                double sx = 0.0;
+                double sy = 0.0;
+                estimateSledPosition(measurement, params[0], params[1], params[2], params[3], params[4], sx, sy);
+                params.push_back(sx);
+                params.push_back(sy);
+            }
+
+            std::vector<double> residuals;
+            bundleResiduals(measurements, params, residuals);
+            double currentSSR = sumSquaredResiduals(residuals);
+
+            std::vector<double> bestParams = params;
+            double              bestSSR    = currentSSR;
+            double              lambda     = LM_INITIAL_LAMBDA;
+            int                 rejections = 0;
+            std::vector<double> nextParams;
+            std::vector<double> nextResiduals;
+            int                 iterationCount = 0;
 
         for (int iteration = 0; iteration < LM_MAX_ITERATIONS; iteration++) {
             iterationCount = iteration + 1;
@@ -963,19 +981,32 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
                     break;
                 }
             }
-        }
-        log_debug("Find Anchors LM iterations=" << iterationCount << " bestSSR=" << bestSSR);
+            // end of LM loop
+            }
+            const bool thisConverged = (rejections <= LM_MAX_REJECTIONS) && (lambda < 1e12);
+            log_debug("Find Anchors LM attempt=" << attempt << " iterations=" << iterationCount
+                                                 << " bestSSR=" << bestSSR << " converged=" << thisConverged);
+
+            if (bestSSR < globalBestSSR) {
+                globalBestSSR    = bestSSR;
+                globalBestParams = bestParams;
+            }
+
+            if (thisConverged) {
+                anyConverged = true;
+                break;
+            }
+        }  // end retry loop
 
         serviceCalibrationWatchdogs(true);
 
         // ── Fitness computation ────────────────────────────────────────────────
         std::vector<double> finalRes;
-        bundleResiduals(measurements, bestParams, finalRes);
+        bundleResiduals(measurements, globalBestParams, finalRes);
 
         CalibrationFitness fit;
-        fit.rms        = std::sqrt(bestSSR / (4.0 * measurementCount));
-        fit.iterations = iterationCount;
-        fit.converged  = (rejections <= LM_MAX_REJECTIONS) && (lambda < 1e12);
+        fit.rms       = std::sqrt(globalBestSSR / (4.0 * measurementCount));
+        fit.converged = anyConverged;
 
         fit.maxResidual = 0.0;
         for (const double r : finalRes) {
@@ -998,8 +1029,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
         // Gate 1: convergence
         if (!fit.converged) {
-            log_error("Find Anchors fit failed: LM did not converge (rejections=" << rejections << " lambda=" << lambda
-                                                                                   << ") - the math solver stalled; this is often transient, try calibrating again");
+            log_error("Find Anchors fit failed: LM did not converge after retries - the math solver stalled; try calibrating again");
             return false;
         }
 
@@ -1032,15 +1062,15 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
         log_info("Find Anchors fit: rms=" << fit.rms << "mm max=" << fit.maxResidual << "mm"
                                           << " perAnchor=[" << fit.rmsPerAnchor[0] << "," << fit.rmsPerAnchor[1] << ","
                                           << fit.rmsPerAnchor[2] << "," << fit.rmsPerAnchor[3] << "]mm"
-                                          << " iters=" << fit.iterations << " converged=" << fit.converged);
+                                          << " converged=" << fit.converged);
 
         previousFitnessRms  = fit.rms;
         lastRecomputePassed = true;
 
-        kinematics->setCalibrationAnchors(bestParams[0], bestParams[1], bestParams[2], bestParams[3], bestParams[4]);
-        log_info("Find Anchors recompute complete: tl=(" << bestParams[0] << "," << bestParams[1] << ") tr=(" << bestParams[2] << ","
-                                                        << bestParams[3] << ") brX=" << bestParams[4]
-                                                        << " SSR=" << bestSSR << " points=" << measurementCount);
+        kinematics->setCalibrationAnchors(globalBestParams[0], globalBestParams[1], globalBestParams[2], globalBestParams[3], globalBestParams[4]);
+        log_info("Find Anchors recompute complete: tl=(" << globalBestParams[0] << "," << globalBestParams[1] << ") tr=(" << globalBestParams[2] << ","
+                                                        << globalBestParams[3] << ") brX=" << globalBestParams[4]
+                                                        << " SSR=" << globalBestSSR << " points=" << measurementCount);
         return true;
     } catch (const std::bad_alloc&) {
         log_error("Find Anchors recompute failed: out of memory at points=" << measurementCount);

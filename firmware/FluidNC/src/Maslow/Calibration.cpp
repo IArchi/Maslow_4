@@ -792,8 +792,10 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
 
         // Perturbation offsets applied to anchor starting positions on each retry.
         // tl and tr are perturbed symmetrically (opposite X) to preserve rough frame symmetry.
-        constexpr int    LM_MAX_RETRIES   = 3;
-        constexpr double LM_RETRY_PERTURB = 25.0;  // mm
+        // There are LM_MAX_RETRIES entries — one per retry after the initial attempt (attempt 0).
+        constexpr int    LM_MAX_RETRIES        = 3;
+        constexpr double LM_RETRY_PERTURB      = 25.0;   // mm
+        constexpr double LM_LAMBDA_OVERFLOW    = 1e12;   // lambda threshold above which LM is considered stalled
         const double perturbX[LM_MAX_RETRIES] = {  LM_RETRY_PERTURB, -LM_RETRY_PERTURB, 0.0 };
         const double perturbY[LM_MAX_RETRIES] = { 0.0,  LM_RETRY_PERTURB, -LM_RETRY_PERTURB };
 
@@ -813,7 +815,7 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
             params.reserve(5 + 2 * measurementCount);
             params.push_back(tlX0 + px);
             params.push_back(tlY0 + py);
-            params.push_back(trX0 - px);
+            params.push_back(trX0 - px);  // symmetric: tr perturbed opposite to tl in X
             params.push_back(trY0 + py);
             params.push_back(brX0);
 
@@ -977,13 +979,13 @@ bool Calibration::recomputeAnchorsWithLevenbergMarquardt(int measurementCount) {
             } else {
                 lambda *= LM_LAMBDA_INCREASE;
                 rejections++;
-                if (rejections > LM_MAX_REJECTIONS || lambda > 1e12) {
+                if (rejections > LM_MAX_REJECTIONS || lambda > LM_LAMBDA_OVERFLOW) {
                     break;
                 }
             }
             // end of LM loop
             }
-            const bool thisConverged = (rejections <= LM_MAX_REJECTIONS) && (lambda < 1e12);
+            const bool thisConverged = (rejections <= LM_MAX_REJECTIONS) && (lambda < LM_LAMBDA_OVERFLOW);
             log_debug("Find Anchors LM attempt=" << attempt << " iterations=" << iterationCount
                                                  << " bestSSR=" << bestSSR << " converged=" << thisConverged);
 

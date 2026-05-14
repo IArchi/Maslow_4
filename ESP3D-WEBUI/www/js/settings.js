@@ -269,8 +269,11 @@ function get_index_from_eeprom_pos(pos) {
 const getConfigFileName = () => {
   if (typeof GetPrefOrDefault === 'function') {
     const configFileName = GetPrefOrDefault("config_filename");
-    if (typeof configFileName === "string" && configFileName.trim().length > 0) {
-      return configFileName.trim();
+    if (typeof configFileName === "string") {
+      const trimmedConfigFileName = configFileName.trim();
+      if (trimmedConfigFileName.length > 0) {
+        return trimmedConfigFileName;
+      }
     }
   }
   if (typeof preferenceslist !== 'undefined' && preferenceslist.length > 0 && preferenceslist[0].config_filename) {

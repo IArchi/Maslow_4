@@ -52,28 +52,37 @@ function getUpdateStream() {
     return GetPrefOrDefault("update_stream") || "release";
 }
 
-/** Select the best release from the list based on the configured stream */
+/** Select the best release from the list based on the configured stream.
+ *
+ * Tag convention (see .github/workflows in PR #975):
+ *   nightly      — rolling pre-release published daily; tag_name is literally "nightly"
+ *   experimental — versioned pre-release; tag_name matches v*-exp* (e.g. v1.2.3-exp.1)
+ *   release      — stable full release; tag_name is bare semver (e.g. v1.2.3)
+ */
 function selectReleaseForStream(releases, stream) {
     if (!releases || releases.length === 0) {
         return null;
     }
     let candidates;
     switch (stream) {
-        case "experimental":
-            // prerelease builds only
-            candidates = releases.filter(r => r.prerelease && !r.draft);
-            break;
         case "nightly":
-            // all published releases (prerelease or not), most recent first
-            candidates = releases.filter(r => !r.draft);
+            // The nightly workflow always recreates a single rolling release whose
+            // tag_name is the literal string "nightly".
+            candidates = releases.filter(r => r.tag_name === "nightly" && !r.draft);
+            break;
+        case "experimental":
+            // Versioned pre-releases (v*-exp.*) — exclude the rolling nightly tag.
+            candidates = releases.filter(
+                r => r.prerelease && !r.draft && r.tag_name !== "nightly"
+            );
             break;
         case "release":
         default:
-            // stable, non-prerelease only
+            // Stable, non-prerelease only.
             candidates = releases.filter(r => !r.prerelease && !r.draft);
             break;
     }
-    // Releases are returned by GitHub newest-first, so pick the first match
+    // GitHub returns releases newest-first; pick the first match.
     return candidates.length > 0 ? candidates[0] : null;
 }
 

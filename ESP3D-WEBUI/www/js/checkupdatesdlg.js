@@ -236,19 +236,44 @@ async function downloadAsset(url, onProgress) {
     return new Blob(chunks);
 }
 
-/** Upload a File object to the ESP32 firmware update endpoint */
-function uploadFirmware(file, onProgress, onSuccess, onFailure) {
-    const formData = BuildFileUploadFormData("/", [file]);
-    SendFileHttp(httpCmd.fwUpdate, formData, onProgress, onSuccess, onFailure);
+/** Wrap SendFileHttp in a Promise */
+function sendFileHttpPromise(url, formData, onProgress, context) {
+    return new Promise((resolve, reject) => {
+        SendFileHttp(
+            url,
+            formData,
+            onProgress,
+            () => resolve(),
+            (error_code, response) => {
+                const ctx = context ? `${context}: ` : "";
+                reject(new Error(`${ctx}HTTP ${error_code} — ${response}`));
+            }
+        );
+    });
 }
 
-/** Upload a file to the ESP32 local filesystem */
-function uploadFileToFS(file, onProgress, onSuccess, onFailure) {
-    const formData = BuildFileUploadFormData("/", [file]);
-    SendFileHttp(httpCmd.files, formData, onProgress, onSuccess, onFailure);
+/** Wrap checkFileExists in a Promise — resolves with true/false */
+function checkFileExistsPromise(filename) {
+    return new Promise((resolve) => {
+        checkFileExists(filename, resolve, () => resolve(false));
+    });
 }
 
-/** Install the update: download firmware.bin and/or index.html.gz, then upload them */
+/** Save a blob to the ESP32 filesystem via /files */
+function saveToFilesystem(blob, filename, onProgress) {
+    const file = new File([blob], filename);
+    const formData = BuildFileUploadFormData("/", [file]);
+    return sendFileHttpPromise(httpCmd.files, formData, onProgress, `save ${filename}`);
+}
+
+/** Upload a blob to the firmware-update endpoint (/updatefw) — triggers reboot */
+function flashFirmware(blob, onProgress) {
+    const file = new File([blob], "firmware.bin");
+    const formData = BuildFileUploadFormData("/", [file]);
+    return sendFileHttpPromise(httpCmd.fwUpdate, formData, onProgress, "flash firmware");
+}
+
+/** Install the update: download both assets, save to filesystem, verify, then flash */
 function installUpdate() {
     if (!checkUpdates_latestRelease) {
         alertdlg(translate_text_item("Error"), translate_text_item("No release selected."));
@@ -261,7 +286,7 @@ function installUpdate() {
     );
 }
 
-function startInstallUpdate(response) {
+async function startInstallUpdate(response) {
     if (response !== "yes") return;
 
     const release = checkUpdates_latestRelease;
@@ -282,72 +307,87 @@ function startInstallUpdate(response) {
     // Disable ping monitoring during install
     disablePingForUpload();
 
-    // Chain: download+upload firmware, then download+upload UI
-    const steps = [];
-    if (fwAsset) steps.push({ asset: fwAsset, label: "firmware.bin", type: "firmware" });
-    if (uiAsset) steps.push({ asset: uiAsset, label: "index.html.gz", type: "ui" });
+    try {
+        let fwBlob = null;
+        let uiBlob = null;
 
-    processNextUpdateStep(steps, 0);
-}
+        // Phase 1: Download firmware.bin (0–20 %)
+        if (fwAsset) {
+            setHTML("checkupdates_step", `${translate_text_item("Downloading")} firmware.bin...`);
+            fwBlob = await downloadAsset(fwAsset.browser_download_url, (loaded, total) => {
+                setProgress(Math.round((loaded / total) * 20));
+            });
+        }
 
-function processNextUpdateStep(steps, idx) {
-    if (idx >= steps.length) {
-        // All done — reboot
-        finishInstallUpdate();
-        return;
-    }
+        // Phase 2: Download index.html.gz (20–40 %)
+        if (uiAsset) {
+            setHTML("checkupdates_step", `${translate_text_item("Downloading")} index.html.gz...`);
+            uiBlob = await downloadAsset(uiAsset.browser_download_url, (loaded, total) => {
+                setProgress(20 + Math.round((loaded / total) * 20));
+            });
+        }
 
-    const step = steps[idx];
-    setHTML("checkupdates_step", `${translate_text_item("Downloading")} ${step.label}...`);
-    setProgress(0);
-
-    downloadAsset(step.asset.browser_download_url, (loaded, total) => {
-        setProgress(Math.round((loaded / total) * 50)); // download = 0-50%
-    })
-        .then(blob => {
-            const file = new File([blob], step.label);
-            setHTML("checkupdates_step", `${translate_text_item("Uploading")} ${step.label}...`);
-            setProgress(50);
-
-            const onProgress = (evt) => {
+        // Phase 3: Save firmware.bin to filesystem (40–55 %)
+        if (fwBlob) {
+            setHTML("checkupdates_step", `${translate_text_item("Saving")} firmware.bin...`);
+            await saveToFilesystem(fwBlob, "firmware.bin", (evt) => {
                 if (evt.lengthComputable) {
-                    const pct = 50 + Math.round((evt.loaded / evt.total) * 50);
-                    setProgress(pct);
+                    setProgress(40 + Math.round((evt.loaded / evt.total) * 15));
                 }
-            };
+            });
+        }
 
-            const onSuccess = () => {
-                setProgress(100);
-                processNextUpdateStep(steps, idx + 1);
-            };
+        // Phase 4: Save index.html.gz to filesystem — this installs the UI (55–70 %)
+        if (uiBlob) {
+            setHTML("checkupdates_step", `${translate_text_item("Installing UI")}...`);
+            await saveToFilesystem(uiBlob, "index.html.gz", (evt) => {
+                if (evt.lengthComputable) {
+                    setProgress(55 + Math.round((evt.loaded / evt.total) * 15));
+                }
+            });
+        }
 
-            const onFailure = (error_code, response) => {
-                checkUpdates_ongoing = false;
-                restorePingAfterUpload();
-                displayBlock("checkUpdatesDlgCheck");
-                setHTML(
-                    "checkupdates_status",
-                    `<span style="color:red;">${translate_text_item("Upload failed:")} ${step.label}</span>`
-                );
-                console.error("Update upload failed:", error_code, response);
-            };
+        // Phase 5: Verify both files exist on filesystem (70–75 %)
+        setHTML("checkupdates_step", translate_text_item("Verifying downloads..."));
+        setProgress(70);
 
-            if (step.type === "firmware") {
-                uploadFirmware(file, onProgress, onSuccess, onFailure);
-            } else {
-                uploadFileToFS(file, onProgress, onSuccess, onFailure);
+        if (fwBlob) {
+            const fwExists = await checkFileExistsPromise("firmware.bin");
+            if (!fwExists) {
+                throw new Error(`${translate_text_item("Verification failed:")} firmware.bin`);
             }
-        })
-        .catch(err => {
-            checkUpdates_ongoing = false;
-            restorePingAfterUpload();
-            displayBlock("checkUpdatesDlgCheck");
-            setHTML(
-                "checkupdates_status",
-                `<span style="color:red;">${translate_text_item("Download failed:")} ${step.label}: ${err.message}</span>`
-            );
-            console.error("Update download failed:", err);
-        });
+        }
+
+        if (uiBlob) {
+            const uiExists = await checkFileExistsPromise("index.html.gz");
+            if (!uiExists) {
+                throw new Error(`${translate_text_item("Verification failed:")} index.html.gz`);
+            }
+        }
+
+        setProgress(75);
+
+        // Phase 6: Flash firmware (75–100 %) — triggers reboot
+        if (fwBlob) {
+            setHTML("checkupdates_step", `${translate_text_item("Installing firmware")}...`);
+            await flashFirmware(fwBlob, (evt) => {
+                if (evt.lengthComputable) {
+                    setProgress(75 + Math.round((evt.loaded / evt.total) * 25));
+                }
+            });
+        }
+
+        finishInstallUpdate();
+    } catch (err) {
+        checkUpdates_ongoing = false;
+        restorePingAfterUpload();
+        displayBlock("checkUpdatesDlgCheck");
+        setHTML(
+            "checkupdates_status",
+            `<span style="color:red;">${translate_text_item("Update failed:")} ${err.message}</span>`
+        );
+        console.error("Update failed:", err);
+    }
 }
 
 function finishInstallUpdate() {

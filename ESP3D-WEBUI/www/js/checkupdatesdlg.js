@@ -79,17 +79,20 @@ function selectReleaseForStream(releases, stream) {
 
 /** Return true if latestTag is newer than currentVersion */
 function isNewerVersion(currentVersion, latestTag) {
-    // Normalise: strip leading 'v', convert to lower-case
-    const normalize = (v) => v.replace(/^v/i, "").trim().toLowerCase();
+    // Normalize: strip leading 'v', convert to lower-case, drop pre-release suffix for comparison
+    const normalize = (v) => {
+        // Strip leading 'v', lowercase, then remove any pre-release suffix (e.g. '-beta', '-rc1')
+        return v.replace(/^v/i, "").trim().toLowerCase().replace(/-.*$/, "");
+    };
     const cur = normalize(currentVersion || "");
     const latest = normalize(latestTag || "");
     if (!cur || !latest) {
-        return latest !== cur;
+        return (latest !== cur);
     }
     if (cur === latest) {
         return false;
     }
-    // Try semver numeric comparison
+    // Numeric semver comparison
     const toNum = (s) => s.split(".").map(p => parseInt(p, 10) || 0);
     const curParts = toNum(cur);
     const latestParts = toNum(latest);
@@ -121,7 +124,10 @@ function checkForUpdates() {
     const stream = getUpdateStream();
 
     fetch(GITHUB_API_BASE, {
-        headers: { "Accept": "application/vnd.github+json" }
+        headers: {
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "MaslowCNC-WebUI"
+        }
     })
         .then(response => {
             if (!response.ok) {
@@ -207,7 +213,7 @@ function handleReleaseFetched(release, stream) {
 async function downloadAsset(url, onProgress) {
     const response = await fetch(url, { headers: { "Accept": "application/octet-stream" } });
     if (!response.ok) {
-        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+        throw new Error(`Download failed (${response.status} ${response.statusText}): ${url}`);
     }
 
     // Stream the download so we can report progress

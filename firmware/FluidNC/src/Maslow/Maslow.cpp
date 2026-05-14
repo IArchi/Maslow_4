@@ -510,11 +510,11 @@ void Maslow_::loadZPos() {
             fi.f    = targetZ;
             ret     = nvs_set_i32(nvsHandle, "zPos", fi.i);
             if (ret != ESP_OK) {
-                log_info("Error " + std::string(esp_err_to_name(ret)) + " writing corrected zPos to NVS!\n");
+                log_error("Error " + std::string(esp_err_to_name(ret)) + " writing corrected zPos to NVS!");
             } else {
                 ret = nvs_commit(nvsHandle);
                 if (ret != ESP_OK) {
-                    log_info("Error " + std::string(esp_err_to_name(ret)) + " committing corrected zPos to NVS!\n");
+                    log_error("Error " + std::string(esp_err_to_name(ret)) + " committing corrected zPos to NVS!");
                 }
             }
         }

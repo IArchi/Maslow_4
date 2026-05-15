@@ -515,10 +515,13 @@ void Maslow_::loadZPos() {
 
         float zmPlusZHome = targetZ + zHome;
         bool invalidHighZmOnly = std::isfinite(targetZ) && targetZ > MAX_VALID_ZM_MM;
+        // When startup Zm is above the machine max, keep persisted Z (do not reset to 0)
+        // and only warn; this high-Zm case is intentionally excluded from reset logic.
+        bool invalidHighZmPlusZHome = std::isfinite(zmPlusZHome) && zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM;
         bool invalidPersistedZ = !std::isfinite(targetZ)
                                  || !std::isfinite(zmPlusZHome)
                                  || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
-                                 || (zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM && !invalidHighZmOnly);
+                                 || (invalidHighZmPlusZHome && !invalidHighZmOnly);
 
         if (invalidHighZmOnly) {
             log_warn("Maslow Zm invalid warning: Invalid startup Zm (" << targetZ

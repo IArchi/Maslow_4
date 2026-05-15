@@ -358,8 +358,7 @@ const maslowInfoMsgHandling = (msg) => {
 
 	if (msg.startsWith(`[MSG:WARN: ${Z_HOME_RESET_WARNING_PREFIX}`)) {
 		showZHomeResetWarningMessage(msg);
-	}
-	if (msg.startsWith(`[MSG:WARN: ${ZM_INVALID_WARNING_PREFIX}`)) {
+	} else if (msg.startsWith(`[MSG:WARN: ${ZM_INVALID_WARNING_PREFIX}`)) {
 		showZmInvalidWarningMessage(msg);
 	}
 

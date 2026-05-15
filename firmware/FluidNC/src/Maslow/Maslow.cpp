@@ -481,7 +481,8 @@ void Maslow_::saveZPos() {
 
 //This function loads the z-axis position from the non-volitle storage
 void Maslow_::loadZPos() {
-    static constexpr float MIN_VALID_ZPOS_MM = -73.0f;
+    static constexpr float MIN_VALID_ZM_PLUS_ZHOME_MM = 0.0f;
+    static constexpr float MAX_VALID_ZM_PLUS_ZHOME_MM = 73.0f;
 
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
@@ -504,9 +505,16 @@ void Maslow_::loadZPos() {
         fi.i    = value2;
         targetZ = fi.f;
 
-        if (!std::isfinite(targetZ) || targetZ < MIN_VALID_ZPOS_MM) {
-            log_warn("Maslow Z home reset warning: Persisted Z home was invalid (" << targetZ
-                                                                                     << "mm) and has been reset to 0. Please set Z home.");
+        float* wco             = get_wco();
+        float  zHome           = wco[Z_AXIS];
+        float  zmPlusZHome     = targetZ + zHome;
+        bool   invalidPersistedZ = !std::isfinite(targetZ) || !std::isfinite(zmPlusZHome) || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
+                                 || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM;
+
+        if (invalidPersistedZ) {
+            log_warn("Maslow Z home reset warning: Invalid startup Z values (Zm=" << targetZ << "mm, Z home=" << zHome
+                                                                                   << "mm, Zm+Z home=" << zmPlusZHome
+                                                                                   << "mm). Persisted Z has been reset to 0. Please set Z home.");
             targetZ = 0;
             fi.f    = targetZ;
             ret     = nvs_set_i32(nvsHandle, "zPos", fi.i);

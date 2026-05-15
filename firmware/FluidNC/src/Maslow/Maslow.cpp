@@ -505,15 +505,18 @@ void Maslow_::loadZPos() {
         fi.i    = value2;
         targetZ = fi.f;
 
+        // gc_state is zero-initialized before gc_init() runs, so if coordinate
+        // offsets are not loaded yet, Z home safely defaults to 0 here.
         float zHome = gc_state.coord_system[Z_AXIS] + gc_state.coord_offset[Z_AXIS];
         if (Z_AXIS == TOOL_LENGTH_OFFSET_AXIS) {
             zHome += gc_state.tool_length_offset;
         }
 
         float zmPlusZHome = targetZ + zHome;
-        bool  invalidPersistedZ =
-            !std::isfinite(targetZ) || !std::isfinite(zmPlusZHome) || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
-            || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM;
+        bool invalidPersistedZ = !std::isfinite(targetZ)
+                                 || !std::isfinite(zmPlusZHome)
+                                 || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
+                                 || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM;
 
         if (invalidPersistedZ) {
             log_warn("Maslow Z home reset warning: Invalid startup Z values (Zm=" << targetZ << "mm, Z home=" << zHome

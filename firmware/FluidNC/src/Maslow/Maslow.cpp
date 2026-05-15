@@ -483,6 +483,7 @@ void Maslow_::saveZPos() {
 void Maslow_::loadZPos() {
     static constexpr float MIN_VALID_ZM_PLUS_ZHOME_MM = 0.0f;
     static constexpr float MAX_VALID_ZM_PLUS_ZHOME_MM = 73.0f;
+    static constexpr float MAX_VALID_ZM_MM            = 73.0f;
 
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
@@ -513,12 +514,16 @@ void Maslow_::loadZPos() {
         }
 
         float zmPlusZHome = targetZ + zHome;
+        bool invalidHighZmOnly = std::isfinite(targetZ) && targetZ > MAX_VALID_ZM_MM;
         bool invalidPersistedZ = !std::isfinite(targetZ)
                                  || !std::isfinite(zmPlusZHome)
                                  || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
-                                 || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM;
+                                 || (zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM && !invalidHighZmOnly);
 
-        if (invalidPersistedZ) {
+        if (invalidHighZmOnly) {
+            log_warn("Maslow Zm invalid warning: Invalid startup Zm (" << targetZ
+                                                                       << "mm). Lower Z and reset Z stop from the menus.");
+        } else if (invalidPersistedZ) {
             log_warn("Maslow Z home reset warning: Invalid startup Z values (Zm=" << targetZ << "mm, Z home=" << zHome
                                                                                    << "mm, Zm+Z home=" << zmPlusZHome
                                                                                    << "mm). Persisted Z has been reset to 0. Please set Z home.");

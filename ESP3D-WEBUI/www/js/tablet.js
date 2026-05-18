@@ -1702,6 +1702,10 @@ function tabletInit() {
 }
 
 const showGCode = (gcode, append = false, updateToolpath = true) => {
+  if (!append && gcode !== "" && typeof clearFindAnchorsTrace === "function") {
+    clearFindAnchorsTrace();
+  }
+
   gCodeLoaded = gcode !== "";
   if (!gCodeLoaded) {
     _gcodeRaw = "";

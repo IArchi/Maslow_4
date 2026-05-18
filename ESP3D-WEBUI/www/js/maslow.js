@@ -281,11 +281,16 @@ const updateFindAnchorsView = () => {
 	const isFindingAnchors = (maslowStatus.state === MASLOW_STATE_FINDING_ANCHORS || maslowStatus.state === MASLOW_STATE_FIND_ANCHORS_COMPUTING);
 
 	if (isFindingAnchors !== wasFindingAnchors) {
-		if (typeof clearFindAnchorsTrace === 'function') {
-			clearFindAnchorsTrace();
-		}
-		if (typeof refreshGcode === 'function') {
-			refreshGcode();
+		if (isFindingAnchors) {
+			if (typeof clearFindAnchorsTrace === 'function') {
+				clearFindAnchorsTrace();
+			}
+			if (typeof showGCode === 'function') {
+				showGCode("");
+			}
+			if (typeof setGcodeViewerPage === 'function') {
+				setGcodeViewerPage(2);
+			}
 		}
 		wasFindingAnchors = isFindingAnchors;
 	}

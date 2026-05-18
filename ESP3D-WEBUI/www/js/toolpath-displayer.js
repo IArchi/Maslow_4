@@ -2042,6 +2042,16 @@ var refreshGcode = function() {
     updateJobBoundsDisplay();
 }
 
+var setGcodeViewerPage = function(pageNumber) {
+    const parsed = Number(pageNumber);
+    if (!Number.isFinite(parsed)) {
+        return;
+    }
+
+    const pageIndex = Math.max(0, Math.min(4, Math.trunc(parsed) - 1));
+    cameraAngle = pageIndex;
+}
+
 // Function to update the job bounds display
 var updateJobBoundsDisplay = function() {
     const boundsInfo = document.getElementById("job-bounds-info");

@@ -1702,7 +1702,8 @@ function tabletInit() {
 }
 
 const showGCode = (gcode, append = false, updateToolpath = true) => {
-  if (!append && gcode !== "" && typeof clearFindAnchorsTrace === "function") {
+  const isLoadStatusText = gcode === "Loading GCode file..." || gcode.startsWith("Error loading GCode file:");
+  if (!append && gcode !== "" && !isLoadStatusText && typeof clearFindAnchorsTrace === "function") {
     clearFindAnchorsTrace();
   }
 

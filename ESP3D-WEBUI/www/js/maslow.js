@@ -11,6 +11,7 @@ const ZM_INVALID_WARNING_PREFIX = "Maslow Zm invalid warning:";
 const MASLOW_STATE_FINDING_ANCHORS = 6;
 const MASLOW_STATE_READY_TO_CUT = 7;
 const MASLOW_STATE_FIND_ANCHORS_COMPUTING = 9;
+const FIND_ANCHORS_WAYPOINT_COORDINATE_REGEX = /^\[MSG:INFO:\s*Waypoint\s+\d+\s+coordinates:\s*X=([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s+Y=([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\]$/;
 let wasFindingAnchors = false;
 
 /** This keeps track of when we saw the last heartbeat from the machine */
@@ -358,7 +359,7 @@ const maslowInfoMsgHandling = (msg) => {
 	}
 
 	if (msg.startsWith("[MSG:INFO: Waypoint ")) {
-		const waypointMatch = msg.match(/^\[MSG:INFO:\s*Waypoint\s+\d+\s+coordinates:\s*X=([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s+Y=([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\]$/);
+		const waypointMatch = msg.match(FIND_ANCHORS_WAYPOINT_COORDINATE_REGEX);
 		if (waypointMatch) {
 			const x = Number(waypointMatch[1]);
 			const y = Number(waypointMatch[2]);

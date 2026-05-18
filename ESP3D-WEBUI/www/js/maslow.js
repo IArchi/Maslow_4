@@ -289,7 +289,7 @@ const updateFindAnchorsView = () => {
 				showGCode("");
 			}
 			if (typeof setGcodeViewerPage === 'function') {
-				setGcodeViewerPage(1);
+				setGcodeViewerPage(0);
 			}
 		}
 		wasFindingAnchors = isFindingAnchors;

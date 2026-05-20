@@ -481,9 +481,8 @@ void Maslow_::saveZPos() {
 
 //This function loads the z-axis position from the non-volitle storage
 void Maslow_::loadZPos() {
-    static constexpr float MIN_VALID_ZM_PLUS_ZHOME_MM = 0.0f;
-    static constexpr float MAX_VALID_ZM_PLUS_ZHOME_MM = 73.0f;
-    static constexpr float MAX_VALID_ZM_MM            = 73.0f;
+    static constexpr float MIN_VALID_Z_MM = 0.0f;
+    static constexpr float MAX_VALID_Z_MM = 72.0f;
 
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
@@ -514,33 +513,18 @@ void Maslow_::loadZPos() {
         }
 
         float zmPlusZHome = targetZ + zHome;
-        bool invalidHighZmOnly = std::isfinite(targetZ) && targetZ > MAX_VALID_ZM_MM;
-        // When startup Zm is above the machine max, keep persisted Z (do not reset to 0)
-        // and only warn; this high-Zm case is intentionally excluded from reset logic.
-        bool invalidHighZmPlusZHome = std::isfinite(zmPlusZHome) && zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_MM;
-        bool invalidPersistedZ = !std::isfinite(targetZ)
-                                 || !std::isfinite(zmPlusZHome)
-                                 || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
-                                 || (invalidHighZmPlusZHome && !invalidHighZmOnly);
+        bool zmOutOfRange = !std::isfinite(targetZ) || targetZ < MIN_VALID_Z_MM || targetZ > MAX_VALID_Z_MM;
+        bool zHomeOutOfRange =
+            !std::isfinite(zHome) || !std::isfinite(zmPlusZHome) || zmPlusZHome < MIN_VALID_Z_MM || zmPlusZHome > MAX_VALID_Z_MM;
 
-        if (invalidHighZmOnly) {
-            log_warn("Maslow Zm invalid warning: Invalid startup Zm (" << targetZ
-                                                                       << "mm). Lower Z and reset Z stop from the menus.");
-        } else if (invalidPersistedZ) {
-            log_warn("Maslow Z home reset warning: Invalid startup Z values (Zm=" << targetZ << "mm, Z home=" << zHome
-                                                                                   << "mm, Zm+Z home=" << zmPlusZHome
-                                                                                   << "mm). Persisted Z has been reset to 0. Please set Z home.");
-            targetZ = 0;
-            fi.f    = targetZ;
-            ret     = nvs_set_i32(nvsHandle, "zPos", fi.i);
-            if (ret != ESP_OK) {
-                log_error("Error " + std::string(esp_err_to_name(ret)) + " writing corrected zPos to NVS!");
-            } else {
-                ret = nvs_commit(nvsHandle);
-                if (ret != ESP_OK) {
-                    log_error("Error " + std::string(esp_err_to_name(ret)) + " committing corrected zPos to NVS!");
-                }
-            }
+        if (zmOutOfRange) {
+            log_warn("Maslow Zm invalid warning: Startup Zm is out of range (Zm=" << targetZ << "mm). Valid range is 0 to 72mm.");
+        }
+
+        if (zHomeOutOfRange) {
+            log_warn("Maslow Z home reset warning: Startup Z home is out of range (Zm=" << targetZ << "mm, Z home=" << zHome
+                                                                                         << "mm, Zm+Z home=" << zmPlusZHome
+                                                                                         << "mm). Valid range for Zm+Z home is 0 to 72mm.");
         }
 
         // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)

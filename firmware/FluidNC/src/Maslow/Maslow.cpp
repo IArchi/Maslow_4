@@ -519,7 +519,9 @@ void Maslow_::loadZPos() {
 
         bool invalidPersistedZm = !std::isfinite(targetZ) || targetZ < MIN_VALID_ZM_MM || targetZ >= MAX_VALID_ZM_EXCLUSIVE_MM;
         bool outOfExpectedZHomeRange = !std::isfinite(zHome)
+                                       || !std::isfinite(zmMinusZHome)
                                        || !std::isfinite(zmPlusZHome)
+                                       || zmMinusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
                                        || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
                                        || zHome > MAX_VALID_ZHOME_WARN_MM;
 

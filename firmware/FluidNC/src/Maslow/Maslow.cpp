@@ -482,7 +482,7 @@ void Maslow_::saveZPos() {
 //This function loads the z-axis position from the non-volitle storage
 void Maslow_::loadZPos() {
     static constexpr float MIN_VALID_ZM_MM                 = 0.0f;
-    static constexpr float MAX_VALID_ZM_MM                 = 73.0f;
+    static constexpr float MAX_VALID_ZM_EXCLUSIVE_MM       = 73.0f;
     static constexpr float MIN_VALID_ZM_MINUS_ZHOME_MM     = 0.0f;
     static constexpr float MAX_VALID_ZM_PLUS_ZHOME_WARN_MM = 72.0f;
 
@@ -517,11 +517,11 @@ void Maslow_::loadZPos() {
         float zmMinusZHome = targetZ - zHome;
         float zmPlusZHome  = targetZ + zHome;
 
-        bool invalidPersistedZm = !std::isfinite(targetZ) || targetZ < MIN_VALID_ZM_MM || targetZ >= MAX_VALID_ZM_MM;
-        bool invalidZHomeRange = !std::isfinite(zmMinusZHome)
-                                 || !std::isfinite(zmPlusZHome)
-                                 || zmMinusZHome < MIN_VALID_ZM_MINUS_ZHOME_MM
-                                 || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_WARN_MM;
+        bool invalidPersistedZm = !std::isfinite(targetZ) || targetZ < MIN_VALID_ZM_MM || targetZ >= MAX_VALID_ZM_EXCLUSIVE_MM;
+        bool outOfExpectedZHomeRange = !std::isfinite(zmMinusZHome)
+                                       || !std::isfinite(zmPlusZHome)
+                                       || zmMinusZHome < MIN_VALID_ZM_MINUS_ZHOME_MM
+                                       || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_WARN_MM;
 
         if (invalidPersistedZm) {
             log_warn("Maslow Z home reset warning: Invalid startup Z values (Zm=" << targetZ << "mm, Z home=" << zHome
@@ -539,7 +539,7 @@ void Maslow_::loadZPos() {
                     log_error("Error " + std::string(esp_err_to_name(ret)) + " committing corrected zPos to NVS!");
                 }
             }
-        } else if (invalidZHomeRange) {
+        } else if (outOfExpectedZHomeRange) {
             log_warn("Maslow Zm invalid warning: Startup Z values out of expected range (Zm=" << targetZ << "mm, Z home=" << zHome
                                                                                                << "mm, Zm-Z home=" << zmMinusZHome
                                                                                                << "mm, Zm+Z home=" << zmPlusZHome

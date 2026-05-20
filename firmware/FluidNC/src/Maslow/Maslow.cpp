@@ -517,7 +517,6 @@ void Maslow_::loadZPos() {
         // offsets are not loaded yet, Z home safely defaults to 0 here.
         float zHome = currentZHome();
 
-        float zmPlusZHome = targetZ + zHome;
         bool zmOutOfRange = !std::isfinite(targetZ) || targetZ < MIN_VALID_Z_MM || targetZ > MAX_VALID_Z_MM;
         bool zHomeOutOfRange = !std::isfinite(zHome) || zHome < MIN_VALID_Z_MM || zHome > MAX_VALID_Z_MM;
 
@@ -528,7 +527,6 @@ void Maslow_::loadZPos() {
 
         if (zHomeOutOfRange) {
             log_warn("Maslow Z home reset warning: Startup Z home is out of range (Zm=" << targetZ << "mm, Z home=" << zHome
-                                                                                          << "mm, Zm+Z home=" << zmPlusZHome
                                                                                           << "mm). Valid range for Z home is 0 to 72mm inclusive. No reset performed.");
         }
 

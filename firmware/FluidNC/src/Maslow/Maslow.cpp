@@ -485,6 +485,7 @@ void Maslow_::loadZPos() {
     static constexpr float MAX_VALID_ZM_EXCLUSIVE_MM       = 73.0f;
     static constexpr float MIN_VALID_ZM_PLUS_ZHOME_MM      = 0.0f;
     static constexpr float MAX_VALID_ZM_PLUS_ZHOME_WARN_MM = 72.0f;
+    static constexpr float MAX_VALID_ZHOME_WARN_MM         = 72.0f;
 
     nvs_handle_t nvsHandle;
     esp_err_t    ret = nvs_open("maslow", NVS_READWRITE, &nvsHandle);
@@ -521,7 +522,8 @@ void Maslow_::loadZPos() {
         bool outOfExpectedZHomeRange = !std::isfinite(zmMinusZHome)
                                        || !std::isfinite(zmPlusZHome)
                                        || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
-                                       || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_WARN_MM;
+                                       || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_WARN_MM
+                                       || zHome > MAX_VALID_ZHOME_WARN_MM;
 
         if (invalidPersistedZm) {
             log_warn("Maslow Z home reset warning: Invalid startup Z values (Zm=" << targetZ << "mm, Z home=" << zHome
@@ -540,10 +542,10 @@ void Maslow_::loadZPos() {
                 }
             }
         } else if (outOfExpectedZHomeRange) {
-            log_warn("Maslow Zm invalid warning: Startup Z values out of expected range (Zm=" << targetZ << "mm, Z home=" << zHome
-                                                                                               << "mm, Zm-Z home=" << zmMinusZHome
-                                                                                               << "mm, Zm+Z home=" << zmPlusZHome
-                                                                                               << "mm). Persisted Z has not been reset.");
+            log_warn("Maslow Zm invalid warning: Startup Z values indicate invalid Z home (Zm=" << targetZ << "mm, Z home=" << zHome
+                                                                                                << "mm, Zm-Z home=" << zmMinusZHome
+                                                                                                << "mm, Zm+Z home=" << zmPlusZHome
+                                                                                                << "mm). Persisted Z has not been reset.");
         }
 
         // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)

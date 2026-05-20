@@ -544,8 +544,8 @@ void Maslow_::loadZPos() {
 
 void Maslow_::logLoadZPosDebug() {
     float zHome = currentZHome();
-    float zmPlusZHome = targetZ + zHome;
-    log_info("Maslow::loadZPos() debug: Zm=" << targetZ << "mm, Z home=" << zHome << "mm, Zm+Z home=" << zmPlusZHome << "mm");
+    float zPosition = targetZ + zHome;
+    log_info("Maslow startup Z debug: Zm=" << targetZ << "mm, Z home=" << zHome << "mm, Z position=" << zPosition << "mm");
 }
 
 /** Sets the 'bottom' Z position, this is a 'stop' beyond which travel cannot continue */

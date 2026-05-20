@@ -480,6 +480,14 @@ void Maslow_::saveZPos() {
 }
 
 //This function loads the z-axis position from the non-volitle storage
+float Maslow_::currentZHome() const {
+    float zHome = gc_state.coord_system[Z_AXIS] + gc_state.coord_offset[Z_AXIS];
+    if (Z_AXIS == TOOL_LENGTH_OFFSET_AXIS) {
+        zHome += gc_state.tool_length_offset;
+    }
+    return zHome;
+}
+
 void Maslow_::loadZPos() {
     static constexpr float MIN_VALID_Z_MM = 0.0f;
     static constexpr float MAX_VALID_Z_MM = 72.0f;
@@ -507,10 +515,7 @@ void Maslow_::loadZPos() {
 
         // gc_state is zero-initialized before gc_init() runs, so if coordinate
         // offsets are not loaded yet, Z home safely defaults to 0 here.
-        float zHome = gc_state.coord_system[Z_AXIS] + gc_state.coord_offset[Z_AXIS];
-        if (Z_AXIS == TOOL_LENGTH_OFFSET_AXIS) {
-            zHome += gc_state.tool_length_offset;
-        }
+        float zHome = currentZHome();
 
         float zmPlusZHome = targetZ + zHome;
         bool zmOutOfRange = !std::isfinite(targetZ) || targetZ < MIN_VALID_Z_MM || targetZ > MAX_VALID_Z_MM;
@@ -541,10 +546,7 @@ void Maslow_::loadZPos() {
 }
 
 void Maslow_::logLoadZPosDebug() {
-    float zHome = gc_state.coord_system[Z_AXIS] + gc_state.coord_offset[Z_AXIS];
-    if (Z_AXIS == TOOL_LENGTH_OFFSET_AXIS) {
-        zHome += gc_state.tool_length_offset;
-    }
+    float zHome = currentZHome();
     float zmPlusZHome = targetZ + zHome;
     log_info("Maslow::loadZPos() debug: Zm=" << targetZ << "mm, Z home=" << zHome << "mm, Zm+Z home=" << zmPlusZHome << "mm");
 }

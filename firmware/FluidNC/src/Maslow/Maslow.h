@@ -96,6 +96,7 @@ public:
     //Save and load z-axis position, set z-stop
     void saveZPos();
     void loadZPos();
+    void logLoadZPosDebug();
     /** Sets the 'bottom' Z position, this is a 'stop' beyond which travel cannot continue */
     void setZStop();
 

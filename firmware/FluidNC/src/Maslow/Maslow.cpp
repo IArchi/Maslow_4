@@ -540,6 +540,15 @@ void Maslow_::loadZPos() {
     }
 }
 
+void Maslow_::logLoadZPosDebug() {
+    float zHome = gc_state.coord_system[Z_AXIS] + gc_state.coord_offset[Z_AXIS];
+    if (Z_AXIS == TOOL_LENGTH_OFFSET_AXIS) {
+        zHome += gc_state.tool_length_offset;
+    }
+    float zmPlusZHome = targetZ + zHome;
+    log_info("Maslow::loadZPos() debug: Zm=" << targetZ << "mm, Z home=" << zHome << "mm, Zm+Z home=" << zmPlusZHome << "mm");
+}
+
 /** Sets the 'bottom' Z position, this is a 'stop' beyond which travel cannot continue */
 void Maslow_::setZStop() {
     targetZ = 0;

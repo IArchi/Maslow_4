@@ -483,7 +483,6 @@ void Maslow_::saveZPos() {
 void Maslow_::loadZPos() {
     static constexpr float MIN_VALID_ZM_MM                 = 0.0f;
     static constexpr float MAX_VALID_ZM_EXCLUSIVE_MM       = 73.0f;
-    static constexpr float MIN_VALID_ZM_MINUS_ZHOME_MM     = 0.0f;
     static constexpr float MIN_VALID_ZM_PLUS_ZHOME_MM      = 0.0f;
     static constexpr float MAX_VALID_ZM_PLUS_ZHOME_WARN_MM = 72.0f;
 
@@ -521,7 +520,6 @@ void Maslow_::loadZPos() {
         bool invalidPersistedZm = !std::isfinite(targetZ) || targetZ < MIN_VALID_ZM_MM || targetZ >= MAX_VALID_ZM_EXCLUSIVE_MM;
         bool outOfExpectedZHomeRange = !std::isfinite(zmMinusZHome)
                                        || !std::isfinite(zmPlusZHome)
-                                       || zmMinusZHome < MIN_VALID_ZM_MINUS_ZHOME_MM
                                        || zmPlusZHome < MIN_VALID_ZM_PLUS_ZHOME_MM
                                        || zmPlusZHome > MAX_VALID_ZM_PLUS_ZHOME_WARN_MM;
 

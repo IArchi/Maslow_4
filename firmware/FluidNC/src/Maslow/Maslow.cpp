@@ -518,13 +518,14 @@ void Maslow_::loadZPos() {
             !std::isfinite(zHome) || !std::isfinite(zmPlusZHome) || zmPlusZHome < MIN_VALID_Z_MM || zmPlusZHome > MAX_VALID_Z_MM;
 
         if (zmOutOfRange) {
-            log_warn("Maslow Zm invalid warning: Startup Zm is out of range (Zm=" << targetZ << "mm). Valid range is 0 to 72mm.");
+            log_warn("Maslow Zm invalid warning: Startup Zm is out of range (Zm=" << targetZ
+                                                                                  << "mm). Valid range is 0 to 72mm inclusive.");
         }
 
         if (zHomeOutOfRange) {
             log_warn("Maslow Z home reset warning: Startup Z home is out of range (Zm=" << targetZ << "mm, Z home=" << zHome
                                                                                          << "mm, Zm+Z home=" << zmPlusZHome
-                                                                                         << "mm). Valid range for Zm+Z home is 0 to 72mm.");
+                                                                                         << "mm). Valid range for Zm+Z home is 0 to 72mm inclusive. No reset performed.");
         }
 
         // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)

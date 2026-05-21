@@ -544,7 +544,7 @@ void Maslow_::loadZPos() {
 
 void Maslow_::logLoadZPosDebug() {
     float zHome = currentZHome();
-    float zPosition = targetZ + zHome;
+    float zPosition = targetZ - zHome;
     log_info("Maslow startup Z debug: Zm=" << targetZ << "mm, Z home=" << zHome << "mm, Z position=" << zPosition << "mm");
 }
 

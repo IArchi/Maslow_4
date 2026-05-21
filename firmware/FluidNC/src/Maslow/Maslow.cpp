@@ -562,11 +562,19 @@ void Maslow_::setZStop() {
     gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
     plan_sync_position();
 
-    // Also set Z home (G92 Z0) to establish work coordinate offset
-    char  gcode_line[] = "G92 Z0";
-    Error result       = gc_execute_line(gcode_line);
+    // Persist Z home at 0 by clearing transient G92 offset and updating the
+    // active work coordinate system at the current machine position.
+    char  clear_offset_line[] = "G92.1";
+    Error result              = gc_execute_line(clear_offset_line);
     if (result != Error::Ok) {
-        log_error("Failed to set Z home: " << errorString(result));
+        log_error("Failed to clear transient Z home offset: " << errorString(result));
+        return;
+    }
+
+    char set_home_line[] = "G10 L20 P0 Z0";
+    result               = gc_execute_line(set_home_line);
+    if (result != Error::Ok) {
+        log_error("Failed to set persistent Z home: " << errorString(result));
     }
 }
 

@@ -524,12 +524,12 @@ void Maslow_::loadZPos() {
         if (zPositionOutOfRange) {
             log_warn("Maslow Z position warning: Z position out of range, check Z home is valid (Z home=" << zHome << "mm, Z position=" << zPosition
                                                                                                            << "mm, Z home + Z position=" << targetZ
-                                                                                                           << "mm). Valid range is 0 to 72mm inclusive.");
+                                                                                                           << "mm). Valid range is 0 to 72mm inclusive. Power cycling Maslow may clear error.");
         }
 
         if (zHomeOutOfRange) {
             log_warn("Maslow Z home reset warning: Startup Z home is out of range (Zm=" << targetZ << "mm, Z home=" << zHome
-                                                                                          << "mm). Valid range for Z home is 0 to 72mm inclusive. No reset performed.");
+                                                                                          << "mm). Valid range for Z home is 0 to 72mm inclusive. No reset performed. Power cycling Maslow may clear error.");
         }
 
         // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)

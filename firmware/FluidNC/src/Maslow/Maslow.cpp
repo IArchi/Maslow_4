@@ -517,12 +517,15 @@ void Maslow_::loadZPos() {
         // offsets are not loaded yet, Z home safely defaults to 0 here.
         float zHome = currentZHome();
 
-        bool zmOutOfRange = !std::isfinite(targetZ) || targetZ < MIN_VALID_Z_MM || targetZ > MAX_VALID_Z_MM;
+        float zPosition = targetZ - zHome;
+        float zHomePlusZPosition = zHome + zPosition;
+        bool zPositionOutOfRange = !std::isfinite(zHomePlusZPosition) || zHomePlusZPosition < MIN_VALID_Z_MM || zHomePlusZPosition > MAX_VALID_Z_MM;
         bool zHomeOutOfRange = !std::isfinite(zHome) || zHome < MIN_VALID_Z_MM || zHome > MAX_VALID_Z_MM;
 
-        if (zmOutOfRange) {
-            log_warn("Maslow Zm invalid warning: Startup Zm is out of range (Zm=" << targetZ
-                                                                                  << "mm). Valid range is 0 to 72mm inclusive.");
+        if (zPositionOutOfRange) {
+            log_warn("Maslow Z position warning: Z position out of range, check Z home is valid (Z home=" << zHome << "mm, Z position=" << zPosition
+                                                                                                           << "mm, Z home + Z position=" << zHomePlusZPosition
+                                                                                                           << "mm). Valid range is 0 to 72mm inclusive.");
         }
 
         if (zHomeOutOfRange) {

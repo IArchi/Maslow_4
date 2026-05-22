@@ -1103,16 +1103,19 @@ void Calibration::logClbmMeasurements(int measurementCount) const {
     std::string clbm = "CLBM:[";
     clbm.reserve(16 + static_cast<size_t>(measurementCount) * 48);
 
-    char item[96];
+    char item[64];
     for (int i = 0; i < measurementCount; i++) {
         snprintf(item,
                  sizeof(item),
-                 "{bl:%g, br:%g, tr:%g, tl:%g},",
+                 "{bl:%g, br:%g, tr:%g, tl:%g}",
                  calibration_data[i][_BL],
                  calibration_data[i][_BR],
                  calibration_data[i][_TR],
                  calibration_data[i][_TL]);
         clbm += item;
+        if (i + 1 < measurementCount) {
+            clbm += ",";
+        }
     }
     clbm += "]";
 

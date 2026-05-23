@@ -1143,17 +1143,20 @@ const tabletMoveBottomRight = () => sendMove("X+Y-");
 // Button event handlers - Fourth Row
 const openSetZHomePopup = () => {
   tabletClick();
-  const zCurrent = MPOS && MPOS.length >= 3 ? MPOS[2].toFixed(3) : "0";
+  // Pre-fill with the previously defined Z home value (WCO[2]) so that
+  // confirming without changes is a no-op and Cancel leaves Z home unchanged.
+  const zHome = WCO && WCO.length >= 3 ? WCO[2].toFixed(3) : "0";
   const zInput = id("setHomeZ");
   if (zInput) {
-    zInput.value = zCurrent;
+    zInput.value = zHome;
     zInput.min = Z_HOME_MIN_SAFE_MM;
     zInput.max = Z_HOME_MAX_SAFE_MM;
     zInput.title = `Z: ${Z_HOME_MIN_SAFE_MM} to ${Z_HOME_MAX_SAFE_MM} mm`;
   }
   const zLabel = id("currentZPositionLabel");
   if (zLabel) {
-    zLabel.textContent = `Current: ${zCurrent} mm`;
+    const zCurrent = MPOS && MPOS.length >= 3 ? MPOS[2].toFixed(3) : "0";
+    zLabel.textContent = `Current Z: ${zCurrent} mm`;
   }
   openModal("set-z-home-popup");
 }

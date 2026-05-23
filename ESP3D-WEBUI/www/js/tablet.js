@@ -1143,22 +1143,33 @@ const tabletMoveBottomRight = () => sendMove("X+Y-");
 // Button event handlers - Fourth Row
 const openSetZHomePopup = () => {
   tabletClick();
-  // Pre-fill with the previously defined Z home value (WCO[2]) so that
-  // confirming without changes is a no-op and Cancel leaves Z home unchanged.
-  const zHome = WCO && WCO.length >= 3 ? WCO[2].toFixed(3) : "0";
+  const zCurrent = MPOS && MPOS.length >= 3 ? MPOS[2].toFixed(3) : "0";
   const zInput = id("setHomeZ");
   if (zInput) {
-    zInput.value = zHome;
+    // Pre-fill with current machine Z position so the user sees where Z is now.
+    zInput.value = zCurrent;
     zInput.min = Z_HOME_MIN_SAFE_MM;
     zInput.max = Z_HOME_MAX_SAFE_MM;
     zInput.title = `Z: ${Z_HOME_MIN_SAFE_MM} to ${Z_HOME_MAX_SAFE_MM} mm`;
   }
-  const zLabel = id("currentZPositionLabel");
-  if (zLabel) {
-    const zCurrent = MPOS && MPOS.length >= 3 ? MPOS[2].toFixed(3) : "0";
-    zLabel.textContent = `Current Z: ${zCurrent} mm`;
+  // Context label shows the previously defined Z home value (WCO[2]).
+  const zHomeLabel = id("currentZHomeLabel");
+  if (zHomeLabel) {
+    const zHome = WCO && WCO.length >= 3 ? WCO[2].toFixed(3) : "0";
+    zHomeLabel.textContent = `Z Home: ${zHome} mm`;
   }
   openModal("set-z-home-popup");
+}
+
+const moveToZHome = () => {
+  hideModal("set-z-home-popup");
+  const machineZ = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  const workZeroZ = WCO && WCO.length >= 3 ? WCO[2] : null;
+  const zDelta = (machineZ !== null && workZeroZ !== null) ? workZeroZ - machineZ : 0;
+  checkZHomeAndProceed(() => {
+    sendCommand("G90 G0 Z0");
+    addMessage("Moving to Z Home position");
+  }, zDelta);
 }
 
 const confirmSetZHome = () => {
@@ -1672,6 +1683,7 @@ function tabletInit() {
     id("set-z-home-popup").addEventListener("click", () => hideModal("set-z-home-popup"));
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_set_z_home_cancel").addEventListener("click", () => hideModal("set-z-home-popup"));
+    id("tablettab_move_to_z_home").addEventListener("click", moveToZHome);
     id("tablettab_set_z_home_confirm").addEventListener("click", confirmSetZHome);
 
     // Controls - Fifth Row

@@ -396,6 +396,7 @@ uint16_t MotorUnit::getRawEncoderAngle() {
 
 void MotorUnit::setEncoderGeometry(double beltToothSpacing, double encoderTeeth) {
     if (!std::isfinite(beltToothSpacing) || !std::isfinite(encoderTeeth) || beltToothSpacing <= 0.0 || encoderTeeth <= 0.0) {
+        log_warn("Ignoring invalid encoder geometry: beltToothSpacing=" << beltToothSpacing << ", encoderTeeth=" << encoderTeeth);
         return;
     }
     _mmPerRevolution = beltToothSpacing * encoderTeeth;

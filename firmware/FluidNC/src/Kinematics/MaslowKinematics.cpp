@@ -34,8 +34,8 @@ kinematics:
     brZ: 78.0
     beltEndExtension: 30.0
     armLength: 123.4
-    beltToothSpacing: 43.975  # mm between adjacent belt teeth
-    encoderTeeth: 1.0         # tooth count on the encoder roller
+    beltToothSpacing: 1.9988  # mm between adjacent belt teeth
+    encoderTeeth: 22.0        # tooth count on the encoder roller
     spoilboardThickness: 0.0
     workThickness: 0.0
     maxSegmentLength: 5.0

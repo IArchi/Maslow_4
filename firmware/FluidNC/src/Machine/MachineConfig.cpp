@@ -256,8 +256,8 @@ namespace Machine {
                                      "    brZ: 100.0\n"
                                      "    beltEndExtension: 30.0\n"
                                      "    armLength: 123.4\n"
-                                     "    beltToothSpacing: 43.975\n"
-                                     "    encoderTeeth: 1.0\n"
+                                     "    beltToothSpacing: 1.9988\n"
+                                     "    encoderTeeth: 22.0\n"
                                      "    maxSegmentLength: 5.0\n"
                                      "    fixedZ: false\n";
 

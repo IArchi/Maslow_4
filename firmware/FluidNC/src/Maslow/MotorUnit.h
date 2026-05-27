@@ -22,6 +22,8 @@ public:
     double   getPosition();
     void     setPosition(double position);  // Set encoder position from saved value
     uint16_t getRawEncoderAngle();          // Get current raw encoder angle (0-4095)
+    void     setEncoderGeometry(double beltToothSpacing, double encoderTeeth);
+    double   getMmPerRevolution() const;
     double   getCurrent();
     double   getPositionError();
     void     stop();

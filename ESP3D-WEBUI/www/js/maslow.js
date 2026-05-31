@@ -4,6 +4,7 @@
 /** Maslow Status */
 let maslowStatus = { homed: false, extended: false, state: 0 };
 const APPLY_TENSION_WARNING_PREFIX = "Maslow Apply Tension deviation warning:";
+const APPLY_TENSION_RETRACTION_WARNING_PREFIX = "Maslow Apply Tension retraction warning:";
 const Z_HOME_RESET_WARNING_PREFIX = "Maslow Z home reset warning:";
 const ZM_INVALID_WARNING_PREFIX = "Maslow Zm invalid warning:";
 
@@ -390,6 +391,10 @@ const maslowInfoMsgHandling = (msg) => {
 		showApplyTensionWarningMessage(msg);
 	}
 
+	if (msg.startsWith(`[MSG:WARN: ${APPLY_TENSION_RETRACTION_WARNING_PREFIX}`)) {
+		showApplyTensionRetractionWarningMessage(msg);
+	}
+
 	if (msg.startsWith(`[MSG:WARN: ${Z_HOME_RESET_WARNING_PREFIX}`)) {
 		showZHomeResetWarningMessage(msg);
 	} else if (msg.startsWith(`[MSG:WARN: ${ZM_INVALID_WARNING_PREFIX}`)) {
@@ -484,6 +489,78 @@ function showApplyTensionWarningMessage(msg) {
 		"Apply Tension Warning",
 		warningText.substring(APPLY_TENSION_WARNING_PREFIX.length).trim()
 	);
+}
+
+function showApplyTensionRetractionWarningMessage(msg) {
+	const warningMatch = msg.match(/^\[MSG:WARN:\s*(.*)\]$/);
+	if (!warningMatch) {
+		return;
+	}
+
+	const warningText = warningMatch[1].trim();
+	if (!warningText.startsWith(APPLY_TENSION_RETRACTION_WARNING_PREFIX)) {
+		return;
+	}
+
+	const modalId = "apply-tension-retraction-warning-modal";
+	const existingModal = document.getElementById(modalId);
+	if (existingModal) {
+		existingModal.remove();
+	}
+
+	const modal = document.createElement("div");
+	modal.id = modalId;
+	modal.style.cssText = `
+		position: fixed;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(0, 0, 0, 0.45);
+		z-index: 2000;
+		padding: 20px;
+	`;
+
+	const dialog = document.createElement("div");
+	dialog.style.cssText = `
+		background-color: white;
+		padding: 20px;
+		border: 1px solid black;
+		box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+		max-width: 520px;
+		width: 100%;
+	`;
+
+	const heading = document.createElement("h3");
+	heading.textContent = "Apply Tension Warning";
+	heading.style.marginTop = "0";
+
+	const messageElement = document.createElement("p");
+	messageElement.textContent = warningText.substring(APPLY_TENSION_RETRACTION_WARNING_PREFIX.length).trim();
+
+	const actions = document.createElement("div");
+	actions.style.cssText = "display: flex; gap: 10px; justify-content: flex-end;";
+
+	const cancelButton = document.createElement("button");
+	cancelButton.textContent = "Cancel";
+	cancelButton.style.cssText = "padding: 5px 10px; cursor: pointer;";
+	cancelButton.onclick = () => modal.remove();
+
+	const continueButton = document.createElement("button");
+	continueButton.textContent = "Continue";
+	continueButton.style.cssText = "padding: 5px 10px; cursor: pointer;";
+	continueButton.onclick = () => {
+		sendCommand("$TKSLK");
+		modal.remove();
+	};
+
+	actions.appendChild(cancelButton);
+	actions.appendChild(continueButton);
+	dialog.appendChild(heading);
+	dialog.appendChild(messageElement);
+	dialog.appendChild(actions);
+	modal.appendChild(dialog);
+	document.body.appendChild(modal);
 }
 
 function showZHomeResetWarningMessage(msg) {

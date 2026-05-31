@@ -16,6 +16,7 @@ let files_file_list = [];
 let files_status_list = [];
 let files_current_file_index = -1;
 let files_error_status = "";
+let files_last_uploaded_gcode = null;
 let tfiles_filters;
 const tft_sd = "SD:";
 const tft_usb = "U:";
@@ -203,9 +204,14 @@ function files_build_file_line(index, actions) {
 
 function tabletSelectGCodeFile(filename) {
 	const selector = id("filelist");
+	if (!selector) {
+		return;
+	}
 	const options = Array.from(selector.options);
 	const option = options.find((item) => item.text === filename);
-	option.selected = true;
+	if (option) {
+		option.selected = true;
+	}
 }
 
 const getEventIndex = (event) => Number.parseInt(event.currentTarget.dataset.index);
@@ -569,6 +575,8 @@ const files_delete_failed = (error_code, response) => {
 };
 
 function files_directSD_upload_failed(error_code, response) {
+	files_last_uploaded_gcode = null;
+
 	// Restore ping monitoring after upload fails
 	restorePingAfterUpload();
 	
@@ -764,6 +772,11 @@ function files_start_upload() {
 	const fileName = files[0].name;
 	const fileSize = (files[0].size / 1024 / 1024).toFixed(2);
 	Monitor_output_Update(`[Upload] Starting upload of ${fileName} (${fileSize} MB)\n`);
+	files_last_uploaded_gcode = {
+		name: fileName,
+		path: `${files_currentPath()}${fileName}`,
+		size: files[0].size,
+	};
 
 	// Disable ping monitoring during upload
 	disablePingForUpload();
@@ -778,6 +791,9 @@ function files_start_upload() {
 }
 
 const files_upload_success = (response_text) => {
+	const uploadedFile = files_last_uploaded_gcode;
+	files_last_uploaded_gcode = null;
+
 	// Restore ping monitoring after upload completes
 	restorePingAfterUpload();
 	
@@ -786,6 +802,16 @@ const files_upload_success = (response_text) => {
 	
 	// Reuse the list success handler
 	files_list_success(response_text);
+
+	if (!uploadedFile || typeof tabletLoadGCodeFile !== "function") {
+		return;
+	}
+
+	const fileEntry = files_file_list.find((file) => !file.isdir && file.name === uploadedFile.name);
+	if (fileEntry && fileEntry.isprintable) {
+		tabletSelectGCodeFile(uploadedFile.name);
+		tabletLoadGCodeFile(uploadedFile.path, fileEntry.size || uploadedFile.size);
+	}
 };
 
 function FilesUploadProgressDisplay(oEvent) {

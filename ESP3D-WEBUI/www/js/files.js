@@ -11,6 +11,13 @@ const files_currentPath = (value) => {
 	return files_current_path;
 }
 
+const files_joinPath = (directory, fileName) => {
+	if (!directory || !fileName) {
+		return "";
+	}
+	return `${directory.endsWith("/") ? directory : `${directory}/`}${fileName}`;
+};
+
 let files_filter_sd_list = false;
 let files_file_list = [];
 let files_status_list = [];
@@ -774,7 +781,7 @@ function files_start_upload() {
 	Monitor_output_Update(`[Upload] Starting upload of ${fileName} (${fileSize} MB)\n`);
 	files_last_uploaded_gcode = {
 		name: fileName,
-		path: `${files_currentPath()}${fileName}`,
+		path: files_joinPath(files_currentPath(), fileName),
 		size: files[0].size,
 	};
 
@@ -807,10 +814,12 @@ const files_upload_success = (response_text) => {
 		return;
 	}
 
-	const fileEntry = files_file_list.find((file) => !file.isdir && file.name === uploadedFile.name);
+	const fileEntry = files_file_list.find((file) => !file.isdir && files_joinPath(files_currentPath(), file.name) === uploadedFile.path);
 	if (fileEntry && fileEntry.isprintable) {
-		tabletSelectGCodeFile(uploadedFile.name);
-		tabletLoadGCodeFile(uploadedFile.path, fileEntry.size || uploadedFile.size);
+		if (typeof tabletSelectGCodeFile === "function") {
+			tabletSelectGCodeFile(uploadedFile.name);
+		}
+		tabletLoadGCodeFile(uploadedFile.path, fileEntry.size ?? uploadedFile.size);
 	}
 };
 

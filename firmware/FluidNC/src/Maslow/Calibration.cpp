@@ -1210,7 +1210,7 @@ bool Calibration::takeSlackFunc() {
     static unsigned long holdTimer = millis();
     static bool          retractionMonitorInitialized = false;
     static float         startBeltPosition[ARM_COUNT] = { 0 };
-    constexpr float      maxApplyTensionRetractionMm  = 300.0f;
+    const float          maxApplyTensionRetractionMm  = applyTensionBeltRetractionLimitMm;
 
     if (!retractionMonitorInitialized) {
         for (int arm = _TL; arm < ARM_COUNT; arm++) {
@@ -1221,7 +1221,7 @@ bool Calibration::takeSlackFunc() {
 
     for (int arm = _TL; arm < ARM_COUNT; arm++) {
         const float retractedAmount = startBeltPosition[arm] - Maslow.axis[arm].getPosition();
-        if (retractedAmount > maxApplyTensionRetractionMm) {
+        if (applyTensionAllowLimiting && retractedAmount > maxApplyTensionRetractionMm) {
             for (int stopArm = _TL; stopArm < ARM_COUNT; stopArm++) {
                 Maslow.axis[stopArm].setTarget(Maslow.axis[stopArm].getPosition());
                 Maslow.axis[stopArm].stop();
@@ -1229,7 +1229,8 @@ bool Calibration::takeSlackFunc() {
 
             log_warn("Maslow Apply Tension retraction warning: Belt "
                      << Maslow.axis_id_to_label(arm).c_str() << " retracted " << retractedAmount
-                     << "mm while applying tension. A belt may not be anchored. Continue to keep retracting or Cancel to stop.");
+                     << "mm while applying tension (limit " << maxApplyTensionRetractionMm
+                     << "mm). A belt may not be anchored. Continue to keep retracting or Cancel to stop.");
 
             takeSlackState                = 0;
             retractionMonitorInitialized  = false;

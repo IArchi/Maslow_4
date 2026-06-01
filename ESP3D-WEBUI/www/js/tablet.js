@@ -1525,6 +1525,7 @@ const tabletSavePark = () => {
 };
 
 const scaleThicknessDefaults = { scaleX: 1.0, scaleY: 1.0, workThickness: 0.0, spoilboardThickness: 0.0 };
+const applyTensionBeltLimitDefaults = { retractionLimit: 300.0, allowLimiting: "off" };
 
 const getScaleThicknessValues = () => {
   const lv = globalThis.loadedValues || {};
@@ -1586,6 +1587,62 @@ const tabletSaveScaleThickness = () => {
   saveMaslowYaml();
   scheduleCallback(() => {
     hideModal("scale-thickness-popup");
+    hideModal("optional-settings-popup");
+  }, 1000);
+};
+
+const tabletApplyTensionLimitPopupHide = () => hideModal("apply-tension-limit-popup");
+
+const getApplyTensionLimitValues = () => {
+  const lv = globalThis.loadedValues || {};
+  const rawAllowLimiting = String(lv.applyTensionAllowLimiting || "false").toLowerCase();
+  return {
+    retractionLimit: isNaN(parseFloat(lv.applyTensionBeltRetractionLimit))
+      ? applyTensionBeltLimitDefaults.retractionLimit
+      : parseFloat(lv.applyTensionBeltRetractionLimit),
+    allowLimiting: rawAllowLimiting === "true" ? "on" : applyTensionBeltLimitDefaults.allowLimiting,
+  };
+};
+
+const tabletOpenApplyTensionLimitPopup = () => {
+  const { retractionLimit, allowLimiting } = getApplyTensionLimitValues();
+
+  const elRetractionLimit = id("applyTensionBeltRetractionLimit");
+  const elAllowLimiting = id("applyTensionAllowLimiting");
+  const elCurrent = id("apply-tension-limit-current-values");
+
+  if (elRetractionLimit) elRetractionLimit.value = retractionLimit;
+  if (elAllowLimiting) elAllowLimiting.value = allowLimiting;
+  if (elCurrent) elCurrent.textContent = `Current: Belt Retraction limit=${retractionLimit}mm, Allow Limiting=${allowLimiting === "on" ? "On" : "Off"}`;
+
+  openModal("apply-tension-limit-popup");
+};
+
+const tabletSaveApplyTensionLimit = () => {
+  const elRetractionLimit = id("applyTensionBeltRetractionLimit");
+  const elAllowLimiting = id("applyTensionAllowLimiting");
+
+  const newRetractionLimit = elRetractionLimit ? elRetractionLimit.value.trim() : "";
+  const allowLimitingValue = elAllowLimiting ? elAllowLimiting.value : applyTensionBeltLimitDefaults.allowLimiting;
+  const newAllowLimiting = allowLimitingValue === "on" ? "true" : "false";
+
+  const lv = globalThis.loadedValues || {};
+  const keys = [
+    { field: "applyTensionBeltRetractionLimit", cmd: "Maslow_Apply_Tension_Belt_Retraction_Limit", newVal: newRetractionLimit },
+    { field: "applyTensionAllowLimiting", cmd: "Maslow_Apply_Tension_Allow_Limiting", newVal: newAllowLimiting },
+  ];
+
+  for (const k of keys) {
+    if (k.newVal !== "" && k.newVal !== String(lv[k.field] || "")) {
+      SendPrinterCommand(`$/${k.cmd}=${k.newVal}`);
+      if (!globalThis.loadedValues) globalThis.loadedValues = {};
+      globalThis.loadedValues[k.field] = k.newVal;
+    }
+  }
+
+  saveMaslowYaml();
+  scheduleCallback(() => {
+    hideModal("apply-tension-limit-popup");
     hideModal("optional-settings-popup");
   }, 1000);
 };
@@ -1725,6 +1782,7 @@ function tabletInit() {
     id("tablettab_cal_work_area").addEventListener("click", tabletOpenWorkAreaPopup);
     id("tablettab_cal_park").addEventListener("click", tabletOpenParkPopup);
     id("tablettab_cal_scale_thickness").addEventListener("click", tabletOpenScaleThicknessPopup);
+    id("tablettab_cal_apply_tension_limit").addEventListener("click", tabletOpenApplyTensionLimitPopup);
 
     // Buttons - Work Area Pop-up
     id("work-area-popup").addEventListener("click", tabletWorkAreaPopupHide);
@@ -1743,6 +1801,12 @@ function tabletInit() {
     id("scale_thickness_popup_content").addEventListener("click", tabletPopupStopProp);
     id("tablettab_scale_thickness_cancel").addEventListener("click", tabletScaleThicknessPopupHide);
     id("tablettab_scale_thickness_save").addEventListener("click", tabletSaveScaleThickness);
+
+    // Buttons - Apply Tension Belt Limit Pop-up
+    id("apply-tension-limit-popup").addEventListener("click", tabletApplyTensionLimitPopupHide);
+    id("apply_tension_limit_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("tablettab_apply_tension_limit_cancel").addEventListener("click", tabletApplyTensionLimitPopupHide);
+    id("tablettab_apply_tension_limit_save").addEventListener("click", tabletSaveApplyTensionLimit);
 
     // Buttons - Configuration Pop-up
     id("configuration-popup").addEventListener("click", tabletConfigPopupHide);

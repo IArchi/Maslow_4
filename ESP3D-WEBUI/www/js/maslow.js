@@ -621,6 +621,8 @@ const cfgDef = {
 	spoilboardThickness: { name: "spoilboardThickness", type: "A", cmd: "Maslow_spoilboardThickness" },
 	workThickness: { name: "workThickness", type: "A", cmd: "Maslow_workThickness" },
 	Acceptable_Calibration_Threshold: { name: "acceptableCalibrationThreshold", type: "A", cmd: "Maslow_Acceptable_Calibration_Threshold" },
+	Apply_Tension_Belt_Retraction_Limit: { name: "applyTensionBeltRetractionLimit", type: "A", cmd: "Maslow_Apply_Tension_Belt_Retraction_Limit" },
+	Apply_Tension_Allow_Limiting: { name: "applyTensionAllowLimiting", type: "A", cmd: "Maslow_Apply_Tension_Allow_Limiting" },
 	Extend_Dist: { name: "extendDist", type: "A", cmd: "Maslow_Extend_Dist" },
 	Scale_X: { name: "scaleX", type: "A", cmd: "Maslow_Scale_X" },
 	Scale_Y: { name: "scaleY", type: "A", cmd: "Maslow_Scale_Y" },

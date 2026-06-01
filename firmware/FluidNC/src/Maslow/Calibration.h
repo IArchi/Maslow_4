@@ -147,6 +147,7 @@ private:
 
     bool recomputeAnchorsWithLevenbergMarquardt(int measurementCount);
     void logClbmMeasurements(int measurementCount) const;
+    bool updateExtendDistanceFromAnchors();
 
     //A structure to hold the state names
     struct StateName {

@@ -1145,25 +1145,28 @@ bool Calibration::updateExtendDistanceFromAnchors() {
                                           kinematics->computeBL(xPos, yPos, zPos),
                                           kinematics->computeBR(xPos, yPos, zPos) };
 
-    float longestDistanceToAnchor = 0.0f;
+    float distanceToAnchor[ARM_COUNT] = {};
     for (int arm = 0; arm < ARM_COUNT; arm++) {
-        const float distanceToAnchor = measurementToXYPlane(beltLength[arm], fabsf(zTotal[arm]));
-        if (!std::isfinite(distanceToAnchor)) {
+        distanceToAnchor[arm] = measurementToXYPlane(beltLength[arm], fabsf(zTotal[arm]));
+        if (!std::isfinite(distanceToAnchor[arm])) {
             log_error("Find Anchors completed, but invalid anchor distance prevented updating " << M << "_Extend_Dist");
             return false;
         }
-        longestDistanceToAnchor = std::max(longestDistanceToAnchor, distanceToAnchor);
     }
 
-    const float computedExtendDistance = longestDistanceToAnchor + safetyMargin - extension;
+    const float trBlDiagonalAverage   = 0.5f * (distanceToAnchor[_TR] + distanceToAnchor[_BL]);
+    const float tlBrDiagonalAverage   = 0.5f * (distanceToAnchor[_TL] + distanceToAnchor[_BR]);
+    const float longestDiagonalAverage = std::max(trBlDiagonalAverage, tlBrDiagonalAverage);
+
+    const float computedExtendDistance = longestDiagonalAverage + safetyMargin - extension;
     if (!std::isfinite(computedExtendDistance)) {
         log_error("Find Anchors completed, but computed " << M << "_Extend_Dist is invalid");
         return false;
     }
 
     extendDist = std::max(0.0f, computedExtendDistance);
-    log_info("Find Anchors set " << M << "_Extend_Dist=" << extendDist << " (longest anchor distance=" << longestDistanceToAnchor
-                                 << ", extension=" << extension << ")");
+    log_info("Find Anchors set " << M << "_Extend_Dist=" << extendDist << " (TR-BL avg=" << trBlDiagonalAverage
+                                 << ", TL-BR avg=" << tlBrDiagonalAverage << ", extension=" << extension << ")");
     return true;
 }
 

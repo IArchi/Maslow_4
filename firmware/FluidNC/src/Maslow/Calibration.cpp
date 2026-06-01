@@ -1122,6 +1122,51 @@ void Calibration::logClbmMeasurements(int measurementCount) const {
     log_info(clbm.c_str());
 }
 
+bool Calibration::updateExtendDistanceFromAnchors() {
+    auto kinematics = getKinematics();
+    if (!kinematics) {
+        log_error("Find Anchors completed, but MaslowKinematics is unavailable for updating " << M << "_Extend_Dist");
+        return false;
+    }
+
+    constexpr float safetyMargin = 100.0f;
+    const float     extension    = kinematics->getBeltEndExtension() + kinematics->getArmLength();
+    const float     xPos         = Maslow.x;
+    const float     yPos         = Maslow.y;
+    const float     zPos         = get_mpos()[2];
+
+    const float zTotal[ARM_COUNT] = { zPos + kinematics->getTlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness(),
+                                      zPos + kinematics->getTrZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness(),
+                                      zPos + kinematics->getBlZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness(),
+                                      zPos + kinematics->getBrZ() + kinematics->getSpoilboardThickness() + kinematics->getWorkThickness() };
+
+    const float beltLength[ARM_COUNT] = { kinematics->computeTL(xPos, yPos, zPos),
+                                          kinematics->computeTR(xPos, yPos, zPos),
+                                          kinematics->computeBL(xPos, yPos, zPos),
+                                          kinematics->computeBR(xPos, yPos, zPos) };
+
+    float longestDistanceToAnchor = 0.0f;
+    for (int arm = 0; arm < ARM_COUNT; arm++) {
+        const float distanceToAnchor = measurementToXYPlane(beltLength[arm], fabsf(zTotal[arm]));
+        if (!std::isfinite(distanceToAnchor)) {
+            log_error("Find Anchors completed, but invalid anchor distance prevented updating " << M << "_Extend_Dist");
+            return false;
+        }
+        longestDistanceToAnchor = std::max(longestDistanceToAnchor, distanceToAnchor);
+    }
+
+    const float computedExtendDistance = longestDistanceToAnchor + safetyMargin - extension;
+    if (!std::isfinite(computedExtendDistance)) {
+        log_error("Find Anchors completed, but computed " << M << "_Extend_Dist is invalid");
+        return false;
+    }
+
+    extendDist = std::max(0.0f, computedExtendDistance);
+    log_info("Find Anchors set " << M << "_Extend_Dist=" << extendDist << " (longest anchor distance=" << longestDistanceToAnchor
+                                 << ", extension=" << extension << ")");
+    return true;
+}
+
 // --Maslow calibration loop
 void Calibration::calibration_loop() {
     serviceCalibrationWatchdogs(false);
@@ -1132,6 +1177,10 @@ void Calibration::calibration_loop() {
         // after all fitness gates pass; it is reset to false by resetCalibrationState().
         // Calibration always performs at least one recompute before reaching waypoint > pointCount.
         if (lastRecomputePassed) {
+            if (!updateExtendDistanceFromAnchors()) {
+                log_error("Find Anchors completed, but failed to update " << M << "_Extend_Dist");
+            }
+
             char saveCommand[] = "$CO";
             Error saveResult   = execute_line(saveCommand, allChannels, WebUI::AuthenticationLevel::LEVEL_ADMIN);
             if (saveResult != Error::Ok) {

@@ -1525,7 +1525,7 @@ const tabletSavePark = () => {
 };
 
 const scaleThicknessDefaults = { scaleX: 1.0, scaleY: 1.0, workThickness: 0.0, spoilboardThickness: 0.0 };
-const applyTensionBeltLimitDefaults = { retractionLimit: 300.0, allowLimiting: "off" };
+const applyTensionBeltLimitDefaults = { retractionLimit: 300.0, allowLimiting: "on" };
 
 const getScaleThicknessValues = () => {
   const lv = globalThis.loadedValues || {};
@@ -1595,7 +1595,7 @@ const tabletApplyTensionLimitPopupHide = () => hideModal("apply-tension-limit-po
 
 const getApplyTensionLimitValues = () => {
   const lv = globalThis.loadedValues || {};
-  const rawAllowLimiting = String(lv.applyTensionAllowLimiting || "false").toLowerCase();
+  const rawAllowLimiting = String(lv.applyTensionAllowLimiting || "true").toLowerCase();
   return {
     retractionLimit: isNaN(parseFloat(lv.applyTensionBeltRetractionLimit))
       ? applyTensionBeltLimitDefaults.retractionLimit

@@ -80,7 +80,7 @@ public:
     bool  orientation;
     float acceptableCalibrationThreshold = 0.5;
     float applyTensionBeltRetractionLimitMm = 300.0;
-    bool  applyTensionAllowLimiting         = false;
+    bool  applyTensionAllowLimiting         = true;
     int   calibrationGridSize            = 9;
     float calibration_grid_width_mm_X    = 0;      // mm grid width (0 = auto-calculate as 50% of frame width)
     float calibration_grid_height_mm_Y   = 0;      // mm grid height (0 = auto-calculate as 20% of frame height)

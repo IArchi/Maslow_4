@@ -227,7 +227,7 @@ namespace Machine {
 
     const std::string dcM4CurrentThreshold = M + "_Retract_Current_Threshold: 1300\n" + M + "_Acceptable_Calibration_Threshold: 0.5\n";
     const std::string dcM4ApplyTensionLimit =
-        M + "_Apply_Tension_Belt_Retraction_Limit: 300.0\n" + M + "_Apply_Tension_Allow_Limiting: false\n";
+        M + "_Apply_Tension_Belt_Retraction_Limit: 300.0\n" + M + "_Apply_Tension_Allow_Limiting: true\n";
 
     const std::string dcM4Thickness = M + "_spoilboardThickness: 0.0\n" + M + "_workThickness: 0.0\n";
 

@@ -1613,7 +1613,7 @@ const tabletOpenApplyTensionLimitPopup = () => {
 
   if (elRetractionLimit) elRetractionLimit.value = retractionLimit;
   if (elAllowLimiting) elAllowLimiting.value = allowLimiting;
-  if (elCurrent) elCurrent.textContent = `Current: Belt Retraction limit=${retractionLimit}mm, Allow Limiting=${allowLimiting === "on" ? "On" : "Off"}`;
+  if (elCurrent) elCurrent.textContent = `Current: Belt Retraction Limit=${retractionLimit}mm, Allow Limiting=${allowLimiting === "on" ? "On" : "Off"}`;
 
   openModal("apply-tension-limit-popup");
 };

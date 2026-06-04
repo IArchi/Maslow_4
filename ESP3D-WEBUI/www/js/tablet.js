@@ -1525,7 +1525,7 @@ const tabletSavePark = () => {
 };
 
 const scaleThicknessDefaults = { scaleX: 1.0, scaleY: 1.0, workThickness: 0.0, spoilboardThickness: 0.0 };
-const applyTensionBeltLimitDefaults = { retractionLimit: 300.0, allowLimiting: "on" };
+const applyTensionBeltLimitDefaults = { retractionLimit: 300.0, extendDist: 2600.0 };
 
 const getScaleThicknessValues = () => {
   const lv = globalThis.loadedValues || {};
@@ -1595,41 +1595,41 @@ const tabletApplyTensionLimitPopupHide = () => hideModal("apply-tension-limit-po
 
 const getApplyTensionLimitValues = () => {
   const lv = globalThis.loadedValues || {};
-  const rawAllowLimiting = String(lv.applyTensionAllowLimiting || "true").toLowerCase();
   return {
     retractionLimit: isNaN(parseFloat(lv.applyTensionBeltRetractionLimit))
       ? applyTensionBeltLimitDefaults.retractionLimit
       : parseFloat(lv.applyTensionBeltRetractionLimit),
-    allowLimiting: rawAllowLimiting === "true" ? "on" : applyTensionBeltLimitDefaults.allowLimiting,
+    extendDist: isNaN(parseFloat(lv.extendDist))
+      ? applyTensionBeltLimitDefaults.extendDist
+      : parseFloat(lv.extendDist),
   };
 };
 
 const tabletOpenApplyTensionLimitPopup = () => {
-  const { retractionLimit, allowLimiting } = getApplyTensionLimitValues();
+  const { retractionLimit, extendDist } = getApplyTensionLimitValues();
 
   const elRetractionLimit = id("applyTensionBeltRetractionLimit");
-  const elAllowLimiting = id("applyTensionAllowLimiting");
+  const elExtendDist = id("applyTensionExtendDist");
   const elCurrent = id("apply-tension-limit-current-values");
 
   if (elRetractionLimit) elRetractionLimit.value = retractionLimit;
-  if (elAllowLimiting) elAllowLimiting.value = allowLimiting;
-  if (elCurrent) elCurrent.textContent = `Current: Belt Retraction Limit=${retractionLimit}mm, Allow Limiting=${allowLimiting === "on" ? "On" : "Off"}`;
+  if (elExtendDist) elExtendDist.value = extendDist;
+  if (elCurrent) elCurrent.textContent = `Current: Belt Retraction Limit=${retractionLimit}mm, Extend Dist=${extendDist}mm`;
 
   openModal("apply-tension-limit-popup");
 };
 
 const tabletSaveApplyTensionLimit = () => {
   const elRetractionLimit = id("applyTensionBeltRetractionLimit");
-  const elAllowLimiting = id("applyTensionAllowLimiting");
+  const elExtendDist = id("applyTensionExtendDist");
 
   const newRetractionLimit = elRetractionLimit ? elRetractionLimit.value.trim() : "";
-  const allowLimitingValue = elAllowLimiting ? elAllowLimiting.value : applyTensionBeltLimitDefaults.allowLimiting;
-  const newAllowLimiting = allowLimitingValue === "on" ? "true" : "false";
+  const newExtendDist = elExtendDist ? elExtendDist.value.trim() : "";
 
   const lv = globalThis.loadedValues || {};
   const keys = [
     { field: "applyTensionBeltRetractionLimit", cmd: "Maslow_Apply_Tension_Belt_Retraction_Limit", newVal: newRetractionLimit },
-    { field: "applyTensionAllowLimiting", cmd: "Maslow_Apply_Tension_Allow_Limiting", newVal: newAllowLimiting },
+    { field: "extendDist", cmd: "Maslow_Extend_Dist", newVal: newExtendDist },
   ];
 
   for (const k of keys) {

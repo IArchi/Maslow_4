@@ -1281,7 +1281,7 @@ bool Calibration::takeSlackFunc() {
             log_warn("Maslow Apply Tension retraction warning: Belt "
                      << Maslow.axis_id_to_label(arm).c_str() << " retracted " << retractedAmount
                      << "mm while applying tension (limit " << applyTensionBeltRetractionLimitMm
-                     << "mm). A belt may not be anchored. Continue to keep retracting or Cancel to stop. Reduce **Extend Dist** or extend **Belt Retraction Limit** (Options) if correct");
+                     << "mm). A belt may not be anchored. Continue to keep retracting or Cancel to stop. Reduce **Extend Dist** or extend **Belt Retraction Limit** (Options) if these settings are correct.");
 
             takeSlackState                = 0;
             retractionMonitorInitialized  = false;

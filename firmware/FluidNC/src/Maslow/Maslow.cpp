@@ -113,6 +113,7 @@ void Maslow_::begin(void (*sys_rt)()) {
         log_error(M + " failed to initialize - fix errors and restart");
     } else {
         log_info("Starting " + M + " Version " << VERSION_NUMBER);
+        log_info("Maslow_Retract_Current_Threshold: " << calibration.retractCurrentThreshold);
     }
 }
 

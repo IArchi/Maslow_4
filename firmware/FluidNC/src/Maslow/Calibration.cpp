@@ -1260,8 +1260,35 @@ void Calibration::calibration_loop() {
 bool Calibration::takeSlackFunc() {
     static int takeSlackState = 0;  //0 -> Starting, 1-> Moving to (0,0), 2-> Taking a measurement. Where should this be defined correctly?
     static unsigned long holdTimer = millis();
-    static float         startingX = 0;
-    static float         startingY = 0;
+    static bool          retractionMonitorInitialized = false;
+    static float         startBeltPosition[ARM_COUNT] = { 0 };
+
+    if (!retractionMonitorInitialized) {
+        for (int arm = _TL; arm < ARM_COUNT; arm++) {
+            startBeltPosition[arm] = Maslow.axis[arm].getPosition();
+        }
+        retractionMonitorInitialized = true;
+    }
+
+    for (int arm = _TL; arm < ARM_COUNT; arm++) {
+        const float retractedAmount = startBeltPosition[arm] - Maslow.axis[arm].getPosition();
+        if (applyTensionAllowLimiting && retractedAmount > applyTensionBeltRetractionLimitMm) {
+            for (int stopArm = _TL; stopArm < ARM_COUNT; stopArm++) {
+                Maslow.axis[stopArm].setTarget(Maslow.axis[stopArm].getPosition());
+                Maslow.axis[stopArm].stop();
+            }
+
+            log_warn("Maslow Apply Tension retraction warning: Belt "
+                     << Maslow.axis_id_to_label(arm).c_str() << " retracted " << retractedAmount
+                     << "mm while applying tension (limit " << applyTensionBeltRetractionLimitMm
+                     << "mm). A belt may not be anchored. Continue to keep retracting or Cancel to stop. Reduce Extend Dist or extend Belt Retraction Limit (Options) if Belts Attached to Anchors. Release Tension will allow Approx. 10mm of belt to be released.");
+
+            takeSlackState                = 0;
+            retractionMonitorInitialized  = false;
+            requestStateChange(EXTENDEDOUT);
+            return true;
+        }
+    }
 
     //Take a measurement
     if (takeSlackState == 0) {
@@ -1272,12 +1299,16 @@ bool Calibration::takeSlackFunc() {
             float y = 0;
             if (!computeXYfromLengths(calibration_data[0][0], calibration_data[0][1], x, y)) {
                 log_error("Failed to compute XY from lengths");
+                retractionMonitorInitialized = false;
                 return true;
             }
 
             auto kinematics = getKinematics();
             if (!kinematics)
+            {
+                retractionMonitorInitialized = false;
                 return true;
+            }
 
             // Get current Z position to accurately compute expected belt lengths
             float* mpos     = get_mpos();
@@ -1309,6 +1340,7 @@ bool Calibration::takeSlackFunc() {
 
                 //Reset
                 takeSlackState = 0;
+                retractionMonitorInitialized = false;
                 requestStateChange(EXTENDEDOUT);
                 return true;
             } else {
@@ -1321,6 +1353,7 @@ bool Calibration::takeSlackFunc() {
                 }
                 takeSlackState = 0;
                 holdTimer      = millis();
+                retractionMonitorInitialized = false;
 
                 // Instead of setting cartesian position and letting kinematics recalculate motor positions,
                 // we need to set the motor positions directly from the measured belt lengths to avoid
@@ -1368,6 +1401,7 @@ bool Calibration::takeSlackFunc() {
     if (takeSlackState == 1) {
         if (millis() - holdTimer > 2000) {
             takeSlackState = 0;
+            retractionMonitorInitialized = false;
             return true;
         }
     }

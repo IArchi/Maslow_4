@@ -360,3 +360,106 @@ jobs:
           fi
 
           gh release upload "$TAG" "${files_to_upload[@]}" --clobber
+
+      # Mirror browser-fetched release files into the repository so raw.githubusercontent.com can serve them with CORS.
+      - name: Checkout default branch for mirrored web assets
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          path: mirror-default
+
+      # Publish latest and versioned copies plus hash manifest, and skip no-op commits.
+      - name: Mirror release assets into repository
+        shell: bash
+        working-directory: mirror-default
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          TAG='${{ needs.prepare.outputs.tag }}'
+          SOURCE_DIR='../dist/release'
+          DEFAULT_BRANCH='${{ github.event.repository.default_branch }}'
+
+          for required in firmware.bin index.html.gz; do
+            if [ ! -f "$SOURCE_DIR/$required" ]; then
+              echo "Missing required packaged release asset: $required" >&2
+              ls -lah "$SOURCE_DIR" >&2 || true
+              exit 1
+            fi
+          done
+
+          PUBLISHED_AT="$(gh release view "$TAG" --json publishedAt --jq '.publishedAt // empty')"
+          if [ -z "$PUBLISHED_AT" ]; then
+            echo "Unable to resolve published date for release '$TAG'" >&2
+            exit 1
+          fi
+
+          SAFE_TAG="$(printf '%s' "$TAG" | tr '/ ' '--' | tr -c 'A-Za-z0-9._-' '_')"
+          LATEST_DIR='web-assets/latest'
+          VERSIONED_DIR="web-assets/$SAFE_TAG"
+
+          mkdir -p "$LATEST_DIR" "$VERSIONED_DIR"
+
+          cp "$SOURCE_DIR/firmware.bin" "$LATEST_DIR/firmware.bin"
+          cp "$SOURCE_DIR/index.html.gz" "$LATEST_DIR/index.html.gz"
+          cp "$SOURCE_DIR/firmware.bin" "$VERSIONED_DIR/firmware.bin"
+          cp "$SOURCE_DIR/index.html.gz" "$VERSIONED_DIR/index.html.gz"
+
+          python3 - <<PY
+          import hashlib
+          import json
+          from pathlib import Path
+
+          tag = "${TAG}"
+          published_at = "${PUBLISHED_AT}"
+          versioned_dir = Path("${VERSIONED_DIR}")
+          latest_dir = Path("${LATEST_DIR}")
+
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+
+          manifest = {
+              "tag_name": tag,
+              "published_at": published_at,
+              "files": {
+                  "firmware.bin": {
+                      "sha256": sha256(latest_dir / "firmware.bin"),
+                      "size_bytes": (latest_dir / "firmware.bin").stat().st_size,
+                  },
+                  "index.html.gz": {
+                      "sha256": sha256(latest_dir / "index.html.gz"),
+                      "size_bytes": (latest_dir / "index.html.gz").stat().st_size,
+                  },
+              },
+          }
+
+          for out_dir in (latest_dir, versioned_dir):
+              (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add \
+            "$LATEST_DIR/firmware.bin" \
+            "$LATEST_DIR/index.html.gz" \
+            "$LATEST_DIR/manifest.json" \
+            "$VERSIONED_DIR/firmware.bin" \
+            "$VERSIONED_DIR/index.html.gz" \
+            "$VERSIONED_DIR/manifest.json"
+
+          if git diff --cached --quiet; then
+            echo 'No mirrored asset changes detected; skipping commit'
+            exit 0
+          fi
+
+          git commit -m "chore(web-assets): mirror release assets for $TAG"
+          git push origin "HEAD:$DEFAULT_BRANCH"

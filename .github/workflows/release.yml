@@ -262,13 +262,15 @@ jobs:
             echo "Updating existing release $TAG"
             gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
             existing_assets=()
-            while IFS= read -r asset; do
-              [ -n "$asset" ] && existing_assets+=("$asset")
-            done <<<"$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+            existing_assets_output="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+            if [ -n "$existing_assets_output" ]; then
+              readarray -t existing_assets <<<"$existing_assets_output"
+            fi
             desired_assets=()
-            while IFS= read -r asset; do
-              [ -n "$asset" ] && desired_assets+=("$asset")
-            done <<<"$(find dist/release -maxdepth 1 -type f -printf '%f\n' | sort)"
+            desired_assets_output="$(find dist/release -maxdepth 1 -type f -printf '%f\n' | sort)"
+            if [ -n "$desired_assets_output" ]; then
+              readarray -t desired_assets <<<"$desired_assets_output"
+            fi
             for asset in "${existing_assets[@]}"; do
               if ! printf '%s\n' "${desired_assets[@]}" | grep -Fxq "$asset"; then
                 echo "Deleting stale asset $asset"

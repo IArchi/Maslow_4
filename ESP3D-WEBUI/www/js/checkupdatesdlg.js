@@ -230,71 +230,45 @@ function handleReleaseFetched(release, stream) {
     }
 }
 
-/** Download a file from a URL and return a Blob */
-async function downloadAsset(url, onProgress) {
-    const response = await fetch(url, { headers: { "Accept": "application/octet-stream" } });
-    if (!response.ok) {
-        throw new Error(`Download failed (${response.status} ${response.statusText}): ${url}`);
-    }
-
-    // Stream the download so we can report progress
-    const contentLength = response.headers.get("Content-Length");
-    const total = contentLength ? parseInt(contentLength, 10) : 0;
-    const reader = response.body.getReader();
-    const chunks = [];
-    let loaded = 0;
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        loaded += value.length;
-        if (total > 0 && onProgress) {
-            onProgress(loaded, total);
-        }
-    }
-
-    return new Blob(chunks);
+/**
+ * Resolve the URL the firmware should download an asset from.
+ * Prefer the GitHub API asset URL (api.github.com/.../releases/assets/{id});
+ * it 302-redirects to the signed binary when requested with
+ * `Accept: application/octet-stream`. The ESP32 performs the download itself
+ * (see /downloadupdate), so it is not affected by the missing CORS headers on
+ * the final release-assets.githubusercontent.com host that block the browser.
+ */
+function assetDownloadUrl(asset) {
+    return (asset && asset.url) || (asset && asset.browser_download_url) || "";
 }
 
-/** Wrap SendFileHttp in a Promise */
-function sendFileHttpPromise(url, formData, onProgress, context) {
+/** Wrap SendGetHttp in a Promise */
+function sendGetHttpPromise(url) {
     return new Promise((resolve, reject) => {
-        SendFileHttp(
+        SendGetHttp(
             url,
-            formData,
-            onProgress,
-            () => resolve(),
-            (error_code, response) => {
-                const ctx = context ? `${context}: ` : "";
-                reject(new Error(`${ctx}HTTP ${error_code} — ${response}`));
-            }
+            (response) => resolve(response),
+            (error_code, response) => reject(new Error(`HTTP ${error_code} — ${response}`))
         );
     });
 }
 
-/** Wrap checkFileExists in a Promise — resolves with true/false */
-function checkFileExistsPromise(filename) {
-    return new Promise((resolve) => {
-        checkFileExists(filename, resolve, () => resolve(false));
-    });
+/**
+ * Ask the firmware to download a release asset directly from GitHub.
+ * target: "firmware" to OTA-flash (triggers reboot), or "file" to save to the
+ * local filesystem under `name` (e.g. index.html.gz).
+ */
+function proxyDownload(asset, target, name) {
+    const params = new URLSearchParams();
+    params.set("url", assetDownloadUrl(asset));
+    params.set("target", target);
+    if (name) {
+        params.set("name", name);
+    }
+    return sendGetHttpPromise(`${httpCmd.downloadUpdate}?${params.toString()}`);
 }
 
-/** Save a blob to the ESP32 filesystem via /files */
-function saveToFilesystem(blob, filename, onProgress) {
-    const file = new File([blob], filename);
-    const formData = BuildFileUploadFormData("/", [file]);
-    return sendFileHttpPromise(httpCmd.files, formData, onProgress, `save ${filename}`);
-}
-
-/** Upload a blob to the firmware-update endpoint (/updatefw) — triggers reboot */
-function flashFirmware(blob, onProgress) {
-    const file = new File([blob], "firmware.bin");
-    const formData = BuildFileUploadFormData("/", [file]);
-    return sendFileHttpPromise(httpCmd.fwUpdate, formData, onProgress, "flash firmware");
-}
-
-/** Install the update: download both assets, save to filesystem, verify, then flash */
+/** Install the update: have the firmware download and install each asset */
 function installUpdate() {
     if (!checkUpdates_latestRelease) {
         alertdlg(translate_text_item("Error"), translate_text_item("No release selected."));
@@ -329,73 +303,23 @@ async function startInstallUpdate(response) {
     disablePingForUpload();
 
     try {
-        let fwBlob = null;
-        let uiBlob = null;
+        // The firmware downloads each asset directly from GitHub (server-side),
+        // which avoids the release-asset CORS restriction that blocks the browser.
 
-        // Phase 1: Download firmware.bin (0–20 %)
-        if (fwAsset) {
-            setHTML("checkupdates_step", `${translate_text_item("Downloading")} firmware.bin...`);
-            fwBlob = await downloadAsset(fwAsset.browser_download_url, (loaded, total) => {
-                setProgress(Math.round((loaded / total) * 20));
-            });
-        }
-
-        // Phase 2: Download index.html.gz (20–40 %)
+        // Phase 1: Install the web UI (index.html.gz) — saved to the filesystem (0–50 %)
         if (uiAsset) {
             setHTML("checkupdates_step", `${translate_text_item("Downloading")} index.html.gz...`);
-            uiBlob = await downloadAsset(uiAsset.browser_download_url, (loaded, total) => {
-                setProgress(20 + Math.round((loaded / total) * 20));
-            });
+            setProgress(10);
+            await proxyDownload(uiAsset, "file", "index.html.gz");
+            setProgress(50);
         }
 
-        // Phase 3: Save firmware.bin to filesystem (40–55 %)
-        if (fwBlob) {
-            setHTML("checkupdates_step", `${translate_text_item("Saving")} firmware.bin...`);
-            await saveToFilesystem(fwBlob, "firmware.bin", (evt) => {
-                if (evt.lengthComputable) {
-                    setProgress(40 + Math.round((evt.loaded / evt.total) * 15));
-                }
-            });
-        }
-
-        // Phase 4: Save index.html.gz to filesystem — this installs the UI (55–70 %)
-        if (uiBlob) {
-            setHTML("checkupdates_step", `${translate_text_item("Installing UI")}...`);
-            await saveToFilesystem(uiBlob, "index.html.gz", (evt) => {
-                if (evt.lengthComputable) {
-                    setProgress(55 + Math.round((evt.loaded / evt.total) * 15));
-                }
-            });
-        }
-
-        // Phase 5: Verify both files exist on filesystem (70–75 %)
-        setHTML("checkupdates_step", translate_text_item("Verifying downloads..."));
-        setProgress(70);
-
-        if (fwBlob) {
-            const fwExists = await checkFileExistsPromise("firmware.bin");
-            if (!fwExists) {
-                throw new Error(`${translate_text_item("Verification failed:")} firmware.bin`);
-            }
-        }
-
-        if (uiBlob) {
-            const uiExists = await checkFileExistsPromise("index.html.gz");
-            if (!uiExists) {
-                throw new Error(`${translate_text_item("Verification failed:")} index.html.gz`);
-            }
-        }
-
-        setProgress(75);
-
-        // Phase 6: Flash firmware (75–100 %) — triggers reboot
-        if (fwBlob) {
+        // Phase 2: Install firmware — downloaded and OTA-flashed, triggers reboot (50–100 %)
+        if (fwAsset) {
             setHTML("checkupdates_step", `${translate_text_item("Installing firmware")}...`);
-            await flashFirmware(fwBlob, (evt) => {
-                if (evt.lengthComputable) {
-                    setProgress(75 + Math.round((evt.loaded / evt.total) * 25));
-                }
-            });
+            setProgress(60);
+            // The device reboots on success; this resolves just before the reboot.
+            await proxyDownload(fwAsset, "firmware");
         }
 
         finishInstallUpdate();

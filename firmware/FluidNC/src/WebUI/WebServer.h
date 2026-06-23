@@ -87,6 +87,7 @@ namespace WebUI {
         static void handleFileList();
         static void handleUpdate();
         static void WebUpdateUpload();
+        static void handleDownloadUpdate();
 
         static bool myStreamFile(const char* path, bool download = false);
 

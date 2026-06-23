@@ -19,6 +19,8 @@
 #    include <ESP32SSDP.h>
 #    include <StreamString.h>
 #    include <Update.h>
+#    include <HTTPClient.h>
+#    include <WiFiClientSecure.h>
 #    include <esp_wifi_types.h>
 #    include <ESPmDNS.h>
 #    include <ESP32SSDP.h>
@@ -147,6 +149,9 @@ namespace WebUI {
 
         //web update
         _webserver->on("/updatefw", HTTP_ANY, handleUpdate, WebUpdateUpload);
+
+        //server-side update download proxy (bypasses GitHub asset CORS restriction)
+        _webserver->on("/downloadupdate", HTTP_ANY, handleDownloadUpdate);
 
         //Direct SD management
         _webserver->on("/upload", HTTP_ANY, handle_direct_SDFileList, SDFileUpload);
@@ -1141,6 +1146,244 @@ namespace WebUI {
             cancelUpload();
             Update.end();
         }
+    }
+
+    // Restrict server-side downloads to GitHub hosts to limit SSRF exposure.
+    static bool isAllowedUpdateHost(const std::string& url) {
+        if (url.rfind("https://", 0) != 0) {
+            return false;
+        }
+        const size_t hostStart = 8;  // strlen("https://")
+        size_t       hostEnd   = url.find('/', hostStart);
+        std::string  host      = (hostEnd == std::string::npos) ? url.substr(hostStart) : url.substr(hostStart, hostEnd - hostStart);
+        // strip any userinfo and port
+        size_t at = host.find('@');
+        if (at != std::string::npos) {
+            host = host.substr(at + 1);
+        }
+        size_t colon = host.find(':');
+        if (colon != std::string::npos) {
+            host = host.substr(0, colon);
+        }
+        auto endsWith = [](const std::string& s, const std::string& suffix) {
+            return s.size() >= suffix.size() && s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+        };
+        return host == "api.github.com" || host == "github.com" || host == "codeload.github.com" || endsWith(host, ".github.com") ||
+               endsWith(host, ".githubusercontent.com");
+    }
+
+    // Download an update asset from the network (server-side proxy).
+    //
+    // The browser cannot fetch GitHub release assets directly: the final signed
+    // download host (release-assets.githubusercontent.com) does not send CORS
+    // headers, so a cross-origin fetch from the ESP32-hosted UI fails with a
+    // NetworkError. The ESP32 is not subject to CORS, so it downloads the file
+    // itself and either flashes it via OTA or writes it to the local filesystem.
+    //
+    // Query args:
+    //   url    - https URL of the asset (GitHub API asset URL or browser_download_url)
+    //   target - "firmware" to OTA-flash, otherwise the file is saved to LocalFS
+    //   name   - destination filename when target != "firmware" (e.g. index.html.gz)
+    void Web_Server::handleDownloadUpdate() {
+        if (is_authenticated() != AuthenticationLevel::LEVEL_ADMIN) {
+            sendStatus(401, "Authentication failed");
+            return;
+        }
+
+        if (!_webserver->hasArg("url") || !_webserver->hasArg("target")) {
+            sendStatus(400, "Missing url or target");
+            return;
+        }
+
+        std::string url        = _webserver->arg("url").c_str();
+        std::string target     = _webserver->arg("target").c_str();
+        bool        isFirmware = (target == "firmware");
+
+        if (!isAllowedUpdateHost(url)) {
+            sendStatus(400, "URL host not allowed");
+            return;
+        }
+
+        std::string name = _webserver->hasArg("name") ? std::string(_webserver->arg("name").c_str()) : std::string();
+        if (!isFirmware) {
+            // Only a bare filename is allowed (no path traversal)
+            if (name.empty() || name.find('/') != std::string::npos || name.find('\\') != std::string::npos ||
+                name.find("..") != std::string::npos) {
+                sendStatus(400, "Invalid filename");
+                return;
+            }
+        }
+
+        log_info("Update download: " << (isFirmware ? "firmware" : name.c_str()) << " from " << url.c_str());
+        Maslow.uploadInProgress = true;
+
+        WiFiClientSecure client;
+        client.setInsecure();  // GitHub uses publicly-trusted certs; skip validation to avoid bundling a CA store
+
+        HTTPClient http;
+        http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        http.setReuse(false);
+        http.setConnectTimeout(15000);
+        http.setTimeout(20000);
+
+        if (!http.begin(client, url.c_str())) {
+            Maslow.uploadInProgress = false;
+            log_error("Update download: connection setup failed");
+            sendStatus(502, "Connection failed");
+            return;
+        }
+        // GitHub's API rejects requests without a User-Agent; both headers are
+        // resent automatically when the request is redirected to the CDN.
+        http.addHeader("User-Agent", "MaslowCNC-FluidNC");
+        http.addHeader("Accept", "application/octet-stream");
+
+        log_info("Update download: connecting...");
+        int httpCode = http.GET();
+        log_info("Update download: HTTP " << httpCode);
+        if (httpCode != HTTP_CODE_OK) {
+            http.end();
+            Maslow.uploadInProgress = false;
+            std::string msg = "Download failed: HTTP " + std::to_string(httpCode);
+            log_error("Update download failed: " << msg.c_str());
+            sendStatus(502, msg.c_str());
+            return;
+        }
+
+        int         total  = http.getSize();  // -1 if unknown / chunked
+        WiFiClient* stream = http.getStreamPtr();
+        uint8_t     buf[2048];
+        size_t      written = 0;
+        bool        ok      = true;
+        std::string errmsg;
+        FileStream* file = nullptr;
+
+        log_info("Update download: content length " << total);
+
+        if (isFirmware) {
+            if (!Update.begin(total > 0 ? total : UPDATE_SIZE_UNKNOWN)) {
+                ok     = false;
+                errmsg = "Not enough space for firmware";
+            }
+        } else {
+            try {
+                std::error_code ec;
+                FluidPath       fpath { name.c_str(), localfsName, ec };
+                if (ec) {
+                    ok     = false;
+                    errmsg = "Filesystem inaccessible";
+                } else {
+                    file = new FileStream(fpath, "w");
+                }
+            } catch (const Error err) {
+                ok     = false;
+                errmsg = "Cannot create file";
+            }
+        }
+
+        // Stream the response body to the destination.
+        //
+        // The loop is bounded by an idle timeout so it can never hang forever:
+        // if no data arrives for IDLE_TIMEOUT_MS (e.g. a stalled TLS connection),
+        // it breaks out and reports a failure instead of spinning indefinitely.
+        const uint32_t IDLE_TIMEOUT_MS = 15000;
+        uint32_t       lastDataMs      = millis();
+        size_t         lastLogged      = 0;
+        while (ok) {
+            size_t avail = stream->available();
+            if (avail) {
+                size_t toRead = avail > sizeof(buf) ? sizeof(buf) : avail;
+                int    n      = stream->readBytes(buf, toRead);
+                if (n > 0) {
+                    if (isFirmware) {
+                        if (Update.write(buf, n) != (size_t)n) {
+                            ok     = false;
+                            errmsg = "Firmware write failed";
+                        }
+                    } else if (file->write(buf, n) != (size_t)n) {
+                        ok     = false;
+                        errmsg = "File write failed";
+                    }
+                    written += n;
+                    lastDataMs = millis();
+                    Maslow.resetUpdateWatchdog();
+                    if (written - lastLogged >= 32768) {
+                        lastLogged = written;
+                        log_info("Update download: " << written << " bytes");
+                    }
+                }
+            } else {
+                // Done when we've read the full content length, or the server
+                // closed the connection with no more buffered data.
+                if (total > 0 && written >= (size_t)total) {
+                    break;
+                }
+                if (!http.connected()) {
+                    break;
+                }
+                if (millis() - lastDataMs > IDLE_TIMEOUT_MS) {
+                    ok     = false;
+                    errmsg = "Download stalled (timeout)";
+                    break;
+                }
+                vTaskDelay(5 / portTICK_RATE_MS);
+            }
+        }
+
+        http.end();
+        log_info("Update download: received " << written << " bytes");
+
+        if (ok && total > 0 && written != (size_t)total) {
+            ok     = false;
+            errmsg = "Incomplete download";
+        }
+        if (ok && written == 0) {
+            ok     = false;
+            errmsg = "Empty download";
+        }
+
+        if (isFirmware) {
+            if (ok) {
+                if (!Update.end(true)) {
+                    ok     = false;
+                    errmsg = "Firmware finalize failed";
+                }
+            } else {
+                Update.abort();
+            }
+        } else if (file) {
+            delete file;
+            file = nullptr;
+            std::error_code ec;
+            FluidPath       fpath { name.c_str(), localfsName, ec };
+            if (ok) {
+                if (!ec) {
+                    fpath.rehash_fs();
+                }
+            } else if (!ec) {
+                stdfs::remove(fpath, ec);  // remove the partial file
+            }
+        }
+
+        if (!ok) {
+            Maslow.uploadInProgress = false;
+            log_info("Update download failed: " << errmsg.c_str());
+            sendStatus(500, errmsg.empty() ? "Update download failed" : errmsg.c_str());
+            return;
+        }
+
+        if (isFirmware) {
+            // Respond, then reboot into the new firmware. uploadInProgress stays
+            // true until the reboot clears it (mirrors the OTA upload handler).
+            log_info("Firmware updated, restarting");
+            sendStatus(200, "Firmware updated, restarting");
+            delay_ms(1000);
+            COMMANDS::restart_MCU();
+            return;  // not reached
+        }
+
+        Maslow.uploadInProgress = false;
+        log_info("Update download complete: " << name.c_str());
+        sendStatus(200, "Ok");
     }
 
     void Web_Server::handleFileOps(const char* fs) {

@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 
+# Captures major, minor, patch, optional prerelease, and optional build metadata from v-prefixed semver tags.
 SEMVER_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$")
 PR_RE = re.compile(r"\(#(\d+)\)|#(\d+)")
 FIX_RE = re.compile(r"\b(fix|fixed|fixes|bug|bugs|regression|error|issue|crash)\b", re.IGNORECASE)

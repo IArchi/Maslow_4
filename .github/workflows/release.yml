@@ -220,13 +220,19 @@ jobs:
 
       - name: Generate release notes
         run: |
+          set +e
           python3 scripts/generate_release_notes.py \
             --tag '${{ needs.prepare.outputs.tag }}' \
             --owner '${{ github.repository_owner }}' \
             --repo '${{ github.event.repository.name }}' \
             --assets-manifest dist/release/release-assets.json \
-            --output dist/release-notes.md || true
-          if [ ! -s dist/release-notes.md ]; then
+            --output dist/release-notes.md
+          notes_status=$?
+          set -e
+          if [ "$notes_status" -ne 0 ]; then
+            echo "Release notes generation failed with exit code $notes_status; using fallback notes" >&2
+          fi
+          if [ "$notes_status" -ne 0 ] || [ ! -s dist/release-notes.md ]; then
             printf '%s\n' \
               '# Release Notes' \
               '' \
@@ -255,8 +261,14 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Updating existing release $TAG"
             gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
-            mapfile -t existing_assets < <(gh release view "$TAG" --json assets --jq '.assets[].name')
-            mapfile -t desired_assets < <(find dist/release -maxdepth 1 -type f -printf '%f\n' | sort)
+            existing_assets=()
+            while IFS= read -r asset; do
+              [ -n "$asset" ] && existing_assets+=("$asset")
+            done <<<"$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+            desired_assets=()
+            while IFS= read -r asset; do
+              [ -n "$asset" ] && desired_assets+=("$asset")
+            done <<<"$(find dist/release -maxdepth 1 -type f -printf '%f\n' | sort)"
             for asset in "${existing_assets[@]}"; do
               if ! printf '%s\n' "${desired_assets[@]}" | grep -Fxq "$asset"; then
                 echo "Deleting stale asset $asset"

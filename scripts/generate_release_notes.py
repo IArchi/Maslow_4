@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 
-SEMVER_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:[-+.]([0-9A-Za-z.-]+))?$")
+SEMVER_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$")
 PR_RE = re.compile(r"\(#(\d+)\)|#(\d+)")
 FIX_RE = re.compile(r"\b(fix|fixed|fixes|bug|bugs|regression|error|issue|crash)\b", re.IGNORECASE)
 BREAKING_RE = re.compile(r"\b(breaking|migration|migrate|config|maslow\.yaml|update required)\b", re.IGNORECASE)
@@ -34,8 +34,8 @@ def semver_key(tag: str) -> tuple:
     match = SEMVER_RE.match(tag)
     if not match:
         return (-1, -1, -1, tag)
-    major, minor, patch, suffix = match.groups()
-    return (int(major), int(minor), int(patch), suffix or "")
+    major, minor, patch, prerelease, build = match.groups()
+    return (int(major), int(minor), int(patch), prerelease or "", build or "")
 
 
 def find_previous_tag(current_tag: str) -> str | None:

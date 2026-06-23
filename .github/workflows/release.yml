@@ -51,7 +51,7 @@ jobs:
             CHECKOUT_REF="$GITHUB_REF"
           fi
 
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.+][0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?([+][0-9A-Za-z.-]+)?$ ]]; then
             echo "A semver tag is required. Got '$TAG'." >&2
             exit 1
           fi
@@ -159,7 +159,11 @@ jobs:
           cp "firmware/.pio/build/$ENV_NAME/littlefs.bin" "$STAGE_DIR/targets/$ENV_NAME/"
           cp "$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin" "$STAGE_DIR/common/"
           cp ESP3D-WEBUI/dist/index.html.gz "$STAGE_DIR/webui/index.html.gz"
-          cp firmware/FluidNC/data/maslow.yaml "$STAGE_DIR/config/maslow.yaml"
+          if [ -f firmware/FluidNC/data/maslow.yaml ]; then
+            cp firmware/FluidNC/data/maslow.yaml "$STAGE_DIR/config/maslow.yaml"
+          else
+            echo "Optional firmware/FluidNC/data/maslow.yaml not present; continuing without it"
+          fi
 
       - name: Validate staged inputs listing
         shell: bash

@@ -159,6 +159,7 @@ def build_host_package(
         format_value(platform_entry["compatibility_output"], env=env, version=version, tag=tag),
     ]
 
+    # Cache downloaded esptool archives between reruns to avoid repeated network fetches.
     esptool_archive = download_esptool_archive(repo_root / ".release-cache", platform)
     with ZipFile(esptool_archive, "r") as esptool_zip:
         for archive_name in archive_names:

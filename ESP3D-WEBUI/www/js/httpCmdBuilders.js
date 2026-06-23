@@ -14,9 +14,6 @@ const httpCmd = {
      * For a POST this is used with FormData the firmware.
      * For a GET this this does something else? */
     fwUpdate: "/updatefw",
-    /** Ask the firmware to download an update asset directly from the network,
-     * bypassing the GitHub release-asset CORS restriction. GET with url/target/name args. */
-    downloadUpdate: "/downloadupdate",
     /** Perform some auth related GET action */
     login: "/login",
 };

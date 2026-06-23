@@ -231,44 +231,95 @@ function handleReleaseFetched(release, stream) {
 }
 
 /**
- * Resolve the URL the firmware should download an asset from.
- * Prefer the GitHub API asset URL (api.github.com/.../releases/assets/{id});
- * it 302-redirects to the signed binary when requested with
- * `Accept: application/octet-stream`. The ESP32 performs the download itself
- * (see /downloadupdate), so it is not affected by the missing CORS headers on
- * the final release-assets.githubusercontent.com host that block the browser.
+ * The release assets (firmware.bin / index.html.gz) cannot be downloaded by the
+ * browser directly from a GitHub Release: those URLs redirect to
+ * release-assets.githubusercontent.com, which sends no CORS headers. The ESP32
+ * itself has too little free RAM to perform the HTTPS/TLS download.
+ *
+ * Instead, a GitHub Action mirrors each release's assets into the repo under
+ * web-assets/<tag>/ (and web-assets/latest/). raw.githubusercontent.com serves
+ * those files WITH "access-control-allow-origin: *", so the browser can fetch
+ * them cross-origin and then upload them to the device over the existing,
+ * low-RAM upload endpoints.
  */
-function assetDownloadUrl(asset) {
-    return (asset && asset.url) || (asset && asset.browser_download_url) || "";
+const MIRROR_BRANCH = "Maslow-Main";
+const MIRROR_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/${MIRROR_BRANCH}/web-assets`;
+
+/** Download a URL as a Blob, reporting progress via onProgress(loaded, total). */
+async function downloadBlob(url, onProgress) {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+    const total = parseInt(response.headers.get("Content-Length") || "0", 10);
+    if (!response.body || !response.body.getReader) {
+        return await response.blob();  // streaming unsupported — fall back
+    }
+    const reader = response.body.getReader();
+    const chunks = [];
+    let loaded = 0;
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        if (total && onProgress) {
+            onProgress(loaded, total);
+        }
+    }
+    return new Blob(chunks);
 }
 
-/** Wrap SendGetHttp in a Promise */
-function sendGetHttpPromise(url) {
+/**
+ * Fetch a mirrored release asset from raw.githubusercontent.com. Tries the
+ * version-specific path (web-assets/<tag>/) first, then falls back to "latest".
+ */
+async function fetchMirrorAsset(tag, filename, onProgress) {
+    const candidates = [];
+    if (tag) {
+        candidates.push(`${MIRROR_BASE}/${encodeURIComponent(tag)}/${filename}`);
+    }
+    candidates.push(`${MIRROR_BASE}/latest/${filename}`);
+
+    let lastErr = null;
+    for (const url of candidates) {
+        try {
+            return await downloadBlob(url, onProgress);
+        } catch (err) {
+            lastErr = err;
+        }
+    }
+    throw new Error(`${translate_text_item("Download failed:")} ${filename} (${lastErr ? lastErr.message : "not found"})`);
+}
+
+/** Wrap SendFileHttp in a Promise that resolves on success / rejects on error. */
+function sendFileHttpPromise(endpoint, formData, onProgress, context) {
     return new Promise((resolve, reject) => {
-        SendGetHttp(
-            url,
-            (response) => resolve(response),
-            (error_code, response) => reject(new Error(`HTTP ${error_code} — ${response}`))
+        SendFileHttp(
+            endpoint,
+            formData,
+            onProgress,
+            () => resolve(),
+            (error_code, response) => {
+                const ctx = context ? `${context}: ` : "";
+                reject(new Error(`${ctx}HTTP ${error_code} — ${response}`));
+            }
         );
     });
 }
 
 /**
- * Ask the firmware to download a release asset directly from GitHub.
- * target: "firmware" to OTA-flash (triggers reboot), or "file" to save to the
- * local filesystem under `name` (e.g. index.html.gz).
+ * Upload a blob to the device.
+ *   endpoint = httpCmd.files    -> save to LocalFS root (e.g. index.html.gz)
+ *   endpoint = httpCmd.fwUpdate -> OTA firmware flash (triggers reboot)
  */
-function proxyDownload(asset, target, name) {
-    const params = new URLSearchParams();
-    params.set("url", assetDownloadUrl(asset));
-    params.set("target", target);
-    if (name) {
-        params.set("name", name);
-    }
-    return sendGetHttpPromise(`${httpCmd.downloadUpdate}?${params.toString()}`);
+function uploadBlobToDevice(blob, filename, endpoint, onProgress, context) {
+    const file = new File([blob], filename);
+    const formData = BuildFileUploadFormData("/", [file]);
+    return sendFileHttpPromise(endpoint, formData, onProgress, context);
 }
 
-/** Install the update: have the firmware download and install each asset */
+/** Install the update: download mirrored assets in the browser, then upload to the device */
 function installUpdate() {
     if (!checkUpdates_latestRelease) {
         alertdlg(translate_text_item("Error"), translate_text_item("No release selected."));
@@ -285,6 +336,7 @@ async function startInstallUpdate(response) {
     if (response !== "yes") return;
 
     const release = checkUpdates_latestRelease;
+    const tag = release.tag_name;
     const fwAsset = findAsset(release, "firmware.bin");
     const uiAsset = findAsset(release, "index.html.gz");
 
@@ -303,23 +355,45 @@ async function startInstallUpdate(response) {
     disablePingForUpload();
 
     try {
-        // The firmware downloads each asset directly from GitHub (server-side),
-        // which avoids the release-asset CORS restriction that blocks the browser.
+        let uiBlob = null;
+        let fwBlob = null;
 
-        // Phase 1: Install the web UI (index.html.gz) — saved to the filesystem (0–50 %)
+        // Phase 1: Download index.html.gz from the CORS-enabled mirror (0–25 %)
         if (uiAsset) {
             setHTML("checkupdates_step", `${translate_text_item("Downloading")} index.html.gz...`);
-            setProgress(10);
-            await proxyDownload(uiAsset, "file", "index.html.gz");
-            setProgress(50);
+            uiBlob = await fetchMirrorAsset(tag, "index.html.gz", (loaded, total) => {
+                setProgress(Math.round((loaded / total) * 25));
+            });
         }
 
-        // Phase 2: Install firmware — downloaded and OTA-flashed, triggers reboot (50–100 %)
+        // Phase 2: Download firmware.bin from the mirror (25–50 %)
         if (fwAsset) {
+            setHTML("checkupdates_step", `${translate_text_item("Downloading")} firmware.bin...`);
+            fwBlob = await fetchMirrorAsset(tag, "firmware.bin", (loaded, total) => {
+                setProgress(25 + Math.round((loaded / total) * 25));
+            });
+        }
+
+        // Phase 3: Install the web UI to the filesystem (50–65 %)
+        // Done before the firmware flash because the firmware flash reboots the device.
+        if (uiBlob) {
+            setHTML("checkupdates_step", `${translate_text_item("Installing UI")}...`);
+            await uploadBlobToDevice(uiBlob, "index.html.gz", httpCmd.files, (evt) => {
+                if (evt.lengthComputable) {
+                    setProgress(50 + Math.round((evt.loaded / evt.total) * 15));
+                }
+            }, "install UI");
+            setProgress(65);
+        }
+
+        // Phase 4: Flash the firmware (65–100 %) — triggers reboot on success
+        if (fwBlob) {
             setHTML("checkupdates_step", `${translate_text_item("Installing firmware")}...`);
-            setProgress(60);
-            // The device reboots on success; this resolves just before the reboot.
-            await proxyDownload(fwAsset, "firmware");
+            await uploadBlobToDevice(fwBlob, "firmware.bin", httpCmd.fwUpdate, (evt) => {
+                if (evt.lengthComputable) {
+                    setProgress(65 + Math.round((evt.loaded / evt.total) * 35));
+                }
+            }, "flash firmware");
         }
 
         finishInstallUpdate();

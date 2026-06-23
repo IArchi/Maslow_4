@@ -299,6 +299,47 @@ jobs:
           TITLE="$TAG - Firmware Release"
           NOTES_FILE='dist/release-notes.md'
 
+          mapfile -t desired_assets < <(
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('release-manifest.json').read_text())
+          version = '${{ needs.prepare.outputs.version }}'
+          tag = '${{ needs.prepare.outputs.tag }}'
+          targets = manifest.get('targets', [])
+
+          def expand(template: str):
+            if '{env}' in template or '{target}' in template:
+              for target in targets:
+                env = target['env']
+                print(template.format(env=env, target=env, version=version, tag=tag))
+            else:
+              env = targets[0]['env'] if targets else ''
+              print(template.format(env=env, target=env, version=version, tag=tag))
+
+          for template in manifest.get('required_release_assets', []):
+            expand(template)
+          for template in manifest.get('optional_release_assets', []):
+            expand(template)
+          PY
+          )
+
+          files_to_upload=()
+          for asset in "${desired_assets[@]}"; do
+            asset_path="dist/release/$asset"
+            if [ -f "$asset_path" ]; then
+              files_to_upload+=("$asset_path")
+            else
+              echo "Optional or missing asset not uploaded: $asset"
+            fi
+          done
+
+          if [ "${#files_to_upload[@]}" -eq 0 ]; then
+            echo "No release assets resolved for upload" >&2
+            exit 1
+          fi
+
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Updating existing release $TAG"
             gh release edit "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
@@ -306,11 +347,6 @@ jobs:
             existing_assets_output="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
             if [ -n "$existing_assets_output" ]; then
               readarray -t existing_assets <<<"$existing_assets_output"
-            fi
-            desired_assets=()
-            desired_assets_output="$(find dist/release -maxdepth 1 -type f -printf '%f\n' | sort)"
-            if [ -n "$desired_assets_output" ]; then
-              readarray -t desired_assets <<<"$desired_assets_output"
             fi
             for asset in "${existing_assets[@]}"; do
               if ! printf '%s\n' "${desired_assets[@]}" | grep -Fxq "$asset"; then
@@ -323,4 +359,4 @@ jobs:
             gh release create "$TAG" --title "$TITLE" --notes-file "$NOTES_FILE"
           fi
 
-          gh release upload "$TAG" dist/release/* --clobber
+          gh release upload "$TAG" "${files_to_upload[@]}" --clobber

@@ -15,7 +15,7 @@ environ = dict(os.environ)
 # User-configurable variables - modify these paths as needed for your system
 # ============================================================================
 
-# Path to platformio executable
+# Path to platformio executable 
 # If pio is in your PATH, you can use just "pio"
 # Otherwise, specify the full path to the pio or platformio executable
 PLATFORMIO_CMD = "pio"

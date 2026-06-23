@@ -146,6 +146,10 @@ jobs:
         working-directory: firmware
         run: pio run -e ${{ matrix.env }} -t buildfs
 
+      - name: Rebuild firmware artifacts for staging
+        working-directory: firmware
+        run: pio run -e ${{ matrix.env }} -t buildprog
+
       - name: Stage release inputs
         shell: bash
         run: |

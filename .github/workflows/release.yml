@@ -57,13 +57,7 @@ jobs:
           fi
 
           VERSION="${TAG#v}"
-          MATRIX="$(python3 - <<'PY'
-import json
-from pathlib import Path
-manifest = json.loads(Path('release-manifest.json').read_text())
-print(json.dumps([target['env'] for target in manifest['targets']]))
-PY
-)"
+          MATRIX="$(python3 -c "import json, pathlib; manifest = json.loads(pathlib.Path('release-manifest.json').read_text()); print(json.dumps([target['env'] for target in manifest['targets']]))")"
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -229,12 +223,12 @@ PY
             --assets-manifest dist/release/release-assets.json \
             --output dist/release-notes.md || true
           if [ ! -s dist/release-notes.md ]; then
-            cat > dist/release-notes.md <<'NOTES'
-# Release Notes
-
-Automated release generated successfully, but custom note generation was incomplete.
-Please review the attached assets and commit history for full details.
-NOTES
+            printf '%s\n' \
+              '# Release Notes' \
+              '' \
+              'Automated release generated successfully, but custom note generation was incomplete.' \
+              'Please review the attached assets and commit history for full details.' \
+              > dist/release-notes.md
           fi
 
       - name: Upload packaged release bundle

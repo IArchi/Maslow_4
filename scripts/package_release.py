@@ -218,9 +218,15 @@ def build_host_package(
 
 def validate_final_assets(manifest: dict, records: list[dict], version: str, tag: str) -> list[str]:
     produced = {record["name"] for record in records}
+    expected_names: set[str] = set()
     missing: list[str] = []
     for template in manifest.get("required_release_assets", []):
-        expected = format_value(template, env=manifest["targets"][0]["env"], version=version, tag=tag)
+        if "{env}" in template or "{target}" in template:
+            for target in manifest["targets"]:
+                expected_names.add(format_value(template, env=target["env"], version=version, tag=tag))
+        else:
+            expected_names.add(format_value(template, env=manifest["targets"][0]["env"], version=version, tag=tag))
+    for expected in sorted(expected_names):
         if expected not in produced:
             missing.append(expected)
     return missing

@@ -119,14 +119,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
 
-      - name: Install embedded UI dependencies
-        working-directory: firmware/embedded
-        run: npm install
-
-      - name: Build embedded fallback UI
-        working-directory: firmware/embedded
-        run: python3 build.py
-
       - name: Install ESP3D-WEBUI dependencies
         working-directory: ESP3D-WEBUI
         run: npm install
@@ -134,6 +126,14 @@ jobs:
       - name: Build ESP3D-WEBUI
         working-directory: ESP3D-WEBUI
         run: npm run build:en
+
+      - name: Install embedded UI dependencies
+        working-directory: firmware/embedded
+        run: npm install
+
+      - name: Build embedded fallback UI
+        working-directory: firmware/embedded
+        run: python3 build.py
 
       - name: Sync built web UI into firmware data
         run: cp ESP3D-WEBUI/dist/index.html.gz firmware/FluidNC/data/index.html.gz

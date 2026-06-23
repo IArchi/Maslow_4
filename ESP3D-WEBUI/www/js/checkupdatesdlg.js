@@ -237,10 +237,10 @@ function handleReleaseFetched(release, stream) {
  * itself has too little free RAM to perform the HTTPS/TLS download.
  *
  * Instead, a GitHub Action mirrors each release's assets into the repo under
- * web-assets/<tag>/ (and web-assets/latest/). raw.githubusercontent.com serves
+ * web-assets/<safe_tag>/ (and web-assets/latest/), where safe_tag is a sanitized
+ * form of the release tag_name (see .github/workflows/release.yml). raw.githubusercontent.com serves
  * those files WITH "access-control-allow-origin: *", so the browser can fetch
  * them cross-origin and then upload them to the device over the existing,
- * low-RAM upload endpoints.
  */
 const MIRROR_BRANCH = "Maslow-Main";
 const MIRROR_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/${MIRROR_BRANCH}/web-assets`;

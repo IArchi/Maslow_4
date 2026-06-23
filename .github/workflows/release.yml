@@ -152,11 +152,48 @@ jobs:
           set -euo pipefail
           ENV_NAME='${{ matrix.env }}'
           STAGE_DIR="release-staging"
+          BUILD_DIR="firmware/.pio/build/$ENV_NAME"
+
+          copy_first_existing() {
+            local dest="$1"
+            shift
+            local src
+            for src in "$@"; do
+              if [ -f "$src" ]; then
+                cp "$src" "$dest"
+                echo "Staged $(basename "$dest") from $src"
+                return 0
+              fi
+            done
+
+            echo "Failed to find expected source for $dest" >&2
+            echo "Checked:" >&2
+            printf '  - %s\n' "$@" >&2
+            if [ -d "$BUILD_DIR" ]; then
+              echo "Available files under $BUILD_DIR:" >&2
+              find "$BUILD_DIR" -maxdepth 3 -type f | sort >&2
+            else
+              echo "Build directory missing: $BUILD_DIR" >&2
+            fi
+            return 1
+          }
+
           mkdir -p "$STAGE_DIR/targets/$ENV_NAME" "$STAGE_DIR/common" "$STAGE_DIR/webui" "$STAGE_DIR/config"
-          cp "firmware/.pio/build/$ENV_NAME/bootloader.bin" "$STAGE_DIR/targets/$ENV_NAME/"
-          cp "firmware/.pio/build/$ENV_NAME/firmware.bin" "$STAGE_DIR/targets/$ENV_NAME/"
-          cp "firmware/.pio/build/$ENV_NAME/partitions.bin" "$STAGE_DIR/targets/$ENV_NAME/"
-          cp "firmware/.pio/build/$ENV_NAME/littlefs.bin" "$STAGE_DIR/targets/$ENV_NAME/"
+
+          copy_first_existing "$STAGE_DIR/targets/$ENV_NAME/bootloader.bin" \
+            "$BUILD_DIR/bootloader.bin" \
+            "$BUILD_DIR/bootloader/bootloader.bin"
+
+          copy_first_existing "$STAGE_DIR/targets/$ENV_NAME/firmware.bin" \
+            "$BUILD_DIR/firmware.bin"
+
+          copy_first_existing "$STAGE_DIR/targets/$ENV_NAME/partitions.bin" \
+            "$BUILD_DIR/partitions.bin" \
+            "$BUILD_DIR/partition-table.bin"
+
+          copy_first_existing "$STAGE_DIR/targets/$ENV_NAME/littlefs.bin" \
+            "$BUILD_DIR/littlefs.bin"
+
           cp "$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin" "$STAGE_DIR/common/"
           cp ESP3D-WEBUI/dist/index.html.gz "$STAGE_DIR/webui/index.html.gz"
           if [ -f firmware/FluidNC/data/maslow.yaml ]; then

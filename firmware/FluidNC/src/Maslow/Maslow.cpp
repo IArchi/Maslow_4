@@ -536,7 +536,7 @@ void Maslow_::loadZPos() {
 
         if (zHomeOutOfRange) {
             log_warn("Maslow Z home reset warning: Startup Z home is out of range (Zm=" << targetZ << "mm, Z home=" << zHome
-                                                                                          << "mm). Valid range for Z home is 0 to 72mm inclusive. No reset performed. Power cycling Maslow may clear error.");
+                                                                                          << "mm). Valid range for Z home is 0 to 72mm inclusive. Resetting Z home to Zm.");
         }
 
         // Use Z_AXIS constant (2) for cartesian coordinate, not motor index (4)
@@ -548,6 +548,22 @@ void Maslow_::loadZPos() {
 
         gc_sync_position();  //This updates the Gcode engine with the new position from the stepping engine that we set with set_motor_steps
         plan_sync_position();
+
+        if (zHomeOutOfRange) {
+            // Reset Z home to Zm by clearing any transient G92 offset and then setting the
+            // work coordinate system so that work Z = 0 at the current machine position (Zm).
+            char  clear_offset_line[] = "G92.1";
+            Error result              = gc_execute_line(clear_offset_line);
+            if (result != Error::Ok) {
+                log_error("Failed to clear transient Z home offset: " << errorString(result));
+            } else {
+                char set_home_line[] = "G10 L20 P0 Z0";
+                result               = gc_execute_line(set_home_line);
+                if (result != Error::Ok) {
+                    log_error("Failed to set work coordinate Z home to Zm: " << errorString(result));
+                }
+            }
+        }
     }
 }
 

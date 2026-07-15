@@ -32,6 +32,7 @@ Step-by-step instructions for building your Maslow 4:
 - [Frame Library](FrameLibrary.md) - Frame designs and specifications
 - [Materials Library](MaterialsLibrary.md) - Material cutting recommendations
 - [Router and Spindle Library](RouterAndSpindleLibrary.md) - Router and spindle options
+- [Software Guide](software-guide/) - CAM and CAD software options for use with Maslow
 - [Software Library](SoftwareLibrary.md) - Software tools and resources
 
 ## Interactive Tools

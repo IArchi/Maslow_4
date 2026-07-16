@@ -10,6 +10,10 @@ Before you purchase any of this software be aware that we are working on some fr
 
 CAM software helps you take your 2D or 3D design and turn it into Gcode for your Maslow to cut.
 
+![FreazyKam](images/FreazyKam.png)
+
+FreazyKam is an excellent free online CAM option which can import .svg files or .dxf files and show how they will cut. It was developed in the maslow forums by the community so it is well supported if you encounter any issues.
+
 ![CrabzCAM](images/software-02.png)
 
 CrabzCAM is a free online ([link](https://mkrabset.github.io/krabzcam/krabzcam/index.html)) tool for generating Gcode from .svg files. It is actively maintained and works well, however the number of options and settings can be overwhelming.

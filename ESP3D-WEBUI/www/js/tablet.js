@@ -1143,38 +1143,46 @@ const tabletMoveBottomLeft = () => sendMove("X-Y-");
 const tabletMoveBottom = () => sendMove("Y-");
 const tabletMoveBottomRight = () => sendMove("X+Y-");
 // Button event handlers - Fourth Row
+const getMachineZPosition = () => MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+
+/** Report whether the Set Z Home popup is currently visible. */
 const setZHomePopupOpen = () => {
   const popup = id("set-z-home-popup");
   return !!popup && popup.style.display !== "none";
 }
 
+/** Keep the popup Z input aligned with the current machine Z while tracking is enabled. */
 const syncSetZHomeInputWithMachineZ = () => {
-  if (!setZHomeInputTracksMachineZ || !setZHomePopupOpen() || !(MPOS && MPOS.length >= 3)) {
+  const machineZ = getMachineZPosition();
+  if (!setZHomeInputTracksMachineZ || !setZHomePopupOpen() || machineZ === null) {
     return;
   }
 
   const zInput = id("setHomeZ");
   if (zInput) {
-    zInput.value = MPOS[2].toFixed(3);
+    zInput.value = machineZ.toFixed(3);
   }
 }
 
+/** Close the popup and stop live machine-Z tracking for the input field. */
 const closeSetZHomePopup = () => {
   setZHomeInputTracksMachineZ = false;
   hideModal("set-z-home-popup");
 }
 
+/** Let the user keep a manually typed Z home value without live MPOS updates overwriting it. */
 const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
 }
 
+/** Jog Z with the mouse wheel while the Set Z Home popup is open. */
 const handleSetZHomePopupWheel = (event) => {
   if (!setZHomePopupOpen()) {
     return;
   }
 
   const direction = Math.sign(event.deltaY);
-  if (!direction) {
+  if (direction === 0 || Number.isNaN(direction)) {
     return;
   }
 
@@ -1186,7 +1194,8 @@ const handleSetZHomePopupWheel = (event) => {
 
 const openSetZHomePopup = () => {
   tabletClick();
-  const zCurrent = MPOS && MPOS.length >= 3 ? MPOS[2].toFixed(3) : "0";
+  const machineZ = getMachineZPosition();
+  const zCurrent = machineZ === null ? "0" : machineZ.toFixed(3);
   const zInput = id("setHomeZ");
   if (zInput) {
     // Pre-fill with current machine Z position so the user sees where Z is now.
@@ -1207,7 +1216,7 @@ const openSetZHomePopup = () => {
 
 const moveToZHome = () => {
   closeSetZHomePopup();
-  const machineZ = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
+  const machineZ = getMachineZPosition();
   const workZeroZ = WCO && WCO.length >= 3 ? WCO[2] : null;
   const zDelta = (machineZ !== null && workZeroZ !== null) ? workZeroZ - machineZ : 0;
   checkZHomeAndProceed(() => {
@@ -1227,7 +1236,7 @@ const confirmSetZHome = () => {
 
   closeSetZHomePopup();
 
-  const mposZ = MPOS ? MPOS[2] : 0;
+  const mposZ = getMachineZPosition() ?? 0;
   sendCommand(`G10 L20 P0 Z${mposZ - zVal}`);
   addMessage(`Z Home pos set: Z=${zVal}mm`);
   refreshGcode();

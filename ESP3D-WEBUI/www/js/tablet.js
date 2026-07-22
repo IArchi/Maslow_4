@@ -362,6 +362,7 @@ let zLowLastAcknowledgedResultZ = null;
 // Whether the one-time startup Z safety check has already fired this connection.
 // Reset on every WebSocket reconnect so the warning re-fires after a firmware restart.
 let startupZCheckDone = false;
+let setZHomeInputTracksMachineZ = false;
 
 /**
  * If a movement would cause the machine Z position to exceed Z_HOME_MAX_SAFE_MM,
@@ -1032,6 +1033,7 @@ function tabletGrblState(grbl, response) {
       const axisName = axisNames[index].toUpperCase();
       setTextContent(`mpos-${axisNames[index]}`, `|${axisName}m: ${Number(pos * factor).toFixed(index > 2 ? 2 : digits)}|`);
     })
+    syncSetZHomeInputWithMachineZ();
   }
 
   // On the first status update that has both WCO and MPOS data, proactively
@@ -1141,6 +1143,47 @@ const tabletMoveBottomLeft = () => sendMove("X-Y-");
 const tabletMoveBottom = () => sendMove("Y-");
 const tabletMoveBottomRight = () => sendMove("X+Y-");
 // Button event handlers - Fourth Row
+const setZHomePopupOpen = () => {
+  const popup = id("set-z-home-popup");
+  return !!popup && popup.style.display !== "none";
+}
+
+const syncSetZHomeInputWithMachineZ = () => {
+  if (!setZHomeInputTracksMachineZ || !setZHomePopupOpen() || !(MPOS && MPOS.length >= 3)) {
+    return;
+  }
+
+  const zInput = id("setHomeZ");
+  if (zInput) {
+    zInput.value = MPOS[2].toFixed(3);
+  }
+}
+
+const closeSetZHomePopup = () => {
+  setZHomeInputTracksMachineZ = false;
+  hideModal("set-z-home-popup");
+}
+
+const handleSetZHomeManualInput = () => {
+  setZHomeInputTracksMachineZ = false;
+}
+
+const handleSetZHomePopupWheel = (event) => {
+  if (!setZHomePopupOpen()) {
+    return;
+  }
+
+  const direction = Math.sign(event.deltaY);
+  if (!direction) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  setZHomeInputTracksMachineZ = true;
+  sendMove(direction < 0 ? "Z+" : "Z-");
+}
+
 const openSetZHomePopup = () => {
   tabletClick();
   const zCurrent = MPOS && MPOS.length >= 3 ? MPOS[2].toFixed(3) : "0";
@@ -1152,6 +1195,7 @@ const openSetZHomePopup = () => {
     zInput.max = Z_HOME_MAX_SAFE_MM;
     zInput.title = `Z: ${Z_HOME_MIN_SAFE_MM} to ${Z_HOME_MAX_SAFE_MM} mm`;
   }
+  setZHomeInputTracksMachineZ = true;
   // Context label shows the previously defined Z home value (WCO[2]).
   const zHomeLabel = id("currentZHomeLabel");
   if (zHomeLabel) {
@@ -1162,7 +1206,7 @@ const openSetZHomePopup = () => {
 }
 
 const moveToZHome = () => {
-  hideModal("set-z-home-popup");
+  closeSetZHomePopup();
   const machineZ = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
   const workZeroZ = WCO && WCO.length >= 3 ? WCO[2] : null;
   const zDelta = (machineZ !== null && workZeroZ !== null) ? workZeroZ - machineZ : 0;
@@ -1181,7 +1225,7 @@ const confirmSetZHome = () => {
     addMessage(`Z Home value clamped to range: Z=${zVal}`);
   }
 
-  hideModal("set-z-home-popup");
+  closeSetZHomePopup();
 
   const mposZ = MPOS ? MPOS[2] : 0;
   sendCommand(`G10 L20 P0 Z${mposZ - zVal}`);
@@ -1737,9 +1781,11 @@ function tabletInit() {
     id("tablettab_set_home_confirm").addEventListener("click", confirmSetHome);
 
     // Buttons - Set Z Home Pop-up
-    id("set-z-home-popup").addEventListener("click", () => hideModal("set-z-home-popup"));
+    id("set-z-home-popup").addEventListener("click", () => closeSetZHomePopup());
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
-    id("tablettab_set_z_home_cancel").addEventListener("click", () => hideModal("set-z-home-popup"));
+    id("set_z_home_popup_content").addEventListener("wheel", handleSetZHomePopupWheel, { passive: false });
+    id("setHomeZ").addEventListener("input", handleSetZHomeManualInput);
+    id("tablettab_set_z_home_cancel").addEventListener("click", () => closeSetZHomePopup());
     id("tablettab_move_to_z_home").addEventListener("click", moveToZHome);
     id("tablettab_set_z_home_confirm").addEventListener("click", confirmSetZHome);
 

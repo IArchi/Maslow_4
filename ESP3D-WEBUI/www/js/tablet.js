@@ -1146,7 +1146,7 @@ const tabletMoveBottomRight = () => sendMove("X+Y-");
 const getMachineZPosition = () => MPOS && MPOS.length >= 3 ? MPOS[2] : null;
 
 /** Report whether the Set Z Home popup is currently visible. */
-const setZHomePopupOpen = () => {
+const isSetZHomePopupOpen = () => {
   const popup = id("set-z-home-popup");
   return !!popup && popup.style.display !== "none";
 }
@@ -1154,7 +1154,7 @@ const setZHomePopupOpen = () => {
 /** Keep the popup Z input aligned with the current machine Z while tracking is enabled. */
 const syncSetZHomeInputWithMachineZ = () => {
   const machineZ = getMachineZPosition();
-  if (!setZHomeInputTracksMachineZ || !setZHomePopupOpen() || machineZ === null) {
+  if (!setZHomeInputTracksMachineZ || !isSetZHomePopupOpen() || machineZ === null) {
     return;
   }
 
@@ -1177,12 +1177,12 @@ const handleSetZHomeManualInput = () => {
 
 /** Jog Z with the mouse wheel while the Set Z Home popup is open. */
 const handleSetZHomePopupWheel = (event) => {
-  if (!setZHomePopupOpen()) {
+  if (!isSetZHomePopupOpen()) {
     return;
   }
 
   const direction = Math.sign(event.deltaY);
-  if (direction === 0 || Number.isNaN(direction)) {
+  if (direction === 0) {
     return;
   }
 
@@ -1792,6 +1792,7 @@ function tabletInit() {
     // Buttons - Set Z Home Pop-up
     id("set-z-home-popup").addEventListener("click", () => closeSetZHomePopup());
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
+    // Non-passive is required here because wheel jogging suppresses the browser's default scroll behavior.
     id("set_z_home_popup_content").addEventListener("wheel", handleSetZHomePopupWheel, { passive: false });
     id("setHomeZ").addEventListener("input", handleSetZHomeManualInput);
     id("tablettab_set_z_home_cancel").addEventListener("click", () => closeSetZHomePopup());

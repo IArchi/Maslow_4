@@ -1208,42 +1208,31 @@ const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
 }
 
-/** Return the popup's default Z wheel jog step in current display units. */
-const getDefaultSetZHomeWheelJogDistance = () => {
+/** Return the popup's default Z jog step in current display units. */
+const getDefaultSetZHomeJogDistance = () => {
   const mainUiDistance = Number(getText("disZ"));
   return mainUiDistance > 0 ? mainUiDistance : 5;
 }
 
-/** Return the popup-specific Z wheel jog step in the current display units. */
-const getSetZHomeWheelJogDistance = () => {
+/** Return the popup-specific Z jog step in the current display units. */
+const getSetZHomeJogDistance = () => {
   const popupDistance = getValueFloat("setHomeZStep");
   if (popupDistance > 0) {
     return popupDistance;
   }
 
-  return getDefaultSetZHomeWheelJogDistance();
+  return getDefaultSetZHomeJogDistance();
 }
 
-/** Jog Z with the mouse wheel while the Set Z Home popup is open. */
-const handleSetZHomePopupWheel = (event) => {
-  if (!isSetZHomePopupOpen()) {
-    return;
-  }
-
-  const direction = Math.sign(event.deltaY);
-  if (direction === 0) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
+/** Jog Z from the Set Z Home popup using the popup-specific step value. */
+const moveSetZHomePopupZ = (direction) => {
   setZHomeInputTracksMachineZ = true;
-  const distance = getSetZHomeWheelJogDistance();
+  const distance = getSetZHomeJogDistance();
   if (distance <= 0) {
     return;
   }
 
-  sendMove(direction < 0 ? "Z+" : "Z-", { distance });
+  sendMove(direction, { distance });
 }
 
 const openSetZHomePopup = () => {
@@ -1261,8 +1250,8 @@ const openSetZHomePopup = () => {
   }
   const zStepInput = id("setHomeZStep");
   if (zStepInput) {
-    zStepInput.value = getDefaultSetZHomeWheelJogDistance();
-    zStepInput.title = `Wheel jog step in ${unitLabel}`;
+    zStepInput.value = getDefaultSetZHomeJogDistance();
+    zStepInput.title = `Jog step in ${unitLabel}`;
   }
   setTextContent("setHomeZStepUnit", `(${unitLabel})`);
   setZHomeInputTracksMachineZ = true;
@@ -1859,9 +1848,9 @@ function tabletInit() {
     id("set-z-home-popup").addEventListener("click", handleSetZHomePopupBackdropClick);
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
     id("set_z_home_popup_content").addEventListener("focusout", handleSetZHomePopupFocusOut);
-    // Non-passive is required here because wheel jogging suppresses the browser's default scroll behavior.
-    id("set_z_home_popup_content").addEventListener("wheel", handleSetZHomePopupWheel, { passive: false });
     id("setHomeZ").addEventListener("input", handleSetZHomeManualInput);
+    id("tablettab_set_z_home_up").addEventListener("click", () => moveSetZHomePopupZ("Z+"));
+    id("tablettab_set_z_home_down").addEventListener("click", () => moveSetZHomePopupZ("Z-"));
     id("tablettab_set_z_home_cancel").addEventListener("click", () => closeSetZHomePopup());
     id("tablettab_move_to_z_home").addEventListener("click", moveToZHome);
     id("tablettab_set_z_home_confirm").addEventListener("click", confirmSetZHome);

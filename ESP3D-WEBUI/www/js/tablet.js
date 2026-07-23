@@ -346,6 +346,7 @@ const Z_HOME_MAX_SAFE_MM = 72;
 // Minimum safe machine Z position in mm. Machine Z should never go below 0 (home
 // position); if a movement would push Z below this value it indicates corruption.
 const Z_HOME_MIN_SAFE_MM = 0;
+const SET_Z_HOME_WHEEL_JOG_MM = 0.5;
 
 // Tracks whether the user has acknowledged the high Z position warning this session.
 // Reset whenever the resulting Z increases beyond the previously acknowledged level,
@@ -545,12 +546,12 @@ const moveTo = (location) => {
 }
 
 /** Perform jog or move commands based on the supplied command */
-const sendMove = (cmd) => {
+const sendMove = (cmd, options = {}) => {
   tabletClick();
 
-  const distance = cmd.includes('Z')
+  const distance = options.distance ?? (cmd.includes('Z')
     ? Number(getText('disZ')) || 0
-    : Number(getText('disM')) || 0;
+    : Number(getText('disM')) || 0);
 
   // Convert a display-unit jog distance to mm for the safety threshold check.
   // MPOS is always in mm; jog distances match the current display unit (mm or inch).
@@ -1189,7 +1190,9 @@ const handleSetZHomePopupWheel = (event) => {
   event.preventDefault();
   event.stopPropagation();
   setZHomeInputTracksMachineZ = true;
-  sendMove(direction < 0 ? "Z+" : "Z-");
+  sendMove(direction < 0 ? "Z+" : "Z-", {
+    distance: gCodeModal.units === "G20" ? SET_Z_HOME_WHEEL_JOG_MM / 25.4 : SET_Z_HOME_WHEEL_JOG_MM
+  });
 }
 
 const openSetZHomePopup = () => {

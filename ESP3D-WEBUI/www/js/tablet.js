@@ -1183,6 +1183,12 @@ const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
 }
 
+/** Return the popup's default Z wheel jog step in current display units. */
+const getDefaultSetZHomeWheelJogDistance = () => {
+  const mainUiDistance = Number(getText("disZ"));
+  return mainUiDistance > 0 ? mainUiDistance : 5;
+}
+
 /** Return the popup-specific Z wheel jog step in the current display units. */
 const getSetZHomeWheelJogDistance = () => {
   const popupDistance = getValueFloat("setHomeZStep");
@@ -1190,7 +1196,7 @@ const getSetZHomeWheelJogDistance = () => {
     return popupDistance;
   }
 
-  return Number(getText("disZ")) || 0;
+  return getDefaultSetZHomeWheelJogDistance();
 }
 
 /** Jog Z with the mouse wheel while the Set Z Home popup is open. */
@@ -1230,7 +1236,7 @@ const openSetZHomePopup = () => {
   }
   const zStepInput = id("setHomeZStep");
   if (zStepInput) {
-    zStepInput.value = getText("disZ") || "";
+    zStepInput.value = getDefaultSetZHomeWheelJogDistance();
     zStepInput.title = `Wheel jog step in ${unitLabel}`;
   }
   setTextContent("setHomeZStepUnit", `(${unitLabel})`);

@@ -197,7 +197,7 @@ const getUnitInfo = () => {
 }
 
 const fromMmToDisplayUnits = (mm) => gCodeModal.units === 'G20' ? mm / MM_PER_INCH : mm;
-const toMmDistance = (distance) => gCodeModal.units === 'G20' ? distance * MM_PER_INCH : distance;
+const fromDisplayUnitsToMm = (distance) => gCodeModal.units === 'G20' ? distance * MM_PER_INCH : distance;
 
 const getWorkAreaBounds = () => {
   const lv = globalThis.loadedValues || {};
@@ -549,12 +549,12 @@ const moveTo = (location) => {
 }
 
 /** Perform jog or move commands based on the supplied command */
-const getMoveDistance = (cmd, options = {}) => {
+const getMoveDistance = (isZMove, options = {}) => {
   if (options.distance !== undefined) {
     return options.distance;
   }
 
-  return cmd.includes('Z')
+  return isZMove
     ? Number(getText('disZ')) || 0
     : Number(getText('disM')) || 0;
 }
@@ -562,7 +562,7 @@ const getMoveDistance = (cmd, options = {}) => {
 const sendMove = (cmd, options = {}) => {
   tabletClick();
 
-  const distance = getMoveDistance(cmd, options);
+  const distance = getMoveDistance(cmd.includes('Z'), options);
 
   // Convert a display-unit jog distance to mm for the safety threshold check.
   // MPOS is always in mm; jog distances match the current display unit (mm or inch).
@@ -600,8 +600,8 @@ const sendMove = (cmd, options = {}) => {
     'X+':   [() => jog({ X:  distance }),                      0],
     'Y-':   [() => jog({ Y: -distance }),                      0],
     'Y+':   [() => jog({ Y:  distance }),                      0],
-    'Z-':   [() => jog({ Z: -distance }),   -toMmDistance(distance)],
-    'Z+':   [() => jog({ Z:  distance }),    toMmDistance(distance)],
+    'Z-':   [() => jog({ Z: -distance }),   -fromDisplayUnitsToMm(distance)],
+    'Z+':   [() => jog({ Z:  distance }),    fromDisplayUnitsToMm(distance)],
     'Z_TOP':[() => move({ Z: 70 }),                  deltaToZTop],
   };
 

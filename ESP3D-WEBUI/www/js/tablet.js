@@ -1134,7 +1134,10 @@ const tabletDOMActivate = () => {
 }
 
 // Button event handlers - First Row
-const tabletMoveZUp = () => sendMove("Z+");
+const Z_JOG_UP = "Z+";
+const Z_JOG_DOWN = "Z-";
+
+const tabletMoveZUp = () => sendMove(Z_JOG_UP);
 const tabletMoveTopLeft = () => sendMove("X-Y+");
 const tabletMoveTop = () => sendMove("Y+");
 const tabletMoveTopRight = () => sendMove("X+Y+");
@@ -1146,7 +1149,7 @@ const tabletCalibrationOpen = () => {
 const tabletMoveLeft = () => sendMove("X-");
 const tabletMoveRight = () => sendMove("X+");
 // Button event handlers - Third Row
-const tabletMoveZDown = () => sendMove("Z-");
+const tabletMoveZDown = () => sendMove(Z_JOG_DOWN);
 const tabletMoveBottomLeft = () => sendMove("X-Y-");
 const tabletMoveBottom = () => sendMove("Y-");
 const tabletMoveBottomRight = () => sendMove("X+Y-");
@@ -1226,6 +1229,10 @@ const getSetZHomeJogDistance = () => {
 
 /** Jog Z from the Set Z Home popup using the popup-specific step value. */
 const moveSetZHomePopupZ = (direction) => {
+  if (direction !== Z_JOG_UP && direction !== Z_JOG_DOWN) {
+    return;
+  }
+
   const distance = getSetZHomeJogDistance();
   if (distance <= 0) {
     return;
@@ -1849,8 +1856,8 @@ function tabletInit() {
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
     id("set_z_home_popup_content").addEventListener("focusout", handleSetZHomePopupFocusOut);
     id("setHomeZ").addEventListener("input", handleSetZHomeManualInput);
-    id("tablettab_set_z_home_up").addEventListener("click", () => moveSetZHomePopupZ("Z+"));
-    id("tablettab_set_z_home_down").addEventListener("click", () => moveSetZHomePopupZ("Z-"));
+    id("tablettab_set_z_home_up").addEventListener("click", () => moveSetZHomePopupZ(Z_JOG_UP));
+    id("tablettab_set_z_home_down").addEventListener("click", () => moveSetZHomePopupZ(Z_JOG_DOWN));
     id("tablettab_set_z_home_cancel").addEventListener("click", () => closeSetZHomePopup());
     id("tablettab_move_to_z_home").addEventListener("click", moveToZHome);
     id("tablettab_set_z_home_confirm").addEventListener("click", confirmSetZHome);

@@ -1226,12 +1226,12 @@ const getSetZHomeJogDistance = () => {
 
 /** Jog Z from the Set Z Home popup using the popup-specific step value. */
 const moveSetZHomePopupZ = (direction) => {
-  setZHomeInputTracksMachineZ = true;
   const distance = getSetZHomeJogDistance();
   if (distance <= 0) {
     return;
   }
 
+  setZHomeInputTracksMachineZ = true;
   sendMove(direction, { distance });
 }
 

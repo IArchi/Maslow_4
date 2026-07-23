@@ -349,8 +349,6 @@ const Z_HOME_MAX_SAFE_MM = 72;
 // Minimum safe machine Z position in mm. Machine Z should never go below 0 (home
 // position); if a movement would push Z below this value it indicates corruption.
 const Z_HOME_MIN_SAFE_MM = 0;
-const SET_Z_HOME_WHEEL_JOG_MM = 0.5;
-
 // Tracks whether the user has acknowledged the high Z position warning this session.
 // Reset whenever the resulting Z increases beyond the previously acknowledged level,
 // or when machine Z returns to the safe range.
@@ -1185,6 +1183,16 @@ const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
 }
 
+/** Return the popup-specific Z wheel jog step in the current display units. */
+const getSetZHomeWheelJogDistance = () => {
+  const popupDistance = getValueFloat("setHomeZStep");
+  if (popupDistance > 0) {
+    return popupDistance;
+  }
+
+  return Number(getText("disZ")) || 0;
+}
+
 /** Jog Z with the mouse wheel while the Set Z Home popup is open. */
 const handleSetZHomePopupWheel = (event) => {
   if (!isSetZHomePopupOpen()) {
@@ -1199,13 +1207,17 @@ const handleSetZHomePopupWheel = (event) => {
   event.preventDefault();
   event.stopPropagation();
   setZHomeInputTracksMachineZ = true;
-  sendMove(direction < 0 ? "Z+" : "Z-", {
-    distance: fromMmToDisplayUnits(SET_Z_HOME_WHEEL_JOG_MM)
-  });
+  const distance = getSetZHomeWheelJogDistance();
+  if (distance <= 0) {
+    return;
+  }
+
+  sendMove(direction < 0 ? "Z+" : "Z-", { distance });
 }
 
 const openSetZHomePopup = () => {
   tabletClick();
+  const { unitLabel } = getUnitInfo();
   const machineZ = getMachineZPosition();
   const zCurrent = machineZ === null ? "0" : machineZ.toFixed(3);
   const zInput = id("setHomeZ");
@@ -1216,6 +1228,12 @@ const openSetZHomePopup = () => {
     zInput.max = Z_HOME_MAX_SAFE_MM;
     zInput.title = `Z: ${Z_HOME_MIN_SAFE_MM} to ${Z_HOME_MAX_SAFE_MM} mm`;
   }
+  const zStepInput = id("setHomeZStep");
+  if (zStepInput) {
+    zStepInput.value = getText("disZ") || "";
+    zStepInput.title = `Wheel jog step in ${unitLabel}`;
+  }
+  setTextContent("setHomeZStepUnit", `(${unitLabel})`);
   setZHomeInputTracksMachineZ = true;
   // Context label shows the previously defined Z home value (WCO[2]).
   const zHomeLabel = id("currentZHomeLabel");

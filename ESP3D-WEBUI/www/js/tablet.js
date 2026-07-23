@@ -1302,7 +1302,7 @@ const confirmSetZHome = () => {
   const mposZ = getMachineZPosition() ?? 0;
   sendCommand(`G10 L20 P0 Z${mposZ - zVal}`);
   addMessage(`Z Home pos set: Z=${zVal}mm`);
-  updateSetZHomeLabel(mposZ - zVal);
+  updateSetZHomeLabel(mposZ);
   refreshGcode();
 }
 // Button event handlers - Fifth Row - nothing special here, move on

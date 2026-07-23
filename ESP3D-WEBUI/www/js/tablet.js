@@ -1178,6 +1178,16 @@ const closeSetZHomePopup = () => {
   hideModal("set-z-home-popup");
 }
 
+/** Close the popup after focus leaves it so in-popup actions do not dismiss it. */
+const handleSetZHomePopupFocusOut = () => {
+  scheduleCallback(() => {
+    const popupContent = id("set_z_home_popup_content");
+    if (isSetZHomePopupOpen() && popupContent && !popupContent.contains(document.activeElement)) {
+      closeSetZHomePopup();
+    }
+  }, 0);
+}
+
 /** Let the user keep a manually typed Z home value without live MPOS updates overwriting it. */
 const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
@@ -1248,10 +1258,17 @@ const openSetZHomePopup = () => {
     zHomeLabel.textContent = `Z Home: ${zHome} mm`;
   }
   openModal("set-z-home-popup");
+  scheduleCallback(() => {
+    if (zInput) {
+      zInput.focus();
+      zInput.select();
+    } else {
+      id("set_z_home_popup_content")?.focus();
+    }
+  }, 0);
 }
 
 const moveToZHome = () => {
-  closeSetZHomePopup();
   const machineZ = getMachineZPosition();
   const workZeroZ = WCO && WCO.length >= 3 ? WCO[2] : null;
   const zDelta = (machineZ !== null && workZeroZ !== null) ? workZeroZ - machineZ : 0;
@@ -1269,8 +1286,6 @@ const confirmSetZHome = () => {
   if (!isNaN(rawZ) && zVal !== rawZ) {
     addMessage(`Z Home value clamped to range: Z=${zVal}`);
   }
-
-  closeSetZHomePopup();
 
   const mposZ = getMachineZPosition() ?? 0;
   sendCommand(`G10 L20 P0 Z${mposZ - zVal}`);
@@ -1826,8 +1841,8 @@ function tabletInit() {
     id("tablettab_set_home_confirm").addEventListener("click", confirmSetHome);
 
     // Buttons - Set Z Home Pop-up
-    id("set-z-home-popup").addEventListener("click", () => closeSetZHomePopup());
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
+    id("set_z_home_popup_content").addEventListener("focusout", handleSetZHomePopupFocusOut);
     // Non-passive is required here because wheel jogging suppresses the browser's default scroll behavior.
     id("set_z_home_popup_content").addEventListener("wheel", handleSetZHomePopupWheel, { passive: false });
     id("setHomeZ").addEventListener("input", handleSetZHomeManualInput);

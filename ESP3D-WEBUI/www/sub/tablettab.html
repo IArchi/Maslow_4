@@ -281,21 +281,29 @@
             <input id="setHomeZStep" type="number" min="0.0001" step="any" class="calibration-modal-input" placeholder="5">
           </div>
         </div>
+        <svg aria-hidden="true" style="display: none; position: absolute; width: 0; height: 0;">
+          <symbol id="set-z-home-jog-up-icon" viewBox="0 0 38 38">
+            <polygon fill="currentColor" points="10.319 5.525 17.833 13.039 2.805 13.039 10.319 5.525" />
+            <rect fill="currentColor" height="2.5" transform="translate(31.899 11.262) rotate(90)" width="21.79"
+              x="-0.576" y="20.33" />
+          </symbol>
+          <symbol id="set-z-home-jog-down-icon" viewBox="0 0 38 38">
+            <polygon fill="currentColor" points="2.805 5.525 17.833 5.525 10.319 13.039"></polygon>
+            <rect fill="currentColor" height="2.5" transform="translate(32 10) rotate(90)" width="21.79" x="-0.576"
+              y="20.33">
+            </rect>
+          </symbol>
+        </svg>
         <div class="buttons-row set-z-home-jog-row">
-          <button id="tablettab_set_z_home_up" class="calibration-modal-button set-z-home-jog-button">
-            <svg width="38" height="38" viewBox="0 0 38 38">
-              <polygon fill="currentColor" points="10.319 5.525 17.833 13.039 2.805 13.039 10.319 5.525" />
-              <rect fill="currentColor" height="2.5" transform="translate(31.899 11.262) rotate(90)" width="21.79"
-                x="-0.576" y="20.33" />
+          <button id="tablettab_set_z_home_up" class="calibration-modal-button set-z-home-jog-button" aria-label="Jog Z up">
+            <svg class="set-z-home-jog-icon" viewBox="0 0 38 38" aria-hidden="true">
+              <use href="#set-z-home-jog-up-icon"></use>
             </svg>
             Z
           </button>
-          <button id="tablettab_set_z_home_down" class="calibration-modal-button set-z-home-jog-button">
-            <svg width="38" height="38" viewBox="0 0 38 38">
-              <polygon fill="currentColor" points="2.805 5.525 17.833 5.525 10.319 13.039"></polygon>
-              <rect fill="currentColor" height="2.5" transform="translate(32 10) rotate(90)" width="21.79" x="-0.576"
-                y="20.33">
-              </rect>
+          <button id="tablettab_set_z_home_down" class="calibration-modal-button set-z-home-jog-button" aria-label="Jog Z down">
+            <svg class="set-z-home-jog-icon" viewBox="0 0 38 38" aria-hidden="true">
+              <use href="#set-z-home-jog-down-icon"></use>
             </svg>
             Z
           </button>

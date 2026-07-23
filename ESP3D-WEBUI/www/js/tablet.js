@@ -1852,6 +1852,7 @@ function tabletInit() {
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
     id("set_z_home_popup_content").addEventListener("focusout", handleSetZHomePopupFocusOut);
     id("setHomeZ").addEventListener("input", handleSetZHomeManualInput);
+    // These popup jog buttons use the popup-specific step from the setHomeZStep input.
     id("tablettab_set_z_home_up").addEventListener("click", () => moveSetZHomePopupZ(Z_JOG_UP));
     id("tablettab_set_z_home_down").addEventListener("click", () => moveSetZHomePopupZ(Z_JOG_DOWN));
     id("tablettab_set_z_home_cancel").addEventListener("click", () => closeSetZHomePopup());

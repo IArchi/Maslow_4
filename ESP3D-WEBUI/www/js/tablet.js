@@ -1188,6 +1188,21 @@ const handleSetZHomePopupFocusOut = () => {
   }, 0);
 }
 
+/** Backdrop clicks should dismiss the popup by moving focus out of it. */
+const handleSetZHomePopupBackdropClick = (event) => {
+  if (event.target !== event.currentTarget) {
+    return;
+  }
+
+  const popupContent = id("set_z_home_popup_content");
+  if (popupContent && popupContent.contains(document.activeElement)) {
+    document.activeElement.blur();
+    return;
+  }
+
+  closeSetZHomePopup();
+}
+
 /** Let the user keep a manually typed Z home value without live MPOS updates overwriting it. */
 const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
@@ -1841,6 +1856,7 @@ function tabletInit() {
     id("tablettab_set_home_confirm").addEventListener("click", confirmSetHome);
 
     // Buttons - Set Z Home Pop-up
+    id("set-z-home-popup").addEventListener("click", handleSetZHomePopupBackdropClick);
     id("set_z_home_popup_content").addEventListener("click", tabletPopupStopProp);
     id("set_z_home_popup_content").addEventListener("focusout", handleSetZHomePopupFocusOut);
     // Non-passive is required here because wheel jogging suppresses the browser's default scroll behavior.

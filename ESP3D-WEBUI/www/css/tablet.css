@@ -850,7 +850,7 @@ background-color: #4caf50!important;
 }
 
 .set-z-home-jog-row {
-  grid-template-columns: repeat(2, 47%);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .set-z-home-jog-button {

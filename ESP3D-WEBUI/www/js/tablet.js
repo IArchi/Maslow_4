@@ -3,6 +3,7 @@
 
 // Constants
 const FILE_LIST_LOAD_DELAY_MS = 500; // Delay to ensure file list is loaded before restoration
+const MM_PER_INCH = 25.4;
 const workAreaDefaults = { x: 2440, y: 1220, offX: 0, offY: 0 };
 
 var gCodeLoaded = false;
@@ -195,6 +196,9 @@ const getUnitInfo = () => {
   };
 }
 
+const fromMmToDisplayUnits = (mm) => gCodeModal.units === 'G20' ? mm / MM_PER_INCH : mm;
+const toMmDistance = (distance) => gCodeModal.units === 'G20' ? distance * MM_PER_INCH : distance;
+
 const getWorkAreaBounds = () => {
   const lv = globalThis.loadedValues || {};
   const areaX = parseFloat(lv.workAreaX) || workAreaDefaults.x;
@@ -337,8 +341,6 @@ const setAxis = (axis, field) => {
 
 var timeout_id = 0,
   hold_time = 1000
-
-const MM_PER_INCH = 25.4;
 
 // Maximum safe machine Z position in mm. If a movement would cause machine Z to
 // exceed this value, a confirmation popup is shown before proceeding.
@@ -564,8 +566,6 @@ const sendMove = (cmd, options = {}) => {
 
   // Convert a display-unit jog distance to mm for the safety threshold check.
   // MPOS is always in mm; jog distances match the current display unit (mm or inch).
-  const toMmDist = (d) => gCodeModal.units === 'G20' ? d * MM_PER_INCH : d;
-
   // Current machine Z and work-coordinate origin Z (both always in mm from firmware).
   // Null when position data has not yet arrived from the firmware.
   const machineZ  = MPOS && MPOS.length >= 3 ? MPOS[2] : null;
@@ -600,8 +600,8 @@ const sendMove = (cmd, options = {}) => {
     'X+':   [() => jog({ X:  distance }),                      0],
     'Y-':   [() => jog({ Y: -distance }),                      0],
     'Y+':   [() => jog({ Y:  distance }),                      0],
-    'Z-':   [() => jog({ Z: -distance }),   -toMmDist(distance)],
-    'Z+':   [() => jog({ Z:  distance }),    toMmDist(distance)],
+    'Z-':   [() => jog({ Z: -distance }),   -toMmDistance(distance)],
+    'Z+':   [() => jog({ Z:  distance }),    toMmDistance(distance)],
     'Z_TOP':[() => move({ Z: 70 }),                  deltaToZTop],
   };
 
@@ -1200,7 +1200,7 @@ const handleSetZHomePopupWheel = (event) => {
   event.stopPropagation();
   setZHomeInputTracksMachineZ = true;
   sendMove(direction < 0 ? "Z+" : "Z-", {
-    distance: gCodeModal.units === "G20" ? SET_Z_HOME_WHEEL_JOG_MM / MM_PER_INCH : SET_Z_HOME_WHEEL_JOG_MM
+    distance: fromMmToDisplayUnits(SET_Z_HOME_WHEEL_JOG_MM)
   });
 }
 

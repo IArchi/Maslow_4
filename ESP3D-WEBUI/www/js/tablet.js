@@ -1211,6 +1211,15 @@ const handleSetZHomeManualInput = () => {
   setZHomeInputTracksMachineZ = false;
 }
 
+/** Update the popup's context label with the currently defined Z home position. */
+const updateSetZHomeLabel = (zHome = WCO && WCO.length >= 3 ? WCO[2] : 0) => {
+  const zHomeLabel = id("currentZHomeLabel");
+  if (zHomeLabel) {
+    const zHomeValue = Number.isFinite(zHome) ? zHome : 0;
+    zHomeLabel.textContent = `Z Home: ${zHomeValue.toFixed(3)} mm`;
+  }
+}
+
 /** Return the popup's default Z jog step in current display units. */
 const getDefaultSetZHomeJogDistance = () => {
   const mainUiDistance = Number(getText("disZ"));
@@ -1259,11 +1268,7 @@ const openSetZHomePopup = () => {
   setTextContent("setHomeZStepUnit", `(${unitLabel})`);
   setZHomeInputTracksMachineZ = true;
   // Context label shows the previously defined Z home value (WCO[2]).
-  const zHomeLabel = id("currentZHomeLabel");
-  if (zHomeLabel) {
-    const zHome = WCO && WCO.length >= 3 ? WCO[2].toFixed(3) : "0";
-    zHomeLabel.textContent = `Z Home: ${zHome} mm`;
-  }
+  updateSetZHomeLabel();
   openModal("set-z-home-popup");
   scheduleCallback(() => {
     if (zInput) {
@@ -1297,6 +1302,7 @@ const confirmSetZHome = () => {
   const mposZ = getMachineZPosition() ?? 0;
   sendCommand(`G10 L20 P0 Z${mposZ - zVal}`);
   addMessage(`Z Home pos set: Z=${zVal}mm`);
+  updateSetZHomeLabel(mposZ - zVal);
   refreshGcode();
 }
 // Button event handlers - Fifth Row - nothing special here, move on

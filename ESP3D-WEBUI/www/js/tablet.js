@@ -1229,10 +1229,6 @@ const getSetZHomeJogDistance = () => {
 
 /** Jog Z from the Set Z Home popup using the popup-specific step value. */
 const moveSetZHomePopupZ = (direction) => {
-  if (direction !== Z_JOG_UP && direction !== Z_JOG_DOWN) {
-    return;
-  }
-
   const distance = getSetZHomeJogDistance();
   if (distance <= 0) {
     return;

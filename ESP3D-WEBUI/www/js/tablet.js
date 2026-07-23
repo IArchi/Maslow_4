@@ -188,11 +188,10 @@ const zeroAxis = (axis) => {
 
 const getUnitInfo = () => {
   const isInchMode = gCodeModal.units === 'G20';
-  const mmPerInch = 25.4;
   return {
     unitLabel: isInchMode ? 'in' : 'mm',
     decimals: isInchMode ? 4 : 3,
-    toDisplay: (mm) => isInchMode ? mm / mmPerInch : mm,
+    toDisplay: (mm) => isInchMode ? mm / MM_PER_INCH : mm,
   };
 }
 
@@ -338,6 +337,8 @@ const setAxis = (axis, field) => {
 
 var timeout_id = 0,
   hold_time = 1000
+
+const MM_PER_INCH = 25.4;
 
 // Maximum safe machine Z position in mm. If a movement would cause machine Z to
 // exceed this value, a confirmation popup is shown before proceeding.
@@ -546,16 +547,24 @@ const moveTo = (location) => {
 }
 
 /** Perform jog or move commands based on the supplied command */
+const getMoveDistance = (cmd, options = {}) => {
+  if (options.distance !== undefined) {
+    return options.distance;
+  }
+
+  return cmd.includes('Z')
+    ? Number(getText('disZ')) || 0
+    : Number(getText('disM')) || 0;
+}
+
 const sendMove = (cmd, options = {}) => {
   tabletClick();
 
-  const distance = options.distance ?? (cmd.includes('Z')
-    ? Number(getText('disZ')) || 0
-    : Number(getText('disM')) || 0);
+  const distance = getMoveDistance(cmd, options);
 
   // Convert a display-unit jog distance to mm for the safety threshold check.
   // MPOS is always in mm; jog distances match the current display unit (mm or inch).
-  const toMmDist = (d) => gCodeModal.units === 'G20' ? d * 25.4 : d;
+  const toMmDist = (d) => gCodeModal.units === 'G20' ? d * MM_PER_INCH : d;
 
   // Current machine Z and work-coordinate origin Z (both always in mm from firmware).
   // Null when position data has not yet arrived from the firmware.
@@ -1191,7 +1200,7 @@ const handleSetZHomePopupWheel = (event) => {
   event.stopPropagation();
   setZHomeInputTracksMachineZ = true;
   sendMove(direction < 0 ? "Z+" : "Z-", {
-    distance: gCodeModal.units === "G20" ? SET_Z_HOME_WHEEL_JOG_MM / 25.4 : SET_Z_HOME_WHEEL_JOG_MM
+    distance: gCodeModal.units === "G20" ? SET_Z_HOME_WHEEL_JOG_MM / MM_PER_INCH : SET_Z_HOME_WHEEL_JOG_MM
   });
 }
 

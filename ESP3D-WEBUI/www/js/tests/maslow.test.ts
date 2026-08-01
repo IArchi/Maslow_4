@@ -99,4 +99,42 @@ describe('maslowMsgHandling', () => {
   test.each(stdDimensionActions)("Key %p with value %p sets %p", (key, value, outDim, outValue = undefined) => {
     setDim(key, value, outDim, outValue);
   });
+
+  test("spoilboardThickness updates all elements with that id (duplicate-id fix)", () => {
+    // Simulate having duplicate ids as in the real HTML (scale-thickness-popup and configuration-popup)
+    document.body.innerHTML = `
+      <div id="scale-thickness-popup">
+        <input id="spoilboardThickness" value="" />
+      </div>
+      <div id="configuration-popup">
+        <input id="spoilboardThickness" value="" />
+      </div>
+    `;
+    global.loadedValues = {};
+    maslowMsgHandling("spoilboardThickness=7.5");
+    const allElements = document.querySelectorAll('[id="spoilboardThickness"]');
+    expect(allElements.length).toBe(2);
+    expect((allElements[0] as HTMLInputElement).value).toBe("7.5");
+    expect((allElements[1] as HTMLInputElement).value).toBe("7.5");
+    expect(global.loadedValues["spoilboardThickness"]).toBe("7.5");
+  });
+
+  test("workThickness updates all elements with that id (duplicate-id fix)", () => {
+    // Simulate having duplicate ids as in the real HTML (scale-thickness-popup and configuration-popup)
+    document.body.innerHTML = `
+      <div id="scale-thickness-popup">
+        <input id="workThickness" value="" />
+      </div>
+      <div id="configuration-popup">
+        <input id="workThickness" value="" />
+      </div>
+    `;
+    global.loadedValues = {};
+    maslowMsgHandling("workThickness=12.0");
+    const allElements = document.querySelectorAll('[id="workThickness"]');
+    expect(allElements.length).toBe(2);
+    expect((allElements[0] as HTMLInputElement).value).toBe("12.0");
+    expect((allElements[1] as HTMLInputElement).value).toBe("12.0");
+    expect(global.loadedValues["workThickness"]).toBe("12.0");
+  });
 });

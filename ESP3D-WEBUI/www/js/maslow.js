@@ -669,7 +669,14 @@ const maslowMsgHandling = (msg) => {
 
 	const stdAction = (id, value) => {
 		const val = ("fnDisp" in cfgVal && typeof cfgVal.fnDisp === "function") ? cfgVal.fnDisp(value) : value;
-		globalThis.setValue(id, val);
+		// Update all elements with this id, not just the first one.
+		// This handles duplicate ids across different popups (e.g. spoilboardThickness and
+		// workThickness appear in both scale-thickness-popup and configuration-popup).
+		if (typeof document !== "undefined" && document.querySelectorAll) {
+			document.querySelectorAll(`[id="${id}"]`).forEach(el => { el.value = val; });
+		} else {
+			globalThis.setValue(id, val);
+		}
 		// Handle loadedValues as an object for compatibility with tests
 		if (!globalThis.loadedValues) {
 			globalThis.loadedValues = {};
@@ -802,10 +809,14 @@ const loadParkSettings = () => {
 };
 
 const saveConfigValues = () => {
+	// Get the configuration popup container so we can target its inputs specifically.
+	// This avoids reading from duplicate-id elements in other popups (e.g. scale-thickness-popup).
+	const configPopup = typeof document !== "undefined" ? document.getElementById("configuration-popup") : null;
 	// Get all of the config data as entered, and as already loaded
 	for (const key of allConfigKeys()) {
 		const cfgVal = cfgDef[key];
-		cfgVal.val = getValue(cfgVal.name);
+		const el = configPopup ? configPopup.querySelector(`[id="${cfgVal.name}"]`) : null;
+		cfgVal.val = el ? el.value : getValue(cfgVal.name);
 		cfgVal.loadedVal = globalThis.loadedValues ? globalThis.loadedValues[cfgVal.name] : undefined;
 	};
 
@@ -902,3 +913,8 @@ const saveWiFiSettings = () => {
 		SendGetHttp(cmd);
 	}
 };
+
+//removeIf(production)
+// ESM exports for unit testing - stripped from production builds by the gulp pipeline
+export { MaslowErrMsgKeyValueCantUse, MaslowErrMsgNoKey, MaslowErrMsgNoValue, MaslowErrMsgNoMatchingKey, MaslowErrMsgKeyValueSuffix, maslowMsgHandling };
+//endRemoveIf(production)

@@ -587,8 +587,8 @@ bool Calibration::requestStateChange(int newState) {
             }
         case RELEASE_TENSION:  //We can enter release tension from any stable state (the machine is not currently performing an action)
             if (currentState == READY_TO_CUT || currentState == UNKNOWN || currentState == EXTENDEDOUT ||
-                currentState == CALIBRATION_COMPUTING) {
-                previousState   = currentState;  // Store the previous state
+                currentState == CALIBRATION_COMPUTING || currentState == RELEASE_TENSION) {
+                previousState   = (currentState != RELEASE_TENSION) ? currentState : previousState;
                 currentState    = RELEASE_TENSION;
                 complyCallTimer = millis();
                 retracting[_TL] = false;
@@ -752,8 +752,8 @@ void Calibration::home() {
     handleMotorOverides();
 
     //if we are done with all the homing moves, switch system state back to Idle?
-    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION && 
-        currentState != CALIBRATION_COMPUTING && currentState != READY_TO_CUT && !calibrationInProgress && 
+    if (currentState != RETRACTING && currentState != EXTENDING && currentState != RELEASE_TENSION &&
+        currentState != CALIBRATION_COMPUTING && !calibrationInProgress &&
         !takeSlack && !checkOverides()) {
         sys.set_state(State::Idle);
     }

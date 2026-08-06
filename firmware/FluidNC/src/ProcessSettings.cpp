@@ -893,8 +893,9 @@ static Error maslow_set_comply(const char* value, WebUI::AuthenticationLevel aut
     if (Maslow.using_default_config) {
         return Error::ConfigurationInvalid;
     }
-    sys.set_state(State::Homing);
-    Maslow.calibration.requestStateChange(RELEASE_TENSION);
+    if (Maslow.calibration.requestStateChange(RELEASE_TENSION)) {
+        sys.set_state(State::Homing);
+    }
     return Error::Ok;
 }
 static Error maslow_start_calibration(const char* value, WebUI::AuthenticationLevel auth_level, Channel& out) {

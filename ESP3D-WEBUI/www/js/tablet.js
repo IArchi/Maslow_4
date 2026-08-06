@@ -2471,7 +2471,12 @@ const onCalibrationButtonsClick = async (command, msg = "") => {
   if (msg) {
     addMessage(msg);
   }
-  sendCommand(command);
+  // Send via WebSocket first to bypass PAGEID-based routing, which fails
+  // silently when the WebSocket has reconnected (new channel, stale PAGEID).
+  // Falls back to HTTP if the WebSocket is not currently open.
+  if (!sendViaWS(command + "\n")) {
+    sendCommand(command);
+  }
 
   //Prints out the index.html version number when test is pressed
   if (command === '$TEST') {

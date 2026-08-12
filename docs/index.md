@@ -40,6 +40,8 @@ Step-by-step instructions for building your Maslow 4:
 - [Calibration Simulator](calibration-simulation/) - Interactive calibration simulation tool
   - [Quick Start Guide](calibration-simulation/QUICKSTART.md)
   - [Full Documentation](calibration-simulation/README.md)
+- [Calibration Data Parser](calibration-simulation/data-parser.html) - Analyze real calibration data with the machine's exact solver, and visualize which measurements are causing errors
+  - [Data Parser Documentation](calibration-simulation/DATA-PARSER.md)
 
 ## Contributing
 

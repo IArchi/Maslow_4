@@ -1157,12 +1157,15 @@ function fwAccumulatePointBlocks(m, tlX, tlY, trX, trY, brX, sx, sy, u, ga, w, g
  */
 function recomputeAnchorsLM(measurements, initialAnchors) {
     const measurementCount = measurements.length;
-    if (measurementCount <= 0) {
+if (measurementCount < 3) {
+        const error = measurementCount <= 0
+            ? 'no measurements available'
+            : 'at least 3 measurements are required';
         return {
             anchors: null,
             fitness: { rms: Infinity, maxResidual: Infinity, rmsPerAnchor: [0,0,0,0], converged: false },
             passed: false,
-            error: 'no measurements available',
+            error,
             totalIterations: 0,
             ssr: Infinity
         };

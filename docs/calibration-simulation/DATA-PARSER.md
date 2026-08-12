@@ -122,11 +122,21 @@ to restore them, and **Reset view** to recentre the map.
 
 This tool uses the **exact same Levenberg-Marquardt math that runs on the machine**.
 The function `recomputeAnchorsLM()` in the shared library
-`../../ESP3D-WEBUI/www/js/calibration-computation.js` is a line-for-line port of the
+`calibration-computation.js` is a line-for-line port of the
 firmware routine `Calibration::recomputeAnchorsWithLevenbergMarquardt()`
 (`firmware/FluidNC/src/Maslow/Calibration.cpp`). Given the same CLBM measurements and
 the same initial anchor guess, the parser produces the **same anchor positions** the
 machine computes.
+
+> **Maintainer note:** `calibration-computation.js` in this folder is a **copy** of the
+> canonical source at `ESP3D-WEBUI/www/js/calibration-computation.js`. The copy is
+> required because GitHub Pages only serves files under `docs/`, so the published tool
+> cannot reach files outside that root. **If you edit the ESP3D-WEBUI source, re-copy it
+> here** to keep them in sync:
+>
+> ```sh
+> cp ESP3D-WEBUI/www/js/calibration-computation.js docs/calibration-simulation/calibration-computation.js
+> ```
 
 The port reproduces the firmware exactly, including:
 - **Sparse bundle adjustment**: anchor parameters `[tlX, tlY, trX, trY, brX]` and a sled

@@ -1380,6 +1380,11 @@ function recomputeAnchorsLM(measurements, initialAnchors) {
 
     const fitness = { rms, maxResidual, rmsPerAnchor, converged: anyConverged };
 
+    // Per-measurement diagnostics (sled position + per-belt residual breakdown)
+    // so callers can visualise where each waypoint sits and which belt drives
+    // its error.
+    const perMeasurement = fwPerMeasurementDiagnostics(measurements, globalBestParams);
+
     // ── Fitness gates (Calibration.cpp lines 1055-1075) ─────────────────────
     let passed = true;
     let error  = null;
@@ -1400,8 +1405,54 @@ function recomputeAnchorsLM(measurements, initialAnchors) {
         passed,
         error,
         totalIterations,
-        ssr: globalBestSSR
+        ssr: globalBestSSR,
+        perMeasurement
     };
+}
+
+/**
+ * Build per-measurement diagnostics from a full bundle parameter vector.
+ *
+ * For each measurement returns the optimised sled position, the signed residual
+ * (computed_distance − measured_belt) for every belt, the measurement's RMS
+ * belt error, and which belt has the largest absolute residual.  Used by the
+ * offline data parser to visualise where each waypoint sits on the sheet and
+ * which belt is driving the fitness error.
+ *
+ * @param {Array} measurements - Array of {tl, tr, bl, br} objects
+ * @param {Array} params       - Full bundle params [5 anchor + 2N sled] (or null)
+ * @returns {Array} One entry per measurement (empty array when params is null)
+ */
+function fwPerMeasurementDiagnostics(measurements, params) {
+    const out = [];
+    if (!params) return out;
+    const res = lmBundleResiduals(measurements, params);
+    for (let i = 0; i < measurements.length; i++) {
+        const rTl = res[4 * i];
+        const rTr = res[4 * i + 1];
+        const rBl = res[4 * i + 2];
+        const rBr = res[4 * i + 3];
+        const ssr = rTl * rTl + rTr * rTr + rBl * rBl + rBr * rBr;
+        const residuals = { tl: rTl, tr: rTr, bl: rBl, br: rBr };
+        let worstBelt = 'tl';
+        let worstAbs = Math.abs(rTl);
+        for (const belt of ['tr', 'bl', 'br']) {
+            const a = Math.abs(residuals[belt]);
+            if (a > worstAbs) {
+                worstAbs = a;
+                worstBelt = belt;
+            }
+        }
+        out.push({
+            index: i,
+            sled: { x: params[5 + 2 * i], y: params[5 + 2 * i + 1] },
+            residuals,
+            rms: Math.sqrt(ssr / 4.0),
+            maxAbsResidual: worstAbs,
+            worstBelt
+        });
+    }
+    return out;
 }
 
 // Small helper mirroring the firmware's (lambda < LM_LAMBDA_OVERFLOW) check.
@@ -1438,7 +1489,8 @@ function failResult(measurements, measurementCount, globalBestParams, globalBest
         passed: false,
         error,
         totalIterations,
-        ssr: globalBestSSR
+        ssr: globalBestSSR,
+        perMeasurement: fwPerMeasurementDiagnostics(measurements, globalBestParams)
     };
 }
 
@@ -1469,6 +1521,7 @@ if (typeof module !== 'undefined' && module.exports) {
         lmSSR,
         lmComputeFitness,
         recomputeAnchorsLM,
+        fwPerMeasurementDiagnostics,
         fwMeasurementJacobiansAndResiduals,
         fwInvertDamped2x2,
         fwSolve5x5,

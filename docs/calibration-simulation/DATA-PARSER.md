@@ -98,6 +98,26 @@ The results show:
   calibration only when RMS ≤ 5 mm and the worst single-belt residual ≤ 15 mm; the log notes
   when a fitness gate fails (the machine would not save those anchors)
 
+### Measurement Map & Error Breakdown
+
+When a computation finishes (especially when a fitness gate fails), a **Measurement Map** is shown:
+
+- **Anchors** are drawn as dark squares at their solved positions.
+- **Each measurement** is a dot at its solved sled position, coloured by its RMS belt error
+  (green = low, red = high). Dots that break a gate get a red outline.
+- **Belt lines** run from each sled toward the four anchors; a line's thickness and colour show
+  how much that individual belt residual contributes, so you can see whether one belt
+  (e.g. bottom-left) is consistently the largest error.
+- **Per-belt RMS cards** summarise which belt drives the overall error.
+- **A per-measurement table** lists the signed residual for every belt, the measurement RMS,
+  and the worst belt, with failing rows highlighted.
+
+The map is interactive: **scroll to zoom**, **drag to pan**, and **click a dot** (or use the
+table checkboxes) to exclude a suspect measurement — the anchors are re-solved from the
+remaining points instantly, so you can see how much a bad point was skewing the fit. Use
+**Exclude failing points** to drop everything that breaks a gate at once, **Include all points**
+to restore them, and **Reset view** to recentre the map.
+
 ## Code Sharing
 
 This tool uses the **exact same Levenberg-Marquardt math that runs on the machine**.

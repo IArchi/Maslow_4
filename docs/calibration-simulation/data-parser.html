@@ -212,6 +212,155 @@
             font-weight: 600;
             color: #2d3748;
         }
+
+        #viz-section {
+            display: none;
+        }
+
+        .viz-canvas-wrap {
+            width: 100%;
+            overflow-x: auto;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        #viz-canvas {
+            display: block;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        #viz-canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        .viz-toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 0 0 12px;
+        }
+
+        .viz-toolbar button {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .viz-toolbar .hint {
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .viz-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 12px 0;
+            font-size: 13px;
+            color: #4a5568;
+            align-items: center;
+        }
+
+        .viz-legend .swatch {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .viz-gradient {
+            display: inline-block;
+            width: 120px;
+            height: 14px;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin: 0 6px;
+            background: linear-gradient(90deg, #2f9e44 0%, #f59f00 50%, #e03131 100%);
+        }
+
+        .measurement-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        .measurement-table th,
+        .measurement-table td {
+            padding: 6px 8px;
+            text-align: right;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .measurement-table th {
+            background: #edf2f7;
+            color: #2d3748;
+            font-weight: 600;
+            text-align: right;
+            position: sticky;
+            top: 0;
+        }
+
+        .measurement-table th:first-child,
+        .measurement-table td:first-child {
+            text-align: left;
+        }
+
+        .measurement-table td.worst {
+            background: #ffe3e3;
+            color: #c92a2a;
+            font-weight: 700;
+        }
+
+        .measurement-table tr.row-fail td {
+            background: #fff5f5;
+        }
+
+        .measurement-table tr.row-disabled td {
+            opacity: 0.4;
+        }
+
+        .measurement-table td.toggle-cell,
+        .measurement-table th.toggle-cell {
+            text-align: center;
+        }
+
+        .belt-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .belt-summary .belt-card {
+            padding: 10px;
+            border-radius: 6px;
+            background: #f1f3f5;
+            border-left: 4px solid #adb5bd;
+            text-align: center;
+        }
+
+        .belt-summary .belt-card.worst-belt {
+            background: #ffe3e3;
+            border-left-color: #e03131;
+        }
+
+        .belt-summary .belt-name {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .belt-summary .belt-rms {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+        }
     </style>
 </head>
 <body>
@@ -240,8 +389,9 @@
         <div class="section">
             <h3>⚓ Initial Anchor Positions</h3>
             <p style="color: #718096; font-size: 14px; margin-bottom: 10px;">
-                Starting estimates for anchor point positions. If the initial fitness is low or the frame is nearly square,
-                the algorithm will automatically compute better starting positions using rectangular optimization (same as ESP3D-WEBUI).
+                Starting estimates for the anchor point positions. Defaults match the anchors in
+                <code>firmware/FluidNC/data/maslow.yaml</code>. The firmware-exact solver refines these,
+                running its own deterministic retry loop just like the machine.
             </p>
             <div class="input-grid">
                 <div>
@@ -304,6 +454,54 @@
             </div>
         </div>
 
+        <div class="section" id="viz-section">
+            <h3>🗺️ Measurement Map &amp; Error Breakdown</h3>
+            <p style="color: #718096; font-size: 14px; margin-bottom: 10px;">
+                Each dot is a measurement's solved sled position, coloured by its RMS belt error.
+                Lines run from each sled toward the four anchors; a line's thickness and colour show
+                how much that individual belt residual contributes, so you can spot whether one belt
+                (e.g. bottom-left) is consistently the worst.
+                <br><strong>Scroll</strong> to zoom, <strong>drag</strong> to pan, and <strong>click a dot</strong>
+                (or use the checkboxes below) to exclude a bad measurement — the anchors are re-solved instantly.
+            </p>
+            <div class="viz-legend">
+                <span><span class="swatch" style="background:#495057;"></span>Anchor</span>
+                <span>Measurement RMS: low <span class="viz-gradient"></span> high</span>
+                <span><span class="swatch" style="background:#e03131;"></span>Belt residual (thicker = larger error)</span>
+            </div>
+            <div class="viz-toolbar">
+                <button id="viz-reset-view">Reset view</button>
+                <button id="viz-include-all">Include all points</button>
+                <button id="viz-exclude-failing">Exclude failing points</button>
+                <span class="hint" id="viz-active-count"></span>
+            </div>
+            <div class="viz-canvas-wrap">
+                <canvas id="viz-canvas" width="1120" height="720"></canvas>
+            </div>
+
+            <div class="belt-summary" id="belt-summary"></div>
+
+            <div style="overflow-x:auto; max-height: 340px; margin-top: 12px;">
+                <table class="measurement-table" id="measurement-table">
+                    <thead>
+                        <tr>
+                            <th class="toggle-cell">On</th>
+                            <th>#</th>
+                            <th>Sled X</th>
+                            <th>Sled Y</th>
+                            <th>TL resid</th>
+                            <th>TR resid</th>
+                            <th>BL resid</th>
+                            <th>BR resid</th>
+                            <th>RMS</th>
+                            <th>Worst belt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="measurement-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="section">
             <h3>📋 Output Log</h3>
             <textarea id="output" rows="16" readonly></textarea>
@@ -315,6 +513,16 @@
 
     <script>
         let parsedMeasurements = null;
+
+        // Interactive state for the measurement map.
+        let enabledFlags = [];        // parallel to parsedMeasurements: is point i included?
+        let lastAnchors = null;       // last computed anchors (for redraw without recompute)
+        let lastPerMeasurement = null; // per-enabled diagnostics; each carries .origIndex
+        let lastFit = null;           // last fitness object
+        let baseMap = null;           // world→canvas fit mapping { tx, ty }
+        const view = { scale: 1, offsetX: 0, offsetY: 0 }; // pan/zoom in screen px
+        const RMS_GATE = 5.0;         // machine RMS fitness gate (mm)
+        const RES_GATE = 15.0;        // machine max-residual gate (mm)
 
         function log(message, clear = false) {
             const output = document.getElementById('output');
@@ -389,6 +597,9 @@
                 }
 
                 parsedMeasurements = measurements;
+                enabledFlags = measurements.map(() => true);
+                resetView();
+                document.getElementById('viz-section').style.display = 'none';
 
                 showStatus('parse-status', `✓ Parsed ${measurements.length} measurements`, 'success');
                 document.getElementById('parse-info').innerHTML =
@@ -405,12 +616,29 @@
                 log(`Error parsing data: ${error.message}`, true);
                 document.getElementById('compute-button').disabled = true;
                 parsedMeasurements = null;
+                enabledFlags = [];
             }
         }
 
-        async function computeAnchorPositions() {
+        async function computeAnchorPositions(resetViewOnRun = true) {
             if (!parsedMeasurements) {
                 showStatus('compute-status', 'Please parse data first', 'error');
+                return;
+            }
+
+            // Only feed the enabled measurements to the solver. Keep a map back to
+            // the original indices so the map/table can label points consistently.
+            const activeMeasurements = [];
+            const activeOrigIndex = [];
+            for (let i = 0; i < parsedMeasurements.length; i++) {
+                if (enabledFlags[i]) {
+                    activeMeasurements.push(parsedMeasurements[i]);
+                    activeOrigIndex.push(i);
+                }
+            }
+
+            if (activeMeasurements.length === 0) {
+                showStatus('compute-status', 'All points are excluded — enable at least one', 'error');
                 return;
             }
 
@@ -432,6 +660,10 @@
             };
 
             log('\n=== Starting Calibration Computation ===');
+            log(`Using ${activeMeasurements.length} of ${parsedMeasurements.length} measurements` +
+                (activeMeasurements.length < parsedMeasurements.length
+                    ? ` (excluded: ${parsedMeasurements.map((_, i) => i).filter(i => !enabledFlags[i]).map(i => '#' + (i + 1)).join(', ')})`
+                    : ''));
             log(`Initial guess from inputs: TL(${initialGuess.tl.x}, ${initialGuess.tl.y}), TR(${initialGuess.tr.x}, ${initialGuess.tr.y}), BR(${initialGuess.br.x}, 0)`);
 
             showStatus('compute-status', 'Computing...', 'info');
@@ -443,15 +675,20 @@
                 // values it logs (already projected into the XY plane), so we must
                 // NOT re-project here — doing so would double-project and diverge
                 // from the machine result.
-                log(`Running firmware-exact Levenberg-Marquardt on ${parsedMeasurements.length} measurements...`);
+                log(`Running firmware-exact Levenberg-Marquardt on ${activeMeasurements.length} measurements...`);
                 log('(Using recomputeAnchorsLM — a line-for-line port of the machine firmware)');
 
                 // recomputeAnchorsLM mirrors Calibration::recomputeAnchorsWithLevenbergMarquardt:
                 // it runs its own deterministic 10-retry perturbation loop internally,
                 // so no external rectangular pre-optimization or retry loop is needed.
-                const result = recomputeAnchorsLM(parsedMeasurements, initialGuess);
+                const result = recomputeAnchorsLM(activeMeasurements, initialGuess);
                 const anchors = result.anchors;
                 const fit = result.fitness;
+
+                // Tag each diagnostic with the original measurement index.
+                if (result.perMeasurement) {
+                    result.perMeasurement.forEach(p => { p.origIndex = activeOrigIndex[p.index]; });
+                }
 
                 log(`\n=== Computation Complete ===`);
                 log(`Total LM iterations: ${result.totalIterations}`);
@@ -473,6 +710,11 @@
                     document.getElementById('result-brx').textContent = anchors.br.x.toFixed(2) + ' mm';
                     document.getElementById('result-fitness').textContent = fit.rms.toFixed(4) + ' mm RMS';
                     document.getElementById('results-box').style.display = 'block';
+
+                    if (result.perMeasurement && result.perMeasurement.length) {
+                        if (resetViewOnRun) resetView();
+                        renderVisualization(anchors, result.perMeasurement, fit);
+                    }
                 }
 
                 if (result.passed) {
@@ -490,9 +732,341 @@
             }
         }
 
+        // Map a normalised error (0 = none, 1 = worst) to a green→amber→red colour.
+        function rmsColor(t) {
+            t = Math.max(0, Math.min(1, t));
+            let r, g, b;
+            if (t < 0.5) {
+                const u = t / 0.5;
+                r = Math.round(0x2f + (0xf5 - 0x2f) * u);
+                g = Math.round(0x9e + (0x9f - 0x9e) * u);
+                b = Math.round(0x44 + (0x00 - 0x44) * u);
+            } else {
+                const u = (t - 0.5) / 0.5;
+                r = Math.round(0xf5 + (0xe0 - 0xf5) * u);
+                g = Math.round(0x9f + (0x31 - 0x9f) * u);
+                b = Math.round(0x00 + (0x31 - 0x00) * u);
+            }
+            return `rgb(${r},${g},${b})`;
+        }
+
+        const BELT_LABELS = { tl: 'Top Left', tr: 'Top Right', bl: 'Bottom Left', br: 'Bottom Right' };
+        const BELT_KEYS = ['tl', 'tr', 'bl', 'br'];
+
+        // Reset the interactive pan/zoom view.
+        function resetView() {
+            view.scale = 1;
+            view.offsetX = 0;
+            view.offsetY = 0;
+            updateActiveCount();
+            if (baseMap) drawCanvas();
+        }
+
+        // Anchor points in world coordinates (bl fixed at origin, br on the X axis).
+        function anchorPointsOf(anchors) {
+            return [
+                { key: 'tl', label: 'TL', x: anchors.tl.x, y: anchors.tl.y },
+                { key: 'tr', label: 'TR', x: anchors.tr.x, y: anchors.tr.y },
+                { key: 'bl', label: 'BL', x: 0, y: 0 },
+                { key: 'br', label: 'BR', x: anchors.br.x, y: 0 }
+            ];
+        }
+
+        // Screen coordinate = user pan/zoom applied on top of the fit mapping.
+        function sx(x) { return view.offsetX + view.scale * baseMap.tx(x); }
+        function sy(y) { return view.offsetY + view.scale * baseMap.ty(y); }
+
+        // Build the fit mapping + summary/table for a fresh solve, then draw.
+        function renderVisualization(anchors, perMeasurement, fit) {
+            lastAnchors = anchors;
+            lastPerMeasurement = perMeasurement;
+            lastFit = fit;
+
+            const canvas = document.getElementById('viz-canvas');
+            const W = canvas.width;
+            const H = canvas.height;
+            const anchorPts = anchorPointsOf(anchors);
+
+            // World bounds from anchors + sled positions.
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            const consider = (x, y) => {
+                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                if (y < minY) minY = y; if (y > maxY) maxY = y;
+            };
+            anchorPts.forEach(a => consider(a.x, a.y));
+            perMeasurement.forEach(p => consider(p.sled.x, p.sled.y));
+
+            const pad = 60;
+            const spanX = (maxX - minX) || 1;
+            const spanY = (maxY - minY) || 1;
+            const scale = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanY);
+            const offX = (W - spanX * scale) / 2 - minX * scale;
+            const offY = (H - spanY * scale) / 2 - minY * scale;
+            // Base (fitted) world→canvas mapping; pan/zoom is layered on in sx/sy.
+            baseMap = {
+                tx: x => offX + x * scale,
+                ty: y => H - (offY + y * scale)   // flip Y (world up → canvas up)
+            };
+
+            buildBeltSummary(fit);
+            buildMeasurementTable(perMeasurement);
+            updateActiveCount();
+
+            document.getElementById('viz-section').style.display = 'block';
+            drawCanvas();
+        }
+
+        // Draw (or redraw) the canvas from the stored state + current view transform.
+        // Cheap enough to call on every pan/zoom frame without re-solving.
+        function drawCanvas() {
+            if (!baseMap || !lastAnchors || !lastPerMeasurement) return;
+
+            const canvas = document.getElementById('viz-canvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const anchorPts = anchorPointsOf(lastAnchors);
+            const perMeasurement = lastPerMeasurement;
+
+            // Largest single belt residual (for line thickness/colour scaling).
+            let maxAbsResid = 1e-6;
+            perMeasurement.forEach(p => {
+                BELT_KEYS.forEach(k => {
+                    const a = Math.abs(p.residuals[k]);
+                    if (a > maxAbsResid) maxAbsResid = a;
+                });
+            });
+            // Scale sled colour so the RMS gate maps to mid-range (amber).
+            let maxRms = RMS_GATE;
+            perMeasurement.forEach(p => { if (p.rms > maxRms) maxRms = p.rms; });
+
+            // 1) Belt lines from each sled toward each anchor.
+            perMeasurement.forEach(p => {
+                const px = sx(p.sled.x);
+                const py = sy(p.sled.y);
+                anchorPts.forEach(a => {
+                    const resid = Math.abs(p.residuals[a.key]);
+                    const frac = resid / maxAbsResid;
+                    ctx.beginPath();
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(sx(a.x), sy(a.y));
+                    ctx.lineWidth = 0.4 + 5 * frac;
+                    ctx.strokeStyle = rmsColor(resid / RES_GATE);
+                    ctx.globalAlpha = 0.12 + 0.5 * frac;
+                    ctx.stroke();
+                });
+            });
+            ctx.globalAlpha = 1;
+
+            // 2) Sled dots, coloured by RMS, labelled with their original index.
+            perMeasurement.forEach(p => {
+                const px = sx(p.sled.x);
+                const py = sy(p.sled.y);
+                const failed = p.rms > RMS_GATE || p.maxAbsResidual > RES_GATE;
+                ctx.beginPath();
+                ctx.arc(px, py, 8, 0, Math.PI * 2);
+                ctx.fillStyle = rmsColor(p.rms / maxRms);
+                ctx.fill();
+                ctx.lineWidth = failed ? 3 : 1.5;
+                ctx.strokeStyle = failed ? '#c92a2a' : '#ffffff';
+                ctx.stroke();
+                ctx.fillStyle = '#212529';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('#' + (p.origIndex + 1), px + 11, py);
+            });
+
+            // 3) Anchors as dark squares with labels.
+            anchorPts.forEach(a => {
+                const ax = sx(a.x);
+                const ay = sy(a.y);
+                ctx.fillStyle = '#343a40';
+                ctx.fillRect(ax - 7, ay - 7, 14, 14);
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(`${a.label} (${a.x.toFixed(0)}, ${a.y.toFixed(0)})`, ax, ay - 10);
+            });
+        }
+
+        // Per-belt RMS summary (which belt drives the error overall).
+        function buildBeltSummary(fit) {
+            const perAnchor = fit.rmsPerAnchor; // [tl, tr, bl, br]
+            let worstIdx = 0;
+            for (let i = 1; i < 4; i++) {
+                if (perAnchor[i] > perAnchor[worstIdx]) worstIdx = i;
+            }
+            document.getElementById('belt-summary').innerHTML = BELT_KEYS.map((k, i) => `
+                <div class="belt-card${i === worstIdx ? ' worst-belt' : ''}">
+                    <div class="belt-name">${BELT_LABELS[k]}</div>
+                    <div class="belt-rms">${perAnchor[i].toFixed(2)} mm</div>
+                    <div class="belt-name">RMS${i === worstIdx ? ' ⚠ worst' : ''}</div>
+                </div>
+            `).join('');
+        }
+
+        // Per-measurement table listing every point (enabled or excluded) with a
+        // checkbox to toggle it in/out of the solve.
+        function buildMeasurementTable(perMeasurement) {
+            const diagByOi = {};
+            perMeasurement.forEach(p => { diagByOi[p.origIndex] = p; });
+
+            const tbody = document.getElementById('measurement-tbody');
+            tbody.innerHTML = parsedMeasurements.map((m, i) => {
+                const on = enabledFlags[i];
+                const p = diagByOi[i];
+                const check = `<input type="checkbox" class="toggle-pt" data-oi="${i}" ${on ? 'checked' : ''}>`;
+                if (on && p) {
+                    const failed = p.rms > RMS_GATE || p.maxAbsResidual > RES_GATE;
+                    const cell = (k) => `<td class="${p.worstBelt === k ? 'worst' : ''}">${p.residuals[k].toFixed(2)}</td>`;
+                    return `
+                        <tr class="${failed ? 'row-fail' : ''}">
+                            <td class="toggle-cell">${check}</td>
+                            <td>#${i + 1}</td>
+                            <td>${p.sled.x.toFixed(1)}</td>
+                            <td>${p.sled.y.toFixed(1)}</td>
+                            ${cell('tl')}${cell('tr')}${cell('bl')}${cell('br')}
+                            <td>${p.rms.toFixed(2)}</td>
+                            <td>${BELT_LABELS[p.worstBelt]}</td>
+                        </tr>
+                    `;
+                }
+                return `
+                    <tr class="row-disabled">
+                        <td class="toggle-cell">${check}</td>
+                        <td>#${i + 1}</td>
+                        <td>—</td><td>—</td>
+                        <td>—</td><td>—</td><td>—</td><td>—</td>
+                        <td>—</td>
+                        <td>excluded</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateActiveCount() {
+            const total = parsedMeasurements ? parsedMeasurements.length : 0;
+            const active = enabledFlags.filter(Boolean).length;
+            const el = document.getElementById('viz-active-count');
+            if (el) el.textContent = `${active} of ${total} points active · zoom ${view.scale.toFixed(2)}×`;
+        }
+
+        // Enable/disable a measurement and re-solve (preserving the current view).
+        function togglePoint(origIndex, enabled) {
+            enabledFlags[origIndex] = enabled;
+            computeAnchorPositions(false);
+        }
+
+        // Convert a mouse event to canvas pixel coordinates.
+        function eventToCanvas(evt) {
+            const canvas = document.getElementById('viz-canvas');
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+                y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        // Return the measurement dot under a canvas point, or null.
+        function hitTestDot(px, py) {
+            if (!lastPerMeasurement) return null;
+            for (const p of lastPerMeasurement) {
+                const dx = px - sx(p.sled.x);
+                const dy = py - sy(p.sled.y);
+                if (dx * dx + dy * dy <= 12 * 12) return p;
+            }
+            return null;
+        }
+
+        // Wire up wheel-zoom, drag-pan, and click-to-exclude on the canvas.
+        (function setupCanvasInteraction() {
+            const canvas = document.getElementById('viz-canvas');
+            let dragging = false, moved = false;
+            let startX = 0, startY = 0, startOffX = 0, startOffY = 0;
+
+            canvas.addEventListener('wheel', (e) => {
+                if (!baseMap) return;
+                e.preventDefault();
+                const p = eventToCanvas(e);
+                const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+                // Zoom about the cursor so the point under it stays put.
+                view.offsetX = p.x - (p.x - view.offsetX) * factor;
+                view.offsetY = p.y - (p.y - view.offsetY) * factor;
+                view.scale *= factor;
+                updateActiveCount();
+                drawCanvas();
+            }, { passive: false });
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (!baseMap) return;
+                dragging = true;
+                moved = false;
+                const p = eventToCanvas(e);
+                startX = p.x; startY = p.y;
+                startOffX = view.offsetX; startOffY = view.offsetY;
+                canvas.classList.add('grabbing');
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                const p = eventToCanvas(e);
+                const dx = p.x - startX;
+                const dy = p.y - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                view.offsetX = startOffX + dx;
+                view.offsetY = startOffY + dy;
+                drawCanvas();
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (!dragging) return;
+                dragging = false;
+                canvas.classList.remove('grabbing');
+                if (!moved) {
+                    // A click (not a drag): exclude the dot under the cursor.
+                    const p = eventToCanvas(e);
+                    const hit = hitTestDot(p.x, p.y);
+                    if (hit) togglePoint(hit.origIndex, false);
+                }
+            });
+        })();
+
         // Event listeners
         document.getElementById('parse-button').addEventListener('click', parseCalibrationData);
-        document.getElementById('compute-button').addEventListener('click', computeAnchorPositions);
+        document.getElementById('compute-button').addEventListener('click', () => computeAnchorPositions(true));
+
+        // Measurement map controls.
+        document.getElementById('viz-reset-view').addEventListener('click', resetView);
+        document.getElementById('viz-include-all').addEventListener('click', () => {
+            if (!parsedMeasurements) return;
+            enabledFlags = parsedMeasurements.map(() => true);
+            computeAnchorPositions(false);
+        });
+        document.getElementById('viz-exclude-failing').addEventListener('click', () => {
+            if (!lastPerMeasurement) return;
+            let changed = false;
+            lastPerMeasurement.forEach(p => {
+                const failed = p.rms > RMS_GATE || p.maxAbsResidual > RES_GATE;
+                if (failed && enabledFlags[p.origIndex]) {
+                    enabledFlags[p.origIndex] = false;
+                    changed = true;
+                }
+            });
+            if (changed) computeAnchorPositions(false);
+            else showStatus('compute-status', 'No failing points to exclude', 'info');
+        });
+
+        // Toggle a point in/out via its table checkbox (event delegation).
+        document.getElementById('measurement-tbody').addEventListener('change', (e) => {
+            const t = e.target;
+            if (t && t.classList && t.classList.contains('toggle-pt')) {
+                togglePoint(parseInt(t.getAttribute('data-oi'), 10), t.checked);
+            }
+        });
 
         // Initialize
         log('Calibration Data Parser ready');
@@ -500,10 +1074,11 @@
         log('1. Paste your measurement data (supports plain, array, and CLBM formats)');
         log('2. Click "Parse and Validate" to check the data');
         log('3. Adjust initial anchor positions if desired (or use defaults)');
-        log('4. Click "Compute Anchor Positions" to run optimization');
+        log('4. Click "Compute Anchor Positions" to run the firmware-exact solver');
         log('');
-        log('Note: Like ESP3D-WEBUI, if initial fitness is low (<0.1) or frame is nearly square,');
-        log('the algorithm will automatically compute better starting positions using rectangular optimization.');
+        log('After computing, the Measurement Map shows each measurement position and');
+        log('per-belt error. Scroll to zoom, drag to pan, and click a dot (or use the');
+        log('checkboxes) to exclude a bad measurement and re-solve instantly.');
     </script>
 </body>
 </html>

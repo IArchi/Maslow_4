@@ -696,6 +696,14 @@ if (activeMeasurements.length < 3) {
                 log(`Fitness: rms=${fit.rms.toFixed(5)} mm, max residual=${fit.maxResidual.toFixed(5)} mm, converged=${fit.converged}`);
                 log(`Per-anchor RMS (mm): TL=${fit.rmsPerAnchor[0].toFixed(4)}, TR=${fit.rmsPerAnchor[1].toFixed(4)}, BL=${fit.rmsPerAnchor[2].toFixed(4)}, BR=${fit.rmsPerAnchor[3].toFixed(4)}`);
 
+if (!anchors) {
+                    document.getElementById('results-box').style.display = 'none';
+                    document.getElementById('viz-section').style.display = 'none';
+                    lastAnchors = null;
+                    lastPerMeasurement = null;
+                    lastFit = null;
+                    baseMap = null;
+                }
                 if (anchors) {
                     log(`\n${result.passed ? '✅' : '⚠️'} Anchor Positions${result.passed ? '' : ' (fitness gates FAILED — machine would NOT save these)'}:`);
                     log(`  Top Left:     X = ${anchors.tl.x.toFixed(2)} mm, Y = ${anchors.tl.y.toFixed(2)} mm`);

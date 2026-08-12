@@ -934,6 +934,569 @@ class LevenbergMarquardtCalibrationComputer {
     }
 }
 
+/* ==========================================================================
+ * FIRMWARE-EXACT Levenberg-Marquardt anchor recompute
+ * --------------------------------------------------------------------------
+ * The functions below are a line-for-line JavaScript port of the machine
+ * firmware's Calibration::recomputeAnchorsWithLevenbergMarquardt() and its
+ * helpers in firmware/FluidNC/src/Maslow/Calibration.cpp.
+ *
+ * They exist so offline tools (e.g. docs/calibration-simulation/data-parser.html)
+ * can reproduce the EXACT anchor positions the machine computes for a given set
+ * of CLBM measurements and initial anchor guess. Do not "clean up" the numerics:
+ * operation order is preserved so the double-precision arithmetic matches the
+ * C++ exactly.
+ *
+ * NOTE: lmBundleResiduals() and lmEstimateSledPosition() above already match the
+ * firmware bundleResiduals()/estimateSledPosition() exactly and are reused here.
+ * ========================================================================== */
+
+// Firmware constants (Calibration.cpp lines 34-43)
+const FW_LM_INITIAL_LAMBDA        = 0.001;
+const FW_LM_LAMBDA_INCREASE       = 10.0;
+const FW_LM_LAMBDA_DECREASE       = 0.1;
+const FW_LM_MAX_ITERATIONS        = 100;
+const FW_LM_MAX_REJECTIONS        = 20;
+const FW_LM_CONVERGENCE_THRESHOLD = 1e-4;
+const FW_FITNESS_RMS_FAIL_MM      = 5.0;
+const FW_FITNESS_MAX_RES_FAIL_MM  = 15.0;
+
+// Retry/perturbation table (Calibration.cpp lines 799-812)
+const FW_LM_MAX_RETRIES   = 10;
+const FW_LM_PERTURB_SMALL = 25.0;
+const FW_LM_PERTURB_LARGE = 50.0;
+const FW_LM_LAMBDA_OVERFLOW = 1e12;
+const FW_PERTURB_X = [
+    FW_LM_PERTURB_SMALL, -FW_LM_PERTURB_SMALL,  0.0,               0.0,
+    FW_LM_PERTURB_SMALL, -FW_LM_PERTURB_SMALL,
+    FW_LM_PERTURB_LARGE, -FW_LM_PERTURB_LARGE,  0.0,               0.0
+];
+const FW_PERTURB_Y = [
+    0.0,               0.0,               FW_LM_PERTURB_SMALL, -FW_LM_PERTURB_SMALL,
+    FW_LM_PERTURB_SMALL, -FW_LM_PERTURB_SMALL,
+    0.0,               0.0,               FW_LM_PERTURB_LARGE, -FW_LM_PERTURB_LARGE
+];
+
+/**
+ * Port of measurementJacobiansAndResiduals() (Calibration.cpp lines 117-170).
+ * Returns { jia: number[4][5], jis: number[4][2], ri: number[4] }.
+ */
+function fwMeasurementJacobiansAndResiduals(m, tlX, tlY, trX, trY, brX, sx, sy) {
+    const jia = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+    const jis = [[0,0],[0,0],[0,0],[0,0]];
+    const ri  = [0, 0, 0, 0];
+
+    const dxTl = sx - tlX;
+    const dyTl = sy - tlY;
+    const dTl  = Math.sqrt(dxTl * dxTl + dyTl * dyTl) + 1e-12;
+
+    const dxTr = sx - trX;
+    const dyTr = sy - trY;
+    const dTr  = Math.sqrt(dxTr * dxTr + dyTr * dyTr) + 1e-12;
+
+    const dBl = Math.sqrt(sx * sx + sy * sy) + 1e-12;
+
+    const dxBr = sx - brX;
+    const dBr  = Math.sqrt(dxBr * dxBr + sy * sy) + 1e-12;
+
+    ri[0] = dTl - m.tl;
+    ri[1] = dTr - m.tr;
+    ri[2] = dBl - m.bl;
+    ri[3] = dBr - m.br;
+
+    jia[0][0] = -dxTl / dTl;
+    jia[0][1] = -dyTl / dTl;
+    jis[0][0] = dxTl / dTl;
+    jis[0][1] = dyTl / dTl;
+
+    jia[1][2] = -dxTr / dTr;
+    jia[1][3] = -dyTr / dTr;
+    jis[1][0] = dxTr / dTr;
+    jis[1][1] = dyTr / dTr;
+
+    jis[2][0] = sx / dBl;
+    jis[2][1] = sy / dBl;
+
+    jia[3][4] = -dxBr / dBr;
+    jis[3][0] = dxBr / dBr;
+    jis[3][1] = sy / dBr;
+
+    return { jia, jis, ri };
+}
+
+/**
+ * Port of invertDamped2x2() (Calibration.cpp lines 172-186).
+ * Returns { ok: boolean, inv: number[2][2] }.
+ */
+function fwInvertDamped2x2(v00, v01, v11, lambda) {
+    const d00 = v00 + lambda * Math.max(v00, 1e-10);
+    const d11 = v11 + lambda * Math.max(v11, 1e-10);
+    const det = d00 * d11 - v01 * v01;
+    if (Math.abs(det) < 1e-12) {
+        return { ok: false, inv: null };
+    }
+    const invDet = 1.0 / det;
+    const inv = [
+        [ d11 * invDet, -v01 * invDet ],
+        [ -v01 * invDet, d00 * invDet ]
+    ];
+    return { ok: true, inv };
+}
+
+/**
+ * Port of solve5x5() (Calibration.cpp lines 188-231). Gaussian elimination with
+ * partial pivoting. Mutates `matrix` in place (caller passes a fresh copy each
+ * iteration, matching the firmware). Returns { ok: boolean, solution: number[5] }.
+ */
+function fwSolve5x5(matrix, rhs) {
+    const b = [rhs[0], rhs[1], rhs[2], rhs[3], rhs[4]];
+    const solution = [0, 0, 0, 0, 0];
+
+    for (let col = 0; col < 5; col++) {
+        let pivot = col;
+        for (let row = col + 1; row < 5; row++) {
+            if (Math.abs(matrix[row][col]) > Math.abs(matrix[pivot][col])) {
+                pivot = row;
+            }
+        }
+        if (Math.abs(matrix[pivot][col]) < 1e-12) {
+            return { ok: false, solution: null };
+        }
+        if (pivot !== col) {
+            for (let k = col; k < 5; k++) {
+                const tmp = matrix[col][k];
+                matrix[col][k] = matrix[pivot][k];
+                matrix[pivot][k] = tmp;
+            }
+            const tmpB = b[col];
+            b[col] = b[pivot];
+            b[pivot] = tmpB;
+        }
+
+        const pivotValue = matrix[col][col];
+        for (let row = col + 1; row < 5; row++) {
+            const factor = matrix[row][col] / pivotValue;
+            matrix[row][col] = 0.0;
+            for (let k = col + 1; k < 5; k++) {
+                matrix[row][k] -= factor * matrix[col][k];
+            }
+            b[row] -= factor * b[col];
+        }
+    }
+
+    for (let row = 4; row >= 0; row--) {
+        let sum = b[row];
+        for (let col = row + 1; col < 5; col++) {
+            sum -= matrix[row][col] * solution[col];
+        }
+        solution[row] = sum / matrix[row][row];
+    }
+    return { ok: true, solution };
+}
+
+/**
+ * Port of accumulatePointBlocks() (Calibration.cpp lines 233-299).
+ * ADDS the per-measurement contribution into the persistent anchor block
+ * (`u` 5x5 upper triangle, `ga` length-5). RESETS and fills the per-measurement
+ * blocks `w` (5x2) and `gi` (length-2). Returns { v00, v01, v11 }.
+ */
+function fwAccumulatePointBlocks(m, tlX, tlY, trX, trY, brX, sx, sy, u, ga, w, gi) {
+    const { jia, jis, ri } = fwMeasurementJacobiansAndResiduals(m, tlX, tlY, trX, trY, brX, sx, sy);
+
+    let v00 = 0.0, v01 = 0.0, v11 = 0.0;
+    gi[0] = 0.0;
+    gi[1] = 0.0;
+    for (let a = 0; a < 5; a++) {
+        w[a][0] = 0.0;
+        w[a][1] = 0.0;
+    }
+
+    for (let row = 0; row < 4; row++) {
+        const js0 = jis[row][0];
+        const js1 = jis[row][1];
+        v00 += js0 * js0;
+        v01 += js0 * js1;
+        v11 += js1 * js1;
+        gi[0] += js0 * ri[row];
+        gi[1] += js1 * ri[row];
+
+        for (let a = 0; a < 5; a++) {
+            const ja = jia[row][a];
+            ga[a] += ja * ri[row];
+            w[a][0] += ja * js0;
+            w[a][1] += ja * js1;
+            for (let bb = a; bb < 5; bb++) {
+                u[a][bb] += ja * jia[row][bb];
+            }
+        }
+    }
+
+    return { v00, v01, v11 };
+}
+
+/**
+ * FIRMWARE-EXACT anchor recompute.
+ *
+ * Port of Calibration::recomputeAnchorsWithLevenbergMarquardt()
+ * (Calibration.cpp lines 766-1090). Sparse Levenberg-Marquardt bundle adjustment
+ * (5 anchor params + 2 sled coords per measurement) solved via Schur complement,
+ * with the firmware's deterministic perturbation-retry loop and fitness gates.
+ *
+ * @param {Array}  measurements - [{tl, tr, bl, br}, ...] belt lengths (the exact
+ *                 CLBM values the machine logs; NO extra projection is applied).
+ * @param {Object} initialAnchors - { tl:{x,y}, tr:{x,y}, bl:{x,y}, br:{x,y} }
+ *                 initial guess (bl fixed at origin, br.y fixed at 0).
+ * @returns {Object} {
+ *   anchors: { tl:{x,y}, tr:{x,y}, bl:{x,y}, br:{x,y} } | null,
+ *   fitness: { rms, maxResidual, rmsPerAnchor:[4], converged },
+ *   passed: boolean,   // true only if all firmware fitness gates pass
+ *   error: string|null,
+ *   totalIterations: number,
+ *   ssr: number
+ * }
+ */
+function recomputeAnchorsLM(measurements, initialAnchors) {
+    const measurementCount = measurements.length;
+if (measurementCount < 3) {
+        const error = measurementCount <= 0
+            ? 'no measurements available'
+            : 'at least 3 measurements are required';
+        return {
+            anchors: null,
+            fitness: { rms: Infinity, maxResidual: Infinity, rmsPerAnchor: [0,0,0,0], converged: false },
+            passed: false,
+            error,
+            totalIterations: 0,
+            ssr: Infinity
+        };
+    }
+
+    const tlX0 = initialAnchors.tl.x;
+    const tlY0 = initialAnchors.tl.y;
+    const trX0 = initialAnchors.tr.x;
+    const trY0 = initialAnchors.tr.y;
+    const brX0 = initialAnchors.br.x;
+
+    let globalBestParams = null;
+    let globalBestSSR    = Infinity;
+    let anyConverged     = false;
+    let totalIterations  = 0;
+    let solverError      = null;
+
+    for (let attempt = 0; attempt <= FW_LM_MAX_RETRIES; attempt++) {
+        const px = (attempt > 0) ? FW_PERTURB_X[attempt - 1] : 0.0;
+        const py = (attempt > 0) ? FW_PERTURB_Y[attempt - 1] : 0.0;
+
+        let params = [tlX0 + px, tlY0 + py, trX0 - px, trY0 + py, brX0];
+        for (const m of measurements) {
+            const sled = lmEstimateSledPosition(m, params[0], params[1], params[2], params[3], params[4]);
+            params.push(sled.x, sled.y);
+        }
+
+        let residuals  = lmBundleResiduals(measurements, params);
+        let currentSSR = lmSSR(residuals);
+
+        let bestParams = params.slice();
+        let bestSSR    = currentSSR;
+        let lambda     = FW_LM_INITIAL_LAMBDA;
+        let rejections = 0;
+
+        for (let iteration = 0; iteration < FW_LM_MAX_ITERATIONS; iteration++) {
+            totalIterations++;
+
+            const tlX = params[0], tlY = params[1];
+            const trX = params[2], trY = params[3];
+            const brX = params[4];
+
+            const u        = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+            const ga       = [0, 0, 0, 0, 0];
+            const schurSub = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+            const schurGain = [0, 0, 0, 0, 0];
+
+            for (let i = 0; i < measurementCount; i++) {
+                const sxIndex = 5 + 2 * i;
+                const syIndex = sxIndex + 1;
+
+                const w  = [[0,0],[0,0],[0,0],[0,0],[0,0]];
+                const gi = [0, 0];
+                const { v00, v01, v11 } = fwAccumulatePointBlocks(
+                    measurements[i], tlX, tlY, trX, trY, brX, params[sxIndex], params[syIndex], u, ga, w, gi);
+
+                const dampedInv = fwInvertDamped2x2(v00, v01, v11, lambda);
+                if (!dampedInv.ok) {
+                    solverError = 'singular 2x2 block at iteration ' + iteration;
+                    return failResult(measurements, measurementCount, globalBestParams, globalBestSSR, anyConverged, totalIterations, solverError);
+                }
+                const invV = dampedInv.inv;
+
+                for (let a = 0; a < 5; a++) {
+                    const winv0 = w[a][0] * invV[0][0] + w[a][1] * invV[1][0];
+                    const winv1 = w[a][0] * invV[0][1] + w[a][1] * invV[1][1];
+                    schurGain[a] += winv0 * gi[0] + winv1 * gi[1];
+                    for (let bb = a; bb < 5; bb++) {
+                        schurSub[a][bb] += winv0 * w[bb][0] + winv1 * w[bb][1];
+                    }
+                }
+            }
+
+            for (let a = 0; a < 5; a++) {
+                for (let bb = 0; bb < a; bb++) {
+                    u[a][bb]        = u[bb][a];
+                    schurSub[a][bb] = schurSub[bb][a];
+                }
+            }
+
+            const schurMatrix = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+            const schurRhs    = [0, 0, 0, 0, 0];
+            for (let a = 0; a < 5; a++) {
+                for (let bb = 0; bb < 5; bb++) {
+                    schurMatrix[a][bb] = u[a][bb] - schurSub[a][bb];
+                }
+                schurMatrix[a][a] += lambda * Math.max(u[a][a], 1e-10);
+                schurRhs[a] = -ga[a] + schurGain[a];
+            }
+
+            const solved = fwSolve5x5(schurMatrix, schurRhs);
+            if (!solved.ok) {
+                solverError = 'reduced linear solver did not converge at iteration ' + iteration;
+                return failResult(measurements, measurementCount, globalBestParams, globalBestSSR, anyConverged, totalIterations, solverError);
+            }
+            const anchorStep = solved.solution;
+
+            const nextParams = params.slice();
+            for (let i = 0; i < 5; i++) {
+                nextParams[i] += anchorStep[i];
+            }
+
+            let singular = false;
+            for (let i = 0; i < measurementCount; i++) {
+                const sxIndex = 5 + 2 * i;
+                const syIndex = sxIndex + 1;
+                const sx = params[sxIndex];
+                const sy = params[syIndex];
+
+                const { jia, jis, ri } = fwMeasurementJacobiansAndResiduals(measurements[i], tlX, tlY, trX, trY, brX, sx, sy);
+
+                let v00 = 0.0, v01 = 0.0, v11 = 0.0;
+                const gi = [0, 0];
+                const w  = [[0,0],[0,0],[0,0],[0,0],[0,0]];
+                for (let row = 0; row < 4; row++) {
+                    const js0 = jis[row][0];
+                    const js1 = jis[row][1];
+                    v00 += js0 * js0;
+                    v01 += js0 * js1;
+                    v11 += js1 * js1;
+                    gi[0] += js0 * ri[row];
+                    gi[1] += js1 * ri[row];
+                    for (let a = 0; a < 5; a++) {
+                        w[a][0] += jia[row][a] * js0;
+                        w[a][1] += jia[row][a] * js1;
+                    }
+                }
+
+                const dampedInv = fwInvertDamped2x2(v00, v01, v11, lambda);
+                if (!dampedInv.ok) {
+                    singular = true;
+                    solverError = 'singular 2x2 block at iteration ' + iteration;
+                    break;
+                }
+                const invV = dampedInv.inv;
+
+                let pointRhs0 = -gi[0];
+                let pointRhs1 = -gi[1];
+                for (let a = 0; a < 5; a++) {
+                    pointRhs0 -= w[a][0] * anchorStep[a];
+                    pointRhs1 -= w[a][1] * anchorStep[a];
+                }
+
+                const sxStep = invV[0][0] * pointRhs0 + invV[0][1] * pointRhs1;
+                const syStep = invV[1][0] * pointRhs0 + invV[1][1] * pointRhs1;
+                nextParams[sxIndex] += sxStep;
+                nextParams[syIndex] += syStep;
+            }
+            if (singular) {
+                return failResult(measurements, measurementCount, globalBestParams, globalBestSSR, anyConverged, totalIterations, solverError);
+            }
+
+            const nextResiduals = lmBundleResiduals(measurements, nextParams);
+            const nextSSR = lmSSR(nextResiduals);
+
+            if (nextSSR < currentSSR) {
+                params = nextParams;
+                residuals = nextResiduals;
+                currentSSR = nextSSR;
+                lambda = Math.max(lambda * FW_LM_LAMBDA_DECREASE, 1e-12);
+                rejections = 0;
+
+                if (currentSSR < bestSSR) {
+                    bestSSR = currentSSR;
+                    bestParams = params.slice();
+                }
+
+                let anchorStepNorm = 0.0;
+                for (let i = 0; i < 5; i++) {
+                    anchorStepNorm += anchorStep[i] * anchorStep[i];
+                }
+                if (Math.sqrt(anchorStepNorm) < FW_LM_CONVERGENCE_THRESHOLD) {
+                    break;
+                }
+            } else {
+                lambda *= FW_LM_LAMBDA_INCREASE;
+                rejections++;
+                if (rejections > FW_LM_MAX_REJECTIONS || lambda > FW_LM_LAMBDA_OVERFLOW) {
+                    break;
+                }
+            }
+        }
+
+        const thisConverged = (rejections <= FW_LM_MAX_REJECTIONS) && (lambda_below_overflow(lambda));
+        if (bestSSR < globalBestSSR) {
+            globalBestSSR    = bestSSR;
+            globalBestParams = bestParams.slice();
+        }
+        if (thisConverged) {
+            anyConverged = true;
+            break;
+        }
+    }
+
+    // ── Fitness computation (Calibration.cpp lines 1018-1075) ────────────────
+    const finalRes = lmBundleResiduals(measurements, globalBestParams);
+
+    const rms = Math.sqrt(globalBestSSR / (4.0 * measurementCount));
+    let maxResidual = 0.0;
+    for (let i = 0; i < finalRes.length; i++) {
+        const ar = Math.abs(finalRes[i]);
+        if (ar > maxResidual) {
+            maxResidual = ar;
+        }
+    }
+    const rmsPerAnchor = [0, 0, 0, 0];
+    for (let j = 0; j < 4; j++) {
+        let sumSq = 0.0;
+        for (let i = 0; i < measurementCount; i++) {
+            const r = finalRes[4 * i + j];
+            sumSq += r * r;
+        }
+        rmsPerAnchor[j] = Math.sqrt(sumSq / measurementCount);
+    }
+
+    const fitness = { rms, maxResidual, rmsPerAnchor, converged: anyConverged };
+
+    // Per-measurement diagnostics (sled position + per-belt residual breakdown)
+    // so callers can visualise where each waypoint sits and which belt drives
+    // its error.
+    const perMeasurement = fwPerMeasurementDiagnostics(measurements, globalBestParams);
+
+    // ── Fitness gates (Calibration.cpp lines 1055-1075) ─────────────────────
+    let passed = true;
+    let error  = null;
+    if (!fitness.converged) {
+        passed = false;
+        error = 'LM did not converge after retries - the math solver stalled; try calibrating again';
+    } else if (fitness.rms > FW_FITNESS_RMS_FAIL_MM) {
+        passed = false;
+        error = 'rms=' + fitness.rms.toFixed(4) + 'mm exceeds limit ' + FW_FITNESS_RMS_FAIL_MM + 'mm';
+    } else if (fitness.maxResidual > FW_FITNESS_MAX_RES_FAIL_MM) {
+        passed = false;
+        error = 'maxResidual=' + fitness.maxResidual.toFixed(4) + 'mm exceeds limit ' + FW_FITNESS_MAX_RES_FAIL_MM + 'mm';
+    }
+
+    return {
+        anchors: lmParamsToGuess(globalBestParams),
+        fitness,
+        passed,
+        error,
+        totalIterations,
+        ssr: globalBestSSR,
+        perMeasurement
+    };
+}
+
+/**
+ * Build per-measurement diagnostics from a full bundle parameter vector.
+ *
+ * For each measurement returns the optimised sled position, the signed residual
+ * (computed_distance − measured_belt) for every belt, the measurement's RMS
+ * belt error, and which belt has the largest absolute residual.  Used by the
+ * offline data parser to visualise where each waypoint sits on the sheet and
+ * which belt is driving the fitness error.
+ *
+ * @param {Array} measurements - Array of {tl, tr, bl, br} objects
+ * @param {Array} params       - Full bundle params [5 anchor + 2N sled] (or null)
+ * @returns {Array} One entry per measurement (empty array when params is null)
+ */
+function fwPerMeasurementDiagnostics(measurements, params) {
+    const out = [];
+    if (!params) return out;
+    const res = lmBundleResiduals(measurements, params);
+    for (let i = 0; i < measurements.length; i++) {
+        const rTl = res[4 * i];
+        const rTr = res[4 * i + 1];
+        const rBl = res[4 * i + 2];
+        const rBr = res[4 * i + 3];
+        const ssr = rTl * rTl + rTr * rTr + rBl * rBl + rBr * rBr;
+        const residuals = { tl: rTl, tr: rTr, bl: rBl, br: rBr };
+        let worstBelt = 'tl';
+        let worstAbs = Math.abs(rTl);
+        for (const belt of ['tr', 'bl', 'br']) {
+            const a = Math.abs(residuals[belt]);
+            if (a > worstAbs) {
+                worstAbs = a;
+                worstBelt = belt;
+            }
+        }
+        out.push({
+            index: i,
+            sled: { x: params[5 + 2 * i], y: params[5 + 2 * i + 1] },
+            residuals,
+            rms: Math.sqrt(ssr / 4.0),
+            maxAbsResidual: worstAbs,
+            worstBelt
+        });
+    }
+    return out;
+}
+
+// Small helper mirroring the firmware's (lambda < LM_LAMBDA_OVERFLOW) check.
+function lambda_below_overflow(lambda) {
+    return lambda < FW_LM_LAMBDA_OVERFLOW;
+}
+
+// Build a failure result (used when the linear solver reports a singular system).
+function failResult(measurements, measurementCount, globalBestParams, globalBestSSR, anyConverged, totalIterations, error) {
+    let anchors = null;
+    let rms = Infinity, maxResidual = Infinity;
+    const rmsPerAnchor = [0, 0, 0, 0];
+    if (globalBestParams) {
+        anchors = lmParamsToGuess(globalBestParams);
+        const finalRes = lmBundleResiduals(measurements, globalBestParams);
+        rms = Math.sqrt(globalBestSSR / (4.0 * measurementCount));
+        maxResidual = 0.0;
+        for (let i = 0; i < finalRes.length; i++) {
+            const ar = Math.abs(finalRes[i]);
+            if (ar > maxResidual) maxResidual = ar;
+        }
+        for (let j = 0; j < 4; j++) {
+            let sumSq = 0.0;
+            for (let i = 0; i < measurementCount; i++) {
+                const r = finalRes[4 * i + j];
+                sumSq += r * r;
+            }
+            rmsPerAnchor[j] = Math.sqrt(sumSq / measurementCount);
+        }
+    }
+    return {
+        anchors,
+        fitness: { rms, maxResidual, rmsPerAnchor, converged: anyConverged },
+        passed: false,
+        error,
+        totalIterations,
+        ssr: globalBestSSR,
+        perMeasurement: fwPerMeasurementDiagnostics(measurements, globalBestParams)
+    };
+}
+
 // Export for use in other modules (works in both browser and Node.js)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -959,6 +1522,12 @@ if (typeof module !== 'undefined' && module.exports) {
         lmNormalEquations,
         lmSolveLinear,
         lmSSR,
-        lmComputeFitness
+        lmComputeFitness,
+        recomputeAnchorsLM,
+        fwPerMeasurementDiagnostics,
+        fwMeasurementJacobiansAndResiduals,
+        fwInvertDamped2x2,
+        fwSolve5x5,
+        fwAccumulatePointBlocks
     };
 }

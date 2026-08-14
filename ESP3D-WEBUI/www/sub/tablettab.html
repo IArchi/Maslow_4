@@ -377,12 +377,6 @@
         <div class="input-row">
           <div id="park-current-values" style="text-align: center; font-size: 0.85em; color: #555;"></div>
         </div>
-        <div class="input-row">
-          <div style="text-align: center; font-size: 0.85em; color: #555;">
-            Park X and Park Y values are absolute values with 0,0 being the centre position independent of the Home position.<br>
-            Park Z is a relative value added to Home Z to allow clearance above the current work piece.
-          </div>
-        </div>
         <hr style="border-top: 1px dashed;">
         <div class="grid-container">
           <div class="input-row">
@@ -401,7 +395,7 @@
             <label for="parkZ" class="input-label">Park Z (mm)</label>
           </div>
           <div class="input-row">
-            <input id="parkZ" type="number" min="-100" max="100" step="any" class="calibration-modal-input" placeholder="2">
+            <input id="parkZ" type="number" min="-100" max="100" step="any" class="calibration-modal-input" placeholder="2" title="Adds to Home Z">
           </div>
         </div>
         <hr style="border-top: 1px dashed;">

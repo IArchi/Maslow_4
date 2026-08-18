@@ -1498,19 +1498,12 @@ const handleMaslowActionButtonClick = () => {
       const safeZ = isNaN(parkZ) ? 2.0 : parkZ;
       const targetX = isNaN(parkX) ? 0.0 : parkX;
       const targetY = isNaN(parkY) ? 0.0 : parkY;
-      // Park position values are stored in mm. Switch to mm mode before moving
-      // so values are interpreted correctly regardless of current unit setting
-      // (G20 inches mode would otherwise treat mm values as inches, causing
-      // amplified movements). Restore the original unit mode afterwards.
-      const wasInches = gCodeModal.units === 'G20';
-      if (wasInches) {
-        sendCommand('G21');
-      }
-      sendCommand(`G90 G0 Z${safeZ}`);
-      sendCommand(`G53 G0 Y${targetY} X${targetX}`);
-      if (wasInches) {
-        sendCommand('G20');
-      }
+      // Park position values are stored in mm. Embed G21 in each command so
+      // the unit mode is set atomically with the move, regardless of current
+      // unit setting (G20 inches mode would otherwise treat mm values as
+      // inches, causing amplified movements).
+      sendCommand(`G21 G90 G0 Z${safeZ}`);
+      sendCommand(`G21 G53 G0 Y${targetY} X${targetX}`);
       addMessage(`Parking: raising Z to ${safeZ}mm above Z home, then moving to machine X=${targetX}, Y=${targetY}`);
       break;
     }

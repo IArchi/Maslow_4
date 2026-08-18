@@ -42,6 +42,7 @@ Step-by-step instructions for building your Maslow 4:
   - [Full Documentation](calibration-simulation/README.md)
 - [Calibration Data Parser](calibration-simulation/data-parser.html) - Analyze real calibration data with the machine's exact solver, and visualize which measurements are causing errors
   - [Data Parser Documentation](calibration-simulation/DATA-PARSER.md)
+- [Manual Anchor Locator](manual-anchor-locator/) - Compute anchor coordinates and estimate measurement error from four side lengths and two diagonals
 
 ## Contributing
 

@@ -33,7 +33,7 @@ You can find a complete list of different anchor types here: [ADD LINK]
 
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/8e36c830-4d37-4d99-a702-d1638e9ebba6" />
 
-We've put together a tool to help you to better understand what size of frame you might want and how that will impact your cutting area. You can find that tool here: https://maslowcnc.github.io/Layout-Simulator/
+We've put together a tool to help you to better understand what size of frame you might want and how that will impact your cutting area. You can find that tool here: [Layout Simulator](layout-simulator/).
 
 <img src="quick-start/images/Layout%20Simulator.png" alt="Layout Simulator" width="600">
 

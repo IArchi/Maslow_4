@@ -1136,16 +1136,17 @@ const tabletDOMActivate = () => {
 // Button event handlers - First Row
 const Z_JOG_UP = "Z+";
 const Z_JOG_DOWN = "Z-";
-const CALIBRATION_ONBOARDING_STEP_COUNT = 7;
+const CALIBRATION_ONBOARDING_STEP_COUNT = 8;
 const CALIBRATION_ONBOARDING_LIVE_UPDATE_TIMEOUT_MS = 5000;
 const CALIBRATION_ONBOARDING_TARGET_IDS = {
   1: "tablettab_cal_zstop",
   2: "tablettab_cal_retract",
   3: "tablettab_cal_extend",
   4: null,
-  5: "tablettab_cal_calibrate",
-  6: null,
+  5: null,
+  6: "tablettab_cal_calibrate",
   7: null,
+  8: null,
 };
 
 const tabletMoveZUp = () => sendMove(Z_JOG_UP);
@@ -1160,7 +1161,13 @@ const calibrationOnboardingState = {
   anchorErrorMessage: "",
   zStopSet: false,
   beltsAttached: false,
+  thicknessSaved: false,
   findAnchorsStarted: false,
+};
+
+const CALIBRATION_ONBOARDING_THICKNESS_LIMITS_MM = {
+  min: 0,
+  max: 50,
 };
 
 const getMaslowStateValue = () => (typeof maslowStatus !== 'undefined' ? maslowStatus.state : null);
@@ -1188,6 +1195,29 @@ const syncCalibrationOnboardingZStepInput = () => {
   zStepInput.value = `${stepValue}`;
 }
 
+const getCalibrationOnboardingThicknessFieldValue = (inputId, fallbackValue = 0) => {
+  const input = id(inputId);
+  const rawValue = input ? input.value.trim() : "";
+  const parsedValue = Number.parseFloat(rawValue);
+  const value = Number.isFinite(parsedValue) ? parsedValue : fallbackValue;
+  return Math.min(
+    CALIBRATION_ONBOARDING_THICKNESS_LIMITS_MM.max,
+    Math.max(CALIBRATION_ONBOARDING_THICKNESS_LIMITS_MM.min, value)
+  );
+}
+
+const syncCalibrationOnboardingThicknessInputs = () => {
+  const { workThickness, spoilboardThickness } = getScaleThicknessValues();
+  const workThicknessInput = id("calibration-onboarding-work-thickness");
+  const spoilboardThicknessInput = id("calibration-onboarding-spoilboard-thickness");
+  if (workThicknessInput) {
+    workThicknessInput.value = `${workThickness}`;
+  }
+  if (spoilboardThicknessInput) {
+    spoilboardThicknessInput.value = `${spoilboardThickness}`;
+  }
+}
+
 const syncCalibrationOnboardingState = () => {
   const state = getMaslowStateValue();
   if (state === MASLOW_STATE_READY_TO_CUT) {
@@ -1196,6 +1226,7 @@ const syncCalibrationOnboardingState = () => {
     calibrationOnboardingState.devReadyToCut = true;
     calibrationOnboardingState.zStopSet = true;
     calibrationOnboardingState.beltsAttached = true;
+    calibrationOnboardingState.thicknessSaved = true;
     calibrationOnboardingState.findAnchorsStarted = true;
     return;
   }
@@ -1209,6 +1240,10 @@ const syncCalibrationOnboardingState = () => {
     calibrationOnboardingState.beltsAttached = false;
     calibrationOnboardingState.findAnchorsStarted = false;
   }
+
+  if (state !== null && state >= MASLOW_STATE_FINDING_ANCHORS) {
+    calibrationOnboardingState.thicknessSaved = true;
+  }
 }
 
 const getCalibrationOnboardingStepNumber = () => {
@@ -1218,14 +1253,16 @@ const getCalibrationOnboardingStepNumber = () => {
   const hasExtended = (state !== null && state >= 4) || calibrationOnboardingState.devExtended;
   const hasStartedFindAnchors = calibrationOnboardingState.findAnchorsStarted || calibrationOnboardingState.devReadyToCut || (state !== null && state >= MASLOW_STATE_FINDING_ANCHORS);
   const beltsAttached = calibrationOnboardingState.beltsAttached || (state !== null && state >= MASLOW_STATE_FINDING_ANCHORS);
+  const thicknessSaved = calibrationOnboardingState.thicknessSaved || isReadyToCut || (state !== null && state >= MASLOW_STATE_FINDING_ANCHORS);
 
   if (!(calibrationOnboardingState.zStopSet || isReadyToCut)) return 1;
   if (!hasRetracted) return 2;
   if (!hasExtended) return 3;
   if (!(beltsAttached || isReadyToCut)) return 4;
-  if (!(hasStartedFindAnchors || isReadyToCut)) return 5;
-  if (!isReadyToCut) return 6;
-  return 7;
+  if (!thicknessSaved) return 5;
+  if (!(hasStartedFindAnchors || isReadyToCut)) return 6;
+  if (!isReadyToCut) return 7;
+  return 8;
 }
 
 const clearCalibrationOnboardingTargets = () => {
@@ -1257,6 +1294,7 @@ const openCalibrationOnboarding = () => {
   }
   calibrationOnboardingState.isOpen = true;
   syncCalibrationOnboardingZStepInput();
+  syncCalibrationOnboardingThicknessInputs();
   openModal("calibration-onboarding-popup");
   updateCalibrationOnboarding();
 }
@@ -1303,6 +1341,7 @@ const resetCalibrationOnboardingSessionState = () => {
   resetCalibrationOnboardingDevState();
   calibrationOnboardingState.zStopSet = false;
   calibrationOnboardingState.beltsAttached = false;
+  calibrationOnboardingState.thicknessSaved = false;
   calibrationOnboardingState.findAnchorsStarted = false;
   calibrationOnboardingState.anchorErrorMessage = "";
 }
@@ -1361,7 +1400,7 @@ const updateCalibrationOnboarding = () => {
 
   const anchorErrorLabel = id("calibration-onboarding-anchor-error");
   if (anchorErrorLabel) {
-    const shouldShowError = stepNumber === 6 && !!calibrationOnboardingState.anchorErrorMessage;
+    const shouldShowError = stepNumber === 7 && !!calibrationOnboardingState.anchorErrorMessage;
     anchorErrorLabel.style.display = shouldShowError ? "block" : "none";
     anchorErrorLabel.textContent = calibrationOnboardingState.anchorErrorMessage;
   }
@@ -1381,6 +1420,35 @@ const updateCalibrationOnboarding = () => {
 const confirmCalibrationBeltsAttached = () => {
   tabletClick();
   calibrationOnboardingState.beltsAttached = true;
+  updateCalibrationOnboarding();
+  returnFocusToTablet();
+}
+
+const saveCalibrationOnboardingThickness = () => {
+  tabletClick();
+  const { workThickness: currentWorkThickness, spoilboardThickness: currentSpoilboardThickness } = getScaleThicknessValues();
+  const newWorkThickness = getCalibrationOnboardingThicknessFieldValue("calibration-onboarding-work-thickness", currentWorkThickness);
+  const newSpoilboardThickness = getCalibrationOnboardingThicknessFieldValue("calibration-onboarding-spoilboard-thickness", currentSpoilboardThickness);
+  const updates = [
+    { field: "workThickness", cmd: "Maslow_workThickness", newVal: `${newWorkThickness}` },
+    { field: "spoilboardThickness", cmd: "Maslow_spoilboardThickness", newVal: `${newSpoilboardThickness}` },
+  ];
+  const lv = globalThis.loadedValues || {};
+
+  updates.forEach((update) => {
+    if (String(lv[update.field] || "") !== update.newVal) {
+      SendPrinterCommand(`$/${update.cmd}=${update.newVal}`);
+    }
+  });
+
+  if (!globalThis.loadedValues) {
+    globalThis.loadedValues = {};
+  }
+  globalThis.loadedValues.workThickness = updates[0].newVal;
+  globalThis.loadedValues.spoilboardThickness = updates[1].newVal;
+  calibrationOnboardingState.thicknessSaved = true;
+  syncCalibrationOnboardingThicknessInputs();
+  saveMaslowYaml();
   updateCalibrationOnboarding();
   returnFocusToTablet();
 }
@@ -2209,6 +2277,7 @@ function tabletInit() {
     id("calibration-onboarding-action-retract").addEventListener("click", tabletCalRetract);
     id("calibration-onboarding-action-extend").addEventListener("click", tabletCalExtend);
     id("calibration-onboarding-confirm-belts").addEventListener("click", confirmCalibrationBeltsAttached);
+    id("calibration-onboarding-save-thickness").addEventListener("click", saveCalibrationOnboardingThickness);
     id("calibration-onboarding-action-calibrate").addEventListener("click", tabletCalCalibrate);
     id("calibration-onboarding-finish").addEventListener("click", tabletCalibrationOnboardingFinish);
     id("tablettab_cal_retract").addEventListener("click", tabletCalRetract);

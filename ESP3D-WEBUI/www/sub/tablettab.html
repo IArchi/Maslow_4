@@ -263,6 +263,28 @@
       </div>
 
       <div id="calibration-onboarding-step-5" class="calibration-onboarding-panel" style="display: none;">
+        <div class="calibration-onboarding-step-title">Set material thickness</div>
+        <p class="calibration-onboarding-step-text">Enter the spoilboard and work thickness values used for Z moves, then save them before continuing.</p>
+        <div class="grid-container" title="Valid Range is 0-50mm">
+          <div class="input-row">
+            <label for="calibration-onboarding-spoilboard-thickness" class="input-label">Spoilboard Thickness (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="calibration-onboarding-spoilboard-thickness" type="number" min="0" max="50" step="0.1" class="calibration-modal-input" placeholder="0">
+          </div>
+          <div class="input-row">
+            <label for="calibration-onboarding-work-thickness" class="input-label">Work Thickness (mm)</label>
+          </div>
+          <div class="input-row">
+            <input id="calibration-onboarding-work-thickness" type="number" min="0" max="50" step="0.1" class="calibration-modal-input" placeholder="0">
+          </div>
+        </div>
+        <div class="buttons-row calibration-onboarding-action-row">
+          <button id="calibration-onboarding-save-thickness" type="button" class="calibration-modal-button green-button">Save Thickness</button>
+        </div>
+      </div>
+
+      <div id="calibration-onboarding-step-6" class="calibration-onboarding-panel" style="display: none;">
         <div class="calibration-onboarding-step-title">Find anchor locations</div>
         <p class="calibration-onboarding-step-text">Start the anchor search once belts are attached and Z is fully lowered.</p>
         <div class="buttons-row calibration-onboarding-action-row">
@@ -270,14 +292,14 @@
         </div>
       </div>
 
-      <div id="calibration-onboarding-step-6" class="calibration-onboarding-panel" style="display: none;">
+      <div id="calibration-onboarding-step-7" class="calibration-onboarding-panel" style="display: none;">
         <div class="calibration-onboarding-step-title">Wait for READY_TO_CUT</div>
         <p class="calibration-onboarding-step-text">Calibration is running. This popup advances automatically when Maslow reports <strong>Ready to Cut</strong>.</p>
         <div id="calibration-onboarding-machine-state" class="calibration-onboarding-state-pill">State: Waiting...</div>
         <div id="calibration-onboarding-anchor-error" class="calibration-onboarding-message calibration-onboarding-message-error" style="display: none;"></div>
       </div>
 
-      <div id="calibration-onboarding-step-7" class="calibration-onboarding-panel" style="display: none;">
+      <div id="calibration-onboarding-step-8" class="calibration-onboarding-panel" style="display: none;">
         <div class="calibration-onboarding-step-title">Calibration complete</div>
         <p class="calibration-onboarding-step-text">Maslow is now in <strong>READY_TO_CUT</strong>. The machine is ready.</p>
         <div class="buttons-row calibration-onboarding-action-row">
@@ -286,7 +308,7 @@
       </div>
 
       <div class="calibration-onboarding-progress-wrap">
-        <div id="calibration-onboarding-progress-text" class="calibration-onboarding-progress-text">Step 1 / 7</div>
+        <div id="calibration-onboarding-progress-text" class="calibration-onboarding-progress-text">Step 1 / 8</div>
         <div class="calibration-onboarding-progress-track">
           <span id="calibration-onboarding-dot-1" class="calibration-onboarding-dot active"></span>
           <span id="calibration-onboarding-dot-2" class="calibration-onboarding-dot"></span>
@@ -295,6 +317,7 @@
           <span id="calibration-onboarding-dot-5" class="calibration-onboarding-dot"></span>
           <span id="calibration-onboarding-dot-6" class="calibration-onboarding-dot"></span>
           <span id="calibration-onboarding-dot-7" class="calibration-onboarding-dot"></span>
+          <span id="calibration-onboarding-dot-8" class="calibration-onboarding-dot"></span>
         </div>
       </div>
     </div>
